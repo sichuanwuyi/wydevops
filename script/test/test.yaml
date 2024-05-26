@@ -1,3 +1,9 @@
+test:
+  test1:
+    test3:
+      - name: kkk
+        value: vvvv
+  test2: CCC
 list:
-  - name: aaa
+  - name: test_name
     value: 123

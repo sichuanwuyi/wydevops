@@ -16,9 +16,6 @@ export gEnableCache="true"
 tmpFile="${_selfRootDir}test/test.yaml"
 tmpFile1="${_selfRootDir}test/ci-cd.yaml"
 
-#确保文件不存在
-rm -f "${tmpFile}"
-
 function readAndWriteKVPair() {
   local testName=$1
   local nameValues=$2
@@ -73,7 +70,7 @@ value: 123"
     info "执行读取方法：readParam ${tmpFile##*/} ${paramName}.name ..." "-n"
     readParam "${tmpFile}" "${paramName}.name"
     if [ "${gDefaultRetVal}" != "aaa" ];then
-      error "读取验证失败(返回值与预期值不等)：${gDefaultRetVal} != ${paramValue}"
+      error "读取验证失败(返回值与预期值不等)：${gDefaultRetVal} != aaa"
     else
       info "读取验证成功: ${gDefaultRetVal}" "*"
     fi
@@ -98,8 +95,13 @@ value: 123"
 
 }
 
-#readAndWriteKVPair "简单键值对读写" "test|AAA test.test1|BBB test.test2|CCC test.test1.test3|DDD"
-#readAndWriteKVPair "简单KV键值对列表类读写" "test.test1.test3[0].name|DDD test.test1.test3[0]| test.test1.test3[0].name|kkk test.test1.test3[0].value|vvvv"
+#确保文件不存在
+rm -f "${tmpFile}"
+
+readAndWriteKVPair "简单键值对读写" "test|AAA test.test1|BBB test.test2|CCC test.test1.test3|DDD"
+readAndWriteKVPair "简单KV键值对列表类读写" "test.test1.test3[0].name|DDD test.test1.test3[0]| test.test1.test3[0].name|kkk test.test1.test3[0].value|vvvv"
 
 #clearFileDataBlockMap
 readAndWriteList "列表项读写"
+#readParam "${tmpFile}" list[0].name
+#echo "----gDefaultRetVal=${gDefaultRetVal}----"
