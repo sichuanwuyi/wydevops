@@ -1,0 +1,172 @@
+#本文件的内容来源于_ci-cd-template.yaml文件中的globalParams和chart[0].params配置项。
+#作为语言级配置文件，为不同语言项目提供了独立的默认值配置能力。
+#本文件中如果参数值匹配^(_).*(_)$，则不会更新到_ci-cd-template.yaml文件中
+globalParams:
+  #CICD Java流程会自动从Pom.yml文件中读取服务名称信息覆盖serviceName参数。
+  serviceName: _SERVICE-NAME_
+  #服务中文名称
+  name: _NAME_
+  #服务英文名称
+  nameEn: _NAME-EN_
+  #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
+  serviceCode: ${serviceName}
+  #CICD Java流程会自动从Pom.yml文件中读取版本信息覆盖businessVersion参数。
+  businessVersion: _BUSINESS-VERSION_
+
+  baseImage: ${serviceName}-base
+  baseVersion: ${businessVersion}
+
+  #Dockerfile文件中From语言中定义的基础镜像。
+  #支持多个基础镜像，相互之间使用英文逗号隔开。
+  #注意：注意多个基础镜像间的顺序应与在Dockerfile文件中出现的顺序保持一致。
+  baseFromImage: openjdk:11.0-jre
+  #需要拷贝到docker构建目录中的目录，多个目录间使用英文逗号隔开。
+  copyDirsIntoDocker:
+  #需要拷贝到docker构建目录中的文件，多个文件间使用英文逗号隔开。
+  copyFilesIntoDocker:
+
+  buildType: single
+  appDirInContainer: /usr/local/app
+  workDirInContainer: /app/${serviceName}
+  archTypes: linux/arm64,linux/amd64
+
+  #需要生成的离线安装报的架构类型，多个架构间使用英文逗号隔离。
+  offlineArchTypes: linux/arm64,linux/amd64
+  useTemplate: false
+  #有效的构建阶段列表，逗号分隔。为空则表示所有阶段都有效。
+  validBuildStages:
+  #服务在K8S集群中指定部署的节点选择器
+  nodeSelector:
+  #服务驱逐优先级
+  priorityClassName:
+
+  #服务主端口，也是k8s服务探活和就绪的检测端口，默认是containerPorts参数中第一个端口。
+  mainPort: _MAIN-PORT_
+  #申明docker容器需要开放的端口列表，端口间使用逗号隔开。
+  containerPorts: _CONTAINER-PORT_
+  #ClusterIP类型的Service资源开放的服务端口列表，端口间使用逗号隔开。
+  servicePorts: _SERVICE-PORTS_
+  #ClusterIP类型的Service资源绑定的容器端口列表，端口间使用逗号隔开。
+  nodePorts:
+
+  #apisix网关相关配置
+  gatewayVersion: v2
+  gatewayPath: /${serviceName}
+  #是否为当前服务启用网关的websocket功能
+  websocket: false
+
+  #是否启用K8S服务存活探针
+  livenessProbeEnable: false
+  #是否启用K8S服务就绪探针
+  readinessProbeEnable: false
+
+  #K8S服务资源配置相关参数
+  cpuLimits: 1000m
+  memoryLimits: 1Gi
+  cpuRequests: 500m
+  memoryRequests: 500Mi
+
+  #需要放到项目默认ConfigMap中的文本文件的相对路径列表，文件间使用英文逗号分隔
+  configMapFiles: ./src/main/resources/config/application.yml,./src/main/resources/config/application-prod.yml
+  #需要打包到离线安装包中镜像名称，格式：{镜像名称}:{镜像版本},...
+  packageImages: ${baseImage}:${baseVersion},${serviceName}:${businessVersion}
+
+  #对本服务的一个描述说明文本，会写入Chart镜像。
+  description: "Java服务: ${serviceName}"
+
+  #chart镜像的名称, 默认与服务的名称相同
+  chartName: ${serviceName}
+  #chart镜像的版本, 默认与服务的版本相同
+  chartVersion: ${businessVersion}
+  #chart镜像中应用的版本，默认与服务的版本相同
+  appVersion: ${businessVersion}
+
+  #部署类型：k8s(默认值)、docker(支撑docker-compose方式)
+  deployType: k8s
+  #当前部署环境名称：dev、test，可以自定义。
+  activeProfile: dev
+  devApiServer: 192.168.31.160
+  #在开发集群中使用域名分割子集群时，网关需要的特殊配置。
+  #开发环境中发布的命名空间。这个配置仅用于开发环境
+  devNamespace: develop
+  #开发环境使用的路由的hosts参数。这个配置仅用于开发环境。
+  devRouteHosts: develop.test.com
+
+#项目编译阶段的配置参数
+#（Java项目可本地构建异构项目，直接忽略这个配置节）
+build:
+  #目标架构linux/arm64
+  linux-arm64:
+    #项目编译节点的IP地址
+    nodeIP: 192.168.31.160
+    #项目编译节点SSH连接账号
+    sshAccount: root
+    #项目编译节点SSH连接密码
+    sshPassword: 123456
+    #项目编译使用的镜像名称和版本
+    buildImage: java-build-image-linux-arm64:1.0.0
+  #目标架构linux/amd64
+  linux-amd64:
+    #项目编译节点的IP地址
+    nodeIP: 192.168.31.161
+    #项目编译节点SSH连接账号
+    sshAccount: root
+    #项目编译节点SSH连接密码
+    sshPassword: 123456
+    #项目编译使用的镜像名称和版本
+    buildImage: java-build-image-linux-amd64:1.0.0
+
+#docker构建阶段的配置参数
+docker:
+  #要打包的第三方镜像列表
+  thirdParties:
+    #第三方镜像的名称和版本，不能为空。
+    #目标镜像的架构由docker.archTypes参数决定。
+    - name: test:1.0.0
+      #第三方镜像导出文件所在的目录，如果为空，则直接从私库或公网拉取目标镜像。
+      #目录中的导出文件格式为：{镜像名称}-{架构类型,例如：linux/amd64}.tar；其中\”:\“和\”/\“都转换为\”-\“。
+      #举例：bitnami/prometheus:2.51.2镜像的导出文件名称为bitnami-prometheus-1.0.0-linux-amd64.tar
+      location:
+  customizes:
+    #自定义Docker构建目录中生成的镜像名称和版本，不能空。
+    - name: ${serviceName}-linux-amd64:${businessVersion}
+      #目标架构类型, 当buildType=customize时，会忽略docker.archTypes参数。
+      #该值必须与下面的dockerfile参数指定的文件中的From语句中的--platform参数保持一致，否则会报错。
+      archType: linux/amd64
+      #指定自定义Docker构建目录和Dockerfile文件。
+      dockerfile: ./docker/amd64/Dockerfile
+    #自定义Docker构建目录中生成的镜像名称和版本，不能空。
+    - name: ${serviceName}-linux-arm64:${businessVersion}
+      #目标架构类型, 当buildType=customize时，会忽略docker.archTypes参数。
+      archType: linux/arm64
+      #指定自定义Docker构建目录和Dockerfile文件。
+      dockerfile: ./docker/arm64/Dockerfile
+
+deploy:
+  #要部署的离线包名称
+  - name: ${chartName}
+    docker:
+      #发布模式：docker或docker-compose
+      mode: docker
+      #定义配置文件中的参数名称和默认值
+      params:
+        - name: .Values.params.deployment0.mysql.active
+          value: true
+        - name: .Values.params.deployment0.mysql.host
+          value: 192.168.1.214
+        - name: .Values.params.deployment0.mysql.port
+          value: 3307
+        - name: .Values.params.deployment0.mysql.username
+          value: root
+        - name: .Values.params.deployment0.mysql.password
+          value: 123456
+      #开发集群环境
+      dev:
+        #docker部署方式时，需要部署的节点信息列表。
+        nodeIPs:
+          #格式：{节点IP}|{SSH连接账号}|{SSH连接密码}
+          #第一个节点必须是能免密直连其他节点。
+          - 172.21.210.99|22|root|123456
+      #测试集群环境
+      #test:
+      #  ...

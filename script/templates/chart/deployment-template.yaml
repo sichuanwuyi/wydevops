@@ -1,0 +1,122 @@
+{{- with \$.Values.${l_moduleName} }}
+apiVersion: apps/v1
+kind: ${l_kindType}
+metadata:
+  name: {{ .name | trunc 63 | trimSuffix \"-\" }}
+  labels:
+    helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
+    app.kubernetes.io/version: ${gCurrentServiceVersion}
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: {{ .name | trunc 63 | trimSuffix \"-\" }}
+    app.kubernetes.io/instance: {{ \$.Release.Name }}
+spec:
+  replicas: {{ .replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .name | trunc 63 | trimSuffix \"-\" }}
+      app.kubernetes.io/instance: {{ \$.Release.Name }}
+  template:
+    metadata:
+      {{- if .podAnnotations }}
+      annotations:
+        {{- toYaml .podAnnotations | nindent 8 }}
+      {{- end }}
+      labels:
+        app.kubernetes.io/name: {{ .name | trunc 63 | trimSuffix \"-\" }}
+        app.kubernetes.io/instance: {{ \$.Release.Name }}
+        {{- if .podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .priorityClassName }}
+      priorityClassName: {{- .priorityClassName }}
+      {{- end }}
+      {{- if .imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .imagePullSecrets | nindent 8 }}
+      {{- end }}
+      {{- if \$.Values.${l_moduleName}.serviceAccount.create }}
+      serviceAccountName: {{ default \"${l_serviceName}\" \$.Values.${l_moduleName}.serviceAccount.name }}
+      {{- else }}
+      serviceAccountName: {{ default \"default\" \$.Values.${l_moduleName}.serviceAccount.name }}
+      {{- end }}
+      {{- if .podSecurityContext }}
+      securityContext:
+        {{- toYaml .podSecurityContext | nindent 8 }}
+      {{- end }}
+      {{- if .volumes }}
+      volumes:
+        {{- toYaml .volumes | nindent 8 }}
+      {{- end }}
+      {{- if .initContainers }}
+      initContainers:
+      {{- range .initContainers }}
+        - name: {{ .name }}
+          {{- if \$.Values.image.registry }}
+          image: {{ \$.Values.image.registry }}/{{ .repository }}:{{ .tag }}
+          {{- else }}
+          image: {{ .repository }}:{{ .tag }}
+          {{- end }}
+          imagePullPolicy: {{ .pullPolicy }}
+        {{- if .args }}
+          args:
+            {{- toYaml .args | nindent 12 }}
+        {{- end }}
+        {{- if .command }}
+          command:
+            {{- toYaml .command | nindent 12 }}
+        {{- end }}
+      {{- end }}
+      {{- end }}
+      containers:
+      {{- range .containers }}
+        - name: {{ .name | trunc 63 | trimSuffix \"-\" }}
+          securityContext:
+            {{- toYaml \$.Values.${l_moduleName}.securityContext | nindent 12 }}
+          {{- if \$.Values.image.registry }}
+          image: {{ \$.Values.image.registry }}/{{ .repository }}:{{ .tag | default \$.Chart.AppVersion }}
+          {{- else }}
+          image: {{ .repository }}:{{ .tag | default \$.Chart.AppVersion }}
+          {{- end }}
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- if .ports }}
+          ports:
+            {{- toYaml .ports | nindent 12 }}
+          {{- end }}
+          {{- if .env }}
+          env:
+            {{- toYaml .env | nindent 12 }}
+          {{- end }}
+          {{- if .volumeMounts }}
+          volumeMounts:
+            {{- toYaml .volumeMounts | nindent 12 }}
+          {{- end }}
+          {{- if .livenessProbeEnable }}
+          livenessProbe:
+            {{- toYaml .livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .readinessProbeEnable }}
+          readinessProbe:
+            {{- toYaml .readinessProbe | nindent 12 }}
+          {{- end }}
+          {{- if \$.Values.params.${l_moduleName}.resources }}
+          resources:
+            {{- toYaml \$.Values.params.${l_moduleName}.resources | nindent 12 }}
+          {{- else if .resources }}
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+          {{- end }}
+      {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector:
+        {{- toYaml .nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .affinity }}
+      affinity:
+        {{- toYaml .affinity | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations:
+        {{- toYaml .tolerations | nindent 8 }}
+      {{- end }}
+{{- end }}

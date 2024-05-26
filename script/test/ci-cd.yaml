@@ -1,0 +1,153 @@
+image:
+  registry: 192.168.31.214:8002
+params:
+  deployment0:
+    resources:
+      limits:
+        cpu: "1000m"
+      requests:
+        memory:
+        cpu: 
+          name: wuyi
+          value: 123
+deployment0:
+  name: atom-hardware-manager
+  #配置chart镜像中需要发布的服务的类型：Deployment、DaemonSet、StatefulSet。
+  kind: Deployment
+  replicaCount: 1
+  priorityClassName:
+  imagePullSecrets: []
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  podSecurityContext: {}
+  securityContext: {}
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+  nodeSelector:
+  tolerations: []
+  affinity: {}
+  podLabels: {}
+  podAnnotations:
+    app.kubernetes.io/service-name: "系统硬件监管服务"
+    app.kubernetes.io/service-en-name: "atom hardware manager"
+  volumes:
+    - name: atom-hardware-manager-config
+      configMap:
+        defaultMode: 493
+        name: atom-hardware-manager-configmap
+        optional: false
+    - name: public-params
+      configMap:
+        name: public-configs
+        optional: true
+  #initContainers的第一个容器，其名称默认应该等于服务名称。
+  initContainers:
+  #如果没有initContainers配置（即buildType=single），
+  #则containers的第一个容器其名称默认应该等于服务名称。
+  containers:
+    - name: atom-hardware-manager
+      repository: atom-hardware-manager
+      pullPolicy: Always
+      tag: 2.0.7
+      #容器关联的Service的配置信息，自动生成的，不需要配置，此处申明主要是用来占位
+      service:
+        clusterIP:
+          name: atom-hardware-manager
+          version: 2.0.7
+          ports:
+            - name: http-9090
+              protocol: TCP
+              port: 9090
+              targetPort: 9090
+            - name: http-9091
+              protocol: TCP
+              port: 9091
+              targetPort: 9091
+        nodePort:
+          name: atom-hardware-manager
+          version: 2.0.7
+          ports:
+            - name: http-9092
+              protocol: TCP
+              port: 9092
+              targetPort: 9092
+              nodePort: 30092
+            - name: http-9093
+              protocol: TCP
+              port: 9093
+              targetPort: 9093
+              nodePort: 30093
+      ports:
+        - name: http-9090
+          protocol: TCP
+          containerPort: 9090
+        - name: http-9091
+          protocol: TCP
+          containerPort: 9091
+        - name: http-9092
+          protocol: TCP
+          containerPort: 9092
+        - name: http-9093
+          protocol: TCP
+          containerPort: 9093
+      #定义环境变量
+      #env:
+      # - name: SERVICE_PORT
+      #   value: "80"
+      volumeMounts:
+        - name: public-params
+          mountPath: /var/config
+        - name: atom-hardware-manager-config
+          #mountPath参数的前缀必须与docker.workDir参数一致。
+          mountPath: /app/atom-hardware-manager/config
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+        requests:
+          cpu: 500m
+          memory: 500Mi
+      livenessProbeEnable: true
+      livenessProbe:
+        initialDelaySeconds: 15
+        failureThreshold: 10
+        periodSeconds: 5
+        successThreshold: 1
+        timeoutSeconds: 5
+        httpGet:
+          path: /atom/v1/monitor/health/liveness
+          port: 9090
+      readinessProbeEnable: true
+      readinessProbe:
+        initialDelaySeconds: 15
+        failureThreshold: 10
+        periodSeconds: 5
+        successThreshold: 1
+        timeoutSeconds: 5
+        httpGet:
+          path: /atom/v1/monitor/health/readiness
+          port: 9090
+  #定义configmap名称（格式：{服务名称}-configmap）及其包含的文件列表
+  #网关路由配置
+  gatewayRoute:
+    type: apisix
+    version: v2
+    routes:
+      - name: atom-hardware-manager
+        #是否使能Websocket功能
+        websocket: false
+        match:
+          hosts: []
+          paths: ["/atom/v1/monitor*"]
+        plugins:
+          #是否开启跨域
+          - name: cors
+            enable: true
+        backends:
+          servicePort: 9090

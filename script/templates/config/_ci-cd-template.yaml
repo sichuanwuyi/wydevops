@@ -1,0 +1,419 @@
+#本文件为本脚本项目使用的全功能配置文件。
+#不同语言项目使用这个统一的全功能配置文件。
+#不同语言项目可能存在不同的参数默认值，请在对应的语言子目录下的_ci-cd-config.yaml文件中配置。
+globalParams:
+  #CICD Java流程会自动从Pom.yml文件中读取服务名称信息覆盖serviceName参数。
+  serviceName: _SERVICE-NAME_
+  #服务中文名称
+  name: _NAME_
+  #服务英文名称
+  nameEn: _NAME-EN_
+  #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
+  serviceCode: ${serviceName}
+  #CICD Java流程会自动从Pom.yml文件中读取版本信息覆盖businessVersion参数。
+  businessVersion: _BUSINESS-VERSION_
+
+  baseImage: ${serviceName}-base
+  baseVersion: _BASE-VERSION_
+
+  #Dockerfile文件中From语言中定义的基础镜像。
+  #支持多个基础镜像，相互之间使用英文逗号隔开。
+  #注意：注意多个基础镜像间的顺序应与在Dockerfile文件中出现的顺序保持一致。
+  baseFromImage: _BASE-FROM-IMAGE_
+  #需要拷贝到docker构建目录中的目录，多个目录间使用英文逗号隔开。
+  copyDirsIntoDocker: _COPY-DIRS-INTO-DOCKER_
+  #需要拷贝到docker构建目录中的文件，多个文件间使用英文逗号隔开。
+  copyFilesIntoDocker: _COPY-FILES-INTO-DOCKER_
+
+  buildType: _BUILD-TYPE_
+  appDirInContainer: _APP-DIR-IN-CONTAINER_
+  workDirInContainer: _WORK-DIR-IN-CONTAINER_
+  archTypes: _ARCH-TYPES_
+
+  #需要生成的离线安装报的架构类型，多个架构间使用英文逗号隔离。
+  offlineArchTypes: _OFFLINE-ARCH-TYPES_
+  useTemplate: _USE-TEMPLATE_
+  #有效的构建阶段列表，逗号分隔。为空则表示所有阶段都有效。
+  validBuildStages:
+  #服务在K8S集群中指定部署的节点选择器
+  nodeSelector: _NODE-SELECTOR_
+  #服务驱逐优先级
+  priorityClassName: _PRIORITY-CLASS-NAME_
+
+  #服务主端口，也是k8s服务探活和就绪的检测端口，默认是containerPorts参数中第一个端口。
+  mainPort: _MAIN-PORT_
+  #申明docker容器需要开放的端口列表，端口间使用逗号隔开。
+  containerPorts: _CONTAINER-PORT_
+  #ClusterIP类型的Service资源开放的服务端口列表，端口间使用逗号隔开。
+  servicePorts: _SERVICE-PORTS_
+  #ClusterIP类型的Service资源绑定的容器端口列表，端口间使用逗号隔开。
+  nodePorts: _NODE-PORTS_
+
+  #gateway网关相关配置
+  gatewayVersion: _GATEWAY-VERSION_
+  gatewayPath: _GATEWAY-ROUTE_
+  #是否为当前服务启用网关的websocket功能
+  websocket: _GATEWAYS-WEB-SOCKET_
+
+  #是否启用K8S服务存活探针
+  livenessProbeEnable: _LIVENESS-PROBE_
+  #是否启用K8S服务就绪探针
+  readinessProbeEnable: _READINESS-PROBE_
+
+  #K8S服务资源配置相关参数的默认值
+  cpuLimits: _CPU-LIMITS_
+  memoryLimits: _MEM-LIMITS_
+  cpuRequests: _CPU-REQUESTS_
+  memoryRequests: _MEM-REQUESTS_
+
+  #需要放到项目默认ConfigMap中的文本文件的相对路径列表，文件间使用英文逗号分隔
+  configMapFiles: _CONFIGMAP-FILES_
+  #需要打包到离线安装包中镜像名称，格式：{镜像名称}:{镜像版本},...
+  packageImages: _PACKAGE-IMAGES_
+
+  #对本服务的一个描述说明文本，会写入Chart镜像。
+  description: "Java服务: ${serviceName}"
+
+  #chart镜像的名称, 默认与服务的名称相同
+  chartName: _CHART-NAME_
+  #chart镜像的版本, 默认与服务的版本相同
+  chartVersion: _CHART-VERSION_
+  #chart镜像中应用的版本，默认与服务的版本相同
+  appVersion: _CHART-APP-VERSION_
+
+  #部署类型：k8s(默认值)、docker(支撑docker-compose方式)
+  deployType: k8s
+  #当前部署环境名称：dev、test，可以自定义。
+  activeProfile: dev
+  devApiServer: 192.168.31.160
+  #在开发集群中使用域名分割子集群时，网关需要的特殊配置。
+  #开发环境中发布的命名空间。这个配置仅用于开发环境
+  devNamespace: develop
+  #开发环境使用的路由的hosts参数。这个配置仅用于开发环境。
+  devRouteHosts: develop.test.com
+
+#------以下配置为高级配置，在未充分理解的情况下不要轻易改动------#
+
+#项目编译阶段的配置参数
+#（Java项目可本地构建异构项目，直接忽略这个配置节）
+build:
+  #目标架构linux/arm64
+  linux-arm64:
+    #项目编译节点的IP地址
+    nodeIP: 192.168.31.160
+    #项目编译节点SSH连接账号
+    sshAccount: root
+    #项目编译节点SSH连接密码
+    sshPassword: 123456
+    #项目编译使用的镜像名称和版本
+    buildImage: java-build-image-linux-arm64:1.0.0
+  #目标架构linux/amd64
+  linux-amd64:
+    #项目编译节点的IP地址
+    nodeIP: 192.168.31.161
+    #项目编译节点SSH连接账号
+    sshAccount: root
+    #项目编译节点SSH连接密码
+    sshPassword: 123456
+    #项目编译使用的镜像名称和版本
+    buildImage: java-build-image-linux-amd64:1.0.0
+
+#docker构建阶段的配置参数
+docker:
+  #构建类型(全部小写)：
+  # single：单镜像模式：构建单一的应用镜像
+  # double：双镜像模式：构建应用基础镜像和应用业务镜像
+  # base：仅构建“应用基础镜像”
+  # business：仅构建“应用业务镜像”
+  # thirdParty: 打包第三方镜像：拉取第三方镜像，缓存到本地镜像缓存目录中，然后推送到私库中，最后导出到gDockerBuildOutDir目录中。
+  # customize: 自定义模式，指定docker构建目录后由本脚本自动完成构建。
+  buildType: ${buildType}
+  #是否强制使用Docker模板文件。
+  useTemplate: ${useTemplate}
+  #projectType参数决定了生成时使用的默认Dockerfile模板。
+  #有效值(全部为小写)：java、python、c、c++、vue、nodejs
+  projectType: java
+  #容器中应用工作路径，
+  workDir: ${workDirInContainer}
+  #docker容器中应用存储路径，注意要与挂载的ConfigMap目录保持一致。
+  appDir: ${appDirInContainer}
+  #需要拷贝到Docker镜像中的子目录列表，多个子目录间使用逗号间隔，
+  #如果不是绝对路径，则父目录为主模块目录。
+  copyDirs: ${copyDirsIntoDocker}
+  #需要拷贝到Docker镜像中的文件列表，多个文件间使用逗号间隔，
+  #如果不是绝对路径，则父目录为主模块目录。
+  copyFiles: ${copyFilesIntoDocker}
+  #目标架构类型,多项时表示需要构建多个镜像。
+  archTypes: ${archTypes}
+  #生成的Docker镜像对外暴露的端口列表
+  exposePorts: ${containerPorts}
+  #docker容器内的时区配置
+  timeZone: Asia/Shanghai
+  business:
+    name: ${serviceName}-business
+    #业务镜像的版本
+    version: ${businessVersion}
+    #使用的第三方的基础镜像
+    fromImage: busybox:latest
+  base:
+    name: ${baseImage}
+    #输出的业务基础镜像的版本
+    version: ${baseVersion}
+    #业务基础镜像使用的第三方基础镜像
+    fromImage: ${baseFromImage}
+  #要打包的第三方镜像列表
+  thirdParties:
+    #第三方镜像的名称和版本，不能为空。
+    #目标镜像的架构由docker.archTypes参数决定。
+    - name: test:1.0.0
+      #第三方镜像导出文件所在的目录，如果为空，则直接从私库或公网拉取目标镜像。
+      #目录中的导出文件格式为：{镜像名称}-{架构类型,例如：linux/amd64}.tar；其中\”:\“和\”/\“都转换为\”-\“。
+      #举例：bitnami/prometheus:2.51.2镜像的导出文件名称为bitnami-prometheus-1.0.0-linux-amd64.tar
+      location:
+  customizes:
+      #自定义Docker构建目录中生成的镜像名称和版本，不能空。
+    - name: ${serviceName}-linux-amd64:${businessVersion}
+      #目标架构类型, 当buildType=customize时，会忽略docker.archTypes参数。
+      #该值必须与下面的dockerfile参数指定的文件中的From语句中的--platform参数保持一致，否则会报错。
+      archType: linux/amd64
+      #指定自定义Docker构建目录和Dockerfile文件。
+      dockerfile: ./docker/amd64/Dockerfile
+    #自定义Docker构建目录中生成的镜像名称和版本，不能空。
+    - name: ${serviceName}-linux-arm64:${businessVersion}
+      #目标架构类型, 当buildType=customize时，会忽略docker.archTypes参数。
+      archType: linux/arm64
+      #指定自定义Docker构建目录和Dockerfile文件。
+      dockerfile: ./docker/arm64/Dockerfile
+
+#chart过程需要完成helm打包的chart镜像配置项列表。
+#每一项对应一个chart镜像打包配置；即同时可支持多个chart镜像的打包。
+#绝大多数项目只会存在一个chart镜像打包配置项。
+chart:
+  - name: ${chartName}
+    version: ${chartVersion}
+    appVersion: ${appVersion}
+    #如果是自定义helm打包, 以下参数需要设置成自定义helm打包目录。
+    #对于自定义helm打包方式,需要人工保证打包目录中文件内容的正确性。
+    #脚本框架只负责helm package和 helm push等流程操作。
+    customizedHelmDir:
+    #Chart.yaml文件中的description内容。
+    description: ${description}
+
+    #以下deployments和params配置节参数对于自定义helm打包方式无意义。
+    #配置chart镜像中需要发布的Deployment/DaemonSet/StatefulSet服务。
+    #每一个配置项都会对应生成一套deployment.yaml、route.yaml、service.yaml、configMap.yaml
+    # serviceAccount.yaml、hpa.yaml等配置文件
+    deployments:
+      - name: ${serviceName}
+        #配置chart镜像中需要发布的服务的类型：Deployment、DaemonSet、StatefulSet。
+        kind: Deployment
+        replicaCount: 1
+        priorityClassName: ${priorityClassName}
+        imagePullSecrets: []
+        serviceAccount:
+          create: true
+          annotations: {}
+          name: ""
+        podSecurityContext: {}
+        securityContext: {}
+        autoscaling:
+          enabled: false
+          minReplicas: 1
+          maxReplicas: 100
+          targetCPUUtilizationPercentage: 80
+          # targetMemoryUtilizationPercentage: 80
+        nodeSelector: ${nodeSelector}
+        tolerations: []
+        affinity: {}
+        podLabels: {}
+        podAnnotations:
+          app.kubernetes.io/service-name: \"${name}\"
+          app.kubernetes.io/service-en-name: \"${nameEn}\"
+        volumes:
+        #initContainers的第一个容器，其名称默认应该等于服务名称。
+        initContainers:
+          - name: ${serviceName}-business
+            repository: ${serviceName}-business
+            pullPolicy: Always
+            tag: ${businessVersion}
+            args: []
+            command:
+              - "sh"
+              - "-c"
+              - "cp -rf ${appDirInContainer}/* ${workDirInContainer}"
+        #如果没有initContainers配置（即buildType=single），
+        #则containers的第一个容器其名称默认应该等于服务名称。
+        containers:
+          - name: ${serviceName}-base
+            repository: ${baseImage}
+            pullPolicy: Always
+            tag: ${baseVersion}
+            #容器关联的Service的配置信息，自动生成的，不需要配置，此处申明主要是用来占位
+            service:
+            ports:
+              - name: http
+                protocol: TCP
+                containerPort: ${containerPorts}
+                servicePort: ${servicePorts}
+                nodePort: ${nodePorts}
+            #定义环境变量
+            #env:
+            # - name: SERVICE_PORT
+            #   value: "80"
+            volumeMounts:
+            resources:
+              limits:
+                cpu: ${cpuLimits}
+                memory: ${memoryLimits}
+              requests:
+                cpu: ${cpuRequests}
+                memory: ${memoryRequests}
+            livenessProbeEnable: ${livenessProbeEnable}
+            livenessProbe:
+              initialDelaySeconds: 15
+              failureThreshold: 10
+              periodSeconds: 5
+              successThreshold: 1
+              timeoutSeconds: 5
+              httpGet:
+                path: ${gatewayPath}/health/liveness
+                port: ${mainPort}
+            readinessProbeEnable: ${readinessProbeEnable}
+            readinessProbe:
+              initialDelaySeconds: 15
+              failureThreshold: 10
+              periodSeconds: 5
+              successThreshold: 1
+              timeoutSeconds: 5
+              httpGet:
+                path: ${gatewayPath}/health/readiness
+                port: ${mainPort}
+        #定义configmap名称（格式：{服务名称}-configmap）及其包含的文件列表
+        configMaps:
+            #containerName用于指定要挂载本ConfigMap的容器名称。
+          - containerName: ${serviceName}-base
+            #名称必须与volumes中的某个ConfigMap名相同
+            name: ${serviceName}-configmap
+            files: ${configMapFiles}
+        #网关路由配置
+        gatewayRoute:
+          type: apisix
+          version: v2
+          routes:
+            - name: ${serviceName}
+              #是否使能Websocket功能
+              websocket: ${websocket}
+              match:
+                hosts: []
+                paths: ["${gatewayPath}*"]
+              plugins:
+                #是否开启跨域
+                - name: cors
+                  enable: true
+              backends:
+                servicePort: ${mainPort}
+
+    #需要写入values.yaml文件的自定义配置信息。
+    params:
+      #用于UI解析和展示的参数。服务安装器在安装服务的离线安装包时会弹出参数配置对话框，
+      #以下配置节用于控制参数配置对话框的内容。
+      configurable:
+        - label: "资源配置"
+          catalog: "通用参数"
+          #当chart.deployments配置项为多个时，使用以下参数绑定当前参数项的归属服务。
+          serviceCode: ${serviceName}
+          items:
+            - name: "CPU最大可用核数"
+              key: "deployment0.resources.limits.cpu"
+              required: true
+              type: "input"
+              len: 120
+              value: "${cpuLimits}"
+              express: "^[1-9]{1}[0-9]{2,4}m$"
+              description: "服务最大可用CPU核数，取值范围：100m-99999m，单位：m(毫核）"
+            - name: "内存最大可用额度"
+              key: "deployment0.resources.limits.memory"
+              required: true
+              type: "input"
+              len: 120
+              value: "${memoryLimits}"
+              express: "^[1-9]{1}[0-9]{0,2}(Mi|Gi)$"
+              description: "服务最大可用内存额度，取值范围：1Mi-999Gi，单位单位：Mi或Gi"
+            - name: "CPU预订核数"
+              key: "deployment0.resources.requests.cpu"
+              required: true
+              type: "input"
+              len: 120
+              value: "${cpuRequests}"
+              express: "^[1-9]{1}[0-9]{2,4}m$"
+              description: "服务预订的CPU核数，取值范围：100m-99999m，单位：m(毫核）"
+            - name: "内存预订额度"
+              key: "deployment0.resources.requests.memory"
+              required: true
+              type: "input"
+              len: 120
+              value: "${memoryRequests}"
+              express: "^[1-9]{1}[0-9]{0,2}(Mi|Gi)$"
+              description: "服务预订的内存额度，取值范围：1Mi-999Gi，单位：Mi或Gi"
+
+package:
+    #离线包的名称
+  - name: ${chartName}
+    #绑定离线打包的chart
+    chartName: ${chartName}
+    chartVersion: ${chartVersion}
+    #离线包中镜像的架构类型，是多项则打出的离线包就是多个。
+    #离线包名称：{chartName}-{archType}-{chartVersion}.tar.gz
+    archTypes: ${offlineArchTypes}
+    #设置离线安装包中需要包含的镜像列表。
+    #脚本会自动从chart镜像中收集需要的docker镜像，并与下列参数的值进行合并去重。
+    #可在这个参数中设置好需要额外上传的其他docker镜像。
+    images: ${packageImages}
+
+deploy:
+  - name: ${chartName}
+    #要部署的离线包名称
+    packageName: ${chartName}
+    #发布类型：k8s或docker
+    deployType: ${deployType}
+    #部署的目标环境。
+    activeProfile: ${activeProfile}
+    k8s:
+      #开发集群环境
+      dev:
+        apiServer: ${devApiServer}
+        namespace: ${devNamespace}
+        routeHosts: ${devRouteHosts}
+      #测试集群环境
+      #test:
+      #  ...
+    docker:
+      #发布模式：docker或docker-compose
+      mode: docker
+      #指定用于生成docker-run.sh文件的生成器脚本，或者直接是docker run命令字符串。
+      dockerRunShellGenerator:
+      #指定用于生成docker-compose.yaml的生成器脚本，或者直接是docker-compose.yaml文件。
+      dockerComposeYamlGenerator:
+      #定义配置文件中的参数名称和默认值
+      params:
+        - name: .Values.params.deployment0.mysql.active
+          value: true
+        - name: .Values.params.deployment0.mysql.host
+          value: 192.168.1.214
+        - name: .Values.params.deployment0.mysql.port
+          value: 3307
+        - name: .Values.params.deployment0.mysql.username
+          value: root
+        - name: .Values.params.deployment0.mysql.password
+          value: 123456
+      #开发集群环境
+      dev:
+        #docker部署方式时，需要部署的节点信息列表。
+        nodeIPsArray:
+          #格式：{节点IP}|{SSH连接账号}|{SSH连接密码}
+          #第一个节点必须是能免密直连其他节点。
+          - 192.168.100.1|22|root|123456
+          - 192.168.100.2|22|root|123456
+      #测试集群环境
+      #test:
+      #  ...

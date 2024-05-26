@@ -1,0 +1,14 @@
+
+FROM --platform=_PLATFORM_ _FROM-IMAGE0_
+USER root
+
+ENV TZ=_TZ_
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+ENV JAVA_OPTS="-Dspring.config.location=_WORK-DIR-IN-CONTAINER_/config/application.yml"
+ENV LANG C.UTF-8
+
+EXPOSE _EXPOSE_
+
+ENTRYPOINT ["sh", "-c", "cd _WORK-DIR-IN-CONTAINER_;java $JAVA_OPTS org.springframework.boot.loader.JarLauncher"]
+
