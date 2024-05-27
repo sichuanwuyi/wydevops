@@ -579,7 +579,6 @@ function __readOrWriteYamlFile() {
   #确定参数匹配正则字符串。
   if [ "${l_isDataBlock}" == "true" ];then
     #读取数据块第一个有效行。
-    #l_content=$(awk "NR==${l_dataBlockStartRowNum}, NR==${l_dataBlockEndRowNum}" "${l_yamlFile}" | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+")
     l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_dataBlockStartRowNum},${l_dataBlockEndRowNum}p"  | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+")
     if [ "${l_lastArrayIndex}" -ge 0 ];then
       #是列表项的情况：目标参数可能存在列表项的第一行，也可能在后续行中，因此正则式有两种情况。
@@ -1319,15 +1318,12 @@ function _getRowNumAndPrefixSpaceNum(){
 
   if [[ "${l_order}" && "${l_order}" == "positive" ]];then
     #从l_yamlFile文件的第l_startRowNum行开始直至l_endRowNum行，查找所有符合正则表达式的行（以行号开头）, 并返回第一行内容。
-    #l_content=$(awk "NR==${l_startRowNum}, NR==${l_endRowNum}" "${l_yamlFile}" | grep -m 1 -noP "${l_regexStr}")
     l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum},${l_endRowNum}p" | grep -m 1 -noP "${l_regexStr}")
   elif [[ "${l_order}" && "${l_order}" == "reverse" ]];then
     #从l_yamlFile文件的第l_startRowNum行开始直至l_endRowNum行，查找所有符合正则表达式的行（以行号开头）, 并返回最后一行内容。
-    #l_content=$(awk "NR==${l_startRowNum}, NR==${l_endRowNum}" "${l_yamlFile}" | grep -noP "${l_regexStr}" | tail -n 1)
     l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum},${l_endRowNum}p" | grep -noP "${l_regexStr}" | tail -n 1)
   else
     #从l_yamlFile文件的第l_startRowNum行开始直至l_endRowNum行，查找并返回所有符合正则表达式的行（以行号开头）。
-    #l_content=$(awk "NR==${l_startRowNum}, NR==${l_endRowNum}" "${l_yamlFile}" | grep -noP "${l_regexStr}")
     l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum},${l_endRowNum}p" | grep -noP "${l_regexStr}")
   fi
 
@@ -1542,7 +1538,6 @@ function _getDataBlockRowNum() {
   #否则说明参数没有下属数据块，l_blockStartRowNum和l_blockEndRowNum保持默认值-1.
   if [ "${l_tmpStartRowNum}" -le "${l_maxRowNum}" ];then
     #直接从文件中读取l_tmpStartRowNum至l_maxRowNum间的数据。
-    #l_content=$(awk "NR==${l_tmpStartRowNum}, NR==${l_maxRowNum}" "${l_yamlFile}")
     l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpStartRowNum},${l_maxRowNum}p")
     #事实上l_content不可能是空的。
     if [ "${l_content}" ];then
@@ -1759,7 +1754,6 @@ function _getDataBlockRowNum1() {
   ((l_blockEndRowNum = -1))
   if [ "${l_tmpStartRowNum}" -le "${l_maxRowNum}" ];then
     #直接从文件中读取l_tmpStartRowNum至l_maxRowNum间的数据。
-    #l_content=$(awk "NR==${l_tmpStartRowNum}, NR==${l_maxRowNum}" "${l_yamlFile}")
     l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpStartRowNum},${l_maxRowNum}p")
     #事实上l_content不可能是空的。
     if [ "${l_content}" ];then
@@ -1933,7 +1927,6 @@ function _readDataBlock(){
   local l_array
 
   #先直接读取内容。
-  #l_content=$(awk "NR==${l_startRowNum}, NR==${l_endRowNum}" "${l_yamlFile}")
   l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum},${l_endRowNum}p")
   if [ "${l_isDataBlock}" == "false" ];then
     #如果是数组格式，则直接读取l_arrayIndex指定的数组项。
