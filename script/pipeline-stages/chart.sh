@@ -33,8 +33,7 @@ function executeChartStage() {
     #获取当前chart镜像实际构建目录（可能会遇到自定义chart构建目录）
     l_chartPath="${gDefaultRetVal}"
     invokeExtendPointFunc "createChartImage" "创建Chart镜像扩展" "${l_chartPath}"
-          showCachedData
-          exit 1
+
     invokeExtendPointFunc "onAfterCreatingChartImage" "创建Chart镜像后扩展" "${l_chartPath}"
     #向外部管理平台发送通知
     invokeExtendPointFunc "sendNotify" "调用通知接口发送Chart镜像构建结果" "${gCurrentStageResult}"

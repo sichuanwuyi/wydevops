@@ -1,9 +1,4 @@
-test:
-  test1:
-    test3:
-      - name: kkk
-        value: vvvv
-  test2: CCC
-list:
-  - name: test_name
-    value: 123
+ports:
+  - name: ffff
+    protocol: TCP
+    containerPort: 9090,9091,9092,9093

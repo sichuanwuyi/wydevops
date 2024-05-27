@@ -98,10 +98,26 @@ value: 123"
 #确保文件不存在
 rm -f "${tmpFile}"
 
-readAndWriteKVPair "简单键值对读写" "test|AAA test.test1|BBB test.test2|CCC test.test1.test3|DDD"
-readAndWriteKVPair "简单KV键值对列表类读写" "test.test1.test3[0].name|DDD test.test1.test3[0]| test.test1.test3[0].name|kkk test.test1.test3[0].value|vvvv"
+#readAndWriteKVPair "简单键值对读写" "test|AAA test.test1|BBB test.test2|CCC test.test1.test3|DDD"
+#readAndWriteKVPair "简单KV键值对列表类读写" "test.test1.test3[0].name|DDD test.test1.test3[0]| test.test1.test3[0].name|kkk test.test1.test3[0].value|vvvv"
 
 #clearFileDataBlockMap
-readAndWriteList "列表项读写"
+#readAndWriteList "列表项读写"
+
+value="name: http
+protocol: TCP
+containerPort: 9090,9091,9092,9093"
+
+disableSaveBackImmediately
+l_saveBackStatus="${gDefaultRetVal}"
+
+insertParam "${tmpFile}" "ports[0]" "${value}"
+echo "----gDefaultRetVal=${gDefaultRetVal}----"
+
+updateParam "${tmpFile}" "ports[0].name" "ffff"
+echo "----gDefaultRetVal=${gDefaultRetVal}----"
+
+#恢复gSaveBackImmediately的原始值。
+enableSaveBackImmediately "${l_saveBackStatus}"
 #readParam "${tmpFile}" list[0].name
 #echo "----gDefaultRetVal=${gDefaultRetVal}----"

@@ -221,6 +221,7 @@ function onModifyingChartYaml_ex(){
     updateParam "${l_chartYaml}" "description" "${gCurrentAppDescription}"
   fi
 
+  #恢复gSaveBackImmediately的值。
   enableSaveBackImmediately "${l_saveBackStatus}"
 
 }
@@ -359,7 +360,9 @@ function addParamsToValuesYaml_ex(){
   local l_key
   local l_value
 
-  #clearFileDataBlockMap "${l_valuesYaml##*/}"
+  #关闭yaml-helper.sh文件中的gImmediatelySaveBack标志。
+  disableSaveBackImmediately
+  l_saveBackStatus="${gDefaultRetVal}"
 
   readParam "${l_packageYaml}" "${l_paramPath}"
   if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
@@ -434,9 +437,9 @@ function addParamsToValuesYaml_ex(){
       error "删除${l_valuesYaml##*/}文件中${l_paramPath}.configurable参数失败"
     info "删除${l_valuesYaml##*/}文件中${l_paramPath}.configurable参数成功"
   fi
-  echo "------addParamsToValuesYaml_ex---------"
-  showCachedData
-  exit 1
+
+  #恢复gSaveBackImmediately的值。
+  enableSaveBackImmediately "${l_saveBackStatus}"
 }
 
 function combineParamsToValuesYaml_ex() {
@@ -893,6 +896,7 @@ function handleBuildingSingleImageForChart_ex() {
     ((l_i = l_i + 1))
   done
 
+  #恢复gSaveBackImmediately的值。
   enableSaveBackImmediately "${l_saveBackStatus}"
 }
 
@@ -1001,8 +1005,8 @@ function _createServiceConfig() {
     readParam "${l_cicdYaml}" "${l_paramPath}.tag"
     l_version="${gDefaultRetVal}"
 
-    #disableSaveBackImmediately
-    #l_saveBackStatus="${gDefaultRetVal}"
+    disableSaveBackImmediately
+    l_saveBackStatus="${gDefaultRetVal}"
 
     ((l_clusterIPIndex = -1))
     ((l_nodePortIndex = -1))
@@ -1105,7 +1109,8 @@ function _createServiceConfig() {
       ((l_i = l_i + 1))
     done
 
-    #enableSaveBackImmediately "${l_saveBackStatus}"
+    #恢复gSaveBackImmediately的值。
+    enableSaveBackImmediately "${l_saveBackStatus}"
 
     #从临时文件中读出service配置信息
     readParam "${l_tmpFile}" "service"
@@ -1126,6 +1131,7 @@ function _createServiceConfig() {
 function _processMultiplePorts() {
   export gDefaultRetVal
   export gTempFileDir
+  export gFileContentMap
 
   local l_cicdYaml=$1
   local l_paramPath=$2
@@ -1168,8 +1174,8 @@ function _processMultiplePorts() {
     error "读取ports[0].name参数失败"
   fi
 
-  #disableSaveBackImmediately
-  #l_saveBackStatus="${gDefaultRetVal}"
+  disableSaveBackImmediately
+  l_saveBackStatus="${gDefaultRetVal}"
 
   ((l_i = 0))
   ((l_index = -1))
@@ -1223,8 +1229,8 @@ function _processMultiplePorts() {
     ((l_i = l_i + 1))
   done
 
-  #恢复gSaveBackImmediately的原始值。
-  #enableSaveBackImmediately "${l_saveBackStatus}"
+  #恢复gSaveBackImmediately的值。
+  enableSaveBackImmediately "${l_saveBackStatus}"
 
   #从临时文件中读出ports配置信息
   readParam "${l_tmpFile}" "ports"

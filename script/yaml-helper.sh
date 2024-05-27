@@ -539,17 +539,17 @@ function __readOrWriteYamlFile() {
     ((l_dataBlockStartRowNum = 1))
     ((l_dataBlockEndRowNum = 1))
     ((l_dataBlockPrefixSpaceNum=0))
-    if [ -s "${l_yamlFile}" ];then
+    if [ "${_yamlFileContent}" ];then
       #文件存在且不是空的，则读取第一个有效行。
-      #l_content=$(awk "NR==1, NR==-1" "${l_yamlFile}" | grep -m 1 -noP "^([ ]*)[a-zA-Z_]+")
-      l_content=$(echo -e "${_yamlFileContent}" | grep -m 1 -noP "^([ ]*)[a-zA-Z_]+")
+      l_content=$(echo -e "${_yamlFileContent}" | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+")
       if [ "${l_content}" ];then
         #文件中存在有效行，则设置l_dataBlockStartRowNum的值。
         l_dataBlockStartRowNum=${l_content%%:*}
         #获取数据块的默认前导空格数量。
         l_dataBlockPrefixSpaceNum=$(echo -e "${l_content}" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
         #直接获取文件最后一个有效行的行号并赋值给l_dataBlockEndRowNum变量
-        l_content=$(awk "NR==${l_dataBlockStartRowNum}, NR==-1" "${l_yamlFile}" | grep -noP "^([ ]*)[a-zA-Z_\-]+" | tail -n 1)
+        l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_dataBlockStartRowNum},\$p")
+        l_content=$(echo -e "${l_content}" | grep -noP "^([ ]*)[a-zA-Z_\-]+" | tail -n 1)
         l_dataBlockEndRowNum="${l_content%%:*}"
         ((l_dataBlockEndRowNum = l_dataBlockStartRowNum + l_dataBlockEndRowNum - 1))
       fi
@@ -595,7 +595,7 @@ function __readOrWriteYamlFile() {
     #直接设置目标参数定位查询的结果值。
     gDefaultRetVal="-1 -1 false"
   fi
-  echo "-----gDefaultRetVal=${gDefaultRetVal}----${l_dataBlockStartRowNum} ${l_dataBlockEndRowNum}--------"
+
   # shellcheck disable=SC2206
   l_array=(${gDefaultRetVal})
   #数据块中目标参数所在行号
@@ -659,7 +659,7 @@ function __readOrWriteYamlFile() {
   #获取参数下属数据块的起止行号, 会自动创建缺失的列表项。
   _getDataBlockRowNum "${l_mode}" "${l_yamlFile}" "${l_curParamRowNum}" "${l_dataBlockEndRowNum}" "${l_curItemIndex}" \
     "${l_curParamPrefixSpaceNum}" "${l_curParamHasListItemPrefix}"
-  echo "===2===${l_curParamName}===|${l_curParamRowNum} ${l_dataBlockEndRowNum} ${l_curItemIndex} ${l_curParamPrefixSpaceNum} ${l_curParamHasListItemPrefix}|====${gDefaultRetVal}========"
+  #echo "===2===${l_curParamName}===|${l_curParamRowNum} ${l_dataBlockEndRowNum} ${l_curItemIndex} ${l_curParamPrefixSpaceNum} ${l_curParamHasListItemPrefix}|====${gDefaultRetVal}========"
   #_getDataBlockRowNum返回数据格式：
   #{数据块的起始行号} {数据块的截止行号} {数据块的前导空格数} {现有列表项总数} {执行过程中新增的列表项数} {执行过程中删除的文件行数}
   # shellcheck disable=SC2206
@@ -914,7 +914,6 @@ function _insertParamDirectly(){
       #查找l_blockStartRowNum行的最后一个兄弟行的行号。
       ((l_tmpRowNum1 = l_blockStartRowNum + 1))
       l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpRowNum1},${l_blockEndRowNum}p")
-      echo "-----QQQQ1-----${l_tmpRowNum1}----${l_blockEndRowNum}---${l_tmpContent}---"
       if [ "${l_tmpContent}" ];then
         #查找l_tmpContent中l_tmpRowNum1行后面的第一个父级行。
         ((l_tmpSpaceNum = l_blockPrefixSpaceNum - 2))
@@ -923,7 +922,6 @@ function _insertParamDirectly(){
         if [ "${l_tmpContent}" ];then
           l_tmpRowNum1="${l_tmpContent%%:*}"
           ((l_tmpRowNum = l_blockStartRowNum + 1 + l_tmpRowNum1 - 2))
-          echo "-----QQQQ-----${l_tmpRowNum}----${l_tmpSpaceNum}---${l_tmpContent}---"
         fi
       fi
     fi
@@ -934,10 +932,6 @@ function _insertParamDirectly(){
     l_lineContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpRowNum}p")
     l_content="${l_lineContent}\n${l_content}"
     ((l_blockStartRowNum = l_tmpRowNum + 1))
-  fi
-
-  if [ "${l_paramName}" == "value" ];then
-    echo "--AA----${l_tmpRowNum}---${l_isDataBlock}----${l_content}-------------"
   fi
 
   #sed -i "${l_tmpRowNum}c\\${l_content}" "${l_yamlFile}"
