@@ -229,6 +229,7 @@ function onModifyingChartYaml_ex(){
 function onModifyingValuesYaml_ex(){
   export gDefaultRetVal
   export gDockerRepoName
+  export gFileContentMap
 
   local l_chartPath=$1
 
@@ -346,7 +347,7 @@ function helmPushChartImage_ex() {
 
 function addParamsToValuesYaml_ex(){
   export gDefaultRetVal
-  export gSaveBackImmediately
+  export gFileContentMap
 
   local l_packageYaml=$1
   local l_paramPath=$2

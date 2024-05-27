@@ -254,10 +254,15 @@ function combine(){
 
 function showCachedData() {
   export gFileDataBlockMap
+
+  local l_fileName=$1
   local l_item
+
   # shellcheck disable=SC2068
   for l_item in ${!gFileDataBlockMap[@]};do
-    info "${l_item} => ${gFileDataBlockMap[${l_item}]}"
+    if [[ ! "${l_fileName}" || ${l_item} =~ ^(${l_fileName##*/}) ]];then
+      info "${l_item} => ${gFileDataBlockMap[${l_item}]}"
+    fi
   done
 }
 
@@ -909,31 +914,28 @@ function _insertParamDirectly(){
   if [[ "${l_flag}" == "a" ]];then
     ((l_addTotalLineCount = 1))
 
-    if [[ "${l_blockStartRowNum}" -lt "${l_blockEndRowNum}" ]];then
-      #查找l_blockStartRowNum行的最后一个兄弟行的行号。
-      ((l_tmpRowNum1 = l_blockStartRowNum + 1))
-      l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpRowNum1},${l_blockEndRowNum}p")
-      if [ "${l_tmpContent}" ];then
-        #查找l_tmpContent中l_tmpRowNum1行后面的第一个父级行。
-        ((l_tmpSpaceNum = l_blockPrefixSpaceNum - 2))
-        [[ "${l_tmpSpaceNum}" -lt 0 ]] && ((l_tmpSpaceNum = 0))
-        l_tmpContent=$(echo -e "${l_tmpContent}" | grep -m 1 -noP "^([ ]{0,${l_tmpSpaceNum}})[a-zA-Z_\-]+")
+    if [ "${l_blockPrefixSpaceNum}" -gt 0 ];then
+      if [[ "${l_blockStartRowNum}" -lt "${l_blockEndRowNum}" ]];then
+        #查找l_blockStartRowNum行的最后一个兄弟行的行号。
+        ((l_tmpRowNum1 = l_blockStartRowNum + 1))
+        l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpRowNum1},${l_blockEndRowNum}p")
         if [ "${l_tmpContent}" ];then
-          l_tmpRowNum1="${l_tmpContent%%:*}"
-          ((l_tmpRowNum = l_blockStartRowNum + 1 + l_tmpRowNum1 - 2))
+          #查找l_tmpContent中l_tmpRowNum1行后面的第一个父级行。
+          ((l_tmpSpaceNum = l_blockPrefixSpaceNum - 2))
+          l_tmpContent=$(echo -e "${l_tmpContent}" | grep -m 1 -noP "^([ ]{0,${l_tmpSpaceNum}})[a-zA-Z_\-]+")
+          if [ "${l_tmpContent}" ];then
+            l_tmpRowNum1="${l_tmpContent%%:*}"
+            ((l_tmpRowNum = l_blockStartRowNum + 1 + l_tmpRowNum1 - 2))
+          fi
         fi
       fi
     fi
 
-    #[[ "${l_isDataBlock}" == "false" ]] && ((l_tmpRowNum = l_blockStartRowNum))
-
-    #l_lineContent=$(sed -n "${l_tmpRowNum}p" "${l_yamlFile}")
     l_lineContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpRowNum}p")
     l_content="${l_lineContent}\n${l_content}"
     ((l_blockStartRowNum = l_tmpRowNum + 1))
   fi
 
-  #sed -i "${l_tmpRowNum}c\\${l_content}" "${l_yamlFile}"
   _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_tmpRowNum}c\\${l_content}")
 
   #返回插入参数所在行行号、参数所在行的前导空格数量、参数所在行是否有列表项前缀符"-"。

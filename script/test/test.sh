@@ -108,16 +108,13 @@ value="name: http
 protocol: TCP
 containerPort: 9090,9091,9092,9093"
 
-disableSaveBackImmediately
-l_saveBackStatus="${gDefaultRetVal}"
+#disableSaveBackImmediately
+#l_saveBackStatus="${gDefaultRetVal}"
 
-insertParam "${tmpFile}" "ports[0]" "${value}"
-echo "----gDefaultRetVal=${gDefaultRetVal}----"
-
-updateParam "${tmpFile}" "ports[0].name" "ffff"
+insertParam "${tmpFile1}" "deployment0" "${value}"
 echo "----gDefaultRetVal=${gDefaultRetVal}----"
 
 #恢复gSaveBackImmediately的原始值。
-enableSaveBackImmediately "${l_saveBackStatus}"
+#enableSaveBackImmediately "${l_saveBackStatus}"
 #readParam "${tmpFile}" list[0].name
 #echo "----gDefaultRetVal=${gDefaultRetVal}----"

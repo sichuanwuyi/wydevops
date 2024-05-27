@@ -88,8 +88,10 @@ function registerTempFile(){
 function unregisterTempFile(){
   export gTempFileRegTables
   local l_tmpFile=$1
-  rm -f "${l_tmpFile}"
-  unset gTempFileRegTables["${l_tmpFile##*/}"]
+  if [ "${l_tmpFile}" ];then
+    rm -f "${l_tmpFile}"
+    unset gTempFileRegTables["${l_tmpFile##*/}"]
+  fi
 }
 
 #调用log函数输出调试信息
