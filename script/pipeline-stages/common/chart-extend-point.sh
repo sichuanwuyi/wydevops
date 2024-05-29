@@ -334,7 +334,7 @@ function onBeforeHelmPackage_ex() {
   local l_yamlList
   local l_ymalFile
 
-  if [ "${gCustomizedHelm}" == "false" ];then
+  if [[ "${gCustomizedHelm}" == "false" && -d "${gBuildPath}/chart-templates" ]];then
     info "尝试将主模块目录下chart-templates子目录中的*.yaml文件复制到./templates目录中 ..."
     #为项目自定义部分特殊配置提供了扩展。
     l_yamlList=$(find "${gBuildPath}/chart-templates" -type f -name "*.yaml")
@@ -1035,10 +1035,6 @@ function _processContainerPorts(){
   done
 }
 
-function _processMultipleServices() {
-  export gDefaultRetVal
-}
-
 function _createServiceConfig() {
   export gDefaultRetVal
   export gBuildScriptRootDir
@@ -1282,6 +1278,9 @@ function _processMultiplePorts() {
       #插入端口配置节。
       ((l_index = l_index + 1))
       insertParam "${l_tmpFile}" "ports[${l_index}]" "${gDefaultRetVal}"
+      #清除servicePort和nodePort属性
+      deleteParam "${l_tmpFile}" "ports[${l_index}].servicePort"
+      deleteParam "${l_tmpFile}" "ports[${l_index}].nodePort"
     else
       #循环展开端口配置。
       for (( l_j=0; l_j < l_containerPortCount; l_j++ )); do
@@ -1310,6 +1309,9 @@ function _processMultiplePorts() {
         if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
           error "多端口配置错误：更新ports[${l_index}].containerPort参数失败"
         fi
+        #清除servicePort和nodePort属性
+        deleteParam "${l_tmpFile}" "ports[${l_index}].servicePort"
+        deleteParam "${l_tmpFile}" "ports[${l_index}].nodePort"
       done
     fi
     #调整数组下标，跳过新增加的数组项。

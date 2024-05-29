@@ -387,6 +387,7 @@ function _deployServiceByDocker(){
 
 function _deployServiceInK8S() {
   export gDefaultRetVal
+  export gShellExecuteResult
   export gCiCdYamlFile
   export gHelmBuildOutDir
 
@@ -445,12 +446,15 @@ function _deployServiceInK8S() {
     #从文件中读取参数设置值对。
     # shellcheck disable=SC2002
     l_settingParams=$(cat "${l_settingFile}")
+    l_settingParams="${l_settingParams%,*}"
   fi
 
   #自定义Helm命令行中set参数扩展
   invokeExtendPointFunc "onCustomizedSetParamsBeforeHelmInstall" "自定义Helm命令行中set参数扩展" \
     "${gCiCdYamlFile}" "${l_index}" "${l_activeProfile}"
-  l_customizedSetParams="${gDefaultRetVal}"
+  if [[ "${gShellExecuteResult}" == "true" && ${gDefaultRetVal} != "null" ]];then
+    l_customizedSetParams="${gDefaultRetVal}"
+  fi
 
   if [ "${l_customizedSetParams}" ];then
     l_settingParams="${l_settingParams},${l_customizedSetParams}"
@@ -479,7 +483,7 @@ function _deployServiceInK8S() {
 
   l_errorLog=$(echo -e "${l_content}" | grep -ioP "^(.*)Error:(.*)$")
   if [ "${l_errorLog}" ];then
-    error "${l_chartName}服务安装失败:${l_errorLog}"
+    error "${l_chartName}服务安装失败:\n${l_content}"
   else
     info "${l_chartName}服务安装成功:\n${l_content}"
   fi

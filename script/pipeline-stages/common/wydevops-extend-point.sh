@@ -14,9 +14,33 @@ function onAfterInitGlobalParams_ex() {
 }
 
 function onBeforeReplaceParamPlaceholder_ex() {
+  export gBuildType
+
   local l_cicdYaml=$1
   local l_placeholders
   local l_placeholder
+
+  info "将命令行接收的全局参数值写入配置文件中..."
+  if [ "${gBuildType}" ];then
+    #初始化gBuildType参数。
+    updateParam "${l_cicdYaml}" "globalParams.buildType" "${gBuildType}"
+  fi
+
+  if [ "${gArchTypes}" ];then
+    updateParam "${l_cicdYaml}" "globalParams.archTypes" "${gArchTypes}"
+  fi
+
+  if [ "${gOfflineArchTypes}" ];then
+    updateParam "${l_cicdYaml}" "globalParams.offlineArchTypes" "${gOfflineArchTypes}"
+  fi
+
+  if [ "${gUseTemplate}" ];then
+    updateParam "${l_cicdYaml}" "globalParams.useTemplate" "${gUseTemplate}"
+  fi
+
+  if [ "${gValidBuildStages}" ];then
+    updateParam "${l_cicdYaml}" "globalParams.validBuildStages" "${gValidBuildStages}"
+  fi
 
   #检查文件中是否存在未定义好的占位符号。
   # shellcheck disable=SC2002
@@ -209,7 +233,7 @@ function _initGlobalParams() {
     info "未检测到自定义模板文件，使用默认的_${gCiCdTemplateFileName}模板文件 ..."
     invokeExtendPointFunc "createCiCdTemplateFile" "创建_ci-cd-template.yaml配置文件" "${l_templateFile}"
 
-    info "创建项目级_ci-cd-config.yaml配置文件 ..."
+    info "获取项目级_ci-cd-config.yaml配置文件 ..."
     l_tmpCiCdConfigFile="${gBuildPath}/_${gCiCdConfigYamlFileName}"
     #首先尝试复制语言级_ci-cd-config.yaml创建一个项目级的_ci-cd-config.yaml
     #注意：语言级_ci-cd-config.yaml模板文件中对大部分的参数都配置了默认值。
@@ -226,19 +250,19 @@ function _initGlobalParams() {
       if [ -f "${l_tmpCiCdConfigFile}" ];then
         info "检测到系统中配置有${gLanguage}语言级_ci-cd-config.yaml配置文件"
         info "先将ci-cd-config.yaml文件内容合并到_ci-cd-config.yaml文件中"
-        combine "${l_ciCdConfigFile}" "${l_tmpCiCdConfigFile}" "" "false" "false" "true"
+        combine "${l_ciCdConfigFile}" "${l_tmpCiCdConfigFile}" "" "false" "true" "true"
         echo -e "\n"
         info "再将_ci-cd-config.yaml文件内容合并到_ci-cd-template.yaml文件中"
-        combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "false" "false"
+        combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "false" "true"
       else
         warn "系统中未检测到${gLanguage}语言级_ci-cd-config.yaml配置文件"
         info "直接将ci-cd-config.yaml配置文件的内容合并到_ci-cd-template.yaml文件中"
-        combine "${l_ciCdConfigFile}" "${l_templateFile}" "" "true" "true" "true"
+        combine "${l_ciCdConfigFile}" "${l_templateFile}" "" "false" "true"
       fi
     elif [ -f "${l_tmpCiCdConfigFile}" ];then
       info "检测到系统中配置有${gLanguage}语言级_ci-cd-config.yaml配置文件"
       info "直接将_ci-cd-config.yaml配置文件的内容合并到_ci-cd-template.yaml文件中"
-      combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "true" "true" "true"
+      combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "true" "true"
     fi
 
     #删除临时文件
@@ -255,9 +279,8 @@ function _initGlobalParams() {
   #将ci-cd-template.yaml文件更名为ci-cd.yaml文件中。
   cat "${l_templateFile}" > "${gCiCdYamlFile}"
 
-  if [ ! -f "${gCiCdYamlFile}" ];then
-    error "未找到${gCiCdYamlFileName}文件：${gCiCdYamlFile}"
-  fi
+  #删除临时文件
+  rm -f "${l_templateFile}" || true
 
   #调用：替换变量引用前扩展点。
   invokeExtendPointFunc "onBeforeReplaceParamPlaceholder" "ci-cd.yaml文件中变量引用处理前" "${gCiCdYamlFile}"
@@ -525,8 +548,6 @@ function _loadGlobalParamsFromCiCdYaml() {
     #初始化gBuildType参数。
     readParam "${l_cicdYaml}" "globalParams.buildType"
     gBuildType="${gDefaultRetVal}"
-  else
-    updateParam "${l_cicdYaml}" "globalParams.buildType" "${gBuildType}"
   fi
   info "gBuildType参数高优先配置值为：${gBuildType}"
 
@@ -538,8 +559,6 @@ function _loadGlobalParamsFromCiCdYaml() {
     else
       gArchTypes="linux/amd64,linux/arm64"
     fi
-  else
-    updateParam "${l_cicdYaml}" "globalParams.archTypes" "${gArchTypes}"
   fi
   info "gArchTypes参数高优先配置值为：${gArchTypes}"
 
@@ -551,8 +570,6 @@ function _loadGlobalParamsFromCiCdYaml() {
     else
       gOfflineArchTypes="linux/amd64,linux/arm64"
     fi
-  else
-    updateParam "${l_cicdYaml}" "globalParams.offlineArchTypes" "${gOfflineArchTypes}"
   fi
   info "gOfflineArchTypes参数高优先配置值为：${gOfflineArchTypes}"
 
@@ -564,8 +581,6 @@ function _loadGlobalParamsFromCiCdYaml() {
     else
       gUseTemplate="false"
     fi
-  else
-    updateParam "${l_cicdYaml}" "globalParams.useTemplate" "${gUseTemplate}"
   fi
   info "gUseTemplate参数高优先配置值为：${gUseTemplate}"
 
@@ -576,8 +591,6 @@ function _loadGlobalParamsFromCiCdYaml() {
     else
       gValidBuildStages="all"
     fi
-  else
-    updateParam "${l_cicdYaml}" "globalParams.validBuildStages" "${gValidBuildStages}"
   fi
   info "gValidBuildStages参数高优先配置值为：${gValidBuildStages}"
 

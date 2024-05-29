@@ -201,7 +201,7 @@ chart:
     #Chart.yaml文件中的description内容。
     description: ${description}
     #是否需要为项目创建网关路由配置
-    createGatewayRoute: true
+    createGatewayRoute: false
     #是否需要为项目创建K8S的Service资源配置
     createK8sService: true
     #以下deployments和params配置节参数对于自定义helm打包方式无意义。
@@ -388,12 +388,21 @@ deploy:
       - name: .Values.params.deployment0.mysql.active
         value: true
       - name: .Values.params.deployment0.mysql.host
-        value: 192.168.1.214
+        value: 192.168.31.214
       - name: .Values.params.deployment0.mysql.port
         value: 3307
       - name: .Values.params.deployment0.mysql.username
         value: root
       - name: .Values.params.deployment0.mysql.password
+        value: 123456
+      #redis相关参数
+      - name: .Values.params.deployment0.redis.host
+        value: 192.168.31.214
+      - name: .Values.params.deployment0.redis.port
+        value: 6379
+      - name: .Values.params.deployment0.redis.timeout
+        value: 10000
+      - name: .Values.params.deployment0.redis.password
         value: 123456
     k8s:
       #开发集群环境

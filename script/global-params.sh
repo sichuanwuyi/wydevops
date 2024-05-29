@@ -158,6 +158,8 @@ function defineGlobalParams(){
 
 #功能扩展点标准调用方法
 function invokeExtendPointFunc() {
+  export gShellExecuteResult
+
   local l_funcName=$1
   local l_extentPointName=$2
 
@@ -175,8 +177,11 @@ function invokeExtendPointFunc() {
   #调用公共功能扩展
   extendLog "\n--->> ${l_extentPointName}(${l_funcName}) <<---"
 
+  gShellExecuteResult="false"
+
   if type -t "${l_funcName}_ex" > /dev/null; then
     info "调用公共功能扩展点:${l_funcName}_ex..."
+    gShellExecuteResult="true"
     # shellcheck disable=SC2068
     "${l_funcName}_ex" ${l_param[@]}
   else
@@ -187,6 +192,7 @@ function invokeExtendPointFunc() {
   l_funcName1="_${l_funcName}_ex"
   if type -t "${l_funcName1}" > /dev/null; then
     info "调用${gLanguage}语言级功能扩展点:${l_funcName1}..."
+    gShellExecuteResult="true"
     # shellcheck disable=SC2068
     "${l_funcName1}" ${l_param[@]}
   else
@@ -202,33 +208,33 @@ function invokeExtendPointFunc() {
 }
 
 function executeShellScript() {
-   local l_buildPath=$1
-   local l_scriptFile=$2
-   local l_localScriptFile
+  export gShellExecuteResult
 
-   export gShellExecuteResult
+  local l_buildPath=$1
+  local l_scriptFile=$2
+  local l_localScriptFile
 
-   local l_param=("${@}")
+  local l_param=("${@}")
 
-   #删除前两个参数
-   # shellcheck disable=SC2184
-   unset l_param[0]
-   # shellcheck disable=SC2184
-   unset l_param[1]
-   # shellcheck disable=SC2206
-   l_param=(${l_param[*]})
+  #删除前两个参数
+  # shellcheck disable=SC2184
+  unset l_param[0]
+  # shellcheck disable=SC2184
+  unset l_param[1]
+  # shellcheck disable=SC2206
+  l_param=(${l_param[*]})
 
-   #如果l_scriptFile脚本存在，则调用之
-   l_localScriptFile="${l_buildPath}/ci-cd/${l_scriptFile}"
-   if [ -f "${l_localScriptFile}" ];then
-     # shellcheck disable=SC1090
-     source "${l_localScriptFile}" "${l_param[@]}"
-     gShellExecuteResult="true"
-     info "调用项目级功能扩展${l_scriptFile}...成功"
-   else
-     gShellExecuteResult="false"
-     info "未发现项目级功能扩展文件：${l_scriptFile}"
-   fi
+  gShellExecuteResult="false"
+  #如果l_scriptFile脚本存在，则调用之
+  l_localScriptFile="${l_buildPath}/ci-cd/${l_scriptFile}"
+  if [ -f "${l_localScriptFile}" ];then
+    gShellExecuteResult="true"
+    # shellcheck disable=SC1090
+    source "${l_localScriptFile}" "${l_param[@]}"
+    info "调用项目级功能扩展${l_scriptFile}...成功"
+  else
+    info "未发现项目级功能扩展文件：${l_scriptFile}"
+  fi
 }
 
 function parseDockerRepoInfo() {

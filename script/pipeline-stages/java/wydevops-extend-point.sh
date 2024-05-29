@@ -17,14 +17,22 @@ function _initGlobalParams_ex() {
 
 function _createCiCdConfigFile_ex() {
   export gLanguage
+
+  local l_templateFile=$1
   local l_tmpCiCdConfigFile=$2
+
+
+  local l_tmpFile
 
   declare -A _configFileMap
   declare -A _javaYamlParamMap
   declare -A _javaPomParamMap
 
+  l_tmpFile="${l_tmpCiCdConfigFile}"
+  [[ ! -f "${l_tmpCiCdConfigFile}" ]] && l_tmpFile="${l_templateFile}"
+
   invokeExtendPointFunc "initialParamLoadConfigMap" "参数加载方式配置MAP二次初始化扩展"
-  invokeExtendPointFunc "initCiCdConfigFileByParamLoadMap" "_ci-cd-config.yaml文件中参数的初始化" "${l_tmpCiCdConfigFile}"
+  invokeExtendPointFunc "initCiCdConfigFileByParamLoadMap" "${l_tmpFile##*/}文件中参数的初始化" "${l_tmpFile}"
 }
 
 function _initCiCdConfigFileByParamLoadMap_ex() {
@@ -134,6 +142,8 @@ function _processJavaProjectParamMap() {
 
   local l_paramCount
   local l_hasError
+  local l_array
+  local l_exitOnFailure1
 
   if [ ! "${l_exitOnFailure}" ];then
     l_exitOnFailure="false"
@@ -144,12 +154,9 @@ function _processJavaProjectParamMap() {
   l_shortFileNames=""
   # shellcheck disable=SC2068
   for l_keyItem in ${l_keyItems[@]};do
-    if [ ! "${l_shortFileNames}" ];then
-      l_shortFileNames="${l_keyItem##*/}"
-    else
-      l_shortFileNames="${l_shortFileNames}、${l_keyItem##*/}"
-    fi
+    l_shortFileNames="${l_shortFileNames}、${l_keyItem##*/}"
   done
+  l_shortFileNames="${l_shortFileNames:1}"
 
   eval "l_paramTotal=\${#${l_targetMapName}[@]}"
 
@@ -180,13 +187,22 @@ function _processJavaProjectParamMap() {
         #取实际的参数路径（l_keyItem中可能带有参数读取模式类型）
         #取从右向左最后一个“|”符号的左边部分赋值给l_paramPath
         l_paramPath="${l_subKeyItems[0]%%|*}"
+
+        l_exitOnFailure1="${l_exitOnFailure}"
+        l_readMode="0"
         if [[ "${l_subKeyItems[0]}" =~ ^(.*)\|(.*)$ ]];then
-          #取从左向右第一个“|”的右边部分赋值给l_readMode
-          l_readMode="${l_subKeyItems[0]#*|}"
-        else
-          l_readMode="0"
+          #尝试读取参数实际的路径和错误退出标志值。
+          l_array="${l_subKeyItems[0]//\|/ }"
+          #${l_array[1]}存放的是该参数读取失败退出标志
+          if [[ "${l_array[1]}" == "true" || "${l_array[1]}" == "false" ]];then
+            l_exitOnFailure1="${l_array[1]}"
+          elif [[ "${#l_array[@]}" -gt 2 && "${l_array[2]}" =~ ^[0-9]+$ ]];then
+            #${l_array[2]}存放的是该参数读取方式
+            l_readMode="${l_array[2]}"
+          fi
         fi
-        _readParamValueEx "${l_sourceFiles}" "${l_paramPath}" "${l_readMode}"
+
+        _readParamValueEx "${l_sourceFiles}" "${l_paramPath}" "${l_readMode}" "${l_exitOnFailure1}"
         l_paramValue="${gDefaultRetVal}"
         #如果指定参数不存在，则跳过该参数。
         if [ "${l_paramValue}" == "null" ];then
@@ -219,15 +235,24 @@ function _processJavaProjectParamMap() {
         #取实际的参数路径（l_keyItem中可能带有参数读取模式类型）
         #取从右向左最后一个“|”符号的左边部分赋值给l_paramPath
         l_paramPath="${l_keyItem%%|*}"
+
+        l_exitOnFailure1="${l_exitOnFailure}"
+        l_readMode="0"
         if [[ "${l_keyItem}" =~ ^(.*)\|(.*)$ ]];then
-          #取从左向右第一个“|”的右边部分赋值给l_readMode
-          l_readMode="${l_keyItem#*|}"
-        else
-          l_readMode="0"
+          #尝试读取参数实际的路径和错误退出标志值。
+          # shellcheck disable=SC2206
+          l_array=(${l_keyItem//\|/ })
+          #${l_array[1]}存放的是该参数读取失败退出标志
+          if [[ "${l_array[1]}" == "true" || "${l_array[1]}" == "false" ]];then
+            l_exitOnFailure1="${l_array[1]}"
+          elif [[ "${#l_array[@]}" -gt 2 && "${l_array[2]}" =~ ^[0-9]+$ ]];then
+            #${l_array[2]}存放的是该参数读取方式
+            l_readMode="${l_array[2]}"
+          fi
         fi
 
         #读取参数的值，并更新文件中指定的参数。
-        _readParamValueEx "${l_sourceFiles}" "${l_paramPath}" "${l_readMode}"
+        _readParamValueEx "${l_sourceFiles}" "${l_paramPath}" "${l_readMode}" "${l_exitOnFailure1}"
         l_paramValue="${gDefaultRetVal}"
 
         #循环更新文件中的参数。
@@ -303,29 +328,48 @@ function _readParamValueEx() {
   local l_targetFiles=$1
   local l_paramPath=$2
   local l_readMode=$3
+  local l_exitOnFailure=$4
 
   local l_sourceFiles
   local l_sourceFile
+  local l_found
 
   gDefaultRetVal="null"
-
+  l_found="false"
   # shellcheck disable=SC2206
   l_sourceFiles=(${l_targetFiles})
   # shellcheck disable=SC2068
   for l_sourceFile in ${l_sourceFiles[@]};do
+    #去掉引号
     l_sourceFile=${l_sourceFile//\"/}
+    #相对路径转绝对路径
     if [[ "${l_sourceFile}" =~ ^(\./) ]];then
       l_sourceFile="${gBuildPath}/${l_sourceFile#*/}"
     fi
+
+    if [ ! -f "${l_sourceFile}" ];then
+      warn "${l_sourceFile##*/}文件不存在，直接跳过"
+      continue
+    fi
+
     if [[ "${l_sourceFile}" =~ ^(.*)\.xml$ ]];then
       _readParamValueFromXmlFile "${l_sourceFile}" "${l_paramPath}" "${l_readMode}"
     else
       readParam "${l_sourceFile}" "${l_paramPath}"
     fi
     if [ "${gDefaultRetVal}" != "null" ];then
+      l_found="true"
       break
     fi
   done
+
+  if [[ "${l_found}" == "false" ]];then
+    if [[ "${l_exitOnFailure}" == "true" ]];then
+      error "从${l_sourceFile##*/}文件中读取${l_paramPath}参数失败，请确保该参数存在。"
+    else
+      warn "从${l_sourceFile##*/}文件中读取${l_paramPath}参数失败，请确保该参数存在。"
+    fi
+  fi
 }
 
 function _readParamValueFromXmlFile() {
