@@ -208,11 +208,21 @@ function executeShellScript() {
 
    export gShellExecuteResult
 
+   local l_param=("${@}")
+
+   #删除前两个参数
+   # shellcheck disable=SC2184
+   unset l_param[0]
+   # shellcheck disable=SC2184
+   unset l_param[1]
+   # shellcheck disable=SC2206
+   l_param=(${l_param[*]})
+
    #如果l_scriptFile脚本存在，则调用之
    l_localScriptFile="${l_buildPath}/ci-cd/${l_scriptFile}"
    if [ -f "${l_localScriptFile}" ];then
      # shellcheck disable=SC1090
-     source "${l_localScriptFile}" "${@}"
+     source "${l_localScriptFile}" "${l_param[@]}"
      gShellExecuteResult="true"
      info "调用项目级功能扩展${l_scriptFile}...成功"
    else

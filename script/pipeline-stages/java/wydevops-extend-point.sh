@@ -55,6 +55,7 @@ function _initCiCdConfigFileByParamLoadMap_ex() {
 function _initialParamLoadConfigMap_ex() {
   export gDefaultRetVal
   export gBuildScriptRootDir
+  export gBuildPath
   export gLanguage
 
   export _configFileMap
@@ -63,13 +64,21 @@ function _initialParamLoadConfigMap_ex() {
 
   local l_configFile
 
-  l_configFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/read-param-initial-value-from-yaml-file.config"
+  l_configFile="${gBuildPath}/ci-cd/read-param-initial-value-from-yaml-file.config"
+  if [ ! -f "${l_configFile}" ];then
+    l_configFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/read-param-initial-value-from-yaml-file.config"
+  fi
+
   if [ -f "${l_configFile}" ];then
     initialMapFromConfigFile "${l_configFile}" "_javaYamlParamMap"
     _configFileMap["_javaYamlParamMap|${gDefaultRetVal%%|*}"]="${gDefaultRetVal#*|}"
   fi
 
-  l_configFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/read-param-initial-value-from-xml-file.config"
+  l_configFile="${gBuildPath}/ci-cd/read-param-initial-value-from-xml-file.config"
+  if [ ! -f "${l_configFile}" ];then
+    l_configFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/read-param-initial-value-from-xml-file.config"
+  fi
+
   if [ -f "${l_configFile}" ];then
     initialMapFromConfigFile "${l_configFile}" "_javaPomParamMap"
     _configFileMap["_javaPomParamMap|${gDefaultRetVal%%|*}"]="${gDefaultRetVal#*|}"
@@ -194,6 +203,11 @@ function _processJavaProjectParamMap() {
             break
           fi
         else
+          if [[ "${l_paramValue}" =~ ^([ ]*)(\") ]];then
+            #去掉前后引号
+            l_paramValue="${l_paramValue:1}"
+            l_paramValue="${l_paramValue%\"*}"
+          fi
           if [ "${l_paramValue}" != "${l_subKeyItems[1]}" ];then
             #如果不匹配，则跳过该参数。
             warn "参数${l_paramPath}的值${l_paramValue}与配置值${l_subKeyItems[1]}不相等"

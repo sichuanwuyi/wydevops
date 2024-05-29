@@ -8,9 +8,21 @@ function executePackageStage() {
   export gServiceName
   export gCurrentStageResult
   export gHelmBuildOutDir
+  export gBuildPath
 
   local l_i
   local l_packageName
+
+  local l_array
+  local l_chartName
+  local l_chartVersion
+  local l_images
+  local l_remoteBaseDir
+  local l_localBaseDir
+  local l_deployType
+
+  local l_shellOrYamlFile
+  local l_remoteInstallProxyShell
 
   info "加载公共${gCurrentStage}阶段功能扩展文件：${gCurrentStage}-extend-point.sh"
   # shellcheck disable=SC1090
@@ -33,15 +45,88 @@ function executePackageStage() {
     fi
     l_packageName="${gDefaultRetVal}"
 
-    invokeExtendPointFunc "onBeforeDeployingServicePackage" "服务安装包部署扩展" "${l_i}" "${l_packageName}"
+    #获取包名对应的chart镜像的名称和版本
+    _getChartVersion "${l_packageName}"
+    # shellcheck disable=SC2206
+    l_array=(${gDefaultRetVal})
+    l_chartName="${l_array[0]}"
+    l_chartVersion="${l_array[1]}"
+    l_images="${l_array[2]}"
+
+    # shellcheck disable=SC2088
+    l_remoteBaseDir="~/devops/deploy"
+    l_remoteDir="${l_remoteBaseDir}/${l_chartName}-${l_chartVersion}"
+
+    l_localBaseDir="${gBuildPath}/deploy"
+    [[ -d "${l_localBaseDir}" ]] && rm -rf "${l_localBaseDir:?}"
+    mkdir -p "${l_localBaseDir}"
+
+    readParam "${gCiCdYamlFile}" "deploy[${l_i}].deployType"
+    l_deployType="${gDefaultRetVal}"
+
+    #服务安装包部署前扩展
+    invokeExtendPointFunc "onBeforeDeployingServicePackage" "服务安装包部署前扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
+      "${l_deployType}" "${l_images}" "${l_remoteDir}" "${l_localBaseDir}"
+    l_array=("${gDefaultRetVal}")
+    l_shellOrYamlFile="${l_array[0]}"
+    l_remoteInstallProxyShell="${l_array[1]}"
     #发布服务安装包
-    invokeExtendPointFunc "deployServicePackage" "服务安装包部署扩展" "${l_i}" "${l_packageName}"
-    invokeExtendPointFunc "onAfterCreatingOfflinePackage" "服务安装包部署后扩展" "${l_i}" "${l_packageName}"
+    invokeExtendPointFunc "deployServicePackage" "服务安装包部署扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
+      "${l_deployType}" "${l_images}" "${l_remoteDir}" "${l_localBaseDir}" "${l_shellOrYamlFile}" "${l_remoteInstallProxyShell}"
+    #服务安装包部署后扩展
+    invokeExtendPointFunc "onAfterCreatingOfflinePackage" "服务安装包部署后扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
+      "${l_images}" "${l_remoteDir}" "${l_localBaseDir}"
     #向外部管理平台发送通知
     invokeExtendPointFunc "sendNotify" "向外部接口发送${gServiceName}服务安装包部署结果通知" "${gCurrentStageResult}"
 
+    #删除创建的临时目录
+    #rm -rf "${l_localBaseDir:?}"
+
     ((l_i = l_i + 1))
   done
+
 }
+
+#**********************私有方法-开始***************************#
+
+function _getChartVersion() {
+  export gDefaultRetVal
+  export gCiCdYamlFile
+
+  local l_packageName=$1
+  local l_i
+  local l_chartName
+  local l_chartVersion
+  local l_images
+
+  gDefaultRetVal=""
+  #获取部署的服务的版本
+  ((l_i = 0))
+  while true; do
+    readParam "${gCiCdYamlFile}" "package[${l_i}].name"
+    if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
+      if [ "${l_i}" -eq 0 ];then
+        error "${gCiCdYamlFile##*/}文件中package[${l_i}].name参数是空的"
+      else
+        break
+      fi
+    fi
+    if [ "${gDefaultRetVal}" == "${l_packageName}" ];then
+      readParam "${gCiCdYamlFile}" "package[${l_i}].chartName"
+      l_chartName="${gDefaultRetVal}"
+      readParam "${gCiCdYamlFile}" "package[${l_i}].chartVersion"
+      l_chartVersion="${gDefaultRetVal}"
+      readParam "${gCiCdYamlFile}" "package[${l_i}].images"
+      l_images="${gDefaultRetVal}"
+      break
+    fi
+    ((l_i = l_i + 1))
+  done
+
+  gDefaultRetVal="${l_chartName} ${l_chartVersion} ${l_images}"
+
+}
+
+#**********************私有方法-结束***************************#
 
 executePackageStage

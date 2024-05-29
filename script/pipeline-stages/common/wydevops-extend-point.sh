@@ -260,7 +260,7 @@ function _initGlobalParams() {
     combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "true" "false"
 
     #删除临时文件
-    #rm -f "${l_tmpCiCdConfigFile}" || true
+    rm -f "${l_tmpCiCdConfigFile}" || true
 
   else
     info "检测到自定义配置文件：${gCiCdTemplateFileName}"
@@ -543,6 +543,8 @@ function _loadGlobalParamsFromCiCdYaml() {
     #初始化gBuildType参数。
     readParam "${l_cicdYaml}" "globalParams.buildType"
     gBuildType="${gDefaultRetVal}"
+  else
+    updateParam "${l_cicdYaml}" "globalParams.buildType" "${gBuildType}"
   fi
   info "gBuildType参数高优先配置值为：${gBuildType}"
 
@@ -554,6 +556,8 @@ function _loadGlobalParamsFromCiCdYaml() {
     else
       gArchTypes="linux/amd64,linux/arm64"
     fi
+  else
+    updateParam "${l_cicdYaml}" "globalParams.archTypes" "${gArchTypes}"
   fi
   info "gArchTypes参数高优先配置值为：${gArchTypes}"
 
@@ -565,6 +569,8 @@ function _loadGlobalParamsFromCiCdYaml() {
     else
       gOfflineArchTypes="linux/amd64,linux/arm64"
     fi
+  else
+    updateParam "${l_cicdYaml}" "globalParams.offlineArchTypes" "${gOfflineArchTypes}"
   fi
   info "gOfflineArchTypes参数高优先配置值为：${gOfflineArchTypes}"
 
@@ -576,6 +582,8 @@ function _loadGlobalParamsFromCiCdYaml() {
     else
       gUseTemplate="false"
     fi
+  else
+    updateParam "${l_cicdYaml}" "globalParams.useTemplate" "${gUseTemplate}"
   fi
   info "gUseTemplate参数高优先配置值为：${gUseTemplate}"
 
@@ -586,6 +594,8 @@ function _loadGlobalParamsFromCiCdYaml() {
     else
       gValidBuildStages="all"
     fi
+  else
+    updateParam "${l_cicdYaml}" "globalParams.validBuildStages" "${gValidBuildStages}"
   fi
   info "gValidBuildStages参数高优先配置值为：${gValidBuildStages}"
 

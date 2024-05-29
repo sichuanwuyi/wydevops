@@ -137,7 +137,7 @@ function createConfigFile_ex() {
 
     #创建setting.conf文件。
     l_settingFile="${l_targetDir}/setting.conf"
-    echo "--set image.registry=${gDockerRepoName}" > "${l_settingFile}"
+    echo "image.registry=${gDockerRepoName},\\" > "${l_settingFile}"
 
     l_curDir=$(pwd)
 
@@ -164,7 +164,7 @@ function createConfigFile_ex() {
         l_paramName="${l_paramName%%:*}"
         l_paramName="${l_paramName// /}"
         l_paramPath="params.deployment${l_index}.${l_paramName}"
-        info "正在向setting.conf文件写入${l_paramPath}参数..."
+        info "正在向setting.conf文件写入${l_paramPath}参数 ..."
         _writeSettingConfFile "${l_valuesYaml}" "${l_paramPath}" "${l_settingFile}"
       done
 
@@ -347,7 +347,7 @@ function _writeSettingConfFile() {
   readParam "${l_valuesYaml}" "${l_paramPath}"
   if [ ! "${gDefaultRetVal}" ];then
     info "设置参数${l_paramPath}的值为："
-    echo "--set ${l_paramPath}=" >> "${l_settingFile}"
+    echo "${l_paramPath}=,\\" >> "${l_settingFile}"
   elif [ "${gDefaultRetVal}" != "null" ];then
     if [[ "${gDefaultRetVal}" =~ ^(\-) ]];then
       #处理列表项
@@ -380,7 +380,7 @@ function _writeSettingConfFile() {
           _writeSettingConfFile "${l_valuesYaml}" "${l_paramPath}.${l_paramName}" "${l_settingFile}"
         else
           info "设置参数${l_paramPath}的值为：${l_dataLines[0]}"
-          echo "--set ${l_paramPath}=${l_dataLines[0]}" >> "${l_settingFile}"
+          echo "${l_paramPath}=${l_dataLines[0]},\\" >> "${l_settingFile}"
         fi
       else
         for ((l_i = 0; l_i < l_lineCount; l_i++));do
@@ -395,7 +395,6 @@ function _writeSettingConfFile() {
 
     fi
   fi
-
 }
 
 #收集某个Chart镜像需要的所有docker镜像。

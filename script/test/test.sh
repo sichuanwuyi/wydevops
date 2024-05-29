@@ -98,7 +98,13 @@ value: 123"
 #确保文件不存在
 rm -f "${tmpFile}"
 
-readAndWriteKVPair "简单键值对读写" "test|AAA test.test1|BBB test.test2|CCC test.test1.test3|DDD"
-readAndWriteKVPair "简单KV键值对列表类读写" "test.test1.test3[0].name|DDD test.test1.test3[0]| test.test1.test3[0].name|kkk test.test1.test3[0].value|vvvv"
+#readAndWriteKVPair "简单键值对读写" "test|AAA test.test1|BBB test.test2|CCC test.test1.test3|DDD"
+#readAndWriteKVPair "简单KV键值对列表类读写" "test.test1.test3[0].name|DDD test.test1.test3[0]| test.test1.test3[0].name|kkk test.test1.test3[0].value|vvvv"
+#
+#readAndWriteList "列表项读写"
 
-readAndWriteList "列表项读写"
+helm uninstall atom-hardware-manager -n devops --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config
+
+helm install atom-hardware-manager /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/helm-build/build-out/atom-hardware-manager-2.0.7/chart/atom-hardware-manager-2.0.7.tgz \
+  --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config -n devops --create-namespace \
+  --set "${params}"

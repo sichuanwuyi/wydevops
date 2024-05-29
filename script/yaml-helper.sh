@@ -1038,11 +1038,11 @@ function _updateNotListOrArrayParam() {
       ((l_deletedRowNum = l_array[2]))
     fi
     _updateSingleRowValue "${l_yamlFile}" "${l_startRowNum}" ""
-    gDefaultRetVal="${gDefaultRetVal} ${l_deletedRowNum}"
+    gDefaultRetVal="${gDefaultRetVal} 0 ${l_deletedRowNum}"
   else
     #计算l_newContent的行数(会删除末尾的空行)。
     l_newLineCount=$(echo -e "${l_newContent}" | grep -oP "^([ ]*).*$" | wc -l )
-    if [[ "${l_newLineCount}" -eq 1 ]];then
+    if [[ ! "${l_newContent}" =~ ^([ ]*)(\-) && "${l_newLineCount}" -eq 1 ]];then
       #删除原有的数据块
       if [  "${l_blockStartRowNum}" -gt "${l_startRowNum}" ];then
         ((l_blockStartRowNum = l_startRowNum + 1))
@@ -1053,7 +1053,7 @@ function _updateNotListOrArrayParam() {
       fi
       #如果新值只有一行，则调用新增单行值的更新函数。
       _updateSingleRowValue "${l_yamlFile}" "${l_startRowNum}" "${l_newContent}"
-      gDefaultRetVal="${gDefaultRetVal} ${l_deletedRowNum}"
+      gDefaultRetVal="${gDefaultRetVal} 0 ${l_deletedRowNum}"
     else
       #2.直接删除(l_startRowNum + 1)行到l_blockEndRowNum行间的内容。
       #(l_startRowNum + 1)并不一定等于l_blockStartRowNum行，这两行间如果存在注释行就不相等。
@@ -2774,12 +2774,16 @@ function _combineObject(){
 
       if [ "${l_targetParamValue}" != "${l_paramValue}" ];then
         #直接赋值给目标文件中的对应参数。
-        updateParam "${l_targetYamlFile}" "${l_targetParamPath}.${l_paramName}" "${l_paramValue}"
+        if [[ "${l_allowInsertNewListItem}" == "false" ]];then
+          updateParam "${l_targetYamlFile}" "${l_targetParamPath}.${l_paramName}" "${l_paramValue}"
+        else
+          insertParam "${l_targetYamlFile}" "${l_targetParamPath}.${l_paramName}" "${l_paramValue}"
+        fi
         if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
           if [[ "${l_allowInsertNewListItem}" == "false" && "${l_exitOnFailure}" == "true" ]];then
-            error "合并${l_targetParamPath}.${l_paramName}参数失败"
+            error "合并${l_targetParamPath}.${l_paramName}参数失败:${gDefaultRetVal}"
           else
-            warn "合并${l_targetParamPath}.${l_paramName}参数失败"
+            warn "合并${l_targetParamPath}.${l_paramName}参数失败:${gDefaultRetVal}"
             return
           fi
         else

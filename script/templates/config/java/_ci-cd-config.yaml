@@ -85,12 +85,14 @@ globalParams:
   deployType: k8s
   #当前部署环境名称：dev、test，可以自定义。
   activeProfile: dev
-  devApiServer: 192.168.31.160
+  #K8S集群的ApiServer服务器的地址信息（必须配置）
+  #格式：{服务器IP地址}|{SSH连接账号}|{SSH连接密码}
+  devApiServer:
   #在开发集群中使用域名分割子集群时，网关需要的特殊配置。
   #开发环境中发布的命名空间。这个配置仅用于开发环境
   devNamespace: develop
   #开发环境使用的路由的hosts参数。这个配置仅用于开发环境。
-  devRouteHosts: develop.test.com
+  devRouteHosts:
 
 #项目编译阶段的配置参数
 #（Java项目可本地构建异构项目，直接忽略这个配置节）
@@ -142,26 +144,54 @@ docker:
       #指定自定义Docker构建目录和Dockerfile文件。
       dockerfile: ./docker/arm64/Dockerfile
 
+chart:
+  - name: ${chartName}
+    #是否需要为项目创建网关路由配置
+    createGatewayRoute: true
+    #是否需要为项目创建K8S的Service资源配置
+    createK8sService: true
+
 deploy:
   #要部署的离线包名称
   - name: ${chartName}
+    #定义配置文件中的参数名称和默认值
+    params:
+      - name: .Values.params.deployment0.mysql.active
+        value: true
+      - name: .Values.params.deployment0.mysql.host
+        value: 192.168.1.214
+      - name: .Values.params.deployment0.mysql.port
+        value: 3307
+      - name: .Values.params.deployment0.mysql.username
+        value: root
+      - name: .Values.params.deployment0.mysql.password
+        value: 123456
+    k8s:
+      #开发集群环境
+      dev:
+        #K8S集群的ApiServer服务器的地址信息（必须配置）
+        #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
+        apiServer: ${devApiServer}
+        #发布服务的命名空间（必须配置）
+        namespace: ${devNamespace}
+        #网关路由配置的hosts域名配置(可不配置)
+        routeHosts: ${devRouteHosts}
+      #测试集群环境
+      #test:
+      #  ...
     docker:
       #发布模式：docker或docker-compose
       mode: docker
-      #定义配置文件中的参数名称和默认值
-      params:
-        - name: .Values.params.deployment0.mysql.active
-          value: true
-        - name: .Values.params.deployment0.mysql.host
-          value: 192.168.1.214
-        - name: .Values.params.deployment0.mysql.port
-          value: 3307
-        - name: .Values.params.deployment0.mysql.username
-          value: root
-        - name: .Values.params.deployment0.mysql.password
-          value: 123456
+      #发布类型：k8s或docker
+      deployType: ${deployType}
+      #部署的目标环境。
+      activeProfile: ${activeProfile}
       #开发集群环境
       dev:
+        #设置是否启用代理模式。
+        #如果设置enableProxy=ture,则仅向同架构的第一个节点部署服务，由该节点完成向其他节点的部署服务的任务。
+        #如果设置enableProxy=false,则会循环向给定的服务器部署服务。
+        enableProxy: false
         #docker部署方式时，需要部署的节点信息列表。
         nodeIPs:
           #格式：{节点IP}|{SSH连接账号}|{SSH连接密码}

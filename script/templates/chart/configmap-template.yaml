@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   namespace: {{ .Release.Namespace }}
   name:
-  data:
+data:

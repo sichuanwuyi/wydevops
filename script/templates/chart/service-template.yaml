@@ -7,13 +7,13 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: {{ \$.Release.Namespace }}
-  name: {{ .name | trunc 53 | trimSuffix \"-\" }}-ClusterIP
+  name: {{ .name | trunc 53 | trimSuffix \"-\" }}-clusterip
   labels:
     helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
     app.kubernetes.io/version: {{ .version }}
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix \"-\" }}-ClusterIP
-    app.kubernetes.io/instance: {{ .name | trunc 53 | trimSuffix \"-\" }}-ClusterIP
+    app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix \"-\" }}-clusterip
+    app.kubernetes.io/instance: {{ .name | trunc 53 | trimSuffix \"-\" }}-clusterip
 spec:
   type: ClusterIP
   ports:
@@ -32,13 +32,13 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: {{ \$.Release.Namespace }}
-  name: {{ .name | trunc 54 | trimSuffix \"-\" }}-NodePort
+  name: {{ .name | trunc 54 | trimSuffix \"-\" }}-nodeport
   labels:
     helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
     app.kubernetes.io/version: {{ .version }}
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: {{ .name | trunc 54 | trimSuffix \"-\" }}-NodePort
-    app.kubernetes.io/instance: {{ .name | trunc 54 | trimSuffix \"-\" }}-NodePort
+    app.kubernetes.io/name: {{ .name | trunc 54 | trimSuffix \"-\" }}-nodeport
+    app.kubernetes.io/instance: {{ .name | trunc 54 | trimSuffix \"-\" }}-nodeport
 spec:
   type: NodePort
   ports:

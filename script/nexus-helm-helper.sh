@@ -33,5 +33,23 @@ function pushChartImage() {
   local l_account=$4
   local l_password=$5
 
-  curl -v -F file=@"${l_chartFile}" -u "${l_account}":"${l_password}" http://"${l_repoHostAndPort}"/service/rest/v1/components?repository="${l_repoAliasName}"
+  curl -v -F file=@"${l_chartFile}" -u "${l_account}":"${l_password}" \
+    http://"${l_repoHostAndPort}"/service/rest/v1/components?repository="${l_repoAliasName}"
+}
+
+function pullChartImage() {
+  local l_chartName=$1
+  local l_chartVersion=$2
+  local l_repoAliasName=$3
+  local l_destination=$4
+
+  if [ ! -d "${l_destination}" ];then
+    mkdir -p "${l_destination}"
+  fi
+
+  #更新本地库
+  helm repo update
+  #拉取Chart镜像
+  helm pull "${l_repoAliasName}/${l_chartName}" --destination "${l_destination}" --version "${l_chartVersion}"
+
 }
