@@ -80,7 +80,7 @@ function executePackageStage() {
     invokeExtendPointFunc "sendNotify" "向外部接口发送${gServiceName}服务安装包部署结果通知" "${gCurrentStageResult}"
 
     #删除创建的临时目录
-    #rm -rf "${l_localBaseDir:?}"
+    rm -rf "${l_localBaseDir:?}"
 
     ((l_i = l_i + 1))
   done

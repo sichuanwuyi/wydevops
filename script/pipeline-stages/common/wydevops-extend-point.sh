@@ -83,35 +83,34 @@ function createCiCdConfigFile_ex() {
   if [ -f "${l_tmpCicdConfigFile}" ];then
     info "复制${gLanguage}类项目的_ci-cd-config.yaml模板文件，创建一个项目级的_ci-cd-config.yaml"
     cat "${l_tmpCicdConfigFile}" > "${l_cicdConfigFile}"
-  else
-    info "依据_ci-cd-template.yaml文件创建项目级的_ci-cd-config.yaml"
-    debug "--->将_ci-cd-template.yaml文件中的templates配置节复制到_ci-cd-config.yaml文件中"
-    readParam "${l_cicdTemplateFile}" "globalParams"
-    l_content="${gDefaultRetVal}"
-    if [ "${l_content}" != "null" ];then
-       insertParam "${l_cicdConfigFile}" "globalParams" "${l_content}"
-    fi
-
-    debug "--->将_ci-cd-template.yaml文件中的docker.thirdParties配置节复制到_ci-cd-config.yaml文件的thirdParties配置节中"
-    readParam "${l_cicdTemplateFile}" "docker.thirdParties"
-    if [ "${gDefaultRetVal}" != "null" ];then
-      insertParam "${l_cicdConfigFile}" "thirdParties" "${gDefaultRetVal}"
-    fi
-
-    debug "--->将_ci-cd-template.yaml文件中的chart[].params配置节复制到_ci-cd-config.yaml文件的params配置节中"
-    readParam "${l_cicdTemplateFile}" "chart"
-    if [ "${gDefaultRetVal}" != "null" ];then
-      l_itemCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\- )" | wc -l)
-      for ((l_i = 0; l_i < l_itemCount; l_i++));do
-        readParam "${l_cicdTemplateFile}" "chart[${l_i}].params"
-        if [ "${gDefaultRetVal}" != "null" ];then
-          insertParam "${l_cicdConfigFile}" "params[${l_i}]" "${gDefaultRetVal}"
-        fi
-      done
-    else
-      error "_ci-cd-template.yaml模板文件异常：读取chart配置节失败"
-    fi
-
+#  else
+#    info "依据_ci-cd-template.yaml文件创建项目级的_ci-cd-config.yaml"
+#    debug "--->将_ci-cd-template.yaml文件中的globalParams配置节复制到_ci-cd-config.yaml文件中"
+#    readParam "${l_cicdTemplateFile}" "globalParams"
+#    l_content="${gDefaultRetVal}"
+#    if [ "${l_content}" != "null" ];then
+#       insertParam "${l_cicdConfigFile}" "globalParams" "${l_content}"
+#    fi
+#
+#    debug "--->将_ci-cd-template.yaml文件中的docker.thirdParties配置节复制到_ci-cd-config.yaml文件的thirdParties配置节中"
+#    readParam "${l_cicdTemplateFile}" "docker.thirdParties"
+#    if [ "${gDefaultRetVal}" != "null" ];then
+#      insertParam "${l_cicdConfigFile}" "thirdParties" "${gDefaultRetVal}"
+#    fi
+#
+#    debug "--->将_ci-cd-template.yaml文件中的chart[].params配置节复制到_ci-cd-config.yaml文件的params配置节中"
+#    readParam "${l_cicdTemplateFile}" "chart"
+#    if [ "${gDefaultRetVal}" != "null" ];then
+#      l_itemCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\- )" | wc -l)
+#      for ((l_i = 0; l_i < l_itemCount; l_i++));do
+#        readParam "${l_cicdTemplateFile}" "chart[${l_i}].params"
+#        if [ "${gDefaultRetVal}" != "null" ];then
+#          insertParam "${l_cicdConfigFile}" "params[${l_i}]" "${gDefaultRetVal}"
+#        fi
+#      done
+#    else
+#      error "_ci-cd-template.yaml模板文件异常：读取chart配置节失败"
+#    fi
   fi
 }
 
@@ -251,13 +250,24 @@ function _initGlobalParams() {
     #注意:项目中配置的ci-cd-config.yaml文件内容可能只是_ci-cd-config.yaml文件的子集。
     l_ciCdConfigFile="${gBuildPath}/${gCiCdConfigYamlFileName}"
     if [ -f  "${l_ciCdConfigFile}" ];then
-      info "在项目中检测到ci-cd-config.yaml配置文件，将其内容合并到_ci-cd-config.yaml文件中"
-      combine "${l_ciCdConfigFile}" "${l_tmpCiCdConfigFile}" "" "true" "true" "true"
+      info "检测到项目中存在ci-cd-config.yaml配置文件"
+      if [ -f "${l_tmpCiCdConfigFile}" ];then
+        info "检测到系统中配置有${gLanguage}语言级_ci-cd-config.yaml配置文件"
+        info "先将ci-cd-config.yaml文件内容合并到_ci-cd-config.yaml文件中"
+        combine "${l_ciCdConfigFile}" "${l_tmpCiCdConfigFile}" "" "false" "false" "true"
+        echo -e "\n"
+        info "再将_ci-cd-config.yaml文件内容合并到_ci-cd-template.yaml文件中"
+        combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "false" "false"
+      else
+        warn "系统中未检测到${gLanguage}语言级_ci-cd-config.yaml配置文件"
+        info "直接将ci-cd-config.yaml配置文件的内容合并到_ci-cd-template.yaml文件中"
+        combine "${l_ciCdConfigFile}" "${l_templateFile}" "" "true" "true" "true"
+      fi
+    elif [ -f "${l_tmpCiCdConfigFile}" ];then
+      info "检测到系统中配置有${gLanguage}语言级_ci-cd-config.yaml配置文件"
+      info "直接将_ci-cd-config.yaml配置文件的内容合并到_ci-cd-template.yaml文件中"
+      combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "true" "true" "true"
     fi
-
-    echo -e "\n"
-    info "将_ci-cd-config.yaml文件内容合并到_ci-cd-template.yaml文件中"
-    combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "true" "false"
 
     #删除临时文件
     rm -f "${l_tmpCiCdConfigFile}" || true
