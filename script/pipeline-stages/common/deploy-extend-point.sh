@@ -79,8 +79,8 @@ function onBeforeDeployingServicePackageByDockerMode_ex() {
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].docker.mode"
   if [ "${gDefaultRetVal}" == "docker" ];then
     #获取docker-run.sh文件，该脚本文件的功能是执行docker run命令拉起服务。
-    invokeExtendChain "onGenerateDockerRunShellFile" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_images}" "${l_remoteDir}" \
-      "${gDockerRepoName}" "${gDockerRepoAccount}" "${gDockerRepoPassword}"
+    invokeExtendChain "onGenerateDockerRunShellFile" "${gBuildPath}" "${gBuildType}" "${l_index}" "${l_chartName}" \
+      "${l_chartVersion}" "${l_images}" "${l_remoteDir}" "${gDockerRepoName}" "${gDockerRepoAccount}" "${gDockerRepoPassword}"
     l_shellOrYamlFile="${gDefaultRetVal}"
   else
     #获取docker-compose.yaml文件，该文件是docker-compose命令的配置文件。
@@ -363,20 +363,20 @@ function _deployServiceByDocker(){
         info "已安装" "*"
       fi
 
-      info "将${l_shellOrYamlFile##*/}文件复制到本地deploy目录中"
+      info "将${l_shellOrYamlFile##*/}文件复制到本地${l_localDir##*/}目录中"
       scp "${l_shellOrYamlFile}" "${l_localDir}/${l_shellOrYamlFile##*/}"
 
-      info "将${l_remoteInstallProxyShell##*/}文件复制到本地deploy目录下"
+      info "将${l_remoteInstallProxyShell##*/}文件复制到本地${l_localDir##*/}目录下"
       scp "${l_remoteInstallProxyShell}" "${l_localDir}/${l_remoteInstallProxyShell##*/}"
 
-      info "在本地deploy目录下创建install.sh"
+      info "在本地${l_localBaseDir##*/}目录下创建install.sh"
       l_nodeIps="${l_archTypeMap[${l_archType}]//,${l_proxyNode}/}"
       echo -e "#!/usr/bin/env bash\n source ${l_remoteDir}/${l_remoteInstallProxyShell##*/} \"${l_chartName}\" \"${l_chartVersion}\" \"${l_offlinePackage}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \"${gDockerRepoPassword}\" \"${l_nodeIps}\"" > "${l_localDir}/install.sh"
 
       info "在服务器(${l_ip})上创建${l_remoteDir}目录"
       ssh -p "${l_port}" "${l_account}@${l_ip}" "rm -rf ${l_remoteDir} && mkdir -p ${l_remoteDir}"
 
-      info "将本地deploy目录中的文件和子目录复制到服务器${l_ip}上的${l_remoteDir}目录中"
+      info "将本地${l_localBaseDir##*/}目录中的文件和子目录复制到服务器${l_ip}上的${l_remoteDir}目录中"
       scp -P "${l_port}" -r "${l_localDir}/" "${l_account}@${l_ip}:${l_remoteDir%/*}/"
 
       info "远程执行服务器${l_ip}上的脚本：${l_remoteDir}/install.sh"

@@ -21,6 +21,9 @@ function executePackageStage() {
   local l_localBaseDir
   local l_deployType
 
+  local l_deployTempDir
+  local l_deleteTempDirAfterDeployed
+
   local l_shellOrYamlFile
   local l_remoteInstallProxyShell
 
@@ -53,11 +56,26 @@ function executePackageStage() {
     l_chartVersion="${l_array[1]}"
     l_images="${l_array[2]}"
 
+    readParam "${gCiCdYamlFile}" "deploy[${l_i}].deployTempDir"
+    l_deployTempDir="${gDefaultRetVal}"
+    if [[ ! "${l_deployTempDir}" || "${l_deployTempDir}" == "null" ]];then
+      #设置默认值
+      l_deployTempDir="./deploy"
+    fi
+
+    readParam "${gCiCdYamlFile}" "deploy[${l_i}].deleteTempDirAfterDeployed"
+    l_deleteTempDirAfterDeployed="${gDefaultRetVal}"
+    if [[ ! "${l_deleteTempDirAfterDeployed}" || "${l_deleteTempDirAfterDeployed}" == "null" ]];then
+      #设置默认值
+      l_deleteTempDirAfterDeployed="false"
+    fi
+
     # shellcheck disable=SC2088
-    l_remoteBaseDir="~/devops/deploy"
+    l_remoteBaseDir="~/devops/${l_deployTempDir##*/}"
     l_remoteDir="${l_remoteBaseDir}/${l_chartName}-${l_chartVersion}"
 
-    l_localBaseDir="${gBuildPath}/deploy"
+    l_localBaseDir="${l_deployTempDir}"
+    [[ "${l_deployTempDir}" =~ ^(\./) ]] && l_localBaseDir="${gBuildPath}${l_deployTempDir:1}"
     [[ -d "${l_localBaseDir}" ]] && rm -rf "${l_localBaseDir:?}"
     mkdir -p "${l_localBaseDir}"
 
@@ -79,8 +97,10 @@ function executePackageStage() {
     #向外部管理平台发送通知
     invokeExtendPointFunc "sendNotify" "向外部接口发送${gServiceName}服务安装包部署结果通知" "${gCurrentStageResult}"
 
-    #删除创建的临时目录
-    rm -rf "${l_localBaseDir:?}"
+    if [ "${l_deleteTempDirAfterDeployed}" == "true" ];then
+      #删除创建的临时目录
+      rm -rf "${l_localBaseDir:?}"
+    fi
 
     ((l_i = l_i + 1))
   done
