@@ -307,8 +307,10 @@ function onAfterInitialingGlobalParamsForDockerStage_ex() {
   info "处理docker.copyFiles参数"
   _copyFilesIntoDockerBuildDir "${l_ciCdYamlFile}"
 
-  #完成docker仓库登录
-  dockerLogin "${gDockerRepoName}" "${gDockerRepoAccount}" "${gDockerRepoPassword}"
+  if [[ "${gDockerRepoName}" && "${gDockerRepoAccount}" && "${gDockerRepoPassword}" ]];then
+    #完成docker仓库登录
+    dockerLogin "${gDockerRepoName}" "${gDockerRepoAccount}" "${gDockerRepoPassword}"
+  fi
 }
 
 #生成并初始化DockerFile文件
