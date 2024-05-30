@@ -110,7 +110,59 @@ function createCiCdConfigFile_ex() {
   fi
 }
 
-#------------------------私有函数--------------------------#
+function initialCiCdConfigFileByParamMappingFiles_ex() {
+  export gLanguage
+  export gBuildPath
+  export gBuildScriptRootDir
+
+  local l_templateFile=$1
+  local l_tmpCiCdConfigFile=$2
+
+  local l_cicdTargetFile
+
+  local l_dirList
+  local l_mappingFileDir
+  local l_paramMappingFiles
+  local l_mappingFile
+  local l_loadOk
+
+  l_cicdTargetFile="${l_tmpCiCdConfigFile}"
+  [[ ! -f "${l_tmpCiCdConfigFile}" ]] && l_cicdTargetFile="${l_templateFile}"
+
+  #项目级参数应用文件优先级更高，放置_dirList中靠后面的位置。
+  l_dirList=("${gBuildScriptRootDir}/templates/config/${gLanguage}/param-mapping" "${gBuildPath}/ci-cd/param-mapping")
+  #预先定义好各个参数映射文件对应的
+
+  l_loadOk="false"
+  # shellcheck disable=SC2068
+  for l_mappingFileDir in ${l_dirList[@]};do
+    #读取参数映射目录中的配置文件。
+    if [ -d "${l_mappingFileDir}" ];then
+      l_paramMappingFiles=$(find "${l_mappingFileDir}" -maxdepth 1 -type f -name "*.config")
+      if [ "${l_paramMappingFiles}" ];then
+        # shellcheck disable=SC2068
+        for l_mappingFile in ${l_paramMappingFiles[@]};do
+          declare -A _paramMappingMap
+          #将参数映射文件中的配置读取到_paramMappingMap变量中。
+          initialMapFromConfigFile "${l_mappingFile}" "_paramMappingMap"
+          if [ "${#_paramMappingMap[@]}" -gt 0 ];then
+            #根据参数映射文件初始化l_cicdTargetFile文件中的参数。
+            initialParamValueByMappingConfigFiles "${gBuildPath}" "${l_cicdTargetFile}" \
+              "_paramMappingMap|${gDefaultRetVal%%|*}" "${gDefaultRetVal#*|}"
+            l_loadOk="true"
+          fi
+          unset _paramMappingMap
+        done
+      fi
+    fi
+  done
+
+  if [ "${l_loadOk}" == "false" ];then
+    error "缺少${gLanguage}语言级的参数映射配置文件，该配置文件定义了如何从项目配置文件中读取wyDevops需要的参数。"
+  fi
+}
+
+#------------------------私有方法--开始-------------------------#
 
 function _onBeforeInitGlobalParams() {
   export gWorkMode
@@ -235,12 +287,14 @@ function _initGlobalParams() {
 
     info "获取项目级_ci-cd-config.yaml配置文件 ..."
     l_tmpCiCdConfigFile="${gBuildPath}/_${gCiCdConfigYamlFileName}"
-    #首先尝试复制语言级_ci-cd-config.yaml创建一个项目级的_ci-cd-config.yaml
+    #尝试复制语言级_ci-cd-config.yaml创建一个项目级的_ci-cd-config.yaml
     #注意：语言级_ci-cd-config.yaml模板文件中对大部分的参数都配置了默认值。
-    #如果不存在语言级_ci-cd-config.yaml文件，
-    #则依据_ci-cd-template.yaml文件创建项目级的_ci-cd-config.yaml
-    #注意：这样创建的_ci-cd-config.yaml文件，大部分参数都没有配置默认值，需要在初始化方法中完成默认值配置。
-    invokeExtendPointFunc "createCiCdConfigFile" "创建_ci-cd-config.yaml配置文件" "${l_templateFile}" "${l_tmpCiCdConfigFile}"
+    #如果不存在语言级_ci-cd-config.yaml文件，则直接返回。后续直接将l_ciCdConfigFile文件的内容合并到l_templateFile文件，
+    invokeExtendPointFunc "createCiCdConfigFile" "获取_ci-cd-config.yaml配置文件" "${l_templateFile}" "${l_tmpCiCdConfigFile}"
+
+    #根据参数映射文件中的配置，初始化_ci-cd-config.yaml文件。
+    #如果_ci-cd-config.yaml文件不存在，则直接初始化l_templateFile文件。
+    invokeExtendPointFunc "initialCiCdConfigFileByParamMappingFiles" "获取_ci-cd-config.yaml配置文件" "${l_templateFile}" "${l_tmpCiCdConfigFile}"
 
     #继续判断项目中是否存在ci-cd-config.yaml配置文件？
     #注意:项目中配置的ci-cd-config.yaml文件内容可能只是_ci-cd-config.yaml文件的子集。
@@ -620,6 +674,8 @@ function _loadGlobalParamsFromCiCdYaml() {
   gServiceName="${gDefaultRetVal}"
   info "gServiceName:从配置文件中读取配置值(${gServiceName})"
 }
+
+#------------------------私有方法--结束-------------------------#
 
 #加载语言级脚本扩展文件
 loadExtendScriptFileForLanguage "wydevops"

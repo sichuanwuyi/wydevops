@@ -45,18 +45,23 @@ function invokeExtendChain() {
       #依次调用调用链上的方法，直至返回”true“为止。
       # shellcheck disable=SC2068
       "${l_funcName}" ${l_param[@]}
-      if [ "${gDefaultRetVal}" != "false" ];then
+      # shellcheck disable=SC2145
+      if [[ "${gDefaultRetVal}" =~ ^(true\|) ]];then
         break
       fi
     done
-    if [ "${gDefaultRetVal}" != "false" ];then
+    if [[ "${gDefaultRetVal}" =~ ^(true\|) ]];then
       break
     fi
   done
 
-  if [ "${gDefaultRetVal}" == "false" ];then
-    warn "调用链${l_chainName}执行后返回${gDefaultRetVal}"
+  #如果gDefaultRetVal已false开头，则说明没有找到匹配的方法处理传入的参数。
+  #直接报错退出。
+  if [[ "${gDefaultRetVal}" =~ ^(false\|) ]];then
+    error "调用链${l_chainName}执行失败：未找到与传入参数匹配的方法"
   fi
+
+  gDefaultRetVal="${gDefaultRetVal#*|}"
 }
 
 function registerChain() {
@@ -85,11 +90,6 @@ function registerChain() {
       gInvokeChainRegTables["${l_chainName}"]="${l_chainContent};${l_funcName}"
     fi
   fi
-
-  unset l_chainName
-  unset l_funcName
-  unset l_insertHead
-  unset l_chainContent
 }
 
 function unregisterChain() {
@@ -100,8 +100,6 @@ function unregisterChain() {
   if [ "${l_chainName}" ];then
     unset gInvokeChainRegTables["${l_chainName}"]
   fi
-
-  unset l_chainName
 }
 
 function loadExtendChain() {
@@ -142,13 +140,6 @@ function loadExtendChain() {
     # shellcheck disable=SC1090
     source "${l_shellFile}"
   done
-
-  unset l_shellList
-  unset l_shellFile
-  unset l_chainName
-  unset l_funcNames
-  unset l_funcName
-  unset l_funcNameStr
 }
 
 #定义全局调用链注册表

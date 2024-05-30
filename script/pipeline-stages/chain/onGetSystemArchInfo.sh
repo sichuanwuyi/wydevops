@@ -20,6 +20,8 @@ function onGetSystemArchInfo_ubuntu() {
     #全部转小写后返回。
     gDefaultRetVal="${l_content,,}"
   fi
+
+  gDefaultRetVal="true|${gDefaultRetVal}"
 }
 
 function onGetSystemArchInfo_windows() {
@@ -37,6 +39,8 @@ function onGetSystemArchInfo_windows() {
     l_content=$(arch | grep "x86_64")
     [[ "${l_content}" ]] && gDefaultRetVal="windows/amd64" || gDefaultRetVal="windows/arm64"
   fi
+
+  gDefaultRetVal="true|${gDefaultRetVal}"
 }
 
 function onGetSystemArchInfo_centos() {

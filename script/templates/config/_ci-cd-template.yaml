@@ -47,6 +47,7 @@ globalParams:
   #ClusterIP类型的Service资源开放的服务端口列表，端口间使用逗号隔开。
   servicePorts: _SERVICE-PORTS_
   #ClusterIP类型的Service资源绑定的容器端口列表，端口间使用逗号隔开。
+  #默认范围：30000-32767
   nodePorts: _NODE-PORTS_
 
   #gateway网关相关配置

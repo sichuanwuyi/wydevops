@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-function onInstallCommand_windows() {
+#本调用链主要是用来在不同系统下自动安装需要的命令或工具。
+
+function onInstallTool_windows() {
   export gDefaultRetVal
   local l_command=$1
 
@@ -14,9 +16,11 @@ function onInstallCommand_windows() {
     l_errorLog=$("${l_command}" --version 2>&1 | grep "not found")
     [[ ! "${l_errorLog}" ]] && gDefaultRetVal="true"
   fi
+
+  gDefaultRetVal="true|${gDefaultRetVal}"
 }
 
-function onInstallCommand_ubuntu() {
+function onInstallTool_ubuntu() {
   export gDefaultRetVal
   local l_command=$1
   local l_errorLog
@@ -31,11 +35,14 @@ function onInstallCommand_ubuntu() {
     l_errorLog=$("${l_command}" --version 2>&1 | grep "not found")
     [[ ! "${l_errorLog}" ]] && gDefaultRetVal="true"
   fi
+  gDefaultRetVal="true|${gDefaultRetVal}"
 }
 
-function onInstallCommand_centos() {
+function onInstallTool_centos() {
   export gDefaultRetVal
   local l_command=$1
   info "-------centos系统下安装${l_command}命令--------"
   gDefaultRetVal="false"
+
+  gDefaultRetVal="true|${gDefaultRetVal}"
 }

@@ -103,19 +103,4 @@ rm -f "${tmpFile}"
 #
 #readAndWriteList "列表项读写"
 
-helm uninstall atom-hardware-manager -n devops --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config
-
-helm install --dry-run --debug devops-test /e/tmt/test/helm-build/build-out/devops-test-1.0.0/chart/devops-test-1.0.0.tgz --namespace develop --create-namespace --kubeconfig /e/tmt/test/deploy/kube-config --set image.registry=192.168.31.214:8002,\
-params.deployment0.resources.limits.cpu="500m",\
-params.deployment0.resources.limits.memory="500Mi",\
-params.deployment0.resources.requests.cpu="500m",\
-params.deployment0.resources.requests.memory="500Mi",\
-params.deployment0.mysql.active=true,\
-params.deployment0.mysql.host=192.168.1.214,\
-params.deployment0.mysql.password=123456,\
-params.deployment0.mysql.port=3307,\
-params.deployment0.mysql.username=root,\
-params.deployment0.redis.host=192.168.31.214,\
-params.deployment0.redis.password=123456,\
-params.deployment0.redis.port=6379,\
-params.deployment0.redis.timeout=10000
+helm uninstall devops-test -n develop --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config

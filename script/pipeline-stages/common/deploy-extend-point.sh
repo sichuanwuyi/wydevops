@@ -64,6 +64,8 @@ function onBeforeDeployingServicePackageByDockerMode_ex() {
   export gDockerRepoName
   export gDockerRepoAccount
   export gDockerRepoPassword
+  export gBuildPath
+  export gBuildType
 
   local l_index=$1
   local l_chartName=$2
@@ -82,7 +84,8 @@ function onBeforeDeployingServicePackageByDockerMode_ex() {
     l_shellOrYamlFile="${gDefaultRetVal}"
   else
     #获取docker-compose.yaml文件，该文件是docker-compose命令的配置文件。
-    invokeExtendChain "onGenerateDockerComposeYamlFile" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_images}" "${l_remoteDir}"
+    invokeExtendChain "onGenerateDockerComposeYamlFile" "${gBuildPath}" "${gBuildType}" "${l_index}" "${l_chartName}" \
+      "${l_chartVersion}" "${l_images}" "${l_remoteDir}"
     l_shellOrYamlFile="${gDefaultRetVal}"
   fi
 
@@ -304,6 +307,8 @@ function _deployServiceByDocker(){
     info "检查服务器${l_ip}的硬件架构 ..."
     l_content=$(ssh -p "${l_port}" "${l_account}@${l_ip}" "uname -sm" )
     invokeExtendChain "onGetSystemArchInfo" "${l_content}"
+    # shellcheck disable=SC2015
+    [[ "${gDefaultRetVal}" == "false" ]] && error "读取本地系统架构信息失败" || info "读取到当前系统架构为:${gDefaultRetVal}"
     l_archType="${gDefaultRetVal}"
 
     l_nodeItem="${l_archTypeMap[${l_archType}]},${l_nodeItem}"
