@@ -85,6 +85,20 @@ function error() {
 function registerTempFile(){
   export gTempFileRegTables
   local l_tmpFile=$1
+  local l_content
+
+  if [ ! "${l_replaceOnExist}" ];then
+    l_replaceOnExist="true"
+  fi
+
+  l_content="${gTempFileRegTables[${l_tmpFile##*/}]}"
+  #如果是同名不同路径的文件，则需要根据l_replaceOnExist参数处理。
+  if [[ "${l_content}" ]];then
+    [[ "${l_content}" == "${l_tmpFile}" ]] && return
+    rm -f "${l_content}"
+    unset gFileContentMap["${l_tmpFile}"]
+  fi
+
   info "注册后续需要删除的临时文件:${l_tmpFile##*/}"
   gTempFileRegTables["${l_tmpFile##*/}"]="${l_tmpFile}"
 }
@@ -96,6 +110,7 @@ function unregisterTempFile(){
     info "删除注册的文件${l_tmpFile##*/}"
     rm -f "${l_tmpFile}"
     unset gTempFileRegTables["${l_tmpFile##*/}"]
+    unset gFileContentMap["${l_tmpFile}"]
   fi
 }
 
@@ -266,3 +281,6 @@ export gDebugMode
 export gDebugOutDir
 #引入的全局临时文件目录
 export gTempFileDir
+#引入yaml-helper.yaml文件中的文件内存缓存变量
+#在删除文件时需要同步清除缓存中的内容。
+export gFileContentMap

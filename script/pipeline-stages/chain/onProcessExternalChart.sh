@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 #将外部Chart镜像中values.yaml文件中的params.deployment0配置节复制到l_valuesYaml文件中。
-#并将外部chart镜像中deployment[0]的initialContainers和containers合并到当前chart的deployment0中。
+#并将外部chart镜像中deployment[0]的initContainers和containers合并到当前chart的deployment0中。
+#最后将ConfigMap资源文件复制到当前chart的templates目录中
 function onProcessExternalChart_default() {
   export gDefaultRetVal
   export gTempFileDir
@@ -39,21 +40,23 @@ function onProcessExternalChart_default() {
   else
     l_chartName="${l_externalChartImage##*/}"
     l_chartVersion="${l_chartName##*-}"
-    l_chartVersion="${l_chartVersion%-*}"
+    l_chartVersion="${l_chartVersion%.*}"
     l_chartName="${l_chartName%-*}"
   fi
 
   if [ -f "${l_externalChartImage}" ];then
-    #解压拉取的文件。
+    info "解压外部Chart镜像文件..."
     tar -zxvf "${l_externalChartImage}" -C "${l_externalChartImage%/*}"
     l_valuesYaml1="${l_externalChartImage%/*}/${l_chartName}/values.yaml"
 
-    l_paramPaths=("deployment0.gatewayRoute.routes|deployment${l_index}.gatewayRoute.routes")
+    l_paramPaths=("params.deployment0|params.deployment${l_index}" \
+      "deployment0.volumes|deployment${l_index}.volumes"
+      "deployment0.initContainers|deployment${l_index}.initContainers" \
+      "deployment0.containers|deployment${l_index}.containers" \
+      "deployment0.gatewayRoute.routes|deployment${l_index}.gatewayRoute.routes")
 
     # shellcheck disable=SC2068
     for l_paramPath in ${l_paramPaths[@]};do
-      echo "-------------111-------------"
-      showCachedData
       #读取l_valuesYaml1文件中的参数，判断是否存在，不存在则报错。
       readParam "${l_valuesYaml1}" "${l_paramPath%%|*}"
       if [ "${gDefaultRetVal}" == "null" ];then
@@ -61,11 +64,9 @@ function onProcessExternalChart_default() {
         error "外部Chart镜像${l_externalChartImage##*/}不是使用wydevops生成的。"
       fi
       [[ ! "${gDefaultRetVal}" ]] && continue
-
       #合并到l_valuesYaml文件中。
       combine "${l_valuesYaml1}" "${l_valuesYaml}" "${l_paramPath%%|*}" "${l_paramPath#*|}" "true" "false"
     done
-    exit 1
 
     #将configMap文件复制到l_valuesYaml文件同名下的templates子目录中
     l_templatesDir="${l_externalChartImage%/*}/${l_chartName}/templates"
@@ -76,8 +77,9 @@ function onProcessExternalChart_default() {
       l_content=$(cat "${l_tmpFile}" | grep -oP "^(kind: ConfigMap)$")
       if [ "${l_content}" ];then
         info "将${l_tmpFile##*/}文件复制到${l_valuesYaml%/*}目录中"
-        cp -f "${l_tmpFile}" "${l_valuesYaml%/*}"
+        cp -f "${l_tmpFile}" "${l_valuesYaml%/*}/templates"
       fi
     done
+
   fi
 }

@@ -241,6 +241,7 @@ function onModifyingValuesYaml_ex(){
   local l_key
   local l_serviceName
   local l_chartName
+  local l_externalChartImages
   local l_externalChartImage
 
   local l_createGatewayRoute
@@ -287,6 +288,7 @@ function onModifyingValuesYaml_ex(){
 
     #创建相关的K8s相关的ConfigMap配置。
     invokeExtendPointFunc "createConfigMapYamls" "创建ConfigMap配置扩展" "${l_valuesYaml}"  "${l_key}.configMaps" "${l_serviceName}"
+
     #将l_paramNameList中的params参数配并到values.yaml文件的params配置节中。
     invokeExtendPointFunc "combineParamsToValuesYaml" "为values.yaml文件追加params配置扩展" "${l_valuesYaml}" "${gDefaultRetVal}" "${l_chartName}"
     #deleteParam "${l_valuesYaml}" "${l_key}.configMaps"
@@ -294,16 +296,18 @@ function onModifyingValuesYaml_ex(){
     #检查并插入应用的外部镜像中的容器。
     readParam "${l_valuesYaml}" "${l_key}.refExternalChart"
     if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
-
-      l_externalChartImage="${gDefaultRetVal}"
-      if [[ "${l_externalChartImage}" =~ ^(\./) ]];then
-        l_externalChartImage="${gBuildPath}${l_externalChartImage:1}"
-      fi
-
-      info "正在处理外部Chart镜像引用：${l_externalChartImage}"
-      #将外部Chart镜像中values.yaml文件中的params.deployment0配置节复制到l_valuesYaml文件中。
-      #并将外部chart镜像中deployment[0]的initialContainers和containers合并到当前chart的deployment0中。
-      invokeExtendChain "onProcessExternalChart" "${l_valuesYaml}" "${l_externalChartImage}" "${l_i}"
+      # shellcheck disable=SC2206
+      l_externalChartImages=(${gDefaultRetVal//,/ })
+      # shellcheck disable=SC2068
+      for l_externalChartImage in ${l_externalChartImages[@]};do
+        if [[ "${l_externalChartImage}" =~ ^(\./) ]];then
+          l_externalChartImage="${gBuildPath}${l_externalChartImage:1}"
+        fi
+        info "正在处理外部Chart镜像引用：${l_externalChartImage}"
+        #将外部Chart镜像中values.yaml文件中的params.deployment0配置节复制到l_valuesYaml文件中。
+        #并将外部chart镜像中deployment[0]的initialContainers和containers合并到当前chart的deployment0中。
+        invokeExtendChain "onProcessExternalChart" "${l_valuesYaml}" "${l_externalChartImage}" "${l_i}"
+      done
     fi
 
     if [ "${l_createGatewayRoute}" == "true" ];then
@@ -574,7 +578,6 @@ function createConfigMapYamls_ex(){
   local l_key
   local l_lineNum
   local l_tmpRowNum
-  local l_spaceStr
 
   local l_paramNameList
   local l_tmpList
@@ -582,17 +585,26 @@ function createConfigMapYamls_ex(){
   local l_items
   local l_configMapName
 
+  local l_keyList
   local l_tmpRowNumList
+  local l_tmpSpaceNum
 
   l_paramNameList=""
   ((l_i = 0))
   while true; do
     readParam "${l_valuesYaml}" "${l_configMapsPath}[${l_i}].name"
-    [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && break
+    [[ "${gDefaultRetVal}" == "null" ]] && break
+    if [[  ! "${gDefaultRetVal}" ]];then
+      warn "${l_valuesYaml}文件中${l_configMapsPath}[${l_i}].name参数为空"
+      ((l_i = l_i + 1))
+      continue
+    fi
     l_configMapName="${gDefaultRetVal}"
 
     readParam "${l_valuesYaml}" "${l_configMapsPath}[${l_i}].files"
-    if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
+    [[ "${gDefaultRetVal}" == "null" ]] && break
+    if [[  ! "${gDefaultRetVal}" ]];then
+      warn "${l_valuesYaml}文件中${l_configMapsPath}[${l_i}].files参数为空"
       ((l_i = l_i + 1))
       continue
     fi
@@ -604,7 +616,10 @@ function createConfigMapYamls_ex(){
     cp -f "${gBuildScriptRootDir}/templates/chart/configmap-template.yaml" "${l_configMapFile}"
 
     updateParam "${l_configMapFile}" "metadata.name" "${l_configMapName}"
+    [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && \
+      error "更新templates/chart/configmap-template.yaml文件中metadata.name参数失败"
 
+    l_keyList=()
     l_tmpRowNumList=()
     # shellcheck disable=SC2068
     for ((l_j=0; l_j < l_fileCount; l_j++ ));do
@@ -612,10 +627,14 @@ function createConfigMapYamls_ex(){
       [[ "${l_fileItem}" =~ ^(\.\/) ]] && l_fileItem="${gBuildPath}${l_fileItem:1}"
       l_content=$(cat "${l_fileItem}")
       l_key="${l_fileItem##*/}"
+      info "向${l_configMapFile##*/}文件中插入${l_fileItem##*/}文件内容..." "-n"
+      #将l_key的原始值缓存起来。
+      l_keyList["${l_j}"]="${l_key}"
       #必须将l_key中的”.“符号替换为其他符号，这里选择”_“符号。
       l_key="${l_key//./_}"
       insertParam "${l_configMapFile}" "data.${l_key}" "|\n${l_content}"
-      [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && error "向${l_configMapFile}文件中插入${l_fileItem##*/}文件内容失败"
+      [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && error "插入失败"
+      info "插入成功" "*"
       #获得写入的起始行号。
       # shellcheck disable=SC2206
       l_lineNum=(${gDefaultRetVal})
@@ -631,12 +650,20 @@ function createConfigMapYamls_ex(){
     ((l_i = l_i + 1))
   done
 
+  #直接更新文件内容前需要先清除内存中缓存的文件内容。
+  #否则会导致内存中的旧内容覆盖最新更新的文件内容。
+  clearCachedFileContent "${l_configMapFile}"
+
+  # shellcheck disable=SC2145
   for (( l_i=0; l_i < ${#l_tmpRowNumList[@]}; l_i++));do
     l_tmpRowNum="${l_tmpRowNumList[${l_i}]}"
-    # shellcheck disable=SC2128
-    #读取行的内容。
-    l_lineContent=$(sed -n "${l_tmpRowNum}p" "${l_configMapFile}")
-    l_lineContent="${l_lineContent//_/.}"
+    #获取文件名原始值。
+    l_key="${l_keyList[${l_i}]}"
+    #读取目标行的前导空格数量
+    l_tmpSpaceNum=$(sed -n "${l_tmpRowNum}p" "${l_configMapFile}" | grep -oP "^([ ]*)" | grep -oP " " | wc -l)
+    l_lineContent="$(printf "%${l_tmpSpaceNum}s")"
+    l_lineContent="${l_lineContent}${l_key}: |"
+    info "更新${l_configMapFile##*/}文件中第${l_tmpRowNum}行的内容为：${l_lineContent}"
     #更新行的内容。
     sed -i "${l_tmpRowNum}c\\${l_lineContent}" "${l_configMapFile}"
   done

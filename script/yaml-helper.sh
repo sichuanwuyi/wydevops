@@ -104,12 +104,19 @@ function clearCachedFileContent(){
 
   local l_targetYamlFile=$1
   local l_yamlFile
+  local l_content
 
   if [ "${l_targetYamlFile}" ];then
+    #先写回文件再删除
+    l_content="${gFileContentMap[${l_targetYamlFile}]}"
+    echo -e "${l_content}" > "${l_targetYamlFile}"
     unset gFileContentMap["${l_targetYamlFile}"]
   else
     # shellcheck disable=SC2068
     for l_yamlFile in ${!gFileContentMap[@]};do
+      #先写回文件再删除
+      l_content="${gFileContentMap[${l_yamlFile}]}"
+      echo -e "${l_content}" > "${l_yamlFile}"
       unset gFileContentMap["${l_yamlFile}"]
     done
   fi
@@ -250,13 +257,13 @@ function combine(){
     l_srcContent=$(cat "${l_srcYamlFile}")
   fi
 
-  info "合并${l_srcYamlFile##*/}文件与${l_targetYamlFile##*/}文件中的参数---开始"
+  info "合并${l_srcYamlFile}文件与${l_targetYamlFile}文件中的参数---开始"
 
   #给定参数路径及其参数下属数据块内容，更新目标文件l_targetYamlFile的内容。
   _combine "${l_srcContent}" "${l_srcParamPath}" "${l_targetYamlFile}" "${l_srcParamPath}" "${l_allowInsertNewListItem}" \
     "${l_exitOnFailure}" "${l_cascadeDelete}"
 
-  info "合并${l_srcYamlFile##*/}文件与${l_targetYamlFile##*/}文件中的参数---结束"
+  info "合并${l_srcYamlFile}文件与${l_targetYamlFile}文件中的参数---结束"
 
   #恢复gSaveBackImmediately的原始值。
   enableSaveBackImmediately "${l_saveBackStatus}"
@@ -271,7 +278,7 @@ function combine(){
   gDefaultRetVal="true"
 }
 
-function showCachedData() {
+function showCachedParamPathStatus() {
   export gFileDataBlockMap
 
   local l_fileName=$1
@@ -279,7 +286,7 @@ function showCachedData() {
 
   # shellcheck disable=SC2068
   for l_item in ${!gFileDataBlockMap[@]};do
-    if [[ ! "${l_fileName}" || ${l_item} =~ ^(${l_fileName##*/}) ]];then
+    if [[ ! "${l_fileName}" || ${l_item} =~ ^(${l_fileName//\./\\\.}) ]];then
       info "${l_item} => ${gFileDataBlockMap[${l_item}]}"
     fi
   done
@@ -380,7 +387,7 @@ function _readOrWriteYamlFile() {
         l_tmpParamPath="${l_curParamPath//\[/#}"
         l_tmpParamPath="${l_tmpParamPath//\]/#}"
         #获取l_cachedParamKey参数。
-        l_cachedParamKey="${l_yamlFile##*/}#${l_tmpParamPath}"
+        l_cachedParamKey="${l_yamlFile}#${l_tmpParamPath}"
         #读取缓存数据
         _cachedParams="${gFileDataBlockMap[${l_cachedParamKey}]}"
         if [ "${_cachedParams}" ];then
@@ -426,7 +433,7 @@ function _readOrWriteYamlFile() {
              unset gFileDataBlockMap["${l_cachedParamKey}"]
            done
            #清除文件内容缓存。
-           clearCachedFileContent "${l_yamlFile##*/}"
+           clearCachedFileContent "${l_yamlFile}"
            return
          fi
          #更新模式下：对缓存数据进行更新调整
@@ -540,7 +547,7 @@ function __readOrWriteYamlFile() {
   if [ ! -f "${l_yamlFile}" ];then
     #不是插入模式则报错退出。
     if [[ "${l_mode}" != "insert" ]];then
-      error "目标文件${l_yamlFile##*/}不存在"
+      error "目标文件${l_yamlFile}不存在"
     else
       #文件不存在且是插入模式，则直接创建文件。
       touch "${l_yamlFile}"
@@ -742,7 +749,7 @@ function __readOrWriteYamlFile() {
 
     if [[ "${gEnableCache}" && "${l_isDataBlock}" == "true" ]];then
       #缓存参数路径上的状态数据。
-      l_cachedParamKey="${l_yamlFile##*/}#${_deletedParamPath}"
+      l_cachedParamKey="${l_yamlFile}#${_deletedParamPath}"
       _cachedParamKeys="${_cachedParamKeys} ${l_cachedParamKey}"
       l_cachedParamKey="${l_cachedParamKey//\[/#}"
       l_cachedParamKey="${l_cachedParamKey//\]/#}"
@@ -1813,7 +1820,7 @@ function _getDataBlockRowNum1() {
           l_blockEndRowNum="${l_maxRowNum}"
         fi
       fi
-  echo "---10---l_blockStartRowNum=|${l_blockStartRowNum} ${l_blockEndRowNum}|--"
+
       #如果l_blockStartRowNum=-1，说明还没有确定数据块的起始行号，继续后续处理。
       if [ "${l_blockStartRowNum}" -eq -1 ];then
         #得到兄弟行或父级行的相对行号
@@ -1830,8 +1837,6 @@ function _getDataBlockRowNum1() {
 
     fi
   fi
-
-  echo "---11---l_blockStartRowNum=|${l_blockStartRowNum} ${l_blockEndRowNum}|--"
 
   ((l_itemCount = -1))
   ((l_addItemCount = 0))
@@ -2333,7 +2338,7 @@ function _deleteChildData() {
 
   l_mapSize="${#gFileDataBlockMap[@]}"
   if [ "${l_mapSize}" -gt 0 ];then
-    l_prefixStr="${l_yamlFile##*/}#${l_paramPath}"
+    l_prefixStr="${l_yamlFile}#${l_paramPath}"
     if [ "${l_listItemIndex}" -ge 0 ];then
       l_prefixStr="${l_prefixStr%[*}"
     fi
@@ -2384,7 +2389,7 @@ function _adjustEndRowNum() {
       l_tmpParamPath="${l_tmpParamPath//\]/#}"
 
       #构造l_mapKey参数的值。
-      l_mapKey="${l_yamlFile##*/}#${l_tmpParamPath}"
+      l_mapKey="${l_yamlFile}#${l_tmpParamPath}"
       #读取可能存在的缓存参数。
       l_mapValue="${gFileDataBlockMap[${l_mapKey}]}"
       if [ "${l_mapValue}" ];then
@@ -2414,14 +2419,12 @@ function _adjustStartRowNum() {
   local l_mapKey
   local l_mapValue
   local l_array
-  local l_tmpParamPath
 
   l_mapSize="${#gFileDataBlockMap[@]}"
   if [ "${l_mapSize}" -gt 0 ];then
     # shellcheck disable=SC2068
     for l_mapKey in ${!gFileDataBlockMap[@]};do
-      l_tmpParamPath="${l_yamlFile##*/}"
-      if [[ ! "${l_mapKey}" =~ ^(${l_tmpParamPath//\./\\\.}) ]];then
+      if [[ ! "${l_mapKey}" =~ ^(${l_yamlFile//\./\\\.}) ]];then
         continue
       fi
       #读取可能存在的缓存参数。
@@ -2429,7 +2432,7 @@ function _adjustStartRowNum() {
       if [ "${l_mapValue}" ];then
         # shellcheck disable=SC2206
         l_array=(${l_mapValue//,/ })
-        if [ "${l_array[0]}" -gt "${l_startRowNum}" ];then
+        if [ "${l_array[0]}" -ge "${l_startRowNum}" ];then
           ((l_array[0] = l_array[0] + l_changedLineCount))
           ((l_array[1] = l_array[1] + l_changedLineCount))
           # shellcheck disable=SC2124

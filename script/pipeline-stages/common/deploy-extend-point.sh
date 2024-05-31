@@ -402,8 +402,16 @@ function _deployServiceInK8S() {
   local l_localBaseDir=$4
 
   local l_activeProfile
+  local l_apiServers
   local l_apiServer
+  local l_apiServerIndex
+  local l_maxIndex
+
+  local l_namespaces
+  local l_namespaceCount
   local l_namespace
+
+
   local l_errorLog
   local l_offlinePackage
 
@@ -424,74 +432,87 @@ function _deployServiceInK8S() {
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].activeProfile"
   l_activeProfile="${gDefaultRetVal}"
 
-  readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.apiServer"
-  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == null ]] \
-    && error "${gCiCdYamlFile##*/}文件中deploy[${l_index}].k8s.${l_activeProfile}.apiServer参数缺失或未配置值"
-  l_apiServer="${gDefaultRetVal}"
-
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.namespace"
   [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == null ]] \
     && error "${gCiCdYamlFile##*/}文件中deploy[${l_index}].k8s.${l_activeProfile}.namespace参数缺失或未配置值"
-  l_namespace="${gDefaultRetVal}"
-
   # shellcheck disable=SC2206
-  l_array=(${l_apiServer//\|/ })
-  l_ip="${l_array[0]}"
-  l_port="${l_array[1]}"
-  l_account="${l_array[2]}"
+  l_namespaces=(${gDefaultRetVal})
+  l_namespaceCount="${#l_namespaces[@]}"
+  ((l_maxIndex = l_namespaceCount - 1))
 
-  info "查找Chart镜像文件和其对应的setting.conf文件..."
-  findChartImage "${l_chartName}" "${l_chartVersion}"
-  [[ ! "${gDefaultRetVal}" ]] && error "失败"
+  readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.apiServer"
+  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == null ]] \
+    && error "${gCiCdYamlFile##*/}文件中deploy[${l_index}].k8s.${l_activeProfile}.apiServer参数缺失或未配置值"
   # shellcheck disable=SC2206
-  l_array=(${gDefaultRetVal})
-  l_chartFile="${l_array[0]}"
-  if [ "${#l_array[@]}" -gt 1 ];then
-    l_settingFile="${l_array[1]}"
-    #从文件中读取参数设置值对。
-    # shellcheck disable=SC2002
-    l_settingParams=$(cat "${l_settingFile}")
-    l_settingParams="${l_settingParams%,*}"
-  fi
+  l_apiServers=(${gDefaultRetVal})
+  ((l_apiServerIndex = 0))
+  # shellcheck disable=SC2068
+  for l_apiServer in ${l_apiServers[@]};do
+    #确定命名空间
+    l_namespace="${l_namespaces[${l_apiServerIndex}]}"
+    [[ "${l_apiServerIndex}" -ge "${l_namespaceCount}" ]] && l_namespace="${l_namespaces[l_maxIndex]}"
 
-  #自定义Helm命令行中set参数扩展
-  invokeExtendPointFunc "onCustomizedSetParamsBeforeHelmInstall" "自定义Helm命令行中set参数扩展" \
-    "${gCiCdYamlFile}" "${l_index}" "${l_activeProfile}"
-  if [[ "${gShellExecuteResult}" == "true" && ${gDefaultRetVal} != "null" ]];then
-    l_customizedSetParams="${gDefaultRetVal}"
-  fi
+    # shellcheck disable=SC2206
+    l_array=(${l_apiServer//\|/ })
+    l_ip="${l_array[0]}"
+    l_port="${l_array[1]}"
+    l_account="${l_array[2]}"
 
-  if [ "${l_customizedSetParams}" ];then
-    l_settingParams="${l_settingParams},${l_customizedSetParams}"
-    l_settingParams="${l_settingParams:1}"
-  fi
+    info "查找Chart镜像文件和其对应的setting.conf文件..."
+    findChartImage "${l_chartName}" "${l_chartVersion}"
+    [[ ! "${gDefaultRetVal}" ]] && error "失败"
+    # shellcheck disable=SC2206
+    l_array=(${gDefaultRetVal})
+    l_chartFile="${l_array[0]}"
+    if [ "${#l_array[@]}" -gt 1 ];then
+      l_settingFile="${l_array[1]}"
+      #从文件中读取参数设置值对。
+      # shellcheck disable=SC2002
+      l_settingParams=$(cat "${l_settingFile}")
+      l_settingParams="${l_settingParams%,*}"
+    fi
 
-  info "获取服务器上~/.kube/config文件的内容"
-  ssh -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
+    #自定义Helm命令行中set参数扩展
+    invokeExtendPointFunc "onCustomizedSetParamsBeforeHelmInstall" "自定义Helm命令行中set参数扩展" \
+      "${gCiCdYamlFile}" "${l_index}" "${l_activeProfile}"
+    if [[ "${gShellExecuteResult}" == "true" && ${gDefaultRetVal} != "null" ]];then
+      l_customizedSetParams="${gDefaultRetVal}"
+    fi
 
-  info "先尝试卸载正在运行的${l_chartName}服务"
-  l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
-  l_errorLog=$(echo -e "${l_content}" | grep -ioP "^(.*)Error:(.*)$")
-  if [ "${l_errorLog}" ];then
-    warn "未找到正在运行的${l_chartName}服务:${l_errorLog}"
-  else
-    info "${l_chartName}服务卸载成功:\n${l_content}"
-  fi
+    if [ "${l_customizedSetParams}" ];then
+      l_settingParams="${l_settingParams},${l_customizedSetParams}"
+      l_settingParams="${l_settingParams:1}"
+    fi
 
-  if [ "${l_settingParams}" ];then
-    info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
-    l_content=$(helm install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" 2>&1)
-  else
-    info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config"
-    l_content=$(helm install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
-  fi
+    info "获取服务器上~/.kube/config文件的内容"
+    ssh -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
 
-  l_errorLog=$(echo -e "${l_content}" | grep -ioP "^(.*)Error:(.*)$")
-  if [ "${l_errorLog}" ];then
-    error "${l_chartName}服务安装失败:\n${l_content}"
-  else
-    info "${l_chartName}服务安装成功:\n${l_content}"
-  fi
+    info "先尝试卸载正在运行的${l_chartName}服务"
+    l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
+    l_errorLog=$(echo -e "${l_content}" | grep -ioP "^(.*)Error:(.*)$")
+    if [ "${l_errorLog}" ];then
+      warn "未找到正在运行的${l_chartName}服务:${l_errorLog}"
+    else
+      info "${l_chartName}服务卸载成功:\n${l_content}"
+    fi
+
+    if [ "${l_settingParams}" ];then
+      info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
+      l_content=$(helm install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" 2>&1)
+    else
+      info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config"
+      l_content=$(helm install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
+    fi
+
+    l_errorLog=$(echo -e "${l_content}" | grep -ioP "^(.*)Error:(.*)$")
+    if [ "${l_errorLog}" ];then
+      error "${l_chartName}服务安装失败:\n${l_content}"
+    else
+      info "${l_chartName}服务安装成功:\n${l_content}"
+    fi
+
+    ((l_apiServerIndex = l_apiServerIndex + 1))
+  done
 }
 
 function findChartImage() {

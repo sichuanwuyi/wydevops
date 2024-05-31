@@ -9,7 +9,9 @@ params:
       requests:
         cpu: "500m"
         memory: "500Mi"
-deployment0: 
+  application-prod.yml: |
+deployment0:
   name: http
   protocol: TCP
   containerPort: 9090,9091,9092,9093
+

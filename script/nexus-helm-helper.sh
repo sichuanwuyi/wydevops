@@ -43,6 +43,8 @@ function pullChartImage() {
   local l_repoAliasName=$3
   local l_destination=$4
 
+  local l_errorLog
+
   if [ ! -d "${l_destination}" ];then
     mkdir -p "${l_destination}"
   fi
@@ -53,6 +55,9 @@ function pullChartImage() {
 
   #拉取Chart镜像
   echo "helm pull ${l_repoAliasName}/${l_chartName} --destination ${l_destination} --version ${l_chartVersion}"
-  helm pull "${l_repoAliasName}/${l_chartName}" --destination "${l_destination}" --version "${l_chartVersion}"
-
+  l_errorLog=$(helm pull "${l_repoAliasName}/${l_chartName}" --destination "${l_destination}" --version "${l_chartVersion}" 2>&1)
+  l_errorLog=$(echo -e "${l_errorLog}" | grep -ioP "^(.*)(Error|failed)(.*)$")
+  if [ "${l_errorLog}" ];then
+    error "从${l_repoAliasName}镜像仓库拉取Chart镜像失败:${l_errorLog}"
+  fi
 }

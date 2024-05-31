@@ -252,17 +252,6 @@ function _initGlobalParams() {
   export gBuildScriptRootDir
   export gDockerTemplateDir
 
-  export gHelmBuildDirName
-  export gHelmBuildDir
-  export gHelmBuildOutDirName
-  export gHelmBuildOutDir
-  export gDockerBuildDirName
-  export gDockerBuildDir
-  export gChartBuildDirName
-  export gChartBuildDir
-  export gTempFileDirName
-  export gTempFileDir
-
   export gBuildType
 
   local l_templateFile
@@ -349,6 +338,23 @@ function _initGlobalParams() {
   gDockerTemplateDir="${gBuildScriptRootDir}/templates/docker"
   info "初始化docker模板文件的路径:${gDockerTemplateDir}"
 
+  #清理并创建需要的全局目录
+  _createGlobalDirectory
+}
+
+function _createGlobalDirectory() {
+  export gBuildPath
+  export gHelmBuildDirName
+  export gHelmBuildDir
+  export gHelmBuildOutDirName
+  export gHelmBuildOutDir
+  export gDockerBuildDirName
+  export gDockerBuildDir
+  export gChartBuildDirName
+  export gChartBuildDir
+  export gTempFileDirName
+  export gTempFileDir
+
   gHelmBuildDir="${gBuildPath}/${gHelmBuildDirName}"
   info "初始化构建主目录:${gHelmBuildDir}"
   if [[ ! -d "${gHelmBuildDir}" ]];then
@@ -375,17 +381,59 @@ function _initGlobalParams() {
   info "初始化chart镜像构建目录:${gChartBuildDir}"
   mkdir -p "${gChartBuildDir}"
 
-  if [ "${gTempFileDir}" ];then
-    #如果不为空，则删除该临时目录。
-    # shellcheck disable=SC2115
-    rm -rf "${gTempFileDir}/"
-  fi
   gTempFileDir="${gBuildPath}/${gTempFileDirName}"
-  if [[ -d "${gTempFileDir}" ]];then
+  if [ -d "${gTempFileDir}" ];then
+    #如果不为空，则删除该临时目录。
     rm -rf "${gTempFileDir:?}"
   fi
   info "初始化临时文件存储目录:${gTempFileDir}"
   mkdir -p "${gTempFileDir}"
+
+}
+
+function _checkGlobalDirectory() {
+  export gBuildPath
+  export gHelmBuildDirName
+  export gHelmBuildDir
+  export gHelmBuildOutDirName
+  export gHelmBuildOutDir
+  export gDockerBuildDirName
+  export gDockerBuildDir
+  export gChartBuildDirName
+  export gChartBuildDir
+  export gTempFileDirName
+  export gTempFileDir
+
+  gHelmBuildDir="${gBuildPath}/${gHelmBuildDirName}"
+  info "初始化构建主目录:${gHelmBuildDir}"
+  if [[ ! -d "${gHelmBuildDir}" ]];then
+    mkdir -p "${gHelmBuildDir}"
+  fi
+
+  gHelmBuildOutDir="${gHelmBuildDir}/${gHelmBuildOutDirName}"
+  if [[ ! -d "${gHelmBuildDir}" ]];then
+    info "初始化构建输出目录:${gHelmBuildOutDir}"
+    mkdir -p "${gHelmBuildOutDir}"
+  fi
+
+  gDockerBuildDir="${gHelmBuildDir}/${gDockerBuildDirName}"
+  if [[ ! -d "${gDockerBuildDir}" ]];then
+    info "初始化docker镜像构建目录:${gDockerBuildDir}"
+    mkdir -p "${gDockerBuildDir}"
+  fi
+
+  gChartBuildDir="${gHelmBuildDir}/${gChartBuildDirName}"
+  if [[ ! -d "${gChartBuildDir}" ]];then
+    info "初始化chart镜像构建目录:${gChartBuildDir}"
+    mkdir -p "${gChartBuildDir}"
+  fi
+
+  gTempFileDir="${gBuildPath}/${gTempFileDirName}"
+  if [ ! -d "${gTempFileDir}" ];then
+    info "初始化临时文件存储目录:${gTempFileDir}"
+    mkdir -p "${gTempFileDir}"
+  fi
+
 }
 
 function _onAfterInitGlobalParams(){
@@ -576,7 +624,6 @@ function _replaceParamPlaceholder() {
 
   #清除内存中缓存的文件内容。
   clearCachedFileContent "${l_cicdYaml}"
-
 }
 
 #从ci-cd.yaml文件初始化全局变量的值。

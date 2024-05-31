@@ -214,6 +214,7 @@ chart:
         #指明引用的外部Chart镜像名称。如果是带路径的名称，则直接使用，否则会尝试从Chart仓库拉取镜像。
         #这个参数主要用来支持单pod多服务的Chart打包方式。wydevops会将外部chart镜像中deployment[0]的
         #initialContainers和containers合并到当前chart中。
+        #支持设置多个chart镜像，相互间使用英文逗号隔开。
         #默认情况下应设置为空。
         refExternalChart:
         #配置chart镜像中需要发布的服务的类型：Deployment、DaemonSet、StatefulSet。
@@ -398,7 +399,7 @@ deploy:
       - name: .Values.params.deployment0.mysql.active
         value: true
       - name: .Values.params.deployment0.mysql.host
-        value: 192.168.31.214
+        value: 192.168.1.214
       - name: .Values.params.deployment0.mysql.port
         value: 3307
       - name: .Values.params.deployment0.mysql.username
@@ -407,7 +408,7 @@ deploy:
         value: 123456
       #redis相关参数
       - name: .Values.params.deployment0.redis.host
-        value: 192.168.31.214
+        value: 192.168.1.214
       - name: .Values.params.deployment0.redis.port
         value: 6379
       - name: .Values.params.deployment0.redis.timeout

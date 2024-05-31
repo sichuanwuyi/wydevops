@@ -15,8 +15,6 @@ export gEnableCache="true"
 #定义测试文件名称。
 tmpFile="${_selfRootDir}test/test.yaml"
 tmpFile1="${_selfRootDir}test/ci-cd.yaml"
-tmpFile2="${_selfRootDir}test/values1.yaml"
-tmpFile3="${_selfRootDir}test/values.yaml"
 
 function readAndWriteKVPair() {
   local testName=$1
@@ -105,6 +103,9 @@ rm -f "${tmpFile}"
 #
 #readAndWriteList "列表项读写"
 
-#helm uninstall devops-test -n develop --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config
+helm uninstall devops-test -n develop --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config
+helm uninstall devops-test1 -n develop --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config
+helm uninstall atom-hardware-manager -n develop --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config
 
-combine "${tmpFile2}" "${tmpFile3}" "deployment0.gatewayRoute.routes" "deployment0.gatewayRoute.routes" "true" "false"
+#更新行的内容。
+sed -i "12c\\  application-prod.yml: |" "${tmpFile1}"
