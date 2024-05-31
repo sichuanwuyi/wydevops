@@ -212,6 +212,11 @@ chart:
     # serviceAccount.yaml、hpa.yaml等配置文件
     deployments:
       - name: ${serviceName}
+        #指明引用的外部Chart镜像名称。如果是带路径的名称，则直接使用，否则会尝试从Chart仓库拉取镜像。
+        #这个参数主要用来支持单pod多服务的Chart打包方式。wydevops会将外部chart镜像中deployment[0]的
+        #initialContainers和containers合并到当前chart中。
+        #默认情况下应设置为空。
+        refExternalChart:
         #配置chart镜像中需要发布的服务的类型：Deployment、DaemonSet、StatefulSet。
         kind: Deployment
         replicaCount: 1

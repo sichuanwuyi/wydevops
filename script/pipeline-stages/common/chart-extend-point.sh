@@ -228,6 +228,7 @@ function onModifyingValuesYaml_ex(){
   export gDefaultRetVal
   export gDockerRepoName
   export gFileContentMap
+  export gBuildPath
 
   local l_chartPath=$1
 
@@ -240,6 +241,7 @@ function onModifyingValuesYaml_ex(){
   local l_key
   local l_serviceName
   local l_chartName
+  local l_externalChartImage
 
   local l_createGatewayRoute
   local l_createK8sService
@@ -288,6 +290,21 @@ function onModifyingValuesYaml_ex(){
     #将l_paramNameList中的params参数配并到values.yaml文件的params配置节中。
     invokeExtendPointFunc "combineParamsToValuesYaml" "为values.yaml文件追加params配置扩展" "${l_valuesYaml}" "${gDefaultRetVal}" "${l_chartName}"
     #deleteParam "${l_valuesYaml}" "${l_key}.configMaps"
+
+    #检查并插入应用的外部镜像中的容器。
+    readParam "${l_valuesYaml}" "${l_key}.refExternalChart"
+    if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
+
+      l_externalChartImage="${gDefaultRetVal}"
+      if [[ "${l_externalChartImage}" =~ ^(\./) ]];then
+        l_externalChartImage="${gBuildPath}${l_externalChartImage:1}"
+      fi
+
+      info "正在处理外部Chart镜像引用：${l_externalChartImage}"
+      #将外部Chart镜像中values.yaml文件中的params.deployment0配置节复制到l_valuesYaml文件中。
+      #并将外部chart镜像中deployment[0]的initialContainers和containers合并到当前chart的deployment0中。
+      invokeExtendChain "onProcessExternalChart" "${l_valuesYaml}" "${l_externalChartImage}" "${l_i}"
+    fi
 
     if [ "${l_createGatewayRoute}" == "true" ];then
       #创建K8s相关的网关配置。

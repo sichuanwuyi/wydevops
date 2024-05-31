@@ -304,19 +304,19 @@ function _initGlobalParams() {
       if [ -f "${l_tmpCiCdConfigFile}" ];then
         info "检测到系统中配置有${gLanguage}语言级_ci-cd-config.yaml配置文件"
         info "先将ci-cd-config.yaml文件内容合并到_ci-cd-config.yaml文件中"
-        combine "${l_ciCdConfigFile}" "${l_tmpCiCdConfigFile}" "" "false" "true" "true"
+        combine "${l_ciCdConfigFile}" "${l_tmpCiCdConfigFile}" "" "" "false" "true" "true"
         echo -e "\n"
         info "再将_ci-cd-config.yaml文件内容合并到_ci-cd-template.yaml文件中"
-        combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "false" "true"
+        combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "" "false" "true"
       else
         warn "系统中未检测到${gLanguage}语言级_ci-cd-config.yaml配置文件"
         info "直接将ci-cd-config.yaml配置文件的内容合并到_ci-cd-template.yaml文件中"
-        combine "${l_ciCdConfigFile}" "${l_templateFile}" "" "false" "true"
+        combine "${l_ciCdConfigFile}" "${l_templateFile}" "" "" "false" "true"
       fi
     elif [ -f "${l_tmpCiCdConfigFile}" ];then
       info "检测到系统中配置有${gLanguage}语言级_ci-cd-config.yaml配置文件"
       info "直接将_ci-cd-config.yaml配置文件的内容合并到_ci-cd-template.yaml文件中"
-      combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "true" "true"
+      combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "" "true" "true"
     fi
 
     #删除临时文件

@@ -48,8 +48,11 @@ function pullChartImage() {
   fi
 
   #更新本地库
+  echo "helm repo update"
   helm repo update
+
   #拉取Chart镜像
+  echo "helm pull ${l_repoAliasName}/${l_chartName} --destination ${l_destination} --version ${l_chartVersion}"
   helm pull "${l_repoAliasName}/${l_chartName}" --destination "${l_destination}" --version "${l_chartVersion}"
 
 }

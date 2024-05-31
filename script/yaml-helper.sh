@@ -187,6 +187,24 @@ function getListIndexByPropertyName() {
   gDefaultRetVal="${l_index} ${l_lineCount}"
 }
 
+function getListLength(){
+  export gDefaultRetVal
+
+  local l_yamlFile=$1
+  local l_paramPath=$2
+
+  local l_lineCount
+
+  readParam "${l_yamlFile}" "${l_paramPath}"
+  if [ "${gDefaultRetVal}" == "null" ];then
+    gDefaultRetVal="-1"
+    return
+  fi
+
+  l_lineCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\-)" | wc -l)
+  gDefaultRetVal="${l_lineCount}"
+}
+
 #将l_srcYamlFile文件中的配置合并到l_targetYamlFile文件中。
 #如果l_targetYamlFile文件中不存在相同路径的参数，则输出告警信息或报错退出。
 function combine(){
@@ -195,10 +213,11 @@ function combine(){
   local l_srcYamlFile=$1
   local l_targetYamlFile=$2
   local l_srcParamPath=$3
-  local l_allowInsertNewListItem=$4
-  local l_exitOnFailure=$5
+  local l_targetParamPath=$4
+  local l_allowInsertNewListItem=$5
+  local l_exitOnFailure=$6
   #当列表项中存在特殊的"- !"项时，l_cascadeDelete为true表示：需要将这项也同时赋值到目标文件中
-  local l_cascadeDelete=$6
+  local l_cascadeDelete=$7
 
   local l_srcContent
   local l_saveBackStatus

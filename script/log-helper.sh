@@ -47,6 +47,8 @@ function info() {
 }
 
 function error() {
+  export gTempFileRegTables
+
   #需要输出的信息
   local l_info=$1
   #echo语句的可选项。
@@ -69,6 +71,7 @@ function error() {
   #清除注册的临时文件。
   # shellcheck disable=SC2068
   for l_tempFile in ${gTempFileRegTables[@]};do
+    info "退出前清除已注册的临时文件:${l_tempFile##*/}"
     rm -f "${l_tempFile}"
   done
 
@@ -82,13 +85,15 @@ function error() {
 function registerTempFile(){
   export gTempFileRegTables
   local l_tmpFile=$1
+  info "注册后续需要删除的临时文件:${l_tmpFile##*/}"
   gTempFileRegTables["${l_tmpFile##*/}"]="${l_tmpFile}"
 }
 
 function unregisterTempFile(){
   export gTempFileRegTables
   local l_tmpFile=$1
-  if [ "${l_tmpFile}" ];then
+  if [ -f "${l_tmpFile}" ];then
+    info "删除注册的文件${l_tmpFile##*/}"
     rm -f "${l_tmpFile}"
     unset gTempFileRegTables["${l_tmpFile##*/}"]
   fi
