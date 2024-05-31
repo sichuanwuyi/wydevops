@@ -294,7 +294,7 @@ function onModifyingValuesYaml_ex(){
     #deleteParam "${l_valuesYaml}" "${l_key}.configMaps"
 
     #检查并插入应用的外部镜像中的容器。
-    readParam "${l_valuesYaml}" "${l_key}.refExternalChart"
+    readParam "${l_valuesYaml}" "${l_key}.refExternalCharts"
     if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
       # shellcheck disable=SC2206
       l_externalChartImages=(${gDefaultRetVal//,/ })

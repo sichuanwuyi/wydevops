@@ -217,7 +217,7 @@ chart:
         #initialContainers和containers合并到当前chart中。
         #支持设置多个chart镜像，相互间使用英文逗号隔开。
         #默认情况下应设置为空。
-        refExternalChart:
+        refExternalCharts:
         #配置chart镜像中需要发布的服务的类型：Deployment、DaemonSet、StatefulSet。
         kind: Deployment
         replicaCount: 1
