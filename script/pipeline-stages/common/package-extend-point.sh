@@ -297,7 +297,7 @@ function handleBuildingSingleImageForPackage_ex() {
     for (( l_j=0; l_j < l_arrayLen; l_j++ )) do
       #如果是单镜像打包模式，则需要移除可能存在的业务镜像和基础镜像。
       if [ "${gBuildType}" == "single" ];then
-        l_flag=$(echo "${l_images[${l_j}]}" | grep -ioP "^([ ]*)${l_serviceName//-/\-}(\-base|\-business)*:" )
+        l_flag=$(echo -e "${l_images[${l_j}]}" | grep -ioP "^([ ]*)${l_serviceName//-/\-}(\-base|\-business)*:" )
         if [ "${l_flag}" ];then
           debug "从package[${l_i}].images参数值中移除${l_images[${l_j}]}镜像"
           #是基础镜像，则直接跳过。

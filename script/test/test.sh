@@ -106,6 +106,3 @@ rm -f "${tmpFile}"
 helm uninstall devops-test -n develop --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config
 helm uninstall devops-test1 -n develop --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config
 helm uninstall atom-hardware-manager -n develop --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config
-
-#更新行的内容。
-sed -i "12c\\  application-prod.yml: |" "${tmpFile1}"

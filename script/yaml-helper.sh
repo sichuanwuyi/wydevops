@@ -167,6 +167,7 @@ function getListIndexByPropertyName() {
   local l_paramPath=$2
   local l_paramName=$3
   local l_paramValue=$4
+  local l_returnItemCount=$5
 
   local l_lineCount
   local l_i
@@ -191,7 +192,11 @@ function getListIndexByPropertyName() {
     done
   fi
 
-  gDefaultRetVal="${l_index} ${l_lineCount}"
+  if [[ "${l_returnItemCount}" && "${l_returnItemCount}" == "true" ]];then
+    gDefaultRetVal="${l_index} ${l_lineCount}"
+  else
+    gDefaultRetVal="${l_index}"
+  fi
 }
 
 function getListLength(){
@@ -801,6 +806,7 @@ function __readOrWriteYamlFile() {
           #将内存中的文件内容一次性回写到文件中
           echo -e "${_yamlFileContent}" > "${l_yamlFile}"
         fi
+
         #如果l_addTotalLineCount大于0，则要在返回的新增行数参数(l_array[3])中加上l_addTotalLineCount的数量。
         if [[ "${l_addTotalLineCount}" -gt 0 ]];then
           #如果最后一次新增的列表项数量大于0。则先要减去1避免重复计算内容占据的第一行。

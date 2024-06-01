@@ -169,6 +169,9 @@ function initialGlobalParamsForDockerStage_ex(){
   local l_params
   local l_param
 
+  #先清除内存中缓存的旧的文件内容,确保以下读取操作读到的都是最新内容
+  clearCachedFileContent "${l_cicdYaml}"
+
   if [ ! "${gBuildType}" ];then
     readParam "${l_cicdYaml}" "docker.buildType"
     gBuildType="${gDefaultRetVal}"
@@ -206,14 +209,14 @@ function initialGlobalParamsForDockerStage_ex(){
     readParam "${l_cicdYaml}" "docker.timeZone"
     gTimeZone="${gDefaultRetVal}"
     info "读取参数docker.timeZone的值:${gTimeZone}"
-
+    # shellcheck disable=SC2028
     l_typeNames=("business" "base")
     l_params=("name" "version" "fromImage")
     # shellcheck disable=SC2068
     for l_typeName in ${l_typeNames[@]};do
       for l_param in ${l_params[@]};do
         readParam "${l_cicdYaml}" "docker.${l_typeName}.${l_param}"
-        eval "gTargetDocker${l_param^}_${l_typeName}=\"${gDefaultRetVal}\""
+        eval "export gTargetDocker${l_param^}_${l_typeName}=\"${gDefaultRetVal}\""
         eval "info \"读取参数docker.${l_typeName}.${l_param}的值(gTargetDocker${l_param^}_${l_typeName}):\${gTargetDocker${l_param^}_${l_typeName}}\""
       done
     done
@@ -425,6 +428,7 @@ function onAfterCreatingDockerImage_ex(){
 function handleBuildingSingleImageForDocker_ex() {
   export gDefaultRetVal
   export gCiCdYamlFile
+  export gBuildType
 
   local l_paramArray
   local l_paramItem
@@ -432,14 +436,22 @@ function handleBuildingSingleImageForDocker_ex() {
   local l_paramName1
   local l_paramValue
 
-  l_paramArray=("docker.base.name|globalParams.serviceName" "docker.base.version|globalParams.businessVersion" )
+  l_paramArray=("docker.base.name|globalParams.serviceName" \
+    "docker.base.version|globalParams.businessVersion" )
   # shellcheck disable=SC2068
   for l_paramItem in ${l_paramArray[@]};do
     l_paramName="${l_paramItem%%|*}"
     l_paramName1="${l_paramItem#*|}"
-    readParam "${gCiCdYamlFile}" "${l_paramName1}"
-    [[ "${gDefaultRetVal}" == "null" ]] && error "读取${gCiCdYamlFile##*/}文件中${l_paramName1}参数失败"
-    l_paramValue="${gDefaultRetVal}"
+
+    if [[ "${l_paramName1}" =~ ^(globalParams\.) ]];then
+      readParam "${gCiCdYamlFile}" "${l_paramName1}"
+      [[ "${gDefaultRetVal}" == "null" ]] && error "读取${gCiCdYamlFile##*/}文件中${l_paramName1}参数失败"
+      l_paramValue="${gDefaultRetVal}"
+    else
+      #直接将l_paramName1作为参数值。
+      l_paramValue="${l_paramName1}"
+    fi
+
     updateParam "${gCiCdYamlFile}" "${l_paramName}" "${l_paramValue}"
     if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
       error "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数失败"
@@ -447,6 +459,7 @@ function handleBuildingSingleImageForDocker_ex() {
       info "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数的值为:${l_paramValue}"
     fi
   done
+
 }
 
 #**********************私有方法-开始***************************#

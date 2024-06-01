@@ -21,12 +21,7 @@ function _createCiCdConfigFile_ex() {
   local l_templateFile=$1
   local l_tmpCiCdConfigFile=$2
 
-
   local l_tmpFile
-
-  declare -A _configFileMap
-  declare -A _javaYamlParamMap
-  declare -A _javaPomParamMap
 
   l_tmpFile="${l_tmpCiCdConfigFile}"
   [[ ! -f "${l_tmpCiCdConfigFile}" ]] && l_tmpFile="${l_templateFile}"

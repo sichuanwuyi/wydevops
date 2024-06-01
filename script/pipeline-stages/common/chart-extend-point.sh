@@ -294,7 +294,7 @@ function onModifyingValuesYaml_ex(){
     #deleteParam "${l_valuesYaml}" "${l_key}.configMaps"
 
     #检查并插入应用的外部镜像中的容器。
-    readParam "${l_valuesYaml}" "${l_key}.refExternalCharts"
+    readParam "${l_valuesYaml}" "${l_key}.refExternalContainers"
     if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
       # shellcheck disable=SC2206
       l_externalChartImages=(${gDefaultRetVal//,/ })
@@ -303,7 +303,7 @@ function onModifyingValuesYaml_ex(){
         if [[ "${l_externalChartImage}" =~ ^(\./) ]];then
           l_externalChartImage="${gBuildPath}${l_externalChartImage:1}"
         fi
-        info "正在处理外部Chart镜像引用：${l_externalChartImage}"
+        info "正在处理引用的外部Chart镜像中的容器：${l_externalChartImage}"
         #将外部Chart镜像中values.yaml文件中的params.deployment0配置节复制到l_valuesYaml文件中。
         #并将外部chart镜像中deployment[0]的initialContainers和containers合并到当前chart的deployment0中。
         invokeExtendChain "onProcessExternalChart" "${l_valuesYaml}" "${l_externalChartImage}" "${l_i}"
@@ -499,7 +499,7 @@ function combineParamsToValuesYaml_ex() {
   info "根据chart打包项的名称，获取该chart镜像对应的部署配置节的序号(用于后续读取参数的初始化值) ..." "-n"
   #根据l_chartName获取打包名。
   getListIndexByPropertyName "${gCiCdYamlFile}" "package" "chartName" "${l_chartName}"
-  if [[ ! "${gDefaultRetVal}" =~ ^(\-1) ]];then
+  if [ "${gDefaultRetVal}" -ge 0 ];then
     # shellcheck disable=SC2206
     l_array=(${gDefaultRetVal})
     #获取打包名称
@@ -510,8 +510,7 @@ function combineParamsToValuesYaml_ex() {
       getListIndexByPropertyName "${gCiCdYamlFile}" "deploy" "packageName" "${l_packageName}"
       #获得l_chartName对应的部署配置项的序号，根据这个序号读取各个参数的默认配置值。
       # shellcheck disable=SC2206
-      l_array=(${gDefaultRetVal})
-      l_index="${l_array[0]}"
+      l_index="${gDefaultRetVal}"
     fi
   fi
 
@@ -959,6 +958,7 @@ function handleBuildingSingleImageForChart_ex() {
   local l_i
   local l_j
   local l_k
+  local l_array
   local l_paramArray
   local l_paramItem
   local l_paramName
@@ -982,44 +982,66 @@ function handleBuildingSingleImageForChart_ex() {
         readParam "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].name"
         [[ "${gDefaultRetVal}" == "null" ]] && break
         if [ "${gDefaultRetVal}" == "${gServiceName}" ];then
-          ((l_k = 0))
-          while true; do
-            readParam "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].initContainers[${l_k}].name"
-            [[ "${gDefaultRetVal}" == "null" ]] && break
-            if [ "${gDefaultRetVal}" == "${gServiceName}-business" ];then
-              l_param="chart[${l_i}].deployments[${l_j}].initContainers[${l_k}]"
-              deleteParam "${gCiCdYamlFile}" "${l_param}"
+
+          #删除volumes中的${gServiceName}-workdir目录挂载配置
+          getListIndexByPropertyName "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].volumes" "name" "${gServiceName}-workdir"
+          if [ "${gDefaultRetVal}" -ge 0 ];then
+            l_k="${gDefaultRetVal}"
+            l_param="chart[${l_i}].deployments[${l_j}].volumes[${l_k}]"
+            deleteParam "${gCiCdYamlFile}" "${l_param}"
+            if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
+              error "删除${gCiCdYamlFile##*/}文件中${l_param}配置项失败"
+            else
+              info "成功删除${gCiCdYamlFile##*/}文件中${l_param}配置项"
+            fi
+          fi
+
+          #删除initContainers中的业务镜像配置。
+          getListIndexByPropertyName "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].initContainers" "name" "${gServiceName}-business"
+          if [ "${gDefaultRetVal}" -ge 0 ];then
+            l_param="chart[${l_i}].deployments[${l_j}].initContainers[${gDefaultRetVal}]"
+            deleteParam "${gCiCdYamlFile}" "${l_param}"
+            if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
+              error "删除${gCiCdYamlFile##*/}文件中${l_param}配置项失败"
+            else
+              info "成功删除${gCiCdYamlFile##*/}文件中${l_param}配置项"
+            fi
+          fi
+
+          #对containers中name为${gServiceName}-base的配置项进行修正。
+          getListIndexByPropertyName "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].containers" "name" "${gServiceName}-base"
+          if [ "${gDefaultRetVal}" -ge 0 ];then
+            l_k="${gDefaultRetVal}"
+            l_param="chart[${l_i}].deployments[${l_j}].containers[${l_k}]"
+
+            #对当前container中docker镜像相关的参数进行修正。
+            l_paramArray=("name|${gServiceName}" "repository|${gServiceName}" "tag|${l_businessVersion}")
+            # shellcheck disable=SC2068
+            for l_paramItem in ${l_paramArray[@]};do
+              l_paramName="${l_paramItem%%|*}"
+              l_paramValue="${l_paramItem#*|}"
+              l_paramName="${l_param}.${l_paramName}"
+              updateParam "${gCiCdYamlFile}" "${l_paramName}" "${l_paramValue}"
               if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-                error "删除${gCiCdYamlFile##*/}文件中${l_param}参数失败"
+                error "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数失败"
               else
-                info "成功删除${gCiCdYamlFile##*/}文件中${l_param}配置项"
+                info "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数值为：${l_paramValue}"
               fi
-              break
+            done
+
+            #删除当前container中的name属性为${gServiceName}-workdir的volumeMounts列表项。
+            getListIndexByPropertyName "${gCiCdYamlFile}" "${l_param}.volumeMounts" "name" "${gServiceName}-workdir"
+            if [ "${gDefaultRetVal}" -ge 0 ];then
+              l_k="${gDefaultRetVal}"
+              deleteParam "${gCiCdYamlFile}" "${l_param}.volumeMounts[${gDefaultRetVal}]"
+              if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
+                error "删除${gCiCdYamlFile##*/}文件中${l_param}.volumeMounts[${l_k}]配置项失败"
+              else
+                info "成功删除${gCiCdYamlFile##*/}文件中${l_param}.volumeMounts[${l_k}]配置项"
+              fi
             fi
-            ((l_k = l_k + 1))
-          done
-          ((l_k = 0))
-          while true; do
-            readParam "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].containers[${l_k}].name"
-            [[ "${gDefaultRetVal}" == "null" ]] && break
-            if [ "${gDefaultRetVal}" == "${gServiceName}-base" ];then
-              l_paramArray=("name|${gServiceName}" "repository|${gServiceName}" "tag|${l_businessVersion}")
-              # shellcheck disable=SC2068
-              for l_paramItem in ${l_paramArray[@]};do
-                l_paramName="${l_paramItem%%|*}"
-                l_paramValue="${l_paramItem#*|}"
-                l_paramName="chart[${l_i}].deployments[${l_j}].containers[${l_k}].${l_paramName}"
-                updateParam "${gCiCdYamlFile}" "${l_paramName}" "${l_paramValue}"
-                if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-                  error "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数失败"
-                else
-                  info "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数值为：${l_paramValue}"
-                fi
-              done
-              break
-            fi
-            ((l_k = l_k + 1))
-          done
+          fi
+
         fi
         ((l_j = l_j + 1))
       done

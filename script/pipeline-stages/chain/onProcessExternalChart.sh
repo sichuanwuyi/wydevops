@@ -31,9 +31,9 @@ function onProcessExternalChart_default() {
 
     [[ ! "${gChartRepoName}" ]] && \
       error "没有配置Chart镜像仓库，无法拉取${l_externalChartImage}镜像。请指定Chart镜像仓库或${l_externalChartImage}镜像文件所在的本地路径。"
-
-    l_chartName="${l_externalChartImage%:*}"
-    l_chartVersion="${l_externalChartImage##*:}"
+    l_chartVersion="${l_externalChartImage##*-}"
+    l_chartVersion="${l_chartVersion%.*}"
+    l_chartName="${l_externalChartImage%-*}"
     #拉取指定的chart镜像到gBuildPath目录中。
     pullChartImage "${l_chartName}" "${l_chartVersion}" "${gChartRepoAliasName}" "${gTempFileDir}"
     l_externalChartImage="${gTempFileDir}/${l_externalChartImage}"

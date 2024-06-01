@@ -13,17 +13,20 @@ function addHelmRepo() {
 
   local l_content
 
+  info "先尝试清除本地缓存中已经存在的${l_repoAliasName}仓库..." "-n"
+  l_content=$(helm repo remove "${l_repoAliasName}" 2>&1)
+  info "清除成功" "*"
+
+  info "再向本地缓存中添加${l_repoAliasName}仓库信息..." "-n"
   #如果指定了Chart仓库，则需要先登录Chart仓库，为后续Chart镜像推送做准备。
   l_content=$(helm repo add "${l_repoAliasName}" "http://${l_repoHostAndPort}/repository/${l_repoAliasName}/" --username "${l_account}" --password "${l_password}" 2>&1)
   l_content=$(echo "${l_content}" | grep -ioP "^.*(Error|failed).*$")
   if [ "${l_content}" ];then
-   l_content=$(echo "${l_content}" | grep -oP 'already exists')
-   if [ ! "${l_content}" ];then
-     error "执行命令(helm repo add ${l_repoAliasName} http://${l_account}:${l_password}@${l_repoHostAndPort}/repository/${l_repoAliasName}/)失败"
-   else
-     info "成功执行命令(helm repo add ${l_repoAliasName} http://${l_account}:${l_password}@${l_repoHostAndPort}/repository/${l_repoAliasName}/)"
-   fi
+    error "添加失败" "*"
+  else
+    info "添加成功" "*"
   fi
+
 }
 
 function pushChartImage() {

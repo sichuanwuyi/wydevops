@@ -20,6 +20,21 @@ function onBeforeReplaceParamPlaceholder_ex() {
   local l_placeholders
   local l_placeholder
 
+  info "根据构建类型对ci-cd.yaml文件中globalParams.baseWorkDir参数的值添加后缀"
+  l_paramName="globalParams.baseWorkDir"
+  readParam "${l_cicdYaml}" "${l_paramName}"
+  [[ "${gDefaultRetVal}" == "null" ]] && error "${l_cicdYaml##*/}文件中缺少${l_paramName}参数"
+
+  l_paramValue="${gDefaultRetVal}-double"
+  [[ "${gBuildType}" == "single" ]] && l_paramValue="${gDefaultRetVal}-single"
+
+  insertParam "${l_cicdYaml}" "${l_paramName}" "${l_paramValue}"
+  if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
+    error "更新${l_cicdYaml##*/}文件中${l_paramName}参数失败"
+  else
+    info "更新${l_cicdYaml##*/}文件中${l_paramName}参数的值为:${l_paramValue}"
+  fi
+
   info "将命令行接收的全局参数值写入配置文件中..."
   if [ "${gBuildType}" ];then
     #初始化gBuildType参数。
@@ -581,6 +596,9 @@ function _replaceParamPlaceholder() {
   l_content="${gDefaultRetVal}"
   stringToArray "${l_content}" "l_lines"
 
+  # shellcheck disable=SC2154
+  l_content="${gFileContentMap[${l_cicdYaml}]}"
+
   l_arrayLen="${#l_lines[@]}"
   for (( l_i = 0; l_i < l_arrayLen; l_i++ )); do
     l_line="${l_lines[${l_i}]}"
@@ -611,19 +629,21 @@ function _replaceParamPlaceholder() {
       done
     fi
     l_rowDataMap["${l_paramName}"]="${l_paramValue}"
-    #debug "---将${l_paramName}替换为${l_paramValue}"
+    info "---将${l_paramName}替换为${l_paramValue}"
     #替换文件中的占位符。
-    sed -i "s/\\\${${l_paramName}}/${l_paramValue}/g" "${l_cicdYaml}"
+    l_content=$(echo -e "${l_content}" | sed "s/\\\${${l_paramName}}/${l_paramValue}/g")
   done
 
+  #更新缓存内容。
+  gFileContentMap["${l_cicdYaml}"]="${l_content}"
+  #将内容回写到文件中。
+  clearCachedFileContent "${l_cicdYaml}"
+
   # shellcheck disable=SC2002
-  l_lines=$(cat "${l_cicdYaml}" | grep -oP "\\\$\{[a-zA-Z0-9_\-]+\}" | sort | uniq -c)
+  l_lines=$(echo -e "${l_content}" | grep -oP "\\\$\{[a-zA-Z0-9_\-]+\}" | sort | uniq -c)
   if [ "${lines}" ];then
     error "ci-cd.yaml文件中存在未明确配置的参数:\n${lines}"
   fi
-
-  #清除内存中缓存的文件内容。
-  clearCachedFileContent "${l_cicdYaml}"
 }
 
 #从ci-cd.yaml文件初始化全局变量的值。

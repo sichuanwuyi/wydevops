@@ -99,7 +99,7 @@ function registerTempFile(){
     unset gFileContentMap["${l_tmpFile}"]
   fi
 
-  info "注册后续需要删除的临时文件:${l_tmpFile##*/}"
+  info "注册退出前需要删除的临时文件:${l_tmpFile##*/}"
   gTempFileRegTables["${l_tmpFile##*/}"]="${l_tmpFile}"
 }
 
@@ -107,7 +107,7 @@ function unregisterTempFile(){
   export gTempFileRegTables
   local l_tmpFile=$1
   if [ -f "${l_tmpFile}" ];then
-    info "删除注册的文件${l_tmpFile##*/}"
+    info "删除注册的临时文件${l_tmpFile##*/}"
     rm -f "${l_tmpFile}"
     unset gTempFileRegTables["${l_tmpFile##*/}"]
     unset gFileContentMap["${l_tmpFile}"]

@@ -66,6 +66,10 @@ spec:
           command:
             {{- toYaml .command | nindent 12 }}
         {{- end }}
+        {{- if .volumeMounts }}
+          volumeMounts:
+            {{- toYaml .volumeMounts | nindent 12 }}
+        {{- end }}
       {{- end }}
       {{- end }}
       containers:

@@ -27,7 +27,11 @@ globalParams:
 
   buildType: _BUILD-TYPE_
   appDirInContainer: /usr/local/app
-  workDirInContainer: /app/${serviceName}
+  #默认值为"/app",可自定义。
+  #当构建类型为single时，脚本会自动在baseWorkDir值的后面添加"-single"后缀。
+  #其他构建类型时，脚本会自动在baseWorkDir值的后面添加"-double"后缀。
+  baseWorkDir: /app
+  workDirInContainer: ${baseWorkDir}/${serviceName}
   archTypes: linux/arm64,linux/amd64
 
   #需要生成的离线安装报的架构类型，多个架构间使用英文逗号隔离。
@@ -70,7 +74,7 @@ globalParams:
   #需要放到项目默认ConfigMap中的文本文件的相对路径列表，文件间使用英文逗号分隔
   configMapFiles: ./src/main/resources/config/application.yml,./src/main/resources/config/application-prod.yml
   #需要打包到离线安装包中镜像名称，格式：{镜像名称}:{镜像版本},...
-  packageImages: ${baseImage}:${baseVersion},${serviceName}:${businessVersion}
+  packageImages: ${baseImage}:${baseVersion},${serviceName}-business:${businessVersion}
 
   #对本服务的一个描述说明文本，会写入Chart镜像。
   description: "Java服务: ${serviceName}"
@@ -206,6 +210,10 @@ chart:
     createGatewayRoute: false
     #是否需要为项目创建K8S的Service资源配置
     createK8sService: true
+    #设置引用的外部服务的chart镜像。可以设置多个，相互间使用英文逗号分隔。
+    #这个参数实现了一个Chart镜像包含多个服务的发布方式。
+    #默认情况下应设置为空。
+    refExternalCharts:
     #以下deployments和params配置节参数对于自定义helm打包方式无意义。
     #配置chart镜像中需要发布的Deployment/DaemonSet/StatefulSet服务。
     #每一个配置项都会对应生成一套deployment.yaml、route.yaml、service.yaml、configMap.yaml
@@ -217,7 +225,7 @@ chart:
         #initialContainers和containers合并到当前chart中。
         #支持设置多个chart镜像，相互间使用英文逗号隔开。
         #默认情况下应设置为空。
-        refExternalCharts:
+        refExternalContainers:
         #配置chart镜像中需要发布的服务的类型：Deployment、DaemonSet、StatefulSet。
         kind: Deployment
         replicaCount: 1
@@ -243,6 +251,8 @@ chart:
           app.kubernetes.io/service-name: \"${name}\"
           app.kubernetes.io/service-en-name: \"${nameEn}\"
         volumes:
+          - name: ${serviceName}-workdir
+            emptyDir: {}
           - name: ${serviceName}-config
             configMap:
               defaultMode: 493
@@ -262,7 +272,10 @@ chart:
             command:
               - "sh"
               - "-c"
-              - "cp -rf ${appDirInContainer}/* ${workDirInContainer}"
+              - "mkdir -p ${workDirInContainer} && cp -rf ${appDirInContainer}/* ${workDirInContainer}"
+            volumeMounts:
+              - name: ${serviceName}-workdir
+                mountPath: ${baseWorkDir}
         #如果没有initContainers配置（即buildType=single），
         #则containers的第一个容器其名称默认应该等于服务名称。
         containers:
@@ -283,6 +296,8 @@ chart:
             # - name: SERVICE_PORT
             #   value: "80"
             volumeMounts:
+              - name: ${serviceName}-workdir
+                mountPath: ${baseWorkDir}
               - name: public-params
                 mountPath: /var/config
               - name: ${serviceName}-config
@@ -411,7 +426,7 @@ deploy:
       - name: .Values.params.deployment0.mysql.active
         value: true
       - name: .Values.params.deployment0.mysql.host
-        value: 192.168.1.214
+        value: 192.168.31.214
       - name: .Values.params.deployment0.mysql.port
         value: 3307
       - name: .Values.params.deployment0.mysql.username
@@ -420,7 +435,7 @@ deploy:
         value: 123456
       #redis相关参数
       - name: .Values.params.deployment0.redis.host
-        value: 192.168.1.214
+        value: 192.168.31.214
       - name: .Values.params.deployment0.redis.port
         value: 6379
       - name: .Values.params.deployment0.redis.timeout

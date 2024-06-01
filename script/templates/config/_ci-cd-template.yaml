@@ -27,6 +27,10 @@ globalParams:
 
   buildType: _BUILD-TYPE_
   appDirInContainer: _APP-DIR-IN-CONTAINER_
+  #默认值为"/app",可自定义。
+  #当构建类型为single时，脚本会自动在baseWorkDir值的后面添加"-single"后缀。
+  #其他构建类型时，脚本会自动在baseWorkDir值的后面添加"-double"后缀。
+  baseWorkDir: _BASE-WORK-DIR_
   workDirInContainer: _WORK-DIR-IN-CONTAINER_
   archTypes: _ARCH-TYPES_
 
@@ -192,6 +196,7 @@ docker:
 #每一项对应一个chart镜像打包配置；即同时可支持多个chart镜像的打包。
 #绝大多数项目只会存在一个chart镜像打包配置项。
 chart:
+    #列表项的唯一名称
   - name: ${chartName}
     version: ${chartVersion}
     appVersion: ${appVersion}
@@ -205,6 +210,10 @@ chart:
     createGatewayRoute: false
     #是否需要为项目创建K8S的Service资源配置
     createK8sService: true
+    #设置引用的外部服务的chart镜像。可以设置多个，相互间使用英文逗号分隔。
+    #这个参数实现了一个Chart镜像包含多个服务的发布方式。
+    #默认情况下应设置为空。
+    refExternalCharts:
     #以下deployments和params配置节参数对于自定义helm打包方式无意义。
     #配置chart镜像中需要发布的Deployment/DaemonSet/StatefulSet服务。
     #每一个配置项都会对应生成一套deployment.yaml、route.yaml、service.yaml、configMap.yaml
@@ -216,7 +225,7 @@ chart:
         #initialContainers和containers合并到当前chart中。
         #支持设置多个chart镜像，相互间使用英文逗号隔开。
         #默认情况下应设置为空。
-        refExternalCharts:
+        refExternalContainers:
         #配置chart镜像中需要发布的服务的类型：Deployment、DaemonSet、StatefulSet。
         kind: Deployment
         replicaCount: 1
@@ -242,6 +251,17 @@ chart:
           app.kubernetes.io/service-name: \"${name}\"
           app.kubernetes.io/service-en-name: \"${nameEn}\"
         volumes:
+          - name: ${serviceName}-workdir
+            emptyDir: {}
+          - name: ${serviceName}-config
+            configMap:
+              defaultMode: 493
+              name: ${serviceName}-configmap
+              optional: false
+          - name: public-params
+            configMap:
+              name: public-configs
+              optional: true
         #initContainers的第一个容器，其名称默认应该等于服务名称。
         initContainers:
           - name: ${serviceName}-business
@@ -252,7 +272,10 @@ chart:
             command:
               - "sh"
               - "-c"
-              - "cp -rf ${appDirInContainer}/* ${workDirInContainer}"
+              - "mkdir -p ${workDirInContainer} && cp -rf ${appDirInContainer}/* ${workDirInContainer}"
+            volumeMounts:
+              - name: ${serviceName}-workdir
+                mountPath: ${baseWorkDir}
         #如果没有initContainers配置（即buildType=single），
         #则containers的第一个容器其名称默认应该等于服务名称。
         containers:
@@ -273,6 +296,13 @@ chart:
             # - name: SERVICE_PORT
             #   value: "80"
             volumeMounts:
+              - name: ${serviceName}-workdir
+                mountPath: ${baseWorkDir}
+              - name: public-params
+                mountPath: /var/config
+              - name: ${serviceName}-config
+                #mountPath参数的前缀必须与docker.workDir参数一致。
+                mountPath: /app/${serviceName}/config
             resources:
               limits:
                 cpu: ${cpuLimits}
