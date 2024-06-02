@@ -6,7 +6,7 @@
 function onProcessExternalChart_default() {
   export gDefaultRetVal
   export gTempFileDir
-  export gChartRepoAliasName
+  export gChartRepoInstanceName
   export gChartRepoName
   export gChartRepoAccount
   export gChartRepoPassword
@@ -26,7 +26,7 @@ function onProcessExternalChart_default() {
   local l_tmpFile
   local l_content
 
-  #判断l_externalChartImage是否带有路径,如果没有路径，则从gChartRepoAliasName仓库拉取外部Chart镜像
+  #判断l_externalChartImage是否带有路径,如果没有路径，则从gChartRepoInstanceName仓库拉取外部Chart镜像
   if [[ ! "${l_externalChartImage}" =~ ^(.*)/(.*)$ ]];then
 
     [[ ! "${gChartRepoName}" ]] && \
@@ -35,7 +35,7 @@ function onProcessExternalChart_default() {
     l_chartVersion="${l_chartVersion%.*}"
     l_chartName="${l_externalChartImage%-*}"
     #拉取指定的chart镜像到gBuildPath目录中。
-    pullChartImage "${l_chartName}" "${l_chartVersion}" "${gChartRepoAliasName}" "${gTempFileDir}"
+    pullChartImage "${l_chartName}" "${l_chartVersion}" "${gChartRepoInstanceName}" "${gTempFileDir}"
     l_externalChartImage="${gTempFileDir}/${l_externalChartImage}"
   else
     l_chartName="${l_externalChartImage##*/}"

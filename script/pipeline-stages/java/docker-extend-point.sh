@@ -57,7 +57,9 @@ function _onBeforeCreatingDockerImage_ex() {
   l_curDir=$(pwd)
   # shellcheck disable=SC2164
   cd "${gDockerBuildDir}"
-  java -Djarmode=layertools -jar "${l_jarFiles[0]}" extract
+  l_content=$(java -Djarmode=layertools -jar "${l_jarFiles[0]}" extract 2>&1)
+  l_content=$(echo -e "${l_content}" | grep -ioP "^(.*)(Error|failed)(.*)$")
+  [[ "${l_content}" ]] && error "分层解压jar文件异常：${l_content}"
   # shellcheck disable=SC2164
   cd "${l_curDir}"
 

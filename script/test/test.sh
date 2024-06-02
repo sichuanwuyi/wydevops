@@ -103,6 +103,24 @@ rm -f "${tmpFile}"
 #
 #readAndWriteList "列表项读写"
 
-helm uninstall devops-test -n develop --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config
-helm uninstall devops-test1 -n develop --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config
-helm uninstall atom-hardware-manager -n develop --kubeconfig /e/atom/ideaProjects/atom-hardware-manager-api/atom-hardware-manager/deploy/kube-config
+#helm uninstall devops-test -n develop --kubeconfig /e/tmt/test/deploy/kube-config
+#helm uninstall devops-test1 -n develop --kubeconfig /e/tmt/test/deploy/kube-config
+#helm uninstall atom-hardware-manager -n develop --kubeconfig /e/tmt/test/deploy/kube-config
+
+info "开始清除docker仓库中现有的同名同版本的镜像..."
+l_result=$(curl -X 'GET' -H 'accept: application/json' \
+  "http://192.168.31.214:8081/service/rest/v1/search?repository=registry.docker.home&name=devops-test1&version=1.0.1" 2>&1)
+echo "-------${l_result}---"
+l_result=$(echo -e "${l_result}" | grep -m 1 -oP "^([ ]*)\"id\" : (.*)$")
+if [ "${l_result}" ];then
+  l_id="${l_result#*:}"
+  l_id="${l_id%\"*}"
+  l_id="${l_id/\"/}"
+  l_id="${l_id// /}"
+
+#  l_result=$(curl -X 'DELETE' -H 'accept: application/json' \
+#    "http://${gDockerRepoName%%:*}:${gDockerRepoWebPort}/service/rest/v1/components/${l_id}" 2>&1)
+  info "目标镜像清除成功:${l_id}"
+else
+  warn "目标镜像不存在"
+fi

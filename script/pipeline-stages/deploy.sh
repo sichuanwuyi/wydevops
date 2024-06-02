@@ -9,6 +9,7 @@ function executePackageStage() {
   export gCurrentStageResult
   export gHelmBuildOutDir
   export gBuildPath
+  export gBuildType
 
   local l_i
   local l_packageName
@@ -81,6 +82,9 @@ function executePackageStage() {
 
     readParam "${gCiCdYamlFile}" "deploy[${l_i}].deployType"
     l_deployType="${gDefaultRetVal}"
+
+    [[ "${l_deployType}" == "docker" && ${gBuildType} != "single" ]] && \
+      error "使用${gBuildType}构建类型打包的服务不能使用${l_deployType}方式部署(${l_deployType}部署方式仅适用于single构建类型打包的服务)"
 
     #服务安装包部署前扩展
     invokeExtendPointFunc "onBeforeDeployingServicePackage" "服务安装包部署前扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \

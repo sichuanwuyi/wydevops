@@ -15,9 +15,6 @@ export gGlobalParamNames=(
 "gHelmBuildOutDirName=\"build-out\"" \
 "gTempFileDirName=\"temp\"" \
 
-#默认的Helm仓库类型
-"gChartRepoType=\"nexus\"" \
-
 #项目历史更新文件名称
 "gReleaseNoteFileName=\"release_notes.txt\"" \
 #项目历史更新文件所在的目录，不同语言项目可能不同。
@@ -59,15 +56,21 @@ export gGlobalParamNames=(
 "gTempFileDir=\"/c/temp\"" \
 
 #docker仓库相关参数
+#Docker仓库类型
+"gDockerRepoType" \
+"gDockerRepoInstanceName" \
 "gDockerRepoName" \
 "gDockerRepoAccount" \
 "gDockerRepoPassword" \
+"gDockerRepoWebPort" \
 
-#默认的Chart镜像的别名。
-"gChartRepoAliasName=\"chartmuseum\"" \
+#Chart仓库相关参数
+"gChartRepoType" \
+"gChartRepoInstanceName" \
 "gChartRepoName" \
 "gChartRepoAccount" \
 "gChartRepoPassword" \
+"gChartRepoWebPort" \
 
 #发布平台相关参数
 "gUpdateNotifyUrl" \
@@ -125,8 +128,8 @@ function usage() {
                                   thirdParty: 打包第三方镜像：拉取第三方镜像，缓存到本地镜像缓存目录中，
                                               然后推送到私库中，最后导出到gDockerBuildOutDir目录中。
                                   customize: 自定义模式：指定docker构建目录，脚本框架自动完成docker镜像构建和推送。
-    -C, --chartRepo     string    Chart镜像仓库信息, 格式：\"{repoName({IP}:{端口})},{repoAccount},{repoPassword}\"
-    -D, --dockerRepo    string    Docker镜像仓库信息, 格式：\"{repoName({IP}:{端口})},{repoAccount},{repoPassword}\"
+    -C, --chartRepo     string    Chart镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口}
+    -D, --dockerRepo    string    Docker镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口}
     -I, --imageCacheDir String    当workMode=local时，用于缓存Dockerfile文件中From行指定的Image镜像的本地目录。
     -L, --language      string    项目语言类型; 例如：java、go、c++、python、vue、nodejs等，依据具体实现而定。
     -M, --workMode      string    工作模式：jenkins、local
@@ -241,25 +244,25 @@ function parseDockerRepoInfo() {
   local l_repoInfo=$1
   local l_array
   local l_size
-  local i
 
+  export gDockerRepoType
+  export gDockerRepoInstanceName
   export gDockerRepoName
   export gDockerRepoAccount
   export gDockerRepoPassword
+  export gDockerRepoWebPort
 
   # shellcheck disable=SC2206
   l_array=(${l_repoInfo//,/ })
   l_size=${#l_array[@]}
-  for (( i = 0; i < l_size; i++ )); do
-    if [ "${i}" -eq 0 ];then
-      gDockerRepoName="${l_array[${i}]}"
-    elif [ "${i}" -eq 1 ];then
-      gDockerRepoAccount="${l_array[${i}]}"
-    elif [ "${i}" -eq 2 ];then
-      gDockerRepoPassword="${l_array[${i}]}"
-      break
-    fi
-  done
+  [[ "${l_size}" -lt 6 ]] && error "docker仓库配置参数不足：需要六个参数，只配置了${l_size}个参数。"
+
+  gDockerRepoType="${l_array[0]}"
+  gDockerRepoInstanceName="${l_array[1]}"
+  gDockerRepoName="${l_array[2]}"
+  gDockerRepoAccount="${l_array[3]}"
+  gDockerRepoPassword="${l_array[4]}"
+  gDockerRepoWebPort="${l_array[5]}"
 }
 
 function parseChartRepoInfo() {
@@ -267,28 +270,26 @@ function parseChartRepoInfo() {
 
   local l_array
   local l_size
-  local i
 
-  export gChartRepoAliasName
+  export gChartRepoType
+  export gChartRepoInstanceName
   export gChartRepoName
   export gChartRepoAccount
   export gChartRepoPassword
+  export gChartRepoWebPort
 
   # shellcheck disable=SC2206
   l_array=(${l_repoInfo//,/ })
   l_size=${#l_array[@]}
-  for (( i = 0; i < l_size; i++ )); do
-    if [ "${i}" -eq 0 ];then
-      gChartRepoAliasName="${l_array[${i}]}"
-    elif [ "${i}" -eq 1 ];then
-      gChartRepoName="${l_array[${i}]}"
-    elif [ "${i}" -eq 2 ];then
-      gChartRepoAccount="${l_array[${i}]}"
-    elif [ "${i}" -eq 3 ];then
-      gChartRepoPassword="${l_array[${i}]}"
-      break
-    fi
-  done
+  [[ "${l_size}" -lt 6 ]] && error "chart仓库配置参数不足：需要六个参数，只配置了${l_size}个参数。"
+
+  gChartRepoType="${l_array[0]}"
+  gChartRepoInstanceName="${l_array[1]}"
+  gChartRepoName="${l_array[2]}"
+  gChartRepoAccount="${l_array[3]}"
+  gChartRepoPassword="${l_array[4]}"
+  gChartRepoWebPort="${l_array[5]}"
+
 }
 
 #从文件中加载全局参数

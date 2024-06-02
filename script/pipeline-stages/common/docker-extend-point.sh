@@ -325,6 +325,9 @@ function initialDockerFile_ex() {
   local l_cicdYaml=$1
   local l_dockerFileTemplate=$2
 
+  local l_fileList
+  local l_tmpFile
+
   local l_targetDockerFile
   local l_arrayInfo
   local l_placeholders
@@ -335,9 +338,13 @@ function initialDockerFile_ex() {
   l_targetDockerFile="${l_dockerFileTemplate##*/}"
   # shellcheck disable=SC2206
   l_arrayInfo=(${l_targetDockerFile//_/ })
-  rm -f "${gDockerBuildDir}/${l_arrayInfo[0]}"
-  rm -f "${gDockerBuildDir}/${l_arrayInfo[0]}_base"
-  rm -f "${gDockerBuildDir}/${l_arrayInfo[0]}_business"
+  l_fileList=$(find "${gDockerBuildDir}" -maxdepth 1 -type f -name "${l_arrayInfo[0]}*")
+  if [ "${l_fileList}" ];then
+    # shellcheck disable=SC2068
+    for l_tmpFile in ${l_fileList[@]};do
+      rm -f "${l_tmpFile:?}"
+    done
+  fi
 
   #复制模板文件到Docker镜像构建目录中。
   l_targetDockerFile="${gDockerBuildDir}/${l_dockerFileTemplate##*/}"
@@ -385,7 +392,7 @@ function onBeforeCreatingDockerImage_ex() {
   else
     l_image="${gTargetDockerFromImage_base}"
   fi
-
+  #提前拉取好fromImage镜像。
   pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}"
 }
 
@@ -584,6 +591,10 @@ function _createDockerImage() {
 
   #将生成的镜像推送到私有仓库（测试环境使用的仓库）中
   if [ "${gDockerRepoName}" ];then
+
+    #先删除已经存在的镜像。
+    invokeExtendChain "onDeleteImageInDockerRepo" "${l_image}"
+
     info "将${l_image}镜像推送到${gDockerRepoName}仓库中..."
     pushImage "${l_image}" "${l_archType}" "${gDockerRepoName}"
     # shellcheck disable=SC2015

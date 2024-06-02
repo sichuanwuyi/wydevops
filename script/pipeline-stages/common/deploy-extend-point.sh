@@ -518,7 +518,7 @@ function _deployServiceInK8S() {
 function findChartImage() {
   export gDefaultRetVal
   export gHelmBuildOutDir
-  export gChartRepoAliasName
+  export gChartRepoInstanceName
 
   local l_chartName=$1
   local l_chartVersion=$2
@@ -536,9 +536,9 @@ function findChartImage() {
     l_fileList=$(find "${gHelmBuildOutDir}" -maxdepth 1 -type f -name "${l_chartName}-${l_chartVersion}-*.tar.gz")
     if [ ! "${l_fileList}" ];then
       info "未找到" "*"
-      if [ "${gChartRepoAliasName}" ];then
+      if [ "${gChartRepoInstanceName}" ];then
         info "从Chart镜像仓库中拉取版本为${l_chartVersion}的${l_chartName}镜像..." "-n"
-        pullChartImage "${l_chartName}" "${l_chartVersion}" "${gChartRepoAliasName}" \
+        pullChartImage "${l_chartName}" "${l_chartVersion}" "${gChartRepoInstanceName}" \
           "${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/chart"
         [[ ! -f "${l_chartFile}" ]] && error "拉取失败"
         info "拉取成功" "*"

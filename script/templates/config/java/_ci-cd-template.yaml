@@ -302,7 +302,7 @@ chart:
                 mountPath: /var/config
               - name: ${serviceName}-config
                 #mountPath参数的前缀必须与docker.workDir参数一致。
-                mountPath: /app/${serviceName}/config
+                mountPath: ${workDirInContainer}/config
             resources:
               limits:
                 cpu: ${cpuLimits}

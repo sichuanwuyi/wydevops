@@ -340,12 +340,12 @@ function installHelm_ex() {
 }
 
 function addHelmRepo_ex(){
-  export gChartRepoAliasName
+  export gChartRepoInstanceName
   export gChartRepoName
   export gChartRepoAccount
   export gChartRepoPassword
   #调用${gChartRepoType}-helm-helper.sh文件中的方法。
-  addHelmRepo "${gChartRepoAliasName}" "${gChartRepoName}" "${gChartRepoAccount}" "${gChartRepoPassword}"
+  addHelmRepo "${gChartRepoInstanceName}" "${gChartRepoName}" "${gChartRepoAccount}" "${gChartRepoPassword}"
 }
 
 function onBeforeHelmPackage_ex() {
@@ -371,13 +371,13 @@ function onBeforeHelmPackage_ex() {
 
 function helmPushChartImage_ex() {
   export gChartRepoName
-  export gChartRepoAliasName
+  export gChartRepoInstanceName
   export gChartRepoAccount
   export gChartRepoPassword
 
   local l_chartFile=$1
   #调用${gChartRepoType}-helm-helper.sh文件中的方法。
-  pushChartImage "${l_chartFile}" "${gChartRepoAliasName}" "${gChartRepoName}" \
+  pushChartImage "${l_chartFile}" "${gChartRepoInstanceName}" "${gChartRepoName}" \
     "${gChartRepoAccount}" "${gChartRepoPassword}"
 }
 

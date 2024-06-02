@@ -6,7 +6,7 @@ function initialGlobalParamsForPackageStage_ex() {
   export gDockerRepoName
   export gDockerRepoAccount
   export gDockerRepoPassword
-  export gChartRepoAliasName
+  export gChartRepoInstanceName
   export gChartRepoName
   export gChartRepoAccount
   export gChartRepoPassword
@@ -25,7 +25,7 @@ function initialGlobalParamsForPackageStage_ex() {
 
   if [[ "${gChartRepoName}" && "${gChartRepoAccount}" && "${gChartRepoPassword}" ]];then
     #添加Chart镜像仓库到本地配置中。
-    addHelmRepo "${gChartRepoAliasName}" "${gChartRepoName}" "${gChartRepoAccount}" "${gChartRepoPassword}"
+    addHelmRepo "${gChartRepoInstanceName}" "${gChartRepoName}" "${gChartRepoAccount}" "${gChartRepoPassword}"
   else
     warn "在本地Helm配置中添加Chart镜像仓库信息失败：chart仓库别名、chart仓库地址、登录账号、登录密码均不能为空"
   fi
@@ -85,7 +85,7 @@ function createOfflinePackage_ex() {
 }
 
 function copyChartImage_ex() {
-  export gChartRepoAliasName
+  export gChartRepoInstanceName
 
   local l_index=$1
   local l_chartName=$2
@@ -94,7 +94,7 @@ function copyChartImage_ex() {
 
   if [ ! -f "${l_targetDir}/${l_chartName}-${l_chartVersion}.tgz" ];then
     info "从Chart镜像仓库中拉取目标镜像：${l_targetDir}/${l_chartName}-${l_chartVersion}.tgz ..."
-    helm pull "${gChartRepoAliasName}/${l_chartName}" --destination "${l_targetDir}" --version "${l_chartVersion}"
+    helm pull "${gChartRepoInstanceName}/${l_chartName}" --destination "${l_targetDir}" --version "${l_chartVersion}"
   fi
 
   if [ -f "${l_targetDir}/${l_chartName}-${l_chartVersion}.tgz" ];then

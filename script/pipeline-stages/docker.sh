@@ -198,6 +198,7 @@ function _createDockerImageByDockerfile() {
       gDockerFileTemplateParamMap["_ARCH_"]="${l_archType//\//-}"
       #根据模板文件生成目标Dockerfile文件，并完成初始化(除架构参数外)
       invokeExtendPointFunc "initialDockerFile" "生成并初始化${l_dockerFileTemplate##*/}文件" "${gCiCdYamlFile}" "${l_dockerFileTemplate}"
+
       l_targetDockerFile="${gDefaultRetVal}"
       #docker镜像构建前扩展：执行构建需要的文件拷贝等操作。
       invokeExtendPointFunc "onBeforeCreatingDockerImage" "docker镜像构建前扩展" "${gCiCdYamlFile}" "${l_archType}" "${l_targetDockerFile}"
