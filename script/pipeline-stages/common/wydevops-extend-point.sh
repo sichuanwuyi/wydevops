@@ -419,6 +419,8 @@ function _checkGlobalDirectory() {
   export gTempFileDirName
   export gTempFileDir
 
+  info "检查并创建缺失的全局目录..."
+
   gHelmBuildDir="${gBuildPath}/${gHelmBuildDirName}"
   info "初始化构建主目录:${gHelmBuildDir}"
   if [[ ! -d "${gHelmBuildDir}" ]];then

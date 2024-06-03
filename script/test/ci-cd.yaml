@@ -1,17 +1,53 @@
-image:
-  registry: 192.168.31.214:8002
-params:
-  deployment0:
-    resources:
-      limits:
-        cpu: "1000m"
-        memory: "1Gi"
-      requests:
-        cpu: "500m"
-        memory: "500Mi"
-  application-prod.yml: |
-deployment0:
-  name: http
-  protocol: TCP
-  containerPort: 9090,9091,9092,9093
+{{- range $.Values.deployment1.containers }}
 
+  {{- if .service.clusterIP }}
+  {{- with .service.clusterIP }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ .name | trunc 53 | trimSuffix "-" }}-clusterip
+  labels:
+    helm.sh/chart: a-1.2.3
+    app.kubernetes.io/version: {{ .version }}
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix "-" }}-clusterip
+    app.kubernetes.io/instance: {{ .name | trunc 53 | trimSuffix "-" }}-clusterip
+spec:
+  type: ClusterIP
+  ports:
+    {{- toYaml .ports | nindent 4 }}
+  selector:
+    app.kubernetes.io/name: devops-test1
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+
+  {{- end }}
+  {{- end }}
+
+  {{- if .service.nodePort }}
+  {{- with .service.nodePort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ .name | trunc 54 | trimSuffix "-" }}-nodeport
+  labels:
+    helm.sh/chart: a-1.2.3
+    app.kubernetes.io/version: {{ .version }}
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: {{ .name | trunc 54 | trimSuffix "-" }}-nodeport
+    app.kubernetes.io/instance: {{ .name | trunc 54 | trimSuffix "-" }}-nodeport
+spec:
+  type: NodePort
+  ports:
+    {{- toYaml .ports | nindent 4 }}
+  selector:
+    app.kubernetes.io/name: devops-test1
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+
+  {{- end }}
+  {{- end }}
+
+  {{- end }}

@@ -783,6 +783,12 @@ function __readOrWriteYamlFile() {
         [[ "${l_mode}" == "rowRange" ]] && gDefaultRetVal="-1 -1"
         return
       fi
+
+      if [ "${l_mode}" == "rowRange" ];then
+        gDefaultRetVal="${l_blockStartRowNum} ${l_blockEndRowNum}"
+        return
+      fi
+
       #读取l_rowNum行与l_endRowNum行间的内容。
       _readDataBlock "${l_yamlFile}" "${l_blockStartRowNum}" "${l_blockEndRowNum}" "${l_curItemIndex}" "${l_isDataBlock}"
       if [ "${gDefaultRetVal}" != "null" ];then
@@ -2288,7 +2294,6 @@ function _adjustCachedParamsAfterUpdate() {
     #在缓存中查找Value值中起始行号大于l_startRowNum的记录，将其起始行号加上l_lineChangeCount数量。
     _adjustStartRowNum "${l_yamlFile}" "${l_paramPath}" "${l_startRowNum}" "${l_lineChangeCount}"
   fi
-
 }
 
 function _adjustCachedParamsAfterDelete() {
@@ -2430,6 +2435,7 @@ function _adjustStartRowNum() {
   if [ "${l_mapSize}" -gt 0 ];then
     # shellcheck disable=SC2068
     for l_mapKey in ${!gFileDataBlockMap[@]};do
+      #如果不是目标文件的参数路径，则直接继续下一个。
       if [[ ! "${l_mapKey}" =~ ^(${l_yamlFile//\./\\\.}) ]];then
         continue
       fi
@@ -2438,7 +2444,7 @@ function _adjustStartRowNum() {
       if [ "${l_mapValue}" ];then
         # shellcheck disable=SC2206
         l_array=(${l_mapValue//,/ })
-        if [ "${l_array[0]}" -ge "${l_startRowNum}" ];then
+        if [ "${l_array[0]}" -gt "${l_startRowNum}" ];then
           ((l_array[0] = l_array[0] + l_changedLineCount))
           ((l_array[1] = l_array[1] + l_changedLineCount))
           # shellcheck disable=SC2124

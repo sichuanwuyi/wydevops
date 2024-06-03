@@ -306,6 +306,8 @@ function loadGlobalParamsFromCacheFile() {
   local l_paramName
   local l_paramValue
 
+  info "从文件中加载缓存的全局参数的值..." "-n"
+
   #读取文件中全部的有效行。
   l_content=$(awk "NR==1,NR==-1" "${gBuildPath}/${gGlobalParamCacheFileName}" \
     | grep -oP "^[a-zA-Z_]?[a-zA-Z0-9_\-].*$")
@@ -320,9 +322,10 @@ function loadGlobalParamsFromCacheFile() {
       readParam "${gBuildPath}/${gGlobalParamCacheFileName}" "${l_paramName}"
       l_paramValue="${gDefaultRetVal}"
     fi
-    debug "--->${l_paramName}=${l_paramValue}"
     eval "${l_paramName}=\"${l_paramValue}\""
   done
+
+  info "成功" "*"
 }
 
 #将全局参数写入文件中
