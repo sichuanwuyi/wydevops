@@ -103,6 +103,11 @@ rm -f "${tmpFile}"
 #
 #readAndWriteList "列表项读写"
 
-helm uninstall devops-test -n develop --kubeconfig /e/tmt/test/deploy/kube-config
-helm uninstall devops-test1 -n develop --kubeconfig /e/tmt/test/deploy/kube-config
-helm uninstall atom-hardware-manager -n develop --kubeconfig /e/tmt/test/deploy/kube-config
+#helm uninstall devops-test -n develop --kubeconfig /e/tmt/test/deploy/kube-config
+#helm uninstall devops-test1 -n develop --kubeconfig /e/tmt/test/deploy/kube-config
+#helm uninstall atom-hardware-manager -n develop --kubeconfig /e/tmt/test/deploy/kube-config
+
+l_registerContent=",bb,adt,dt,aa,ss,dt,ww,"
+l_result=$(echo -e "${l_registerContent}," | grep -oP "[a-zA-Z0-9_\-]+," | sort | uniq -c | grep -oP "^([ ]*)[2-9]{1}[0-9]*(.*)$")
+echo -e "${l_result}" | grep -oP "[a-zA-Z_]+[a-zA-Z0-9_\-]*"
+

@@ -52,7 +52,7 @@ globalParams:
   servicePorts: _SERVICE-PORTS_
   #ClusterIP类型的Service资源绑定的容器端口列表，端口间使用逗号隔开。
   #默认范围：30000-32767
-  nodePorts: ${servicePorts}
+  nodePorts:
 
   #apisix网关相关配置
   gatewayVersion: v2
@@ -258,10 +258,15 @@ chart:
               defaultMode: 493
               name: ${serviceName}-configmap
               optional: false
-          - name: public-params
-            configMap:
-              name: public-configs
-              optional: true
+          #挂载公共配置信息
+          #- name: public-params
+          #  configMap:
+          #    name: public-configs
+          #    optional: true
+          #挂载pvc的例子
+          #- name: public-storage
+          #  persistentVolumeClaim:
+          #    claimName: public-storage-pvc
         #initContainers的第一个容器，其名称默认应该等于服务名称。
         initContainers:
           - name: ${serviceName}-business
@@ -298,11 +303,15 @@ chart:
             volumeMounts:
               - name: ${serviceName}-workdir
                 mountPath: ${baseWorkDir}
-              - name: public-params
-                mountPath: /var/config
               - name: ${serviceName}-config
                 #mountPath参数的前缀必须与docker.workDir参数一致。
                 mountPath: ${workDirInContainer}/config
+              #挂载公共配置信息
+              #- name: public-params
+              #  mountPath: /var/config
+              #挂载pvc的例子
+              #- name: public-storage
+              #  mountPath: ${workDirInContainer}/data
             resources:
               limits:
                 cpu: ${cpuLimits}
@@ -335,6 +344,18 @@ chart:
             #名称必须与volumes中的某个ConfigMap名相同
           - name: ${serviceName}-configmap
             files: ${configMapFiles}
+        resourcePlugins:
+          deployment: A
+          service: B
+          serviceAccount: C
+
+          gateway:
+          - name:
+            type: Deployment
+            #模板文件
+            template:
+            #资源生成器Shell脚本
+            generator:
         #网关路由配置
         gatewayRoute:
           type: apisix
@@ -405,7 +426,7 @@ package:
     #离线包名称：{chartName}-{archType}-{chartVersion}.tar.gz
     archTypes: ${offlineArchTypes}
     #设置离线安装包中需要包含的镜像列表。
-    #脚本会自动从chart镜像中收集需要的docker镜像，并与下列参数的值进行合并去重。
+    #wydevops会自动从chart镜像中收集需要的docker镜像，并与下列参数的值进行合并去重。
     #可在这个参数中设置好需要额外上传的其他docker镜像。
     images: ${packageImages}
 
@@ -420,33 +441,16 @@ deploy:
     #部署时使用的临时目录
     deployTempDir: ./deploy
     #部署完毕后是否删除使用的临时文件
-    deleteTempDirAfterDeployed: false
-    #定义配置文件中的参数名称和默认值
+    deleteTempDirAfterDeployed: true
+    #为Chart镜像values.yaml配置文件params配置节中的参数提供默认值
+    #如果部署时deployType=docker，则wydevops会自动更新docker镜像外挂的配置文件中对应参数的值。
     params:
-      - name: .Values.params.deployment0.mysql.active
-        value: true
-      - name: .Values.params.deployment0.mysql.host
-        value: 192.168.1.214
-      - name: .Values.params.deployment0.mysql.port
-        value: 3307
-      - name: .Values.params.deployment0.mysql.username
-        value: root
-      - name: .Values.params.deployment0.mysql.password
-        value: 123456
-      #redis相关参数
-      - name: .Values.params.deployment0.redis.host
-        value: 192.168.1.214
-      - name: .Values.params.deployment0.redis.port
-        value: 6379
-      - name: .Values.params.deployment0.redis.timeout
-        value: 10000
-      - name: .Values.params.deployment0.redis.password
-        value: 123456
     k8s:
       #开发集群环境
       dev:
         #K8S集群的ApiServer服务器的地址信息（必须配置）
         #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
+        #多个集群的ApiServer服务器地址间使用英文逗号隔开。
         apiServer: ${devApiServer}
         #发布服务的命名空间（必须配置）
         namespace: ${devNamespace}

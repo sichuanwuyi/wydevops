@@ -7,6 +7,7 @@ _selfRootDir=$(cd "$(dirname "$0")"; pwd)
 #2.导入yaml函数库文件。
 source "${_selfRootDir}/yaml-helper.sh"
 source "${_selfRootDir}/docker-helper.sh"
+source "${_selfRootDir}/helm-helper.sh"
 source "${_selfRootDir}/helm-installer.sh"
 source "${_selfRootDir}/map-loader.sh"
 #3.引入全局变量及其默认值定义文件。
@@ -21,24 +22,23 @@ if [ ! -d "${gTempFileDir}" ];then
   mkdir -p "${gTempFileDir}"
 fi
 
-export gChartRepoType
 export gWorkMode
 export gBuildPath
 export gClearCachedParams
 export gGlobalParamCacheFileName
 export gArchTypes
+export gPipelineScriptsDir
 
 partLog "第一部分 初始化全局参数"
 
 info "首次解析命令选项和传入参数"
 parseOptions1 "${@}"
 
-# shellcheck disable=SC1090
-source "${_selfRootDir}/${gChartRepoType}-helm-helper.sh"
-
 #读取Jenkins环境变量BUILD_SCRIPT_ROOT。
 [[ ! "${gBuildScriptRootDir}" ]] && gBuildScriptRootDir="${BUILD_SCRIPT_ROOT}"
 info "gBuildScriptRootDir参数初始化：${gBuildScriptRootDir}"
+
+source "${_selfRootDir}/plugins/plugin-manager.sh"
 
 #流水线脚本所在的目录名称
 gPipelineScriptsDir="${gBuildScriptRootDir}/pipeline-stages"

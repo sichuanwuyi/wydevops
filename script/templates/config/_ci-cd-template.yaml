@@ -52,7 +52,7 @@ globalParams:
   servicePorts: _SERVICE-PORTS_
   #ClusterIP类型的Service资源绑定的容器端口列表，端口间使用逗号隔开。
   #默认范围：30000-32767
-  nodePorts: _NODE-PORTS_
+  nodePorts:
 
   #gateway网关相关配置
   gatewayVersion: _GATEWAY-VERSION_
@@ -258,10 +258,15 @@ chart:
               defaultMode: 493
               name: ${serviceName}-configmap
               optional: false
-          - name: public-params
-            configMap:
-              name: public-configs
-              optional: true
+          #挂载公共配置信息
+          #- name: public-params
+          #  configMap:
+          #    name: public-configs
+          #    optional: true
+          #挂载pvc的例子
+          #- name: public-storage
+          #  persistentVolumeClaim:
+          #    claimName: public-storage-pvc
         #initContainers的第一个容器，其名称默认应该等于服务名称。
         initContainers:
           - name: ${serviceName}-business
@@ -298,11 +303,15 @@ chart:
             volumeMounts:
               - name: ${serviceName}-workdir
                 mountPath: ${baseWorkDir}
-              - name: public-params
-                mountPath: /var/config
               - name: ${serviceName}-config
                 #mountPath参数的前缀必须与docker.workDir参数一致。
                 mountPath: ${workDirInContainer}/config
+              #挂载公共配置信息
+              #- name: public-params
+              #  mountPath: /var/config
+              #挂载pvc的例子
+              #- name: public-storage
+              #  mountPath: ${workDirInContainer}/data
             resources:
               limits:
                 cpu: ${cpuLimits}
@@ -357,47 +366,13 @@ chart:
 
     #需要写入values.yaml文件的自定义配置信息。
     params:
-      #用于UI解析和展示的参数。服务安装器在安装服务的离线安装包时会弹出参数配置对话框，
-      #以下配置节用于控制参数配置对话框的内容。
-      configurable:
-        - label: "资源配置"
-          catalog: "通用参数"
-          #当chart.deployments配置项为多个时，使用以下参数绑定当前参数项的归属服务。
-          serviceCode: ${serviceName}
-          items:
-            - name: "CPU最大可用核数"
-              key: "deployment0.resources.limits.cpu"
-              required: true
-              type: "input"
-              len: 120
-              value: "${cpuLimits}"
-              express: "^[1-9]{1}[0-9]{2,4}m$"
-              description: "服务最大可用CPU核数，取值范围：100m-99999m，单位：m(毫核）"
-            - name: "内存最大可用额度"
-              key: "deployment0.resources.limits.memory"
-              required: true
-              type: "input"
-              len: 120
-              value: "${memoryLimits}"
-              express: "^[1-9]{1}[0-9]{0,2}(Mi|Gi)$"
-              description: "服务最大可用内存额度，取值范围：1Mi-999Gi，单位单位：Mi或Gi"
-            - name: "CPU预订核数"
-              key: "deployment0.resources.requests.cpu"
-              required: true
-              type: "input"
-              len: 120
-              value: "${cpuRequests}"
-              express: "^[1-9]{1}[0-9]{2,4}m$"
-              description: "服务预订的CPU核数，取值范围：100m-99999m，单位：m(毫核）"
-            - name: "内存预订额度"
-              key: "deployment0.resources.requests.memory"
-              required: true
-              type: "input"
-              len: 120
-              value: "${memoryRequests}"
-              express: "^[1-9]{1}[0-9]{0,2}(Mi|Gi)$"
-              description: "服务预订的内存额度，取值范围：1Mi-999Gi，单位：Mi或Gi"
-
+      resources:
+        limits:
+          cpu: ${cpuLimits}
+          memory: ${memoryLimits}
+        requests:
+          cpu: ${cpuRequests}
+          memory: ${memoryRequests}
 package:
     #离线包的名称
   - name: ${chartName}
@@ -423,33 +398,16 @@ deploy:
     #部署时使用的临时目录
     deployTempDir: ./deploy
     #部署完毕后是否删除使用的临时文件
-    deleteTempDirAfterDeployed: false
-    #定义配置文件中的参数名称和默认值
+    deleteTempDirAfterDeployed: true
+    #为Chart镜像values.yaml配置文件params配置节中的参数提供默认值
+    #如果部署时deployType=docker，则wydevops会自动更新docker镜像外挂的配置文件中对应参数的值。
     params:
-      - name: .Values.params.deployment0.mysql.active
-        value: true
-      - name: .Values.params.deployment0.mysql.host
-        value: 192.168.1.214
-      - name: .Values.params.deployment0.mysql.port
-        value: 3307
-      - name: .Values.params.deployment0.mysql.username
-        value: root
-      - name: .Values.params.deployment0.mysql.password
-        value: 123456
-      #redis相关参数
-      - name: .Values.params.deployment0.redis.host
-        value: 192.168.1.214
-      - name: .Values.params.deployment0.redis.port
-        value: 6379
-      - name: .Values.params.deployment0.redis.timeout
-        value: 10000
-      - name: .Values.params.deployment0.redis.password
-        value: 123456
     k8s:
       #开发集群环境
       dev:
         #K8S集群的ApiServer服务器的地址信息（必须配置）
         #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
+        #多个集群的ApiServer服务器地址间使用英文逗号隔开。
         apiServer: ${devApiServer}
         #发布服务的命名空间（必须配置）
         namespace: ${devNamespace}

@@ -299,7 +299,7 @@ function onModifyingValuesYaml_ex(){
     #创建相关的K8s相关的ConfigMap配置。
     invokeExtendPointFunc "createConfigMapYamls" "创建ConfigMap配置扩展" "${l_valuesYaml}"  "${l_key}.configMaps" "${l_serviceName}"
 
-    #将l_paramNameList中的params参数配并到values.yaml文件的params配置节中。
+    #将l_paramNameList中的params参数配置到values.yaml文件的params配置节中。
     invokeExtendPointFunc "combineParamsToValuesYaml" "为values.yaml文件追加params配置扩展" "${l_valuesYaml}" "${gDefaultRetVal}" "${l_chartName}"
     #deleteParam "${l_valuesYaml}" "${l_key}.configMaps"
 
@@ -372,21 +372,22 @@ function addHelmRepo_ex(){
   export gChartRepoName
   export gChartRepoAccount
   export gChartRepoPassword
-  #调用${gChartRepoType}-helm-helper.sh文件中的方法。
+  #调用helm-helper.sh文件中的方法。
   addHelmRepo "${gChartRepoInstanceName}" "${gChartRepoName}" "${gChartRepoAccount}" "${gChartRepoPassword}"
 }
 
 function onBeforeHelmPackage_ex() {
   export gBuildPath
   export gCustomizedHelm
+  export gProjectChartTemplatesDir
 
   local l_yamlList
   local l_ymalFile
 
-  if [[ "${gCustomizedHelm}" == "false" && -d "${gBuildPath}/chart-templates" ]];then
+  if [[ "${gCustomizedHelm}" == "false" && -d "${gProjectChartTemplatesDir}" ]];then
     info "尝试将主模块目录下chart-templates子目录中的*.yaml文件复制到./templates目录中 ..."
     #为项目自定义部分特殊配置提供了扩展。
-    l_yamlList=$(find "${gBuildPath}/chart-templates" -type f -name "*.yaml")
+    l_yamlList=$(find "${gProjectChartTemplatesDir}" -type f -name "*.yaml")
     if [ "${l_yamlList}" ];then
       # shellcheck disable=SC2068
       for l_ymalFile in ${l_yamlList[@]};do
@@ -404,7 +405,7 @@ function helmPushChartImage_ex() {
   export gChartRepoPassword
 
   local l_chartFile=$1
-  #调用${gChartRepoType}-helm-helper.sh文件中的方法。
+  #调用helm-helper.sh文件中的方法。
   pushChartImage "${l_chartFile}" "${gChartRepoInstanceName}" "${gChartRepoName}" \
     "${gChartRepoAccount}" "${gChartRepoPassword}"
 }
@@ -549,9 +550,13 @@ function combineParamsToValuesYaml_ex() {
       readParam "${gCiCdYamlFile}" "deploy[${l_index}].params[${l_i}]"
       [[ "${gDefaultRetVal}" == "null" ]] && break
       l_paramName=$(echo "${gDefaultRetVal}" | grep "^name:.*$")
-      l_paramName="${l_paramName//name: /}"
+      l_paramName="${l_paramName//name:/}"
+      l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
       l_paramValue=$(echo "${gDefaultRetVal}" | grep "^value:.*$")
-      l_paramValue="${l_paramValue//value: /}"
+      l_paramValue="${l_paramValue//value:/}"
+      l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
       # shellcheck disable=SC2034
       l_paramDefaultValueMap["${l_paramName//\.Values\./}"]="${l_paramValue}"
       if [ "${l_paramValue}" ];then
@@ -669,7 +674,7 @@ function createConfigMapYamls_ex(){
 
       #提取l_content中包含的.Values.开头的变量。
       # shellcheck disable=SC2002
-      l_content=$(echo -e "${l_content}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]+\}\}" | sort | uniq -c)
+      l_content=$(echo -e "${l_content}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
       l_paramNameList="${l_paramNameList},${l_content}"
     done
 
@@ -696,8 +701,8 @@ function createConfigMapYamls_ex(){
 
   gDefaultRetVal=""
   if [ "${l_paramNameList}" ];then
-    l_paramNameList="${l_paramNameList:1}"
-    l_content=$(echo -e "${l_paramNameList}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]+\}\}" | sort | uniq -c)
+    #参数去重。
+    l_content=$(echo -e "${l_paramNameList}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
     stringToArray "${l_content}" "l_tmpList"
     l_itemCount="${#l_tmpList[@]}"
 
@@ -1558,7 +1563,7 @@ function _insertExternalDeployment(){
         l_contentType=$(echo -e "${l_content}" | grep -oP "\.Values\.deployment${l_i}")
         [ ! "${l_contentType}" ] && continue
 
-        l_contentType=$(echo -e "${l_content}" | grep -oP "^kind: (Deployment|Service|ServiceAccount)$")
+        l_contentType=$(echo -e "${l_content}" | grep -oP "^kind: (Deployment|Service|ServiceAccount|HorizontalPodAutoscaler)$")
         if [ "${l_contentType}" ];then
           info "调整外部镜像中${l_file##*/}文件的参数..."
           sed -i "s/\.deployment${l_i}/\.deployment${l_index}/g" "${l_file}"

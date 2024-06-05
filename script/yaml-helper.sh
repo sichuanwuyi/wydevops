@@ -83,7 +83,9 @@ function enableSaveBackImmediately(){
   # shellcheck disable=SC2068
   for l_yamlFile in ${!gFileContentMap[@]};do
     l_fileContent="${gFileContentMap[${l_yamlFile}]}"
-    echo -e "${l_fileContent}" > "${l_yamlFile}"
+    if [ -f "${l_yamlFile}" ];then
+      echo -e "${l_fileContent}" > "${l_yamlFile}"
+    fi
     if [[ "${l_clearCache}" == "true" ]];then
       unset gFileContentMap["${l_yamlFile}"]
     fi
@@ -168,13 +170,31 @@ function getListIndexByPropertyName() {
   local l_paramName=$3
   local l_paramValue=$4
   local l_returnItemCount=$5
+  #参数值查询字典文件
+  local l_paramQueryDicFile=$6
+  #参数值查询字典配置节的前缀（即名称）
+  local l_paramQueryDicPrefix=$7
 
+  local l_tmpSpaceNum
   local l_lineCount
   local l_i
   local l_index
 
+  local l_curParamValue
+  local l_params
+  local l_param
+
+  if [ ! "${l_paramQueryDicFile}" ];then
+    l_paramQueryDicFile="${l_yamlFile}"
+  fi
+
+  if [ ! "${l_paramQueryDicPrefix}" ];then
+    l_paramQueryDicPrefix="globalParams"
+  fi
+
   readParam "${l_yamlFile}" "${l_paramPath}"
-  l_lineCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\- )" | wc -l)
+  l_tmpSpaceNum=$(echo -e "${gDefaultRetVal}" | grep -m 1 -oP "^([ ]*\- )" | grep -oP "^([ ]*)" | grep -oP " " | wc -l)
+  l_lineCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^([ ]{${l_tmpSpaceNum}}\- )" | wc -l)
 
   ((l_index = -1))
   if [[ "${l_lineCount}" -gt 0 && "${l_paramName}" ]];then
@@ -184,10 +204,28 @@ function getListIndexByPropertyName() {
       if [ "${gDefaultRetVal}" == "null" ];then
         break
       fi
-      if [ "${gDefaultRetVal}" == "${l_paramValue}" ];then
+      l_curParamValue="${gDefaultRetVal}"
+
+      if [ "${l_curParamValue}" != "${l_paramValue}" ];then
+        #读取返回值中包含的参数变量。
+        l_params=$(echo -e "${l_curParamValue}" | grep -oP "\\$\\{[a-zA-Z_]+[a-zA-Z0-9_\-]+\\}" | sort | uniq -c)
+        if [ "${l_params}" ];then
+          # shellcheck disable=SC2068
+          for l_param in ${l_params[@]};do
+            l_param="${l_param#*\{}"
+            l_param="${l_param%\}*}"
+            #读取同文件中的变量的值。
+            readParam "${l_paramQueryDicFile}" "${l_paramQueryDicPrefix}.${l_param}"
+            [[ "${gDefaultRetVal}" != "null" ]] && l_curParamValue="${l_curParamValue//\$\{${l_param}\}/${gDefaultRetVal}}"
+          done
+        fi
+      fi
+
+      if [[ "${l_curParamValue}" == "${l_paramValue}" ]];then
         ((l_index = l_i))
         break;
       fi
+
       ((l_i = l_i + 1))
     done
   fi
@@ -199,7 +237,7 @@ function getListIndexByPropertyName() {
   fi
 }
 
-function getListLength(){
+function getListSize(){
   export gDefaultRetVal
 
   local l_yamlFile=$1
@@ -209,7 +247,7 @@ function getListLength(){
 
   readParam "${l_yamlFile}" "${l_paramPath}"
   if [ "${gDefaultRetVal}" == "null" ];then
-    gDefaultRetVal="-1"
+    gDefaultRetVal="0"
     return
   fi
 
@@ -564,10 +602,8 @@ function __readOrWriteYamlFile() {
   if [ ! "${_yamlFileContent}" ];then
     #初始化文件内容在内存中的缓存。
     _yamlFileContent=$(cat "${l_yamlFile}")
-    if [[ "${gEnableFileContentCache}" == "true" ]];then
-      gFileContentMap["${l_yamlFile}"]="${_yamlFileContent}"
-      info "读取${l_yamlFile##*/}文件内容并缓存到内存中"
-    fi
+    gFileContentMap["${l_yamlFile}"]="${_yamlFileContent}"
+    info "读取${l_yamlFile##*/}文件内容并缓存到内存中"
   fi
 
   #如果数据块截止行号无效，则从文件中读取数据块的起止行号。
@@ -1291,6 +1327,11 @@ function _indentContent(){
 
   local l_tmpSpaceStr
   local l_len
+
+  if [[ "${l_indent}" -eq 0 ]];then
+    gDefaultRetVal=${l_content}
+    return
+  fi
 
   l_len="${l_indent}"
   [[ "${l_len}" -lt 0 ]] && ((l_len = 0 - l_len))
@@ -2233,7 +2274,7 @@ function _updateMultipleRowValue() {
   #l_startRowNum行的下一行数据的前导空格数等于(l_tmpSpaceNum + 2)
   ((l_tmpSpaceNum = l_tmpSpaceNum + 2))
   #在获取新数据第一行的前导空格数量。
-  l_tmpSpaceNum1=$(echo -e "${l_rowData}" | grep -o "^[ ]*[a-zA-Z_\-]+.*$" | grep -o "^[ ]*" | grep -o " " | wc -l)
+  l_tmpSpaceNum1=$(echo -e "${l_rowData}" | grep -m 1 -oP "^[ ]*[a-zA-Z_\-]+.*$" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
   #计算前导空格数量的差值。
   ((l_tmpSpaceNum = l_tmpSpaceNum - l_tmpSpaceNum1))
   #将l_rowData数据整体左移或右移l_tmpSpaceNum个字符。l_tmpSpaceNum为负数时向左移动，为正数时向右移动。
@@ -2245,7 +2286,6 @@ function _updateMultipleRowValue() {
   #将单行格式的l_rowData插入到l_startRowNum行的下一行(字符串中的\n会被自动识别为换行符)。
   #sed -i "${l_startRowNum}a\\${l_rowData}" "${l_yamlFile}"
   _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_startRowNum}a\\${l_rowData}")
-
   #计算插入的最后一行数据所在的行号。
   ((l_tmpRowNum = l_startRowNum + l_lineCount))
   #修正l_startRowNum的值，使其指向参数下属数据块的起始行
@@ -2639,7 +2679,12 @@ function _combine(){
       l_tmpContent="${l_tmpContent1}"
 
       #如果没有匹配到，则直接追加到目标文件对应的列表参数中
-      if [ "${l_targetIndex}" -eq -1  ];then
+      if [[ "${l_targetIndex}" -eq -1 ]];then
+        if [[ "${l_allowInsertNewListItem}" != "true" ]];then
+          warn "忽略项列表项${l_srcParamPath}[${l_tmpIndex}](在目标文件中未能匹配到对应的列表项)，继续下一个列表项"
+          ((l_tmpIndex = l_tmpIndex + 1))
+          continue
+        fi
         #直接将列表项追加到目标文件对应的列表参数中
         info "向目标文件中插入列表项参数${l_targetParamPath}[${l_targetParamItemCount}] ..."
         insertParam "${l_targetYamlFile}" "${l_targetParamPath}[${l_targetParamItemCount}]" "${l_tmpContent}"
@@ -2925,6 +2970,7 @@ function _getMatchedListItemIndex(){
   local l_srcContent=$1
   local l_prefixSpaceNum=$2
   local l_srcIndex=$3
+  local l_allowInsertNewListItem=$4
 
   local l_targetItemCount
   local l_nameLine
@@ -2940,8 +2986,8 @@ function _getMatchedListItemIndex(){
   l_srcContent="${l_srcContent/-/ }"
   ((l_prefixSpaceNum = l_prefixSpaceNum + 2))
   l_nameLine=$(echo -e "${l_srcContent}" | grep -m 1 -oP "^[ ]{${l_prefixSpaceNum}}name:(.*)$")
-  if [ ! "${l_nameLine}" ];then
-    #如果源数据中没有name属性，则默认按序号进行匹配。
+  #如果源内容中没有name属性，或者目标内容中没有name属性，都按序号进行匹配。
+  if [[ ! "${l_nameLine}" || "${l_targetItemCount}" -lt 0 ]];then
     ((l_targetIndex = l_srcIndex))
     #如果l_srcIndex大于等于l_targetItemCount，则设置l_targetIndex=-1，表示没有匹配到。
     [[ "${l_srcIndex}" -ge "${l_targetItemCount}" ]] && ((l_targetIndex = -1))
@@ -2950,14 +2996,11 @@ function _getMatchedListItemIndex(){
   fi
 
   ((l_targetIndex = -1))
-
+  #源内容和目标内容都有name,则按name进行匹配，匹配失败则返回-1.
   l_srcNameValue="${l_nameLine#*:}"
   if [ "${l_srcNameValue}" ];then
-    #删除参数的前导空格。
-    l_tmpSpaceNum=$(echo -e "${l_srcNameValue}" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
-    l_srcNameValue="${l_srcNameValue:${l_tmpSpaceNum}}"
-    #删除参数值尾部空格。
-    l_srcNameValue=$(echo -e "${l_srcNameValue}" | sed 's/[[:space:]]*$//')
+    #删除参数的前导空格和尾部空格。
+    l_srcNameValue=$(echo -e "${l_srcNameValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
     [[ "${l_srcNameValue}" =~ ^[#]+ ]] && l_srcNameValue=""
     if [ "${l_srcNameValue}" ];then
       # shellcheck disable=SC2154
@@ -3058,12 +3101,6 @@ fi
 
 #本文件中所有函数默认的返回变量。
 export gDefaultRetVal
-
-#是否启用文件内容缓存机制。
-export gEnableFileContentCache
-if [ ! "${gEnableFileContentCache}" ];then
-  gEnableFileContentCache="true"
-fi
 
 #是否立即将内存缓存中的文件内容变更回写到文件中。
 export gSaveBackImmediately

@@ -2,7 +2,164 @@
 
 function initialGlobalParamsForDeployStage_ex() {
   export gDefaultRetVal
+  export gCiCdYamlFile
+  export gBuildPath
+  export gCiCdConfigYamlFileName
 
+  local l_saveBackStatus
+  local l_cicdConfigFile
+  local l_deployIndex
+  local l_targetIndex
+
+  local l_loopIndex
+  local l_layerLevel
+  local l_configMapFiles
+  local l_configFile
+  local l_paramList
+  local l_lineCount
+  local l_i
+
+  local l_paramName
+  local l_paramValue
+  local l_itemValue
+  local l_paramIndex
+  local l_array
+  local l_businessParamNames
+  local l_businessParamIndex
+
+  #扫描gCiCdYamlFile文件中chart[?].deployment[?].configMaps参数，在指定的文件中查找”{{ .Values.* }}“格式的参数定义。
+  #如果有则提取这些参数及其默认值，回写到项目中的ci-cd-config.yaml文件中。
+  #如果ci-cd-config.yaml文件不存在，则创建之。并在其中添加deploy相关配置(包括参数列表)。
+
+  info "检测部署服务需要配置的业务参数..."
+
+  disableSaveBackImmediately
+  l_saveBackStatus="${gDefaultRetVal}"
+
+  l_cicdConfigFile="${gBuildPath}/${gCiCdConfigYamlFileName}"
+  if [ ! -f "${l_cicdConfigFile}" ];then
+    info "创建${l_cicdConfigFile##*/}项目配置文件"
+    touch "${l_cicdConfigFile}"
+  fi
+
+  _createDeployItem "${gCiCdYamlFile}" "0" "${l_cicdConfigFile}"
+  # shellcheck disable=SC2206
+  l_array=(${gDefaultRetVal})
+  l_deployIndex="${l_array[0]}"
+  l_targetIndex="${l_array[1]}"
+
+  l_loopIndex=(0 0 0)
+  ((l_layerLevel = 3))
+  while true;do
+    readParam "${gCiCdYamlFile}" "chart[${l_loopIndex[0]}].deployments[${l_loopIndex[1]}].configMaps[${l_loopIndex[2]}].files"
+    if [[ "${gDefaultRetVal}" == "null" ]];then
+      if [ "${l_layerLevel}" -eq 3 ];then
+        ((l_loopIndex[1] = l_loopIndex[1] + 1))
+        ((l_loopIndex[2] = 0))
+      elif [ "${l_layerLevel}" -eq 2 ];then
+        ((l_loopIndex[0] = l_loopIndex[0] + 1))
+        ((l_loopIndex[1] = 0))
+        ((l_loopIndex[2] = 0))
+      else
+        break
+      fi
+      ((l_layerLevel = l_layerLevel - 1))
+      continue
+    fi
+
+    # shellcheck disable=SC2206
+    l_configMapFiles=(${gDefaultRetVal//,/ })
+
+    if [ "${l_layerLevel}" -eq 1 ];then
+      _createDeployItem "${gCiCdYamlFile}" "${l_loopIndex[0]}" "${l_cicdConfigFile}"
+      # shellcheck disable=SC2206
+      l_array=(${gDefaultRetVal})
+      l_deployIndex="${l_array[0]}"
+      l_targetIndex="${l_array[1]}"
+    fi
+
+    #恢复层级数。
+    ((l_layerLevel = 3))
+
+    info "读取${l_cicdConfigFile##*/}文件中deploy[${l_targetIndex}].params列表中所有的name的值。"
+    _readValueOfListItemNames "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params"
+    l_businessParamNames="${gDefaultRetVal}"
+    if [[ "${l_businessParamNames}" && "${l_businessParamNames}" != "null" ]];then
+      l_businessParamNames=",${l_businessParamNames},"
+      l_businessParamIndex="${l_targetIndex}"
+    fi
+
+    # shellcheck disable=SC2068
+    for l_configFile in ${l_configMapFiles[@]};do
+      info "正在检测${l_configFile##*/}文件中的变量..."
+      [[ "${l_configFile}" =~ ^(\.) ]] && l_configFile="${gBuildPath}/${l_configFile#*/}"
+
+      # shellcheck disable=SC2002
+      l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
+      if [ "${l_paramList}" ];then
+
+        stringToArray "${l_paramList}" "l_lines"
+        l_lineCount="${#l_lines[@]}"
+        for ((l_i=0; l_i < l_lineCount; l_i++ ));do
+          l_paramName=$(echo -e "${l_lines[${l_i}]}" | grep -oP ".Values(\.[a-zA-Z0-9_\-]+)+( |\|)")
+          [[ "${l_paramName}" =~ ^(.*)\|$ ]] && l_paramName="${l_paramName%|*}"
+          l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+          l_paramValue=""
+          if [[ "${l_lines[${l_i}]}" =~ ^(.*)(\|[ ]*default)(.*) ]];then
+            l_paramValue="${l_lines[${l_i}]#*|}"
+            l_paramValue="${l_paramValue%%\}*}"
+            l_paramValue="${l_paramValue// default/}"
+            l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+            if [[ "${l_paramValue}" =~ ^(\") ]];then
+              l_paramValue="${l_paramValue/\"/}"
+              l_paramValue="${l_paramValue%\"*}"
+            fi
+          fi
+
+          #不存在name=l_paramName的项，则插入之。
+          getListIndexByPropertyName "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params" "name" "${l_paramName}" "true" "${gCiCdYamlFile}"
+          if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
+            # shellcheck disable=SC2206
+            l_array=(${gDefaultRetVal})
+            l_paramIndex="${l_array[1]}"
+            info "--->向${l_cicdConfigFile##*/}文件添加新参数：deploy[${l_targetIndex}].params[${l_paramIndex}]"
+            l_itemValue="name: ${l_paramName}\nvalue: ${l_paramValue}"
+            insertParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params[${l_paramIndex}]" "${l_itemValue}"
+          else
+            info "--->检测到业务参数:${l_paramName}=" "-n"
+            if [ "${l_paramValue}" ];then
+              info "${l_paramValue}" "*"
+            else
+              warn " (没有配置值)" "*"
+            fi
+          fi
+
+          if [ "${l_businessParamNames}" ];then
+            #从现有参数列表中删除l_paramName。
+            l_businessParamNames="${l_businessParamNames//,${l_paramName},/,}"
+          fi
+        done
+
+      fi
+    done
+
+    if [ "${l_businessParamNames}" ];then
+      warn "清除${l_cicdConfigFile##*/}文件deploy[${l_businessParamIndex}].params列表中未用到的参数项..."
+      # shellcheck disable=SC2206
+      l_array=(${l_businessParamNames//,/ })
+      # shellcheck disable=SC2068
+      for l_paramName in ${l_array[@]};do
+        warn "清除未用到的参数项:${l_paramName}"
+        getListIndexByPropertyName "${l_cicdConfigFile}" "deploy[${l_businessParamIndex}].params" "name" "${l_paramName}" "false" "${gCiCdYamlFile}"
+        deleteParam "${l_cicdConfigFile}" "deploy[${l_businessParamIndex}].params[${gDefaultRetVal}]"
+      done
+    fi
+    ((l_loopIndex[2] = l_loopIndex[2] + 1))
+  done
+
+  #恢复gSaveBackImmediately的原始值。
+  enableSaveBackImmediately "${l_saveBackStatus}"
 }
 
 function onBeforeDeployingServicePackage_ex() {
@@ -180,7 +337,7 @@ function onCheckAndInitialParamInConfigFile_ex(){
 
         #检测配置文件中是否存在动态配置的参数，如果存在则需要替换赋值。
         # shellcheck disable=SC2002
-        l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]+\}\}" | sort | uniq -c)
+        l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
         if [ "${l_paramList}" ];then
 
           #如果l_paramDefaultValueMap变量未初始化，则先加载参数默认值配置Map
@@ -193,8 +350,20 @@ function onCheckAndInitialParamInConfigFile_ex(){
               [[ "${gDefaultRetVal}" == "null" ]] && break
               l_paramName=$(echo "${gDefaultRetVal}" | grep "^name:.*$")
               l_paramName="${l_paramName//name: /}"
+              #去掉头部和尾部的空格。
+              l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+              #补全参数格式，以便后续的匹配。
+              if [[ ! "${l_paramName}" =~ ^(\.Values\.) ]];then
+                #如果参数不是params.deployment开头的则要使用params.deployment0.补全
+                [[ ! "${l_paramName}" =~ ^(params\.deployment)[0-9]+ ]] && l_paramName="params.deployment0.${l_paramName}"
+                l_paramName=".Values.${l_paramName}"
+              fi
+
               l_paramValue=$(echo "${gDefaultRetVal}" | grep "^value:.*$")
               l_paramValue="${l_paramValue//value: /}"
+              #去掉头部和尾部的空格。
+              l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
               # shellcheck disable=SC2034
               l_paramDefaultValueMap["${l_paramName}"]="${l_paramValue}"
               info "加载参数默认值：${l_paramName}=>${l_paramValue}"
@@ -208,7 +377,8 @@ function onCheckAndInitialParamInConfigFile_ex(){
             l_paramItem="${l_lines[${l_m}]}"
             l_paramName=".${l_paramItem#*.}"
             l_paramName="${l_paramName%%\}*}"
-            l_paramName="${l_paramName// /}"
+            #去掉头部和尾部的空格。
+            l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
             l_paramValue="${l_paramDefaultValueMap[${l_paramName}]}"
             if [ ! "${l_paramValue}" ];then
               #如果参数的值未定义，则告警输出。
@@ -546,7 +716,7 @@ function findChartImage() {
     else
       l_offlinePackage="${l_fileList[0]}"
       mkdir -p "${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}"
-      tar -zxvf "${l_offlinePackage}" -C "${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}"
+      tar -zxf "${l_offlinePackage}" -C "${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}"
       # shellcheck disable=SC2181
       if [ "$?" -ne 0 ];then
         error "解压找到的服务离线安装包文件${l_offlinePackage##*/}失败"
@@ -568,6 +738,111 @@ function findChartImage() {
 
 }
 
+function _getDeployIndexByChartIndex(){
+  export gDefaultRetVal
+
+  local l_cicdYamlFile=$1
+  local l_chartIndex=$2
+
+  local l_chartName
+  local l_packageIndex
+  local l_packageName
+  local l_deployIndex
+
+  ((l_deployIndex = -1))
+  readParam "${l_cicdYamlFile}" "chart[${l_chartIndex}].name"
+  if [ "${gDefaultRetVal}" != "null" ];then
+    l_chartName="${gDefaultRetVal}"
+    getListIndexByPropertyName "${l_cicdYamlFile}" "package" "chartName" "${l_chartName}"
+    l_packageIndex="${gDefaultRetVal}"
+    if [ "${l_packageIndex}" -ge 0 ];then
+      readParam "${l_cicdYamlFile}" "package[${l_packageIndex}].name"
+      if [ "${gDefaultRetVal}" != "null" ];then
+        l_packageName="${gDefaultRetVal}"
+        getListIndexByPropertyName "${l_cicdYamlFile}" "deploy" "packageName" "${l_packageName}"
+        l_deployIndex="${gDefaultRetVal}"
+      fi
+    fi
+  fi
+  gDefaultRetVal="${l_deployIndex}"
+}
+
+function _createDeployItem(){
+  export gDefaultRetVal
+  export gBuildScriptRootDir
+  export gLanguage
+  export gCiCdTemplateFileName
+
+  local l_cicdYamlFile=$1
+  local l_chartIndex=$2
+  local l_cicdConfigFile=$3
+
+  local l_deployIndex
+  local l_targetIndex
+  local l_itemCount
+  local l_templateFile
+
+  _getDeployIndexByChartIndex "${l_cicdYamlFile}" "${l_chartIndex}"
+  l_deployIndex="${gDefaultRetVal}"
+  [[ "${l_deployIndex}" -eq -1 ]] && error "${l_cicdYamlFile}文件中缺少对应chart[${l_chartIndex}]的deploy列表项"
+
+  readParam "${l_cicdYamlFile}" "deploy[${l_deployIndex}].name"
+  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && error "${l_cicdYamlFile}文件中deploy[${l_deployIndex}].name异常：不存在或为空"
+
+  #获取l_cicdConfigFile文件中对应的deploy项的序号
+  getListIndexByPropertyName "${l_cicdConfigFile}" "deploy" "name" "${gDefaultRetVal}" "false" "${gCiCdYamlFile}"
+  l_targetIndex="${gDefaultRetVal}"
+
+  if [ "${l_targetIndex}" -eq -1 ];then
+    info "向${l_cicdConfigFile##*/}文件中插入deploy[${l_deployIndex}]配置项"
+    getListSize "${l_cicdConfigFile}" "deploy"
+    l_targetIndex="${gDefaultRetVal}"
+    readParam "${l_cicdYamlFile}" "deploy[${l_deployIndex}]"
+    insertParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}]" "${gDefaultRetVal}"
+
+    #从模板文件中读取deploy[${l_targetIndex}].name未替换成实际参数前的标识。
+    #因为wydevops开始进行全局参数合并的时机是在实际参数值替换动作之前。
+    l_templateFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/_${gCiCdTemplateFileName}"
+    [[ ! -f "${l_templateFile}" ]] && l_templateFile="${gBuildScriptRootDir}/templates/config/_${gCiCdTemplateFileName}"
+    [[ ! -f "${l_templateFile}" ]] && error "wydevops脚本根目录中/templates/config/子目录下未找到_${gCiCdTemplateFileName}模板文件"
+    readParam "${l_templateFile}" "deploy[${l_deployIndex}].name"
+    info "更新deploy[${l_targetIndex}]配置项的name属性为：${gDefaultRetVal}"
+    updateParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].name" "${gDefaultRetVal}"
+
+    info "清除可忽略的其他参数..."
+    deleteParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].packageName"
+    deleteParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].deployTempDir"
+    deleteParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].deleteTempDirAfterDeployed"
+    deleteParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].docker.dockerRunShellGenerator"
+    deleteParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].docker.dockerComposeYamlGenerator"
+  fi
+
+  gDefaultRetVal="${l_deployIndex} ${l_targetIndex}"
+}
+
+function _readValueOfListItemNames() {
+  export gDefaultRetVal
+
+  local l_cicdYamlFile=$1
+  local l_listParamPath=$2
+
+  local l_itemCount
+  local l_i
+  local l_paramName
+  local l_paramNames
+
+  gDefaultRetVal=""
+  readParam "${l_cicdYamlFile}" "${l_listParamPath}"
+  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" = "null" ]] && return
+
+  l_itemCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\-).*$" | wc -l)
+  for ((l_i = 0; l_i < l_itemCount; l_i++));do
+    readParam "${l_cicdYamlFile}" "${l_listParamPath}[${l_i}].name"
+    l_paramName="${gDefaultRetVal}"
+    l_paramNames="${l_paramNames},${l_paramName}"
+  done
+  gDefaultRetVal="${l_paramNames:1}"
+}
 #**********************私有方法-结束***************************#
 
 #加载build阶段脚本库文件

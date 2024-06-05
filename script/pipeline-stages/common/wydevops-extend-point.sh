@@ -145,7 +145,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   [[ ! -f "${l_tmpCiCdConfigFile}" ]] && l_cicdTargetFile="${l_templateFile}"
 
   #项目级参数应用文件优先级更高，放置_dirList中靠后面的位置。
-  l_dirList=("${gBuildScriptRootDir}/templates/config/${gLanguage}/param-mapping" "${gBuildPath}/ci-cd/param-mapping")
+  l_dirList=("${gBuildScriptRootDir}/templates/config/${gLanguage}/param-mapping" "${gBuildPath}/wydevops/param-mapping")
   #预先定义好各个参数映射文件对应的
 
   l_loadOk="false"
@@ -308,14 +308,14 @@ function _initGlobalParams() {
       if [ -f "${l_tmpCiCdConfigFile}" ];then
         info "检测到系统中配置有${gLanguage}语言级_ci-cd-config.yaml配置文件"
         info "先将ci-cd-config.yaml文件内容合并到_ci-cd-config.yaml文件中"
-        combine "${l_ciCdConfigFile}" "${l_tmpCiCdConfigFile}" "" "" "false" "true" "true"
+        combine "${l_ciCdConfigFile}" "${l_tmpCiCdConfigFile}" "" "" "true" "true" "true"
         echo -e "\n"
         info "再将_ci-cd-config.yaml文件内容合并到_ci-cd-template.yaml文件中"
-        combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "" "false" "true"
+        combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "" "true" "true"
       else
         warn "系统中未检测到${gLanguage}语言级_ci-cd-config.yaml配置文件"
         info "直接将ci-cd-config.yaml配置文件的内容合并到_ci-cd-template.yaml文件中"
-        combine "${l_ciCdConfigFile}" "${l_templateFile}" "" "" "false" "true"
+        combine "${l_ciCdConfigFile}" "${l_templateFile}" "" "" "true" "true"
       fi
     elif [ -f "${l_tmpCiCdConfigFile}" ];then
       info "检测到系统中配置有${gLanguage}语言级_ci-cd-config.yaml配置文件"
@@ -369,6 +369,12 @@ function _createGlobalDirectory() {
   export gChartBuildDir
   export gTempFileDirName
   export gTempFileDir
+  export gProjectShellDirName
+  export gProjectShellDir
+  export gProjectChartTemplatesDirName
+  export gProjectChartTemplatesDir
+  export gProjectPluginDirName
+  export gProjectPluginDir
 
   gHelmBuildDir="${gBuildPath}/${gHelmBuildDirName}"
   info "初始化构建主目录:${gHelmBuildDir}"
@@ -404,6 +410,24 @@ function _createGlobalDirectory() {
   info "初始化临时文件存储目录:${gTempFileDir}"
   mkdir -p "${gTempFileDir}"
 
+  gProjectShellDir="${gHelmBuildDir}/${gProjectShellDirName}"
+  if [ ! -d "${gProjectShellDir}" ];then
+    info "初始化项目级脚本文件存储目录:${gProjectShellDir}"
+    mkdir -p "${gProjectShellDir}"
+  fi
+
+  gProjectChartTemplatesDir="${gHelmBuildDir}/${gProjectChartTemplatesDirName}"
+  if [ ! -d "${gProjectChartTemplatesDir}" ];then
+    info "初始化项目级Chart模板文件存储目录:${gProjectChartTemplatesDir}"
+    mkdir -p "${gProjectChartTemplatesDir}"
+  fi
+
+  gProjectPluginDir="${gHelmBuildDir}/${gProjectPluginDirName}"
+  if [ ! -d "${gProjectPluginDir}" ];then
+    info "初始化项目级资源生成器插件存储目录:${gProjectPluginDir}"
+    mkdir -p "${gProjectPluginDir}"
+  fi
+
 }
 
 function _checkGlobalDirectory() {
@@ -418,6 +442,12 @@ function _checkGlobalDirectory() {
   export gChartBuildDir
   export gTempFileDirName
   export gTempFileDir
+  export gProjectShellDirName
+  export gProjectShellDir
+  export gProjectChartTemplatesDirName
+  export gProjectChartTemplatesDir
+  export gProjectPluginDirName
+  export gProjectPluginDir
 
   info "检查并创建缺失的全局目录..."
 
@@ -451,6 +481,23 @@ function _checkGlobalDirectory() {
     mkdir -p "${gTempFileDir}"
   fi
 
+  gProjectShellDir="${gHelmBuildDir}/${gProjectShellDirName}"
+  if [ ! -d "${gProjectShellDir}" ];then
+    info "初始化项目级脚本文件存储目录:${gProjectShellDir}"
+    mkdir -p "${gProjectShellDir}"
+  fi
+
+  gProjectChartTemplatesDir="${gHelmBuildDir}/${gProjectChartTemplatesDirName}"
+  if [ ! -d "${gProjectChartTemplatesDir}" ];then
+    info "初始化项目级Chart模板文件存储目录:${gProjectChartTemplatesDir}"
+    mkdir -p "${gProjectChartTemplatesDir}"
+  fi
+
+  gProjectPluginDir="${gHelmBuildDir}/${gProjectPluginDirName}"
+  if [ ! -d "${gProjectPluginDir}" ];then
+    info "初始化项目级资源生成器插件存储目录:${gProjectPluginDir}"
+    mkdir -p "${gProjectPluginDir}"
+  fi
 }
 
 function _onAfterInitGlobalParams(){

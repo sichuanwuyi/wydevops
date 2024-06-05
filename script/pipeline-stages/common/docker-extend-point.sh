@@ -557,8 +557,12 @@ function _createDockerImage() {
   export gDefaultRetVal
   export gDeleteImageAfterBuilding
   export gDockerRepoName
+  export gDockerRepoInstanceName
+  export gDockerRepoWebPort
+
   export gCurrentStageResult
   export gTempFileDir
+  export gDockerRepoType
 
   local l_image=$1
   local l_archType=$2
@@ -593,7 +597,8 @@ function _createDockerImage() {
   if [ "${gDockerRepoName}" ];then
 
     #先删除已经存在的镜像。
-    invokeExtendChain "onDeleteImageInDockerRepo" "${l_image}"
+    invokeExtendChain "onBeforePushDockerImage" "${gDockerRepoType}" "${l_image}" "${gDockerRepoName}" \
+      "${gDockerRepoInstanceName}" "${gDockerRepoWebPort}"
 
     info "将${l_image}镜像推送到${gDockerRepoName}仓库中..."
     pushImage "${l_image}" "${l_archType}" "${gDockerRepoName}"

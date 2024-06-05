@@ -9,11 +9,14 @@ export gGlobalParamNames=(
 "gCiCdYamlFile" \
 
 #构建相关目录名称
-"gHelmBuildDirName=\"helm-build\"" \
+"gHelmBuildDirName=\"wydevops\"" \
 "gDockerBuildDirName=\"docker-build\"" \
 "gChartBuildDirName=\"chart-build\"" \
 "gHelmBuildOutDirName=\"build-out\"" \
 "gTempFileDirName=\"temp\"" \
+"gProjectShellDirName=\"shell\"" \
+"gProjectPluginDirName=\"plugins\"" \
+"gProjectChartTemplatesDirName=\"chart-templates\"" \
 
 #项目历史更新文件名称
 "gReleaseNoteFileName=\"release_notes.txt\"" \
@@ -36,6 +39,8 @@ export gGlobalParamNames=(
 "gBuildPath" \
 #构建脚本所在的目录
 "gBuildScriptRootDir" \
+#构建脚本中pipeline-stages目录
+"gPipelineScriptsDir" \
 #是否强制使用模板
 "gUseTemplate" \
 #Docker镜像的构建类型数组
@@ -44,6 +49,9 @@ export gGlobalParamNames=(
 "gOfflineArchTypes" \
 #本地缓存DockerFile文件中From语句指定的镜像的目录。
 "gImageCacheDir" \
+"gProjectShellDir" \
+"gProjectPluginDir" \
+"gProjectChartTemplatesDir" \
 
 #项目工程名称
 "gServiceName" \
@@ -212,6 +220,7 @@ function invokeExtendPointFunc() {
 
 function executeShellScript() {
   export gShellExecuteResult
+  export gProjectShellDir
 
   local l_buildPath=$1
   local l_scriptFile=$2
@@ -229,7 +238,7 @@ function executeShellScript() {
 
   gShellExecuteResult="false"
   #如果l_scriptFile脚本存在，则调用之
-  l_localScriptFile="${l_buildPath}/ci-cd/${l_scriptFile}"
+  l_localScriptFile="${gProjectShellDir}/${l_scriptFile}"
   if [ -f "${l_localScriptFile}" ];then
     gShellExecuteResult="true"
     # shellcheck disable=SC1090

@@ -30,6 +30,8 @@ function addHelmRepo() {
 }
 
 function pushChartImage() {
+  export gChartRepoType
+
   local l_chartFile=$1
   local l_repoInstanceName=$2
   local l_repoHostAndPort=$3
@@ -39,48 +41,20 @@ function pushChartImage() {
   local l_tmpFile
   local l_imageName
   local l_imageVersion
-  local l_result
-  local l_id
-  local l_errorLog
 
   l_tmpFile="${l_chartFile##*/}"
   l_imageName="${l_tmpFile%-*}"
   l_imageVersion="${l_chartFile##*-}"
   l_imageVersion="${l_imageVersion%.*}"
 
-  info "在chart仓库中查找现存的${l_imageName}(${l_imageVersion})镜像..."
-  echo "curl -X 'GET' -H 'accept: application/json' http://${l_repoHostAndPort}/service/rest/v1/search?repository=${l_repoInstanceName}&name=${l_imageName}&version=${l_imageVersion}"
-  l_result=$(curl -X 'GET' -H 'accept: application/json' \
-    "http://${l_repoHostAndPort}/service/rest/v1/search?repository=${l_repoInstanceName}&name=${l_imageName}&version=${l_imageVersion}" 2>&1)
-  l_result=$(echo -e "${l_result}" | grep -m 1 -oP "^([ ]*)\"id\" : (.*)$")
-  if [ "${l_result}" ];then
-    l_id="${l_result#*:}"
-    l_id="${l_id%\"*}"
-    l_id="${l_id/\"/}"
-    l_id="${l_id// /}"
-    info "找到了目标镜像，开始清除..."
-    echo "curl -X 'DELETE' -H 'accept: application/json' http://${l_repoHostAndPort}/service/rest/v1/components/${l_id}"
-    l_result=$(curl -X 'DELETE' -H 'accept: application/json' "http://${l_repoHostAndPort}/service/rest/v1/components/${l_id}" 2>&1)
-    info "目标镜像清除成功"
-  else
-    warn "目标镜像不存在"
-  fi
+  #执行推送前调用链: 先删除已经存在的同名同版本镜像。
+  invokeExtendChain "onBeforePushChartImage" "${gChartRepoType}" "${l_imageName}" "${l_imageVersion}" \
+    "${l_repoHostAndPort}" "${l_repoInstanceName}"
 
-  l_tmpFile="chart-push-${RANDOM}.tmp"
-  registerTempFile "${l_tmpFile}"
+  #执行推送调用链
+  invokeExtendChain "onPushChartImage" "${gChartRepoType}" "${l_chartFile}" "${l_repoHostAndPort}" \
+    "${l_repoInstanceName}" "${l_account}" "${l_password}"
 
-  info "开始推送chart镜像到仓库中..."
-  curl -v -F file=@"${l_chartFile}" -u "${l_account}":"${l_password}" \
-    "http://${l_repoHostAndPort}/service/rest/v1/components?repository=${l_repoInstanceName}" 2>&1 | tee "${l_tmpFile}"
-  l_result=$(cat "${l_tmpFile}")
-  l_errorLog=$(echo -e "${l_result}" | grep -ioP "^(.*)(Error|Failed)(.*)$")
-  if [ "${l_errorLog}" ];then
-    error "chart镜像推送失败：\n${l_result}"
-  else
-    info "chart镜像推送成功"
-  fi
-
-  unregisterTempFile "${l_tmpFile}"
 }
 
 function pullChartImage() {
