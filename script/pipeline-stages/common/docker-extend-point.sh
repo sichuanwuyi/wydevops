@@ -392,6 +392,7 @@ function onBeforeCreatingDockerImage_ex() {
   else
     l_image="${gTargetDockerFromImage_base}"
   fi
+
   #提前拉取好fromImage镜像。
   pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}"
 }
@@ -443,7 +444,7 @@ function handleBuildingSingleImageForDocker_ex() {
   local l_paramName1
   local l_paramValue
 
-  l_paramArray=("docker.base.name|globalParams.serviceName" \
+  l_paramArray=("docker.base.name|globalParams.businessImage" \
     "docker.base.version|globalParams.businessVersion" )
   # shellcheck disable=SC2068
   for l_paramItem in ${l_paramArray[@]};do
@@ -601,7 +602,7 @@ function _createDockerImage() {
       "${gDockerRepoInstanceName}" "${gDockerRepoWebPort}"
 
     info "将${l_image}镜像推送到${gDockerRepoName}仓库中..."
-    pushImage "${l_image}" "${l_archType}" "${gDockerRepoName}"
+    pushImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gDockerRepoInstanceName}"
     # shellcheck disable=SC2015
     [[ "${gDefaultRetVal}" != "true" ]] && error "镜像推送失败" || info "镜像推送成功"
   fi

@@ -10,9 +10,10 @@ globalParams:
   nameEn: _NAME-EN_
   #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
   serviceCode: ${serviceName}
+
+  businessImage: ${serviceName}-business
   #CICD Java流程会自动从Pom.yml文件中读取版本信息覆盖businessVersion参数。
   businessVersion: _BUSINESS-VERSION_
-
   baseImage: ${serviceName}-base
   baseVersion: _BASE-VERSION_
 
@@ -74,7 +75,7 @@ globalParams:
   #需要放到项目默认ConfigMap中的文本文件的相对路径列表，文件间使用英文逗号分隔
   configMapFiles: ./src/main/resources/config/application.yml,./src/main/resources/config/application-prod.yml
   #需要打包到离线安装包中镜像名称，格式：{镜像名称}:{镜像版本},...
-  packageImages: ${baseImage}:${baseVersion},${serviceName}-business:${businessVersion}
+  packageImages: ${baseImage}:${baseVersion},${businessImage}:${businessVersion}
 
   #对本服务的一个描述说明文本，会写入Chart镜像。
   description: "Java服务: ${serviceName}"
@@ -157,7 +158,7 @@ docker:
   #docker容器内的时区配置
   timeZone: Asia/Shanghai
   business:
-    name: ${serviceName}-business
+    name: ${businessImage}
     #业务镜像的版本
     version: ${businessVersion}
     #使用的第三方的基础镜像
@@ -270,7 +271,7 @@ chart:
         #initContainers的第一个容器，其名称默认应该等于服务名称。
         initContainers:
           - name: ${serviceName}-business
-            repository: ${serviceName}-business
+            repository: ${businessImage}
             pullPolicy: Always
             tag: ${businessVersion}
             args: []
@@ -344,18 +345,6 @@ chart:
             #名称必须与volumes中的某个ConfigMap名相同
           - name: ${serviceName}-configmap
             files: ${configMapFiles}
-        resourcePlugins:
-          deployment: A
-          service: B
-          serviceAccount: C
-
-          gateway:
-          - name:
-            type: Deployment
-            #模板文件
-            template:
-            #资源生成器Shell脚本
-            generator:
         #网关路由配置
         gatewayRoute:
           type: apisix

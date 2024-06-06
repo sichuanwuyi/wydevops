@@ -152,6 +152,9 @@ function pushImage() {
   local l_image=$1
   local l_archType=$2
   local l_repoName=$3
+  #对于nexus而言，l_instanceName是仓库名称
+  #对于harbor而言，l_instanceName是项目名称
+  local l_instanceName=$4
 
   local l_tmpFile
   local l_errorLog
@@ -365,35 +368,40 @@ function _createDockerManifest() {
 
   local l_cacheDir
   local l_tmpImage
+  local l_result
+  local l_errorLog
 
+  l_tmpImage="${l_repoName}/${l_image}"
+  l_tmpImage="${l_tmpImage//:/\-}"
+  l_tmpImage="${l_tmpImage//\//_}"
   # shellcheck disable=SC2088
-  l_cacheDir="~/.docker/manifests/${l_repoName//:/\-}_${l_image//:/\-}"
+  l_cacheDir="~/.docker/manifests/${l_tmpImage}"
   rm -rf "${l_cacheDir}"
 
   l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
 
-  l_errorLog=$(docker manifest create --insecure --amend "${l_repoName}/${l_image}" "${l_tmpImage}" 2>&1)
-  l_errorLog=$(echo "${l_errorLog}" | grep -ioP "^.*(Error|error|failed|invalid).*$")
+  l_result=$(docker manifest create --insecure --amend "${l_repoName}/${l_image}" "${l_tmpImage}" 2>&1)
+  l_errorLog=$(echo "${l_result}" | grep -ioP "^.*(Error|error|failed|invalid).*$")
   if [ "${l_errorLog}" ];then
-    error "--->执行命令(docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage})失败:\n${l_errorLog}"
+    error "--->执行命令(docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage})失败:\n${l_result}"
   else
     info "--->成功执行命令(docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage})"
   fi
 
-  l_errorLog=$(docker manifest annotate "${l_repoName}/${l_image}" "${l_tmpImage}" --os "${l_archType%%/*}" --arch "${l_archType#*/}" 2>&1)
-  l_errorLog=$(echo "${l_errorLog}" | grep -oP "^.*(Error|error|failed|invalid).*$")
+  l_result=$(docker manifest annotate "${l_repoName}/${l_image}" "${l_tmpImage}" --os "${l_archType%%/*}" --arch "${l_archType#*/}" 2>&1)
+  l_errorLog=$(echo "${l_result}" | grep -oP "^.*(Error|error|failed|invalid).*$")
   if [ "${l_errorLog}" ];then
-    error "--->执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage} --os ${l_archType%%/*} --arch ${l_archType#*/})失败:\n${l_errorLog}"
+    error "--->执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage} --os ${l_archType%%/*} --arch ${l_archType#*/})失败:\n${l_result}"
   else
     info "--->成功执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage} --os ${l_archType%%/*} --arch ${l_archType#*/})"
   fi
 
-  l_errorLog=$(docker manifest push --insecure "${l_repoName}/${l_image}" 2>&1)
-  l_errorLog=$(echo "${l_errorLog}" | grep -ioP "(error|failed|invalid)")
+  l_result=$(docker manifest push --insecure --purge "${l_repoName}/${l_image}" 2>&1)
+  l_errorLog=$(echo "${l_result}" | grep -ioP "^(.*)(error|failed|invalid)(.*)$")
   if [ "${l_errorLog}" ];then
-    error "--->执行命令(docker manifest push --insecure ${l_repoName}/${l_image})失败:\n${l_errorLog}"
+    error "--->执行命令(docker manifest push --insecure --purge ${l_repoName}/${l_image})失败:\n${l_result}"
   else
-    info "--->成功执行命令(docker manifest push --insecure ${l_repoName}/${l_image})"
+    info "--->成功执行命令(docker manifest push --insecure --purge ${l_repoName}/${l_image})"
   fi
 
   #删除本地manifest缓存中的文件。
@@ -412,5 +420,5 @@ if type -t "info" > /dev/null; then
     # shellcheck disable=SC2164
     _selfRootDir=$(cd "$(dirname "$0")"; pwd)
   fi
-  source "${_selfRootDir}/log-helper.sh"
+  source "${_selfRootDir}/helper/log-helper.sh"
 fi

@@ -5,11 +5,11 @@
 _selfRootDir=$(cd "$(dirname "$0")"; pwd)
 
 #2.导入yaml函数库文件。
-source "${_selfRootDir}/yaml-helper.sh"
-source "${_selfRootDir}/docker-helper.sh"
-source "${_selfRootDir}/helm-helper.sh"
-source "${_selfRootDir}/helm-installer.sh"
-source "${_selfRootDir}/map-loader.sh"
+source "${_selfRootDir}/helper/yaml-helper.sh"
+source "${_selfRootDir}/helper/docker-helper.sh"
+source "${_selfRootDir}/helper/helm-helper.sh"
+source "${_selfRootDir}/helper/helm-installer.sh"
+source "${_selfRootDir}/helper/map-loader.sh"
 #3.引入全局变量及其默认值定义文件。
 source "${_selfRootDir}/global-params.sh"
 

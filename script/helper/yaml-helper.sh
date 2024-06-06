@@ -111,14 +111,14 @@ function clearCachedFileContent(){
   if [ "${l_targetYamlFile}" ];then
     #先写回文件再删除
     l_content="${gFileContentMap[${l_targetYamlFile}]}"
-    echo -e "${l_content}" > "${l_targetYamlFile}"
+    [[ "${l_content}" ]] && echo -e "${l_content}" > "${l_targetYamlFile}"
     unset gFileContentMap["${l_targetYamlFile}"]
   else
     # shellcheck disable=SC2068
     for l_yamlFile in ${!gFileContentMap[@]};do
       #先写回文件再删除
       l_content="${gFileContentMap[${l_yamlFile}]}"
-      echo -e "${l_content}" > "${l_yamlFile}"
+      [[ "${l_content}" ]] && echo -e "${l_content}" > "${l_yamlFile}"
       unset gFileContentMap["${l_yamlFile}"]
     done
   fi
@@ -3085,7 +3085,7 @@ if [ ! "${_selfRootDir}" ];then
   # shellcheck disable=SC2164
   _selfRootDir=$(cd "$(dirname "$0")"; pwd)
 fi
-source "${_selfRootDir}/log-helper.sh"
+source "${_selfRootDir}/helper/log-helper.sh"
 
 #定义log-helper文件需要的调试模式指示变量
 export gDebugMode

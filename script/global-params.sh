@@ -64,13 +64,18 @@ export gGlobalParamNames=(
 "gTempFileDir=\"/c/temp\"" \
 
 #docker仓库相关参数
-#Docker仓库类型
+#Docker仓库类型：nexus或harbor
 "gDockerRepoType" \
+#仓库实例名称(nexus)或项目名称(harbor)
 "gDockerRepoInstanceName" \
+#仓库地址，{ip}:{端口}
 "gDockerRepoName" \
 "gDockerRepoAccount" \
 "gDockerRepoPassword" \
+#Restful API接口使用的端口
 "gDockerRepoWebPort" \
+#对于nexus类型的仓库，上传镜像名称是否带仓库实例名称前缀。
+"gDockerImageNameWithInstance" \
 
 #Chart仓库相关参数
 "gChartRepoType" \
@@ -136,8 +141,8 @@ function usage() {
                                   thirdParty: 打包第三方镜像：拉取第三方镜像，缓存到本地镜像缓存目录中，
                                               然后推送到私库中，最后导出到gDockerBuildOutDir目录中。
                                   customize: 自定义模式：指定docker构建目录，脚本框架自动完成docker镜像构建和推送。
-    -C, --chartRepo     string    Chart镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口}
-    -D, --dockerRepo    string    Docker镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口}
+    -C, --chartRepo     string    Chart镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)}
+    -D, --dockerRepo    string    Docker镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)}
     -I, --imageCacheDir String    当workMode=local时，用于缓存Dockerfile文件中From行指定的Image镜像的本地目录。
     -L, --language      string    项目语言类型; 例如：java、go、c++、python、vue、nodejs等，依据具体实现而定。
     -M, --workMode      string    工作模式：jenkins、local
@@ -260,6 +265,7 @@ function parseDockerRepoInfo() {
   export gDockerRepoAccount
   export gDockerRepoPassword
   export gDockerRepoWebPort
+  export gDockerImageNameWithInstance
 
   # shellcheck disable=SC2206
   l_array=(${l_repoInfo//,/ })
@@ -272,6 +278,9 @@ function parseDockerRepoInfo() {
   gDockerRepoAccount="${l_array[3]}"
   gDockerRepoPassword="${l_array[4]}"
   gDockerRepoWebPort="${l_array[5]}"
+
+  gDockerImageNameWithInstance="true"
+  [[ "${gDockerRepoType}" == "nexus" && "${l_size}" -gt 6 ]] && gDockerImageNameWithInstance="${l_array[6]}"
 }
 
 function parseChartRepoInfo() {
@@ -425,6 +434,7 @@ function parseOptions1() {
         gMultipleModelProject="true"
         shift ;;
       -r|--removeImage)
+        gDeleteImageAfterBuilding="true"
         shift ;;
       -t|--template)
         shift ;;
@@ -563,7 +573,6 @@ function parseOptions2() {
       -m|--multipleModel)
         shift ;;
       -r|--removeImage)
-        gDeleteImageAfterBuilding="true"
         shift ;;
       -t|--template)
         gUseTemplate="true"

@@ -15,10 +15,20 @@ function onAfterInitGlobalParams_ex() {
 
 function onBeforeReplaceParamPlaceholder_ex() {
   export gBuildType
+  export gDockerImageNameWithInstance
+  export gDockerRepoInstanceName
 
   local l_cicdYaml=$1
   local l_placeholders
   local l_placeholder
+
+  #为业务镜像和基础镜像添加项目名称前缀。
+  if [ "${gDockerImageNameWithInstance}" == "true" ];then
+    readParam "${l_cicdYaml}" "globalParams.businessImage"
+    updateParam "${l_cicdYaml}" "globalParams.businessImage" "${gDockerRepoInstanceName}/${gDefaultRetVal}"
+    readParam "${l_cicdYaml}" "globalParams.baseImage"
+    updateParam "${l_cicdYaml}" "globalParams.baseImage" "${gDockerRepoInstanceName}/${gDefaultRetVal}"
+  fi
 
   info "根据构建类型对ci-cd.yaml文件中globalParams.baseWorkDir参数的值添加后缀"
   l_paramName="globalParams.baseWorkDir"

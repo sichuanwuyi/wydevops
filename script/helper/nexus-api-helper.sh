@@ -30,6 +30,8 @@ function queryNexusComponentId() {
 
 function deleteNexusComponentById() {
   export gDefaultRetVal
+  export gDockerRepoAccount
+  export gDockerRepoPassword
 
   local l_ipAddr=$1
   local l_restfulPort=$2
@@ -40,10 +42,12 @@ function deleteNexusComponentById() {
 
   gDefaultRetVal="false"
 
-  echo "curl -X 'DELETE' -H 'accept: application/json' http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}"
-  l_result=$(curl -X 'DELETE' -H 'accept: application/json' "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}" 2>&1)
+  echo "curl -X 'DELETE' -H 'accept: application/json' -u ${gDockerRepoAccount}:${gDockerRepoPassword} http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}"
+  l_result=$(curl -X 'DELETE' -H 'accept: application/json' -u "${gDockerRepoAccount}:${gDockerRepoPassword}" \
+    "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}" 2>&1)
   l_errorLog=$(echo -e "${l_result}" |  grep -ioP "^(.*)(Error|Failed)(.*)$")
-  [[ ! "${l_errorLog}" ]] && gDefaultRetVal="true"
+  [[ "${l_errorLog}" ]] && error "删除仓库中现有的同名同版本的镜像失败: ${l_result}"
+  gDefaultRetVal="true"
 
 }
 
@@ -63,15 +67,15 @@ function pushNexusChartComponent(){
   l_tmpFile="chart-push-${RANDOM}.tmp"
   registerTempFile "${l_tmpFile}"
 
-  info "开始推送chart镜像到仓库中..."
+  info "开始推送${l_chartFile##*/}镜像到chart仓库中..." "-n"
   curl -v -F file=@"${l_chartFile}" -u "${l_account}":"${l_password}" \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components?repository=${l_repository}" 2>&1 | tee "${l_tmpFile}"
   l_result=$(cat "${l_tmpFile}")
   l_errorLog=$(echo -e "${l_result}" | grep -ioP "^(.*)(Error|Failed)(.*)$")
   if [ "${l_errorLog}" ];then
-    error "chart镜像推送失败：\n${l_result}"
+    error "推送失败：\n${l_result}"
   else
-    info "chart镜像推送成功"
+    info "推送成功"
   fi
 
   unregisterTempFile "${l_tmpFile}"

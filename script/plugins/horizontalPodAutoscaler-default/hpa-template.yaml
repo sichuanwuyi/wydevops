@@ -1,0 +1,32 @@
+{{- if \$.Values.${l_moduleName}.autoscaling.enabled }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ${l_serviceName}
+  labels:
+    helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
+    app.kubernetes.io/version: ${gCurrentServiceVersion}
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ${l_serviceName}
+    app.kubernetes.io/instance: { { \$.Release.Name } }
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: {{ \$.Values.${l_moduleName}.kind }}
+    name: ${l_serviceName}
+  minReplicas: {{ \$.Values.${l_moduleName}.autoscaling.minReplicas }}
+  maxReplicas: {{ \$.Values.${l_moduleName}.autoscaling.maxReplicas }}
+  metrics:
+    {{- if \$.Values.${l_moduleName}.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ \$.Values.${l_moduleName}.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if \$.Values.${l_moduleName}.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ \$.Values.${l_moduleName}.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

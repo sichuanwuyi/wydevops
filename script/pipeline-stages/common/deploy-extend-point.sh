@@ -85,7 +85,7 @@ function initialGlobalParamsForDeployStage_ex() {
     _readValueOfListItemNames "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params"
     l_businessParamNames="${gDefaultRetVal}"
     if [[ "${l_businessParamNames}" && "${l_businessParamNames}" != "null" ]];then
-      l_businessParamNames=",${l_businessParamNames},"
+      l_businessParamNames="${l_businessParamNames},"
       l_businessParamIndex="${l_targetIndex}"
     fi
 
@@ -137,7 +137,7 @@ function initialGlobalParamsForDeployStage_ex() {
 
           if [ "${l_businessParamNames}" ];then
             #从现有参数列表中删除l_paramName。
-            l_businessParamNames="${l_businessParamNames//,${l_paramName},/,}"
+            l_businessParamNames="${l_businessParamNames//${l_paramName},/,}"
           fi
         done
 
@@ -151,7 +151,8 @@ function initialGlobalParamsForDeployStage_ex() {
       # shellcheck disable=SC2068
       for l_paramName in ${l_array[@]};do
         warn "清除未用到的参数项:${l_paramName}"
-        getListIndexByPropertyName "${l_cicdConfigFile}" "deploy[${l_businessParamIndex}].params" "name" "${l_paramName}" "false" "${gCiCdYamlFile}"
+        getListIndexByPropertyName "${l_cicdConfigFile}" "deploy[${l_businessParamIndex}].params" \
+          "name" "${l_paramName}" "false" "${gCiCdYamlFile}"
         deleteParam "${l_cicdConfigFile}" "deploy[${l_businessParamIndex}].params[${gDefaultRetVal}]"
       done
     fi

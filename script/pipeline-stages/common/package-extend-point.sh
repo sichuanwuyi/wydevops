@@ -10,6 +10,7 @@ function initialGlobalParamsForPackageStage_ex() {
   export gChartRepoName
   export gChartRepoAccount
   export gChartRepoPassword
+  export gChartRepoType
 
   if [ "${gBuildType}" == "single" ];then
     #制作单镜像时，对ci-cd.yaml文件进行特殊处理。
@@ -25,7 +26,7 @@ function initialGlobalParamsForPackageStage_ex() {
 
   if [[ "${gChartRepoName}" && "${gChartRepoAccount}" && "${gChartRepoPassword}" ]];then
     #添加Chart镜像仓库到本地配置中。
-    addHelmRepo "${gChartRepoInstanceName}" "${gChartRepoName}" "${gChartRepoAccount}" "${gChartRepoPassword}"
+    addHelmRepo "${gChartRepoType}" "${gChartRepoInstanceName}" "${gChartRepoName}" "${gChartRepoAccount}" "${gChartRepoPassword}"
   else
     warn "在本地Helm配置中添加Chart镜像仓库信息失败：chart仓库别名、chart仓库地址、登录账号、登录密码均不能为空"
   fi

@@ -10,9 +10,10 @@ globalParams:
   nameEn: _NAME-EN_
   #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
   serviceCode: ${serviceName}
+
+  businessImage: ${serviceName}-business
   #CICD Java流程会自动从Pom.yml文件中读取版本信息覆盖businessVersion参数。
   businessVersion: _BUSINESS-VERSION_
-
   baseImage: ${serviceName}-base
   baseVersion: _BASE-VERSION_
 
@@ -270,7 +271,7 @@ chart:
         #initContainers的第一个容器，其名称默认应该等于服务名称。
         initContainers:
           - name: ${serviceName}-business
-            repository: ${serviceName}-business
+            repository: ${businessImage}
             pullPolicy: Always
             tag: ${businessVersion}
             args: []

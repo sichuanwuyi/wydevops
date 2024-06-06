@@ -6,10 +6,12 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
   export gHelmBuildDir
   export gBuildType
   export gCiCdYamlFile
+  export gChartRepoType
 
   local l_content
   local l_systemType
   local l_archType
+  local l_info
 
   #检查是否安装有helm工具。
   l_content=$(helm version | grep -oP "not found" )
@@ -23,7 +25,9 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
   fi
 
   #将生成的Chart镜像推送到gChartRepoName仓库中。
-  invokeExtendPointFunc "addHelmRepo" "在本地系统中注册helm仓库"
+  l_info="在本地系统中注册helm仓库"
+  [[ "${gChartRepoType}" == "harbor" ]] && l_info="登录harbor仓库"
+  invokeExtendPointFunc "addHelmRepo" "${l_info}"
 
   if [ "${gBuildType}" == "single" ];then
     #制作单镜像时，对ci-cd.yaml文件进行特殊处理。
@@ -368,12 +372,13 @@ function installHelm_ex() {
 }
 
 function addHelmRepo_ex(){
+  export gChartRepoType
   export gChartRepoInstanceName
   export gChartRepoName
   export gChartRepoAccount
   export gChartRepoPassword
   #调用helm-helper.sh文件中的方法。
-  addHelmRepo "${gChartRepoInstanceName}" "${gChartRepoName}" "${gChartRepoAccount}" "${gChartRepoPassword}"
+  addHelmRepo "${gChartRepoType}" "${gChartRepoInstanceName}" "${gChartRepoName}" "${gChartRepoAccount}" "${gChartRepoPassword}"
 }
 
 function onBeforeHelmPackage_ex() {
