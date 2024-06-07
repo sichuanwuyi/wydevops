@@ -24,7 +24,7 @@ function invokeResourceGenerator() {
   l_registerContent="${gPluginRegTables[${l_resourceType}]}"
   l_result=$(echo -e "${l_registerContent}," | grep -oP ",${l_funcNameSuffix},")
   if [ "${l_result}" ];then
-    l_funcName="${l_resourceType}Generator_${l_funcNameSuffix}"
+    l_funcName="${l_resourceType,}Generator_${l_funcNameSuffix}"
     #如果方法l_funcName不存在，则加载一次l_shellFile文件。
     if ! type -t "${l_funcName}" > /dev/null; then
       error "未找到资源生成器方法：${l_funcName}"
@@ -107,13 +107,13 @@ function loadPlugins() {
   # shellcheck disable=SC2068
   for l_pluginDir in ${l_pluginDirs[@]};do
 
-    l_pluginGeneratorList=$(find "${l_pluginDir}" -maxdepth 1 -type f -name "*-generator*.sh")
+    l_pluginGeneratorList=$(find "${l_pluginDir}" -maxdepth 2 -type f -name "*-generator.sh")
     # shellcheck disable=SC2068
     for l_pluginGenerator in ${l_pluginGeneratorList[@]};do
       l_generatorFile="${l_pluginGenerator##*/}"
       l_resourceType="${l_generatorFile%%-*}"
       # shellcheck disable=SC2002
-      l_funcNames=$(cat "${l_pluginGenerator}" | grep -oP "^(function) ${l_resourceType}Generator_(.*)\(\)([ ]*)\{([ ]*)$")
+      l_funcNames=$(cat "${l_pluginGenerator}" | grep -oP "^(function) ${l_resourceType,}Generator_(.*)\(\)([ ]*)\{([ ]*)$")
       stringToArray "${l_funcNames}" "l_lines"
       l_lineCount=${#l_lines[@]}
 
@@ -123,9 +123,9 @@ function loadPlugins() {
         l_funcName="${l_funcName// /}"
         l_funcName="${l_funcName//function/}"
         l_funcName="${l_funcName%%(*}"
-        l_funcName="${l_funcName//${l_resourceType}-generator_/}"
-        l_result=$(echo -e "${l_funcNameStr}," | grep -oP ",${l_funcName},")
-        [[ "${l_result}" ]] && error "${l_resourceType}类型的资源生成器名称冲突：${l_resourceType}Generator_${l_funcName}名称已经存在"
+        l_funcName="${l_funcName//${l_resourceType,}Generator_/}"
+        l_result=$(echo -e "${l_funcNameStr}," | grep -oP "${l_funcName},")
+        [[ "${l_result}" ]] && error "${l_resourceType}类型的资源生成器名称冲突：${l_resourceType,}Generator_${l_funcName}名称已经存在"
         l_funcNameStr="${l_funcNameStr},${l_funcName}"
       done
 

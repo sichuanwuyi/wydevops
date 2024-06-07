@@ -228,6 +228,126 @@ function onModifyingChartYaml_ex(){
 
 }
 
+function onModifyingValuesYaml1_ex(){
+  export gDefaultRetVal
+  export gDockerRepoName
+  export gFileContentMap
+  export gBuildPath
+
+  local l_chartPath=$1
+
+  local l_packageYaml
+  local l_valuesYaml
+  local l_saveBackStatus
+
+  local l_index
+  local l_deploymentItem
+  local l_moduleName
+  local l_pluginIndex
+
+  local l_kind
+  local l_generatorName
+  local l_configPath
+
+  l_packageYaml="${l_chartPath}/package.yaml"
+  l_valuesYaml="${l_chartPath}/values.yaml"
+
+  disableSaveBackImmediately
+  l_saveBackStatus="${gDefaultRetVal}"
+
+  #覆盖l_valuesYaml文件内容。
+  echo "#定义容器内的Docker镜像仓库地址，用于容器内镜像的拉取" > "${l_valuesYaml}"
+  echo "image:" >> "${l_valuesYaml}"
+  #在values.yaml文件中定义image.registry参数
+  insertParam "${l_valuesYaml}" "image.registry" "${gDockerRepoName}"
+
+  #将l_packageYaml文件中的params参数配置节添加到values.yaml文件中。
+  #并将l_packageYaml文件中configMaps[?].files参数中所有文件中配置的变量(”{{ .Values.* }}“)写入values.yaml的params配置节中。
+  invokeExtendPointFunc "addParamsToValuesYaml" "为values.yaml文件添加params配置节扩展" "${l_packageYaml}" "params" "${l_valuesYaml}"
+
+  ((l_index = 0))
+  while true;do
+    readParam "${l_packageYaml}" "deployments[${l_index}]"
+    [[ "${gDefaultRetVal}" == "null" ]] && break
+
+    if [ ! "${gDefaultRetVal}" ];then
+      ((l_index = l_index + 1))
+      return
+    fi
+
+    l_deploymentItem="${gDefaultRetVal}"
+    l_moduleName="deployment${l_index}"
+
+    #将读取的l_deploymentItem插入到l_valuesYaml文件中。
+    insertParam "${l_valuesYaml}" "${l_moduleName}" "${l_deploymentItem}"
+
+    #先处理引用的外部容器，这会改变l_valuesYaml文件中deployment${l_index}项中的内容。
+    #直接调用资源生成器。
+    invokeResourceGenerator "ExternalContainer" "default" "${l_valuesYaml}" "${l_moduleName}.refExternalContainers"
+
+    ((l_pluginIndex = 0))
+    while true;do
+      readParam "${l_valuesYaml}" "${l_moduleName}.resourcePlugins[${l_pluginIndex}].name"
+      [[ "${gDefaultRetVal}" == "null" ]] && break
+
+      if [ ! "${gDefaultRetVal}" ];then
+        ((l_pluginIndex = l_pluginIndex + 1))
+        continue
+      fi
+
+      l_kind="${gDefaultRetVal}"
+
+      readParam "${l_valuesYaml}" "${l_moduleName}.resourcePlugins[${l_pluginIndex}].enable"
+      if [ "${gDefaultRetVal}" == "false" ];then
+        ((l_pluginIndex = l_pluginIndex + 1))
+        continue
+      fi
+
+      #获取插件的资源文件生成器名称
+      l_generatorName="default"
+      readParam "${l_valuesYaml}" "${l_moduleName}.resourcePlugins[${l_pluginIndex}].generatorName"
+      [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && l_generatorName="${gDefaultRetVal}"
+
+      #获取插件配置数据
+      l_configPath=""
+      readParam "${l_valuesYaml}" "${l_moduleName}.resourcePlugins[${l_pluginIndex}].configPath"
+      [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && l_configPath="${gDefaultRetVal}"
+
+      #调用扩展点方法，为三级管理层人员提供干预机会。
+      invokeExtendPointFunc "generateResourceByPlugin" "通过插件生成${l_kind}类型的资源配置文件" "${l_valuesYaml}" \
+        "${l_kind}" "${l_generatorName}" "${l_configPath}"
+
+      ((l_pluginIndex = l_pluginIndex + 1))
+    done
+
+    #最后删除l_valuesYaml文件中deployment${l_index}.resourcePlugins配置。
+    deleteParam "${l_valuesYaml}" "${l_moduleName}.resourcePlugins"
+
+    ((l_index = l_index + 1))
+  done
+
+  #最后处理引用的外部服务，这会为l_valuesYaml文件中增加deployment${l_index}配置项。
+  #直接调用资源生成器。
+  invokeResourceGenerator "ExternalChart" "default" "${l_valuesYaml}" "${l_moduleName}.refExternalCharts"
+
+  enableSaveBackImmediately "${l_saveBackStatus}"
+  #删除已经无用的l_packageYaml文件。
+  rm -f "${l_packageYaml}"
+}
+
+function generateResourceByPlugin_ex() {
+  export gDefaultRetVal
+
+  local l_valuesYaml=$1
+  local l_resourceKind=$2
+  local l_generatorName=$3
+  local l_configPath=$4
+
+  #直接调用资源生成器。
+  invokeResourceGenerator "${l_resourceKind}" "${l_generatorName}" "${l_valuesYaml}" "${l_configPath}"
+
+}
+
 function onModifyingValuesYaml_ex(){
   export gDefaultRetVal
   export gDockerRepoName
@@ -417,7 +537,6 @@ function helmPushChartImage_ex() {
 
 function addParamsToValuesYaml_ex(){
   export gDefaultRetVal
-  export gFileContentMap
 
   local l_packageYaml=$1
   local l_paramPath=$2
@@ -430,10 +549,6 @@ function addParamsToValuesYaml_ex(){
   local l_type
   local l_key
   local l_value
-
-  #关闭yaml-helper.sh文件中的gImmediatelySaveBack标志。
-  disableSaveBackImmediately
-  l_saveBackStatus="${gDefaultRetVal}"
 
   readParam "${l_packageYaml}" "${l_paramPath}"
   if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
@@ -508,8 +623,9 @@ function addParamsToValuesYaml_ex(){
     info "删除${l_valuesYaml##*/}文件中${l_paramPath}.configurable参数成功"
   fi
 
-  #恢复gSaveBackImmediately的值。
-  enableSaveBackImmediately "${l_saveBackStatus}"
+  #将l_paramNameList中的params参数配置到values.yaml文件的params配置节中。
+  invokeExtendPointFunc "combineParamsToValuesYaml" "向values.yaml文件中params配置追加业务参数扩展" "${l_packageYaml}" "${l_valuesYaml}"
+
 }
 
 function combineParamsToValuesYaml_ex() {
@@ -1597,3 +1713,5 @@ function _insertExternalDeployment(){
 
 #加载chart阶段脚本库文件
 loadExtendScriptFileForLanguage "chart"
+
+}

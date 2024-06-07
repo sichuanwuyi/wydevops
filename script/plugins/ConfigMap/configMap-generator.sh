@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-function deploymentGenerator_A() {
+function configMapGenerator_default() {
   export gDefaultRetVal
 }

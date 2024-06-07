@@ -1,8 +1,0 @@
-clusterIP:
-  name:
-  version:
-  ports:
-    - name: http
-      protocol: TCP
-      port:
-      targetPort:

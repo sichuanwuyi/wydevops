@@ -345,9 +345,47 @@ chart:
             #名称必须与volumes中的某个ConfigMap名相同
           - name: ${serviceName}-configmap
             files: ${configMapFiles}
+        resourcePlugins:
+          - name: ConfigMap
+            generatorName: default
+            enable: true
+            configPath:
+          - name: Deployment
+            generatorName: default
+            enable: true
+            configPath:
+          - name: DaemonSet
+            generatorName: default
+            enable: true
+            configPath:
+          - name: StatefulSet
+            generatorName: default
+            enable: true
+            configPath:
+          - name: Service
+            generatorName: default
+            enable: true
+            configPath:
+          - name: ServiceAccount
+            generatorName: default
+            enable: true
+            configPath:
+          - name: HorizontalPodAutoscaler
+            generatorName: default
+            enable: true
+            configPath:
+          - name: Ingress
+            generatorName: default
+            enable: true
+            configPath: gatewayRoute
+          - name: ApisixRoute
+            generatorName: default
+            enable: true
+            configPath: gatewayRoute
+
         #网关路由配置
         gatewayRoute:
-          type: apisix
+          type: ApisixRoute
           version: v2
           routes:
             - name: ${serviceName}
