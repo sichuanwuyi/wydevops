@@ -1,7 +1,7 @@
-{{- range \$.Values.${l_moduleName}.gatewayRoute.routes }}
+{{- range \$.Values.${t_moduleName}.apisixRoute.routes }}
 
 ---
-apiVersion: apisix.apache.org/${l_gatewayVersion}
+apiVersion: apisix.apache.org/${t_gatewayVersion}
 kind: ApisixRoute
 metadata:
   namespace: {{ \$.Release.Namespace }}
@@ -13,20 +13,19 @@ spec:
       websocket: {{ .websocket }}
       {{- end }}
       match:
-        {{- with .match}}
-          {{- if .hosts }}
-          hosts:
-            {{- range .hosts }}
-            - {{ . | quote }}
-            {{- end }}
-          {{ else if \$.Values.devApisixHosts }}
-          hosts:
-            - {{ \$.Values.devApisixHosts | quote }}
+        {{- with .match }}
+        hosts:
+        {{- if \$.Values.gatewayRoute.host }}
+          - {{ \$.Values.gatewayRoute.host | quote }}
+        {{- else }}
+          {{- range .hosts }}
+          - {{ . | quote }}
           {{- end }}
-          paths:
-            {{- range .paths }}
-            - {{ . | quote }}
-            {{- end }}
+        {{- end }}
+        paths:
+          {{- range .paths }}
+          - {{ . | quote }}
+          {{- end }}
         {{- end }}
       {{- if .timeout }}
       timeout:
@@ -37,8 +36,8 @@ spec:
         {{- toYaml .plugins | nindent 8 }}
       {{- end }}
       backends:
-        - serviceName: {{ .name | trunc 63 | trimSuffix \"-\" }}
-          {{- with .backends }}
+        {{- range .backends }}
+        - serviceName: {{ .serviceName }}
           servicePort: {{ .servicePort }}
-          {{- end }}
+        {{- end }}
 {{- end }}

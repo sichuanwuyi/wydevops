@@ -1,4 +1,4 @@
-{{- range \$.Values.${l_moduleName}.containers }}
+{{- range \$.Values.${t_moduleName}.containers }}
 
   {{- if .service.clusterIP }}
   {{- with .service.clusterIP }}
@@ -10,7 +10,7 @@ metadata:
   name: {{ .name | trunc 53 | trimSuffix \"-\" }}-clusterip
   labels:
     helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
-    app.kubernetes.io/version: {{ .version }}
+    app.kubernetes.io/version: ${gCurrentChartVersion}
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix \"-\" }}-clusterip
     app.kubernetes.io/instance: {{ .name | trunc 53 | trimSuffix \"-\" }}-clusterip
@@ -19,7 +19,7 @@ spec:
   ports:
     {{- toYaml .ports | nindent 4 }}
   selector:
-    app.kubernetes.io/name: ${l_serviceName}
+    app.kubernetes.io/name: ${t_deploymentName}
     app.kubernetes.io/instance: {{ \$.Release.Name }}
 
   {{- end }}
@@ -35,7 +35,7 @@ metadata:
   name: {{ .name | trunc 54 | trimSuffix \"-\" }}-nodeport
   labels:
     helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
-    app.kubernetes.io/version: {{ .version }}
+    app.kubernetes.io/version: ${gCurrentChartVersion}
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: {{ .name | trunc 54 | trimSuffix \"-\" }}-nodeport
     app.kubernetes.io/instance: {{ .name | trunc 54 | trimSuffix \"-\" }}-nodeport
@@ -44,7 +44,7 @@ spec:
   ports:
     {{- toYaml .ports | nindent 4 }}
   selector:
-    app.kubernetes.io/name: ${l_serviceName}
+    app.kubernetes.io/name: ${t_deploymentName}
     app.kubernetes.io/instance: {{ \$.Release.Name }}
 
   {{- end }}

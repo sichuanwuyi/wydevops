@@ -381,7 +381,6 @@ function _createGlobalDirectory() {
   export gTempFileDir
   export gProjectShellDirName
   export gProjectShellDir
-  export gProjectChartTemplatesDirName
   export gProjectChartTemplatesDir
   export gProjectPluginDirName
   export gProjectPluginDir
@@ -426,12 +425,6 @@ function _createGlobalDirectory() {
     mkdir -p "${gProjectShellDir}"
   fi
 
-  gProjectChartTemplatesDir="${gHelmBuildDir}/${gProjectChartTemplatesDirName}"
-  if [ ! -d "${gProjectChartTemplatesDir}" ];then
-    info "初始化项目级Chart模板文件存储目录:${gProjectChartTemplatesDir}"
-    mkdir -p "${gProjectChartTemplatesDir}"
-  fi
-
   gProjectPluginDir="${gHelmBuildDir}/${gProjectPluginDirName}"
   if [ ! -d "${gProjectPluginDir}" ];then
     info "初始化项目级资源生成器插件存储目录:${gProjectPluginDir}"
@@ -454,7 +447,6 @@ function _checkGlobalDirectory() {
   export gTempFileDir
   export gProjectShellDirName
   export gProjectShellDir
-  export gProjectChartTemplatesDirName
   export gProjectChartTemplatesDir
   export gProjectPluginDirName
   export gProjectPluginDir
@@ -477,30 +469,33 @@ function _checkGlobalDirectory() {
   if [[ ! -d "${gDockerBuildDir}" ]];then
     info "初始化docker镜像构建目录:${gDockerBuildDir}"
     mkdir -p "${gDockerBuildDir}"
+  else
+    info "清空docker镜像构建目录"
+    rm -rf "${gDockerBuildDir:?}/*"
   fi
 
   gChartBuildDir="${gHelmBuildDir}/${gChartBuildDirName}"
   if [[ ! -d "${gChartBuildDir}" ]];then
     info "初始化chart镜像构建目录:${gChartBuildDir}"
     mkdir -p "${gChartBuildDir}"
+  else
+    info "清空chart镜像构建目录"
+    rm -rf "${gChartBuildDir:?}/*"
   fi
 
   gTempFileDir="${gBuildPath}/${gTempFileDirName}"
   if [ ! -d "${gTempFileDir}" ];then
     info "初始化临时文件存储目录:${gTempFileDir}"
     mkdir -p "${gTempFileDir}"
+  else
+    info "清空临时文件存储目录"
+    rm -rf "${gTempFileDir:?}/*"
   fi
 
   gProjectShellDir="${gHelmBuildDir}/${gProjectShellDirName}"
   if [ ! -d "${gProjectShellDir}" ];then
     info "初始化项目级脚本文件存储目录:${gProjectShellDir}"
     mkdir -p "${gProjectShellDir}"
-  fi
-
-  gProjectChartTemplatesDir="${gHelmBuildDir}/${gProjectChartTemplatesDirName}"
-  if [ ! -d "${gProjectChartTemplatesDir}" ];then
-    info "初始化项目级Chart模板文件存储目录:${gProjectChartTemplatesDir}"
-    mkdir -p "${gProjectChartTemplatesDir}"
   fi
 
   gProjectPluginDir="${gHelmBuildDir}/${gProjectPluginDirName}"

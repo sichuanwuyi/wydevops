@@ -112,6 +112,7 @@ function initialGlobalParamsForDeployStage_ex() {
             l_paramValue="${l_paramValue// default/}"
             l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
             if [[ "${l_paramValue}" =~ ^(\") ]];then
+              #去掉头尾引号
               l_paramValue="${l_paramValue/\"/}"
               l_paramValue="${l_paramValue%\"*}"
             fi
@@ -643,6 +644,26 @@ function _deployServiceInK8S() {
       l_settingParams="${l_settingParams%,*}"
     fi
 
+    #如果dockerRepo参数配置有值，则需要更新image.registry参数的值。
+    readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.dockerRepo"
+    if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
+      # shellcheck disable=SC2206
+      l_array=(${gDefaultRetVal//,/ })
+      warn "更新集群内拉取docker镜像使用的仓库地址为: ${l_array[2]}"
+      #多个同名参数的设置，以最后一个为准。因此可以直接追加参数的最新值。
+      l_settingParams="${l_settingParams},image.registry=${l_array[2]}"
+    fi
+
+    #如果dockerRepo参数配置有值，则需要更新image.registry参数的值。
+    readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.routeHosts"
+    if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
+      # shellcheck disable=SC2206
+      l_array=(${gDefaultRetVal//,/ })
+      warn "更新网关配置中的绑定域名为: ${l_array[0]}"
+      #多个同名参数的设置，以最后一个为准。因此可以直接追加参数的最新值。这里只取第一个。
+      l_settingParams="${l_settingParams},gatewayRoute.host=${l_array[0]}"
+    fi
+
     #自定义Helm命令行中set参数扩展
     invokeExtendPointFunc "onCustomizedSetParamsBeforeHelmInstall" "自定义Helm命令行中set参数扩展" \
       "${gCiCdYamlFile}" "${l_index}" "${l_activeProfile}"
@@ -690,6 +711,7 @@ function findChartImage() {
   export gDefaultRetVal
   export gHelmBuildOutDir
   export gChartRepoInstanceName
+  export gChartRepoType
 
   local l_chartName=$1
   local l_chartVersion=$2
@@ -709,7 +731,7 @@ function findChartImage() {
       info "未找到" "*"
       if [ "${gChartRepoInstanceName}" ];then
         info "从Chart镜像仓库中拉取版本为${l_chartVersion}的${l_chartName}镜像..." "-n"
-        pullChartImage "${l_chartName}" "${l_chartVersion}" "${gChartRepoInstanceName}" \
+        pullChartImage "${gChartRepoType}" "${l_chartName}" "${l_chartVersion}" "${gChartRepoInstanceName}" \
           "${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/chart"
         [[ ! -f "${l_chartFile}" ]] && error "拉取失败"
         info "拉取成功" "*"

@@ -1,16 +1,18 @@
-{{- with \$.Values.${l_moduleName} }}
+{{- with \$.Values.${t_moduleName} }}
 apiVersion: apps/v1
-kind: ${l_kindType}
+kind: ${t_kindType}
 metadata:
   name: {{ .name | trunc 63 | trimSuffix \"-\" }}
   labels:
     helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
-    app.kubernetes.io/version: ${gCurrentServiceVersion}
+    app.kubernetes.io/version: ${gCurrentChartVersion}
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: {{ .name | trunc 63 | trimSuffix \"-\" }}
     app.kubernetes.io/instance: {{ \$.Release.Name }}
 spec:
+  {{- if not .autoscaling.enabled }}
   replicas: {{ .replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ .name | trunc 63 | trimSuffix \"-\" }}
@@ -35,10 +37,10 @@ spec:
       imagePullSecrets:
         {{- toYaml .imagePullSecrets | nindent 8 }}
       {{- end }}
-      {{- if \$.Values.${l_moduleName}.serviceAccount.create }}
-      serviceAccountName: {{ default \"${l_serviceName}\" \$.Values.${l_moduleName}.serviceAccount.name }}
+      {{- if \$.Values.${t_moduleName}.serviceAccount.create }}
+      serviceAccountName: {{ default \"${t_deploymentName}\" \$.Values.${t_moduleName}.serviceAccount.name }}
       {{- else }}
-      serviceAccountName: {{ default \"default\" \$.Values.${l_moduleName}.serviceAccount.name }}
+      serviceAccountName: {{ default \"default\" \$.Values.${t_moduleName}.serviceAccount.name }}
       {{- end }}
       {{- if .podSecurityContext }}
       securityContext:
@@ -76,7 +78,7 @@ spec:
       {{- range .containers }}
         - name: {{ .name | trunc 63 | trimSuffix \"-\" }}
           securityContext:
-            {{- toYaml \$.Values.${l_moduleName}.securityContext | nindent 12 }}
+            {{- toYaml \$.Values.${t_moduleName}.securityContext | nindent 12 }}
           {{- if \$.Values.image.registry }}
           image: {{ \$.Values.image.registry }}/{{ .repository }}:{{ .tag | default \$.Chart.AppVersion }}
           {{- else }}
@@ -103,9 +105,9 @@ spec:
           readinessProbe:
             {{- toYaml .readinessProbe | nindent 12 }}
           {{- end }}
-          {{- if \$.Values.params.${l_moduleName}.resources }}
+          {{- if \$.Values.params.${t_moduleName}.resources }}
           resources:
-            {{- toYaml \$.Values.params.${l_moduleName}.resources | nindent 12 }}
+            {{- toYaml \$.Values.params.${t_moduleName}.resources | nindent 12 }}
           {{- else if .resources }}
           resources:
             {{- toYaml .resources | nindent 12 }}

@@ -7,7 +7,7 @@ _selfRootDir="${_selfRootDir//test/}"
 
 #2.导入yaml函数库文件、向外发送通知的库文件。
 # shellcheck disable=SC1090
-source "${_selfRootDir}yaml-helper.sh"
+source "${_selfRootDir}/helper/yaml-helper.sh"
 
 export gDefaultRetVal
 export gEnableCache="true"
@@ -107,7 +107,5 @@ rm -f "${tmpFile}"
 #helm uninstall devops-test1 -n develop --kubeconfig /e/tmt/test/deploy/kube-config
 #helm uninstall atom-hardware-manager -n develop --kubeconfig /e/tmt/test/deploy/kube-config
 
-l_registerContent=",bb,adt,dt,aa,ss,dt,ww,"
-l_result=$(echo -e "${l_registerContent}," | grep -oP "[a-zA-Z0-9_\-]+," | sort | uniq -c | grep -oP "^([ ]*)[2-9]{1}[0-9]*(.*)$")
-echo -e "${l_result}" | grep -oP "[a-zA-Z_]+[a-zA-Z0-9_\-]*"
-
+l_registerContent="/e/tmt/wydevops/script/plugins/Ingress1/ingress-generator.sh|ingressGenerator_default,;/e/tmt/wydevops/script/plugins/Ingress2/ingress-generator.sh|ingressGenerator_default,"
+echo -e "${l_registerContent}" | grep -oP "[a-zA-Z0-9_\-]+," | sort | uniq -c | grep -oP "^([ ]*)[2-9]{1}[0-9]*(.*)$"

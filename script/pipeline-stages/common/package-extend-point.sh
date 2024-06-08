@@ -17,18 +17,11 @@ function initialGlobalParamsForPackageStage_ex() {
     invokeExtendPointFunc "handleBuildingSingleImageForPackage" "package阶段单镜像构建模式下对ci-cd.yaml文件中参数的特殊调整" "${gCiCdYamlFile}"
   fi
 
-  if [[ "${gDockerRepoName}" && "${gDockerRepoAccount}" && "${gDockerRepoPassword}" ]];then
-    #完成docker仓库登录
-    dockerLogin "${gDockerRepoName}" "${gDockerRepoAccount}" "${gDockerRepoPassword}"
-  else
-    warn "docker仓库登录失败：docker仓库地址、登录账号、登录密码均不能为空"
-  fi
-
-  if [[ "${gChartRepoName}" && "${gChartRepoAccount}" && "${gChartRepoPassword}" ]];then
+  if [[ "${gChartRepoInstanceName}" ]];then
+    #nexus仓库需要先登录，harbor仓库的登录会在addHelmRepo函数中完成。
+    [[ "${gChartRepoType}" == "nexus" ]] && dockerLogin "${gDockerRepoName}" "${gDockerRepoAccount}" "${gDockerRepoPassword}"
     #添加Chart镜像仓库到本地配置中。
     addHelmRepo "${gChartRepoType}" "${gChartRepoInstanceName}" "${gChartRepoName}" "${gChartRepoAccount}" "${gChartRepoPassword}"
-  else
-    warn "在本地Helm配置中添加Chart镜像仓库信息失败：chart仓库别名、chart仓库地址、登录账号、登录密码均不能为空"
   fi
 }
 
@@ -139,6 +132,7 @@ function createConfigFile_ex() {
     #创建setting.conf文件。
     l_settingFile="${l_targetDir}/setting.conf"
     echo "image.registry=${gDockerRepoName},\\" > "${l_settingFile}"
+    echo "gatewayRoute.host=,\\" >> "${l_settingFile}"
 
     l_curDir=$(pwd)
 

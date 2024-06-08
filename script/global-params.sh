@@ -16,7 +16,6 @@ export gGlobalParamNames=(
 "gTempFileDirName=\"temp\"" \
 "gProjectShellDirName=\"shell\"" \
 "gProjectPluginDirName=\"plugins\"" \
-"gProjectChartTemplatesDirName=\"chart-templates\"" \
 
 #项目历史更新文件名称
 "gReleaseNoteFileName=\"release_notes.txt\"" \
@@ -199,7 +198,7 @@ function invokeExtendPointFunc() {
     info "调用公共功能扩展点:${l_funcName}_ex..."
     gShellExecuteResult="true"
     # shellcheck disable=SC2068
-    "${l_funcName}_ex" ${l_param[@]}
+    "${l_funcName}_ex" "${l_param[@]}"
   else
     info "未检测到公共功能扩展点:${l_funcName}_ex..."
   fi

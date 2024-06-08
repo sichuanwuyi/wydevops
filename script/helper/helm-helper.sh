@@ -34,26 +34,20 @@ function pushChartImage() {
 }
 
 function pullChartImage() {
-  local l_chartName=$1
-  local l_chartVersion=$2
-  local l_repoAliasName=$3
-  local l_destination=$4
+  export gChartRepoName
 
-  local l_errorLog
+  local l_chartRepoType=$1
+  local l_chartName=$2
+  local l_chartVersion=$3
+  local l_repoInstanceName=$4
+  local l_destination=$5
 
   if [ ! -d "${l_destination}" ];then
     mkdir -p "${l_destination}"
   fi
 
-  #更新本地库
-  echo "helm repo update"
-  helm repo update
+  #执行推送调用链
+  invokeExtendChain "onPullChartImage" "${l_chartRepoType}" "${l_chartName}" "${l_chartVersion}" \
+    "${l_repoInstanceName}" "${l_destination}" "${gChartRepoName}"
 
-  #拉取Chart镜像
-  echo "helm pull ${l_repoAliasName}/${l_chartName} --destination ${l_destination} --version ${l_chartVersion}"
-  l_errorLog=$(helm pull "${l_repoAliasName}/${l_chartName}" --destination "${l_destination}" --version "${l_chartVersion}" 2>&1)
-  l_errorLog=$(echo -e "${l_errorLog}" | grep -ioP "^(.*)(Error|failed)(.*)$")
-  if [ "${l_errorLog}" ];then
-    error "从${l_repoAliasName}镜像仓库拉取Chart镜像失败:${l_errorLog}"
-  fi
 }

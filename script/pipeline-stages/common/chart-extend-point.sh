@@ -7,6 +7,7 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
   export gBuildType
   export gCiCdYamlFile
   export gChartRepoType
+  export gChartRepoInstanceName
 
   local l_content
   local l_systemType
@@ -24,10 +25,11 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
     invokeExtendPointFunc "installHelm" "在本地系统中安装helm工具" "${gDefaultRetVal%%/*}" "${gDefaultRetVal#*/}"
   fi
 
-  #将生成的Chart镜像推送到gChartRepoName仓库中。
-  l_info="在本地系统中注册helm仓库"
-  [[ "${gChartRepoType}" == "harbor" ]] && l_info="登录harbor仓库"
-  invokeExtendPointFunc "addHelmRepo" "${l_info}"
+  if [ "${gChartRepoInstanceName}" ];then
+    l_info="在本地系统中注册helm仓库"
+    [[ "${gChartRepoType}" == "harbor" ]] && l_info="登录harbor仓库"
+    invokeExtendPointFunc "addHelmRepo" "${l_info}"
+  fi
 
   if [ "${gBuildType}" == "single" ];then
     #制作单镜像时，对ci-cd.yaml文件进行特殊处理。
@@ -91,7 +93,8 @@ function onBeforeCreatingChartImage_ex() {
       error "执行命令(helm create ${l_chartPath})失败: ${l_content}"
     fi
     #删除的无效的文件或目录。
-    l_abortedFiles=("tests" "NOTES.txt" "ingress.yaml" "_helpers.tpl")
+    l_abortedFiles=("tests" "NOTES.txt" "ingress.yaml" "_helpers.tpl" \
+      "deployment.yaml" "hpa.yaml" "service.yaml" "serviceAccount.yaml")
     # shellcheck disable=SC2068
     for l_file in ${l_abortedFiles[@]};do
       if [[ "${l_file}" =~ ^.*\..*$ ]];then
@@ -163,9 +166,7 @@ function onAfterCreatingChartImage_ex() {
   export gHelmBuildOutDir
   export gCurrentChartName
   export gCurrentChartVersion
-  export gChartRepoName
-  export gChartRepoAccount
-  export gChartRepoPassword
+  export gChartRepoInstanceName
 
   local l_chartTgzOutDir
   local l_errorFlag
@@ -196,9 +197,10 @@ function onAfterCreatingChartImage_ex() {
     info "chart镜像(${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz)正确性检测已通过"
   fi
 
-  #将生成的Chart镜像推送到gChartRepoName仓库中。
-  #对于不同的push插件，CHart镜像推送方式是不同的。
-  invokeExtendPointFunc "helmPushChartImage" "Chart镜像推送扩展" "${l_chartTgzOutDir}/${gCurrentChartName}-${gCurrentChartVersion}.tgz"
+  if [ "${gChartRepoInstanceName}" ];then
+    #将生成的Chart镜像推送到chart仓库中。不同的仓库类型chart镜像推送方式是不同的。
+    invokeExtendPointFunc "helmPushChartImage" "Chart镜像推送扩展" "${l_chartTgzOutDir}/${gCurrentChartName}-${gCurrentChartVersion}.tgz"
+  fi
 }
 
 function onModifyingChartYaml_ex(){
@@ -228,7 +230,7 @@ function onModifyingChartYaml_ex(){
 
 }
 
-function onModifyingValuesYaml1_ex(){
+function onModifyingValuesYaml_ex(){
   export gDefaultRetVal
   export gDockerRepoName
   export gFileContentMap
@@ -238,7 +240,6 @@ function onModifyingValuesYaml1_ex(){
 
   local l_packageYaml
   local l_valuesYaml
-  local l_saveBackStatus
 
   local l_index
   local l_deploymentItem
@@ -252,18 +253,21 @@ function onModifyingValuesYaml1_ex(){
   l_packageYaml="${l_chartPath}/package.yaml"
   l_valuesYaml="${l_chartPath}/values.yaml"
 
-  disableSaveBackImmediately
-  l_saveBackStatus="${gDefaultRetVal}"
-
   #覆盖l_valuesYaml文件内容。
   echo "#定义容器内的Docker镜像仓库地址，用于容器内镜像的拉取" > "${l_valuesYaml}"
   echo "image:" >> "${l_valuesYaml}"
   #在values.yaml文件中定义image.registry参数
   insertParam "${l_valuesYaml}" "image.registry" "${gDockerRepoName}"
+  #在values.yaml文件中定义gatewayRoute.host参数
+  insertParam "${l_valuesYaml}" "gatewayRoute.host" "${gDockerRepoName}"
 
   #将l_packageYaml文件中的params参数配置节添加到values.yaml文件中。
   #并将l_packageYaml文件中configMaps[?].files参数中所有文件中配置的变量(”{{ .Values.* }}“)写入values.yaml的params配置节中。
   invokeExtendPointFunc "addParamsToValuesYaml" "为values.yaml文件添加params配置节扩展" "${l_packageYaml}" "params" "${l_valuesYaml}"
+
+  #向l_valuesYaml文件中插入refExternalCharts的值
+  readParam "${l_packageYaml}" "refExternalCharts"
+  insertParam "${l_valuesYaml}" "refExternalCharts" "${gDefaultRetVal}"
 
   ((l_index = 0))
   while true;do
@@ -283,7 +287,8 @@ function onModifyingValuesYaml1_ex(){
 
     #先处理引用的外部容器，这会改变l_valuesYaml文件中deployment${l_index}项中的内容。
     #直接调用资源生成器。
-    invokeResourceGenerator "ExternalContainer" "default" "${l_valuesYaml}" "${l_moduleName}.refExternalContainers"
+    invokeResourceGenerator "ExternalContainer" "default" "${l_valuesYaml}" "${l_index}" \
+      "${l_moduleName}.refExternalContainers"
 
     ((l_pluginIndex = 0))
     while true;do
@@ -314,8 +319,8 @@ function onModifyingValuesYaml1_ex(){
       [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && l_configPath="${gDefaultRetVal}"
 
       #调用扩展点方法，为三级管理层人员提供干预机会。
-      invokeExtendPointFunc "generateResourceByPlugin" "通过插件生成${l_kind}类型的资源配置文件" "${l_valuesYaml}" \
-        "${l_kind}" "${l_generatorName}" "${l_configPath}"
+      invokeExtendPointFunc "generateResourceByPlugin" "通过插件生成${l_kind}类型的资源配置文件" "${l_kind}" \
+        "${l_generatorName}" "${l_valuesYaml}" "${l_index}" "${l_configPath}"
 
       ((l_pluginIndex = l_pluginIndex + 1))
     done
@@ -328,160 +333,15 @@ function onModifyingValuesYaml1_ex(){
 
   #最后处理引用的外部服务，这会为l_valuesYaml文件中增加deployment${l_index}配置项。
   #直接调用资源生成器。
-  invokeResourceGenerator "ExternalChart" "default" "${l_valuesYaml}" "${l_moduleName}.refExternalCharts"
+  invokeResourceGenerator "ExternalChart" "default" "${l_valuesYaml}" "${l_index}" "refExternalCharts"
 
-  enableSaveBackImmediately "${l_saveBackStatus}"
   #删除已经无用的l_packageYaml文件。
   rm -f "${l_packageYaml}"
 }
 
 function generateResourceByPlugin_ex() {
-  export gDefaultRetVal
-
-  local l_valuesYaml=$1
-  local l_resourceKind=$2
-  local l_generatorName=$3
-  local l_configPath=$4
-
   #直接调用资源生成器。
-  invokeResourceGenerator "${l_resourceKind}" "${l_generatorName}" "${l_valuesYaml}" "${l_configPath}"
-
-}
-
-function onModifyingValuesYaml_ex(){
-  export gDefaultRetVal
-  export gDockerRepoName
-  export gFileContentMap
-  export gBuildPath
-
-  local l_chartPath=$1
-
-  local l_packageYaml
-  local l_valuesYaml
-  local l_itemCount
-  local l_content
-  local l_i
-  local l_item
-  local l_key
-  local l_serviceName
-  local l_chartName
-  local l_chartVersion
-
-  local l_externalChartImages
-  local l_externalChartImage
-
-  local l_createGatewayRoute
-  local l_createK8sService
-
-  local l_refExternalCharts
-  local l_refExternalChart
-
-  local l_saveBackStatus
-
-  l_packageYaml="${l_chartPath}/package.yaml"
-  l_valuesYaml="${l_chartPath}/values.yaml"
-
-  disableSaveBackImmediately
-  l_saveBackStatus="${gDefaultRetVal}"
-
-  #覆盖l_valuesYaml文件内容。
-  echo "image:" > "${l_valuesYaml}"
-  #在values.yaml文件中定义image.registry参数
-  insertParam "${l_valuesYaml}" "image.registry" "${gDockerRepoName}"
-
-  #先向values.yaml文件中插入params配置。
-  readParam "${l_packageYaml}" "params"
-  if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
-    #将l_packageYaml文件中的params参数配置节添加到values.yaml文件中。
-    invokeExtendPointFunc "addParamsToValuesYaml" "为values.yaml文件添加params配置节扩展" "${l_packageYaml}" "params" "${l_valuesYaml}"
-  fi
-
-  readParam "${l_packageYaml}" "name"
-  l_chartName="${gDefaultRetVal}"
-  readParam "${l_packageYaml}" "version"
-  l_chartVersion="${gDefaultRetVal}"
-
-  readParam "${l_packageYaml}" "createGatewayRoute"
-  l_createGatewayRoute="${gDefaultRetVal}"
-
-  readParam "${l_packageYaml}" "createK8sService"
-  l_createK8sService="${gDefaultRetVal}"
-
-  readParam "${l_packageYaml}" "deployments"
-  l_content="${gDefaultRetVal}"
-  l_itemCount=$(echo -e "${l_content}" | grep -oP "^(\-)" | wc -l)
-  for ((l_i = 0; l_i < l_itemCount; l_i++));do
-    readParam "${l_packageYaml}" "deployments[${l_i}]"
-    l_item="${gDefaultRetVal}"
-    l_key="deployment${l_i}"
-    insertParam "${l_valuesYaml}" "${l_key}" "${l_item}"
-
-    #读取服务名称
-    readParam "${l_packageYaml}" "deployments[${l_i}].name"
-    l_serviceName="${gDefaultRetVal}"
-
-    #创建相关的K8s相关的ConfigMap配置。
-    invokeExtendPointFunc "createConfigMapYamls" "创建ConfigMap配置扩展" "${l_valuesYaml}"  "${l_key}.configMaps" "${l_serviceName}"
-
-    #将l_paramNameList中的params参数配置到values.yaml文件的params配置节中。
-    invokeExtendPointFunc "combineParamsToValuesYaml" "为values.yaml文件追加params配置扩展" "${l_valuesYaml}" "${gDefaultRetVal}" "${l_chartName}"
-    #deleteParam "${l_valuesYaml}" "${l_key}.configMaps"
-
-    #检查并插入应用的外部镜像中的容器。
-    readParam "${l_valuesYaml}" "${l_key}.refExternalContainers"
-    if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
-      # shellcheck disable=SC2206
-      l_externalChartImages=(${gDefaultRetVal//,/ })
-      # shellcheck disable=SC2068
-      for l_externalChartImage in ${l_externalChartImages[@]};do
-        if [[ "${l_externalChartImage}" =~ ^(\./) ]];then
-          l_externalChartImage="${gBuildPath}${l_externalChartImage:1}"
-        fi
-        info "正在处理引用的外部Chart镜像中的容器：${l_externalChartImage}"
-        #将外部Chart镜像中values.yaml文件中的params.deployment0配置节复制到l_valuesYaml文件中。
-        #并将外部chart镜像中deployment[0]的initialContainers和containers合并到当前chart的deployment0中。
-        invokeExtendChain "onProcessExternalChart" "${l_valuesYaml}" "${l_externalChartImage}" "${l_i}"
-      done
-    fi
-
-    if [ "${l_createGatewayRoute}" == "true" ];then
-      #创建K8s相关的网关配置。
-      invokeExtendPointFunc "createGatewayRouteYamls" "创建网关路由配置" "${l_valuesYaml}" "${l_key}.gatewayRoute" "${l_serviceName}"
-    fi
-
-    if [ "${l_createK8sService}" == "true" ];then
-      #创建K8S相关的Service资源
-      invokeExtendPointFunc "createServiceYaml" "创建K8S相关的Service资源" "${l_valuesYaml}" "${l_key}" "${l_serviceName}"
-    fi
-
-    #创建K8S相关的服务账号资源, 默认实现中完成了gCurrentServiceVersion变量的赋值。
-    invokeExtendPointFunc "createServiceAccountYaml" "创建K8S相关的服务账号资源" "${l_valuesYaml}" "${l_key}" "${l_serviceName}"
-
-    #创建K8S相关的Deployment/DaemonSet/statefulSet资源
-    invokeExtendPointFunc "createDeploymentYaml" "创建Deployment/DaemonSet/statefulSet资源" "${l_valuesYaml}" "${l_key}" "${l_serviceName}"
-
-    #创建K8S相关的水平扩展配置资源
-    invokeExtendPointFunc "createHpaYaml" "创建K8S相关的水平扩展配置资源" "${l_valuesYaml}" "${l_key}" "${l_serviceName}"
-
-  done
-
-  #处理引用的外部服务。
-  readParam "${l_packageYaml}" "refExternalCharts"
-  if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
-    # shellcheck disable=SC2206
-    l_refExternalCharts=(${gDefaultRetVal//,/ })
-    # shellcheck disable=SC2068
-    for l_refExternalChart in ${l_refExternalCharts[@]};do
-      info "向${l_valuesYaml##*/}文件中插入外部Chart镜像中的deployments配置"
-      _insertExternalDeployment "${l_valuesYaml}" "${l_chartName}" "${l_chartVersion}" "${l_refExternalChart}" "${l_i}"
-      l_i="${gDefaultRetVal}"
-    done
-  fi
-
-  enableSaveBackImmediately "${l_saveBackStatus}"
-
-  #删除已经无用的l_packageYaml文件。
-  rm -f "${l_packageYaml}"
+  invokeResourceGenerator "${@}"
 }
 
 function installHelm_ex() {
@@ -618,9 +478,11 @@ function addParamsToValuesYaml_ex(){
     done
     #删除params.configurable配置节
     deleteParam "${l_valuesYaml}" "${l_paramPath}.configurable"
-    [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && \
-      error "删除${l_valuesYaml##*/}文件中${l_paramPath}.configurable参数失败"
-    info "删除${l_valuesYaml##*/}文件中${l_paramPath}.configurable参数成功"
+    if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
+      warn "删除${l_valuesYaml##*/}文件中${l_paramPath}.configurable参数失败：参数不存在"
+    else
+      info "删除${l_valuesYaml##*/}文件中${l_paramPath}.configurable参数成功"
+    fi
   fi
 
   #将l_paramNameList中的params参数配置到values.yaml文件的params配置节中。
@@ -630,473 +492,110 @@ function addParamsToValuesYaml_ex(){
 
 function combineParamsToValuesYaml_ex() {
   export gDefaultRetVal
-  export gCiCdYamlFile
-
-  local l_valuesYaml=$1
-  local l_paramNameList=$2
-  local l_chartName=$3
-
-  local l_index
-  local l_item
-  local l_array
-  local l_packageName
-  local l_paramValue
-  local l_i
-  declare -A l_paramDefaultValueMap
-
-  ((l_index = -1))
-  info "根据chart打包项的名称，获取该chart镜像对应的部署配置节的序号(用于后续读取参数的初始化值) ..." "-n"
-  #根据l_chartName获取打包名。
-  getListIndexByPropertyName "${gCiCdYamlFile}" "package" "chartName" "${l_chartName}"
-  if [ "${gDefaultRetVal}" -ge 0 ];then
-    # shellcheck disable=SC2206
-    l_array=(${gDefaultRetVal})
-    #获取打包名称
-    readParam "${gCiCdYamlFile}" "package[${l_array[0]}].name"
-    if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
-      l_packageName="${gDefaultRetVal}"
-      #根据l_packageName获取打包名。
-      getListIndexByPropertyName "${gCiCdYamlFile}" "deploy" "packageName" "${l_packageName}"
-      #获得l_chartName对应的部署配置项的序号，根据这个序号读取各个参数的默认配置值。
-      # shellcheck disable=SC2206
-      l_index="${gDefaultRetVal}"
-    fi
-  fi
-
-  if [ "${l_index}" -ge 0 ];then
-    info "成功获取序号：${l_index}" "*"
-    info "将参数的默认值读取到内存中 ..."
-    ((l_i = 0))
-    while true;do
-      readParam "${gCiCdYamlFile}" "deploy[${l_index}].params[${l_i}]"
-      [[ "${gDefaultRetVal}" == "null" ]] && break
-      l_paramName=$(echo "${gDefaultRetVal}" | grep "^name:.*$")
-      l_paramName="${l_paramName//name:/}"
-      l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-
-      l_paramValue=$(echo "${gDefaultRetVal}" | grep "^value:.*$")
-      l_paramValue="${l_paramValue//value:/}"
-      l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-
-      # shellcheck disable=SC2034
-      l_paramDefaultValueMap["${l_paramName//\.Values\./}"]="${l_paramValue}"
-      if [ "${l_paramValue}" ];then
-        info "加载参数默认值：${l_paramName//\.Values\./}=>${l_paramValue}"
-      else
-        warn "加载参数默认值：${l_paramName//\.Values\./}=>${l_paramValue}"
-      fi
-      ((l_i = l_i + 1))
-    done
-  else
-    warn "获取序号失败" "*"
-  fi
-
-  # shellcheck disable=SC2206
-  local l_paramNames=(${l_paramNameList//,/ })
-  # shellcheck disable=SC2068
-  for l_item in ${l_paramNames[@]};do
-    readParam "${l_valuesYaml}" "${l_item}"
-    #如果不存在，则插入之。
-    if [ "${gDefaultRetVal}" == "null" ];then
-      #尝试读取参数默认值。
-      l_paramValue="${l_paramDefaultValueMap[${l_item}]}"
-      insertParam "${l_valuesYaml}" "${l_item}" "${l_paramValue}"
-      if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-        error "向${l_valuesYaml##*/}文件中插入${l_item}(=${l_paramValue})参数失败"
-      else
-        info "向${l_valuesYaml##*/}文件中插入${l_item}(=${l_paramValue})参数成功"
-      fi
-    fi
-  done
-}
-
-function createConfigMapYamls_ex(){
-  export gDefaultRetVal
-  export gBuildScriptRootDir
   export gBuildPath
 
-  local l_valuesYaml=$1
-  local l_configMapsPath=$2
-  local l_serviceName=$3
+  local l_packageYaml=$1
+  local l_valuesYaml=$2
 
+  declare -A _paramDeployValueMap
+
+  local l_chartName
+  local l_loopIndex
+  local l_layerLevel
+
+  local l_configMapFiles
+  local l_configFile
+  local l_paramList
+
+  local l_lines
+  local l_lineCount
   local l_i
-  local l_j
-  local l_configMapFile
-  local l_fileList
-  local l_fileCount
-  local l_fileItem
-  local l_content
-  local l_lineContent
-  local l_key
-  local l_lineNum
-  local l_tmpRowNum
+  local l_result
+  local l_info
 
-  local l_paramNameList
-  local l_tmpList
-  local l_itemCount
-  local l_items
-  local l_configMapName
+  readParam "${l_packageYaml}" "name"
+  l_chartName="${gDefaultRetVal}"
 
-  local l_keyList
-  local l_tmpRowNumList
-  local l_tmpSpaceNum
+  #读取参数部署时设置的值。
+  getDeployValueOfParam "${l_chartName}"
 
-  l_paramNameList=""
-  ((l_i = 0))
-  while true; do
-    readParam "${l_valuesYaml}" "${l_configMapsPath}[${l_i}].name"
-    [[ "${gDefaultRetVal}" == "null" ]] && break
-    if [[  ! "${gDefaultRetVal}" ]];then
-      warn "${l_valuesYaml}文件中${l_configMapsPath}[${l_i}].name参数为空"
-      ((l_i = l_i + 1))
-      continue
-    fi
-    l_configMapName="${gDefaultRetVal}"
-
-    readParam "${l_valuesYaml}" "${l_configMapsPath}[${l_i}].files"
-    [[ "${gDefaultRetVal}" == "null" ]] && break
-    if [[  ! "${gDefaultRetVal}" ]];then
-      warn "${l_valuesYaml}文件中${l_configMapsPath}[${l_i}].files参数为空"
-      ((l_i = l_i + 1))
-      continue
-    fi
-
-    stringToArray "${gDefaultRetVal}" "l_fileList" $','
-    l_fileCount="${#l_fileList[@]}"
-
-    l_configMapFile="${l_valuesYaml%/*}/templates/${l_serviceName}-configmap.yaml"
-    cp -f "${gBuildScriptRootDir}/templates/chart/configmap-template.yaml" "${l_configMapFile}"
-
-    updateParam "${l_configMapFile}" "metadata.name" "${l_configMapName}"
-    [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && \
-      error "更新templates/chart/configmap-template.yaml文件中metadata.name参数失败"
-
-    l_keyList=()
-    l_tmpRowNumList=()
-    # shellcheck disable=SC2068
-    for ((l_j=0; l_j < l_fileCount; l_j++ ));do
-      l_fileItem="${l_fileList[${l_j}]}"
-      [[ "${l_fileItem}" =~ ^(\.\/) ]] && l_fileItem="${gBuildPath}${l_fileItem:1}"
-      l_content=$(cat "${l_fileItem}")
-      l_key="${l_fileItem##*/}"
-      info "向${l_configMapFile##*/}文件中插入${l_fileItem##*/}文件内容..." "-n"
-      #将l_key的原始值缓存起来。
-      l_keyList["${l_j}"]="${l_key}"
-      #必须将l_key中的”.“符号替换为其他符号，这里选择”_“符号。
-      l_key="${l_key//./_}"
-      insertParam "${l_configMapFile}" "data.${l_key}" "|\n${l_content}"
-      [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && error "插入失败"
-      info "插入成功" "*"
-      #获得写入的起始行号。
-      # shellcheck disable=SC2206
-      l_lineNum=(${gDefaultRetVal})
-      ((l_tmpRowNum = l_lineNum[0] - 1))
-      l_tmpRowNumList["${l_j}"]="${l_tmpRowNum}"
-
-      #提取l_content中包含的.Values.开头的变量。
-      # shellcheck disable=SC2002
-      l_content=$(echo -e "${l_content}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
-      l_paramNameList="${l_paramNameList},${l_content}"
-    done
-
-    ((l_i = l_i + 1))
-  done
-
-  #直接更新文件内容前需要先清除内存中缓存的文件内容。
-  #否则会导致内存中的旧内容覆盖最新更新的文件内容。
-  clearCachedFileContent "${l_configMapFile}"
-
-  # shellcheck disable=SC2145
-  for (( l_i=0; l_i < ${#l_tmpRowNumList[@]}; l_i++));do
-    l_tmpRowNum="${l_tmpRowNumList[${l_i}]}"
-    #获取文件名原始值。
-    l_key="${l_keyList[${l_i}]}"
-    #读取目标行的前导空格数量
-    l_tmpSpaceNum=$(sed -n "${l_tmpRowNum}p" "${l_configMapFile}" | grep -oP "^([ ]*)" | grep -oP " " | wc -l)
-    l_lineContent="$(printf "%${l_tmpSpaceNum}s")"
-    l_lineContent="${l_lineContent}${l_key}: |"
-    info "更新${l_configMapFile##*/}文件中第${l_tmpRowNum}行的内容为：${l_lineContent}"
-    #更新行的内容。
-    sed -i "${l_tmpRowNum}c\\${l_lineContent}" "${l_configMapFile}"
-  done
-
-  gDefaultRetVal=""
-  if [ "${l_paramNameList}" ];then
-    #参数去重。
-    l_content=$(echo -e "${l_paramNameList}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
-    stringToArray "${l_content}" "l_tmpList"
-    l_itemCount="${#l_tmpList[@]}"
-
-    l_paramNameList=""
-    for ((l_i=0; l_i < l_itemCount; l_i++));do
-      # shellcheck disable=SC2206
-      l_items=(${l_tmpList[${l_i}]})
-      l_paramNameList="${l_paramNameList},${l_items[2]:8}"
-    done
-    gDefaultRetVal="${l_paramNameList:1}"
-  fi
-}
-
-function createGatewayRouteYamls_ex() {
-  export gDefaultRetVal
-  export gBuildScriptRootDir
-  export gLanguage
-
-  local l_valuesYaml=$1
-  local l_gatewayPath=$2
-  local l_serviceName=$3
-
-  local l_gatewayType
-  local l_gatewayVersion
-  local l_moduleName
-  local l_templateFile
-  local l_configFile
-  local l_content
-
-  readParam "${l_valuesYaml}" "${l_gatewayPath}.type"
-  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && error "网关类型(${l_gatewayPath}.type)不能为空"
-  l_gatewayType="${gDefaultRetVal}"
-
-  #读取模板文件。
-  l_templateFile="${gBuildScriptRootDir}/templates/chart/${gLanguage}/${l_gatewayType}-gateway-template.yaml"
-  if [ ! -f "${l_templateFile}" ];then
-    warn "${gLanguage}语言项目模板文件不存在：${l_templateFile}"
-    l_templateFile="${gBuildScriptRootDir}/templates/chart/${l_gatewayType}-gateway-template.yaml"
-    if [ -f "${l_templateFile}" ];then
-      info "使用公共模板文件：${l_templateFile}"
-    else
-      error "模板文件不存在：${l_templateFile}"
-    fi
-  fi
-
-  readParam "${l_valuesYaml}" "${l_gatewayPath}.version"
-  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && error "网关路由版本(${l_gatewayPath}.version)不能为空"
-  #todo: 获取网关组件的版本号，该参数会被下面的模板使用，参数名称不能更改。
-  # shellcheck disable=SC2034
-  l_gatewayVersion="${gDefaultRetVal}"
-  #todo：定义模板文件中使用的变量l_moduleName。
-  l_moduleName="${l_gatewayPath%.*}"
-
-  #定义网关路由配置文件。
-  l_configFile="${l_valuesYaml%/*}/templates/${l_serviceName}-route.yaml"
-  #读取类型匹配的模板文件。
-  l_content=$(cat "${l_templateFile}")
-  #替换模板中的变量。
-  eval "l_content=\$(echo -e \"${l_content}\")"
-  #将替换后的内容写入网关路由配置文件中。
-  echo "${l_content}" > "${l_configFile}"
-
-  #删除自动生成的ingress.yaml文件。
-  rm -f "${l_valuesYaml%/*}/templates/ingress.yaml"
-}
-
-function createServiceYaml_ex() {
-  export gBuildScriptRootDir
-  export gCurrentChartName
-  export gCurrentChartVersion
-  export gLanguage
-
-  local l_valuesYaml=$1
-  local l_moduleName=$2
-  local l_serviceName=$3
-
-  local l_templateFile
-  local l_configFile
-  local l_content
-
-  #读取Service模板文件。
-  l_templateFile="${gBuildScriptRootDir}/templates/chart/${gLanguage}/service-template.yaml"
-  if [ ! -f "${l_templateFile}" ];then
-    warn "${gLanguage}语言项目模板文件不存在：${l_templateFile}"
-    l_templateFile="${gBuildScriptRootDir}/templates/chart/service-template.yaml"
-    if [ -f "${l_templateFile}" ];then
-      info "使用公共模板文件：${l_templateFile}"
-    else
-      error "模板文件不存在：${l_templateFile}"
-    fi
-  fi
-
-  #读取文件内容
-  l_content=$(cat "${l_templateFile}")
-  #替换模板中的变量。
-  eval "l_content=\$(echo -e \"${l_content}\")"
-  #设定目标配置文件
-  l_configFile="${l_valuesYaml%/*}/templates/${l_serviceName}-service.yaml"
-  #写目标配置文件中。
-  echo "${l_content}" > "${l_configFile}"
-
-  #删除自动生成的service.yaml文件。
-  rm -f "${l_valuesYaml%/*}/templates/service.yaml"
-}
-
-function createServiceAccountYaml_ex() {
-  export gDefaultRetVal
-  export gBuildScriptRootDir
-  export gCurrentServiceVersion
-  export gLanguage
-
-  local l_valuesYaml=$1
-  local l_moduleName=$2
-  local l_serviceName=$3
-
-  local l_templateFile
-  local l_configFile
-  local l_content
-  local l_i
-
-  l_templateFile="${gBuildScriptRootDir}/templates/chart/${gLanguage}/serviceaccount-template.yaml"
-  if [ ! -f "${l_templateFile}" ];then
-    warn "${gLanguage}语言项目模板文件不存在：${l_templateFile}"
-    l_templateFile="${gBuildScriptRootDir}/templates/chart/serviceaccount-template.yaml"
-    if [ -f "${l_templateFile}" ];then
-      info "使用公共模板文件：${l_templateFile}"
-    else
-      error "模板文件不存在：${l_templateFile}"
-    fi
-  fi
-
-  ((l_i = 0))
-  while true; do
-    #获取匹配模块的版本。
-    readParam "${l_valuesYaml}" "${l_moduleName}.initContainers[${l_i}].name"
-    if [ "${gDefaultRetVal}" == "null" ];then
-      break
-    elif [ "${gDefaultRetVal}" == "${l_serviceName}-business" ];then
-       #获取模块的版本。
-      readParam "${l_valuesYaml}" "${l_moduleName}.initContainers[${l_i}].tag"
-      #todo: eval语句用的变量。
-      gCurrentServiceVersion="${gDefaultRetVal}"
-      break
-    fi
-    ((l_i = l_i + 1))
-  done
-
-  if [ ! "${gCurrentServiceVersion}" ];then
-    ((l_i = 0))
-    while true; do
-      #获取匹配模块的版本。
-      readParam "${l_valuesYaml}" "${l_moduleName}.containers[${l_i}].name"
-      if [ "${gDefaultRetVal}" == "null" ];then
-        break
-      elif [ "${gDefaultRetVal}" == "${l_serviceName}" ];then
-         #获取模块的版本。
-        readParam "${l_valuesYaml}" "${l_moduleName}.containers[${l_i}].tag"
-        #todo: eval语句用的变量。
-        gCurrentServiceVersion="${gDefaultRetVal}"
-        break
-      fi
-      ((l_i = l_i + 1))
-    done
-  fi
-
-  if [ ! "${gCurrentServiceVersion}" ];then
-    error "读取与服务名称${l_serviceName}匹配的${l_moduleName}.containers[?].tag参数失败"
-  fi
-
-  #读取模板文件内容。
-  l_content=$(cat "${l_templateFile}")
-  #替换模板中的变量。
-  eval "l_content=\$(echo -e \"${l_content}\")"
-  #设定目标配置文件
-  l_configFile="${l_valuesYaml%/*}/templates/${l_serviceName}-serviceaccount.yaml"
-  #将替换后的内容写入配置文件中。
-  echo "${l_content}" > "${l_configFile}"
-
-  #删除自动生成的ingress.yaml文件。
-  rm -f "${l_valuesYaml%/*}/templates/serviceaccount.yaml"
-}
-
-function createDeploymentYaml_ex() {
-  export gDefaultRetVal
-  export gBuildScriptRootDir
-  export gLanguage
-
-  local l_valuesYaml=$1
-  local l_moduleName=$2
-  local l_serviceName=$3
-
-  local l_kindType
-  local l_templateFile
-  local l_configFile
-  local l_content
-
-  #读取匹配类型的模板文件。
-  readParam "${l_valuesYaml}" "${l_moduleName}.kind"
-  l_kindType="${gDefaultRetVal,,}"
-
-  l_templateFile="${gBuildScriptRootDir}/templates/chart/${gLanguage}/${l_kindType}-template.yaml"
-  if [ -f "${l_templateFile}" ];then
-    info "为${l_kindType}类型的服务，使用${gLanguage}语言项目公共模板文件：${l_templateFile}"
-  else
-    warn "${gLanguage}语言项目模板文件不存在：${l_templateFile}"
-    l_templateFile="${gBuildScriptRootDir}/templates/chart/${gLanguage}/deployment-template.yaml"
-    if [ -f "${l_templateFile}" ];then
-      info "为${l_kindType}类型的服务，使用${gLanguage}语言项目公共模板文件：${l_templateFile}"
-    else
-      l_templateFile="${gBuildScriptRootDir}/templates/chart/${l_kindType}-template.yaml"
-      if [ -f "${l_templateFile}" ];then
-        info "为${l_kindType}类型的服务，使用公共模板文件：${l_templateFile}"
+  l_loopIndex=(0 0)
+  ((l_layerLevel = 2))
+  while true;do
+    readParam "${l_packageYaml}" "deployments[${l_loopIndex[0]}].configMaps[${l_loopIndex[1]}].files"
+    if [[ "${gDefaultRetVal}" == "null" ]];then
+      if [ "${l_layerLevel}" -eq 2 ];then
+        ((l_loopIndex[0] = l_loopIndex[0] + 1))
+        ((l_loopIndex[1] = 0))
       else
-        l_templateFile="${gBuildScriptRootDir}/templates/chart/deployment-template.yaml"
-        if [ -f "${l_templateFile}" ];then
-          info "为${l_kindType}类型的服务，使用公共模板文件：${l_templateFile}"
-        else
-          error "无法为${l_kindType}类型的服务匹配到合适的模板文件}"
-        fi
+        break
       fi
+      ((l_layerLevel = l_layerLevel - 1))
+      continue
     fi
-  fi
+    #恢复层级数。
+    ((l_layerLevel = 2))
 
-  #设定目标配置文件
-  l_configFile="${l_valuesYaml%/*}/templates/${l_serviceName}-${l_kindType}.yaml"
+    # shellcheck disable=SC2206
+    l_configMapFiles=(${gDefaultRetVal//,/ })
+    # shellcheck disable=SC2068
+    for l_configFile in ${l_configMapFiles[@]};do
+      info "正在检测${l_configFile##*/}文件中的变量..."
+      [[ "${l_configFile}" =~ ^(\.) ]] && l_configFile="${gBuildPath}/${l_configFile#*/}"
 
-  l_kindType="${l_kindType^}"
-  #读取模板文件内容。
-  l_content=$(cat "${l_templateFile}")
-  #替换模板中的变量。
-  eval "l_content=\$(echo -e \"${l_content}\")"
-  #将替换后的内容写入配置文件中。
-  echo "${l_content}" > "${l_configFile}"
+      # shellcheck disable=SC2002
+      l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
+      if [ "${l_paramList}" ];then
 
-  #删除自动生成的ingress.yaml文件。
-  rm -f "${l_valuesYaml%/*}/templates/deployment.yaml"
-}
+        stringToArray "${l_paramList}" "l_lines"
+        l_lineCount="${#l_lines[@]}"
+        for ((l_i=0; l_i < l_lineCount; l_i++ ));do
+          l_paramName=$(echo -e "${l_lines[${l_i}]}" | grep -oP ".Values(\.[a-zA-Z0-9_\-]+)+( |\|)")
+          [[ "${l_paramName}" =~ ^(.*)\|$ ]] && l_paramName="${l_paramName%|*}"
+          l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+          l_paramName="${l_paramName/\.Values\./}"
 
-function createHpaYaml_ex() {
-  export gDefaultRetVal
-  export gBuildScriptRootDir
-  export gLanguage
+          # shellcheck disable=SC2145
+          l_result=$(echo "${!_paramDeployValueMap[@]} " | grep -oP "${l_paramName} ")
+          if [ "${l_result}" ];then
+            #读取部署时设置的值。
+            l_paramValue="${_paramDeployValueMap[${l_paramName}]}"
+          else
+            #读取配置文件中定义的缺省值。
+            l_paramValue=""
+            if [[ "${l_lines[${l_i}]}" =~ ^(.*)(\|[ ]*default)(.*) ]];then
+              l_paramValue="${l_lines[${l_i}]#*|}"
+              l_paramValue="${l_paramValue%%\}*}"
+              l_paramValue="${l_paramValue// default/}"
+              l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+              if [[ "${l_paramValue}" =~ ^(\") ]];then
+                #去掉头尾引号
+                l_paramValue="${l_paramValue/\"/}"
+                l_paramValue="${l_paramValue%\"*}"
+              fi
+            fi
+          fi
 
-  local l_valuesYaml=$1
-  local l_moduleName=$2
-  local l_serviceName=$3
+          #向l_valuesYaml文件中插入参数。
+          insertParam "${l_valuesYaml}" "${l_paramName}" "${l_paramValue}"
+          l_info="向${l_valuesYaml##*/}文件中插入${l_paramName}参数"
+          if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
+            [[ "${l_paramValue}" ]] && l_info="${l_info}失败：${l_paramValue}"
+            [[ ! "${l_paramValue}" ]] && l_info="${l_info}失败：(值为空)"
+            error "${l_info}"
+          else
+            [[ "${l_paramValue}" ]] && l_info="${l_info}成功：${l_paramValue}"
+            [[ ! "${l_paramValue}" ]] && l_info="${l_info}成功：(值为空)"
+            info "${l_info}"
+          fi
 
-  local l_templateFile
-  local l_configFile
-  local l_content
+        done
+      fi
+    done
 
-  l_templateFile="${gBuildScriptRootDir}/templates/chart/${gLanguage}/hpa-template.yaml"
-  if [ ! -f "${l_templateFile}" ];then
-    warn "${gLanguage}语言项目模板文件不存在：${l_templateFile}"
-    l_templateFile="${gBuildScriptRootDir}/templates/chart/hpa-template.yaml"
-   if [ -f "${l_templateFile}" ];then
-     info "使用公共模板文件：${l_templateFile}"
-   else
-     error "模板文件不存在：${l_templateFile}"
-   fi
-  fi
+    ((l_loopIndex[1] = l_loopIndex[1] + 1))
+  done
 
-  #读取模板文件内容。
-  l_content=$(cat "${l_templateFile}")
-  #替换模板中的变量。
-  eval "l_content=\$(echo -e \"${l_content}\")"
-  #设定目标配置文件
-  l_configFile="${l_valuesYaml%/*}/templates/${l_serviceName}-hpa.yaml"
-  #将替换后的内容写入配置文件中。
-  echo "${l_content}" > "${l_configFile}"
-
-  #删除自动生成的hpa.yaml文件。
-  rm -f "${l_valuesYaml%/*}/templates/hpa.yaml"
 }
 
 #chart阶段单镜像模式下（默认是双镜像模式）对ci-cd.yaml文件的调整
@@ -1209,48 +708,49 @@ function handleBuildingSingleImageForChart_ex() {
 #**********************私有方法-开始***************************#
 
 function _processContainerPorts(){
-  local l_cicdYaml=$1
-
-  local l_index
-  local l_index1
-  local l_index2
-
-  local l_paramPath
-
   export gDefaultRetVal
 
-  ((l_index = 0))
-  while true; do
-    #循环处理chart的每一项
-    readParam "${l_cicdYaml}" "chart[${l_index}]"
-    [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && break
+  local l_cicdYaml=$1
 
-    #循环处理chart[?].deployments的每一项
-    ((l_index1 = 0))
-    while true; do
-      readParam "${l_cicdYaml}" "chart[${l_index}].deployments[${l_index1}]"
-      [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && break
+  local l_loopIndex
+  local l_layerLevel
+  local l_paramPath
 
-      #循环处理chart[?].deployments[?].containers的每一项的ports属性。
-      ((l_index2 = 0))
-      while true; do
-        l_paramPath="chart[${l_index}].deployments[${l_index1}].containers[${l_index2}]"
-        readParam "${l_cicdYaml}" "${l_paramPath}"
-        [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && break
+  #子方法中回使用。
+  declare -A _portAndServiceNameMap
 
-        info "检查并生成项目Service配置信息..."
-        _createServiceConfig "${l_cicdYaml}" "${l_paramPath}"
+  l_loopIndex=(0 0 0)
+  ((l_layerLevel = 3))
+  while true;do
+    l_paramPath="chart[${l_loopIndex[0]}].deployments[${l_loopIndex[1]}].containers[${l_loopIndex[2]}]"
+    readParam "${l_cicdYaml}" "${l_paramPath}.name"
+    if [[ "${gDefaultRetVal}" == "null" ]];then
+      if [ "${l_layerLevel}" -eq 3 ];then
+        ((l_loopIndex[1] = l_loopIndex[1] + 1))
+        ((l_loopIndex[2] = 0))
+      elif [ "${l_layerLevel}" -eq 2 ];then
+        ((l_loopIndex[0] = l_loopIndex[0] + 1))
+        ((l_loopIndex[1] = 0))
+        ((l_loopIndex[2] = 0))
+      else
+        break
+      fi
+      ((l_layerLevel = l_layerLevel - 1))
+      continue
+    fi
+    #恢复层级数。
+    ((l_layerLevel = 3))
 
-        info "检查并处理项目开放了多个容器端口的情况..."
-        _processMultiplePorts "${l_cicdYaml}" "${l_paramPath}"
+    info "检查并生成项目Service配置信息..."
+    _createServiceConfig "${l_cicdYaml}" "${l_paramPath}" "${gDefaultRetVal}"
 
-        ((l_index2 = l_index2 + 1))
-      done
+    info "检查并处理项目开放了多个容器端口的情况..."
+    _processMultiplePorts "${l_cicdYaml}" "${l_paramPath}"
 
-      ((l_index1 = l_index1 + 1))
-    done
+    info "更新路由配置信息中后端服务的名称"
+    _updateServiceNameOfBackendInGatewayRoute "${l_cicdYaml}" "chart[${l_loopIndex[0]}].deployments[${l_loopIndex[1]}]"
 
-    ((l_index = l_index + 1))
+    ((l_loopIndex[2] = l_loopIndex[2] + 1))
   done
 }
 
@@ -1260,12 +760,14 @@ function _createServiceConfig() {
   export gTempFileDir
   export gFileDataBlockMap
 
+  export _portAndServiceNameMap
+
   local l_cicdYaml=$1
   local l_paramPath=$2
+  local l_containerName=$3
 
   local l_configTemplate
   local l_tmpFile
-  local l_name
   local l_version
 
   local l_portName
@@ -1286,23 +788,16 @@ function _createServiceConfig() {
   local l_i
   local l_j
 
+  local l_serviceResourceName
+
   readParam "${l_cicdYaml}" "${l_paramPath}.service"
   if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
-    #读取ports配置节某一项的内容，并写入临时文件中。
-    readParam "${l_cicdYaml}" "${l_paramPath}"
-    if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
-      warn "${l_paramPath}配置节是空的"
-      return
-    fi
 
     #将现有配置写入临时文件中。
     # shellcheck disable=SC2088
     l_tmpFile="${gTempFileDir}/${RANDOM}.tmp"
     registerTempFile "${l_tmpFile}"
     echo "service:" > "${l_tmpFile}"
-
-    readParam "${l_cicdYaml}" "${l_paramPath}.name"
-    l_name="${gDefaultRetVal}"
 
     readParam "${l_cicdYaml}" "${l_paramPath}.tag"
     l_version="${gDefaultRetVal}"
@@ -1386,7 +881,7 @@ function _createServiceConfig() {
                 info "成功读取模板文件内容：${l_subPath}-service-config-template.yaml"
               fi
               insertParam "${l_tmpFile}" "service.${l_subPath}" "${gDefaultRetVal}"
-              updateParam "${l_tmpFile}" "service.${l_subPath}.name" "${l_name}"
+              updateParam "${l_tmpFile}" "service.${l_subPath}.name" "${l_containerName}"
               updateParam "${l_tmpFile}" "service.${l_subPath}.version" "${l_version}"
             else
               #读取Port项配置模板
@@ -1397,9 +892,13 @@ function _createServiceConfig() {
             insertParam "${l_tmpFile}" "service.${l_subPath}.ports[${l_tmpIndex}].name" "${l_portName}-${l_servicePortList[${l_j}]}"
             insertParam "${l_tmpFile}" "service.${l_subPath}.ports[${l_tmpIndex}].port" "${l_servicePortList[${l_j}]}"
             insertParam "${l_tmpFile}" "service.${l_subPath}.ports[${l_tmpIndex}].targetPort" "${l_containerPortList[${l_j}]}"
+            l_serviceResourceName="${l_containerName}-clusterip"
             if [[ "${l_subPath}" == "nodePort" ]];then
               insertParam "${l_tmpFile}" "service.${l_subPath}.ports[${l_tmpIndex}].nodePort" "${l_nodePortList[${l_j}]}"
+              l_serviceResourceName="${l_containerName}-nodeport"
             fi
+            #记录端口对应的Service资源名称。
+            _portAndServiceNameMap["${l_containerPortList[${l_j}]}"]="${l_serviceResourceName}"
           fi
         done
         #删除已处理过的servicePort和nodePort信息。
@@ -1552,6 +1051,62 @@ function _processMultiplePorts() {
 
 }
 
+function _updateServiceNameOfBackendInGatewayRoute() {
+  export _portAndServiceNameMap
+
+  local l_cicdYaml=$1
+  local l_paramPath=$2
+
+  local l_loopIndex
+  local l_layerLevel
+
+  local l_portList
+  local l_configPaths
+  local l_configPath
+  local l_array
+  local l_name
+
+  # shellcheck disable=SC2124
+  l_portList="${!_portAndServiceNameMap[@]}"
+
+  l_configPaths=("ingressRoute.rules,paths" "apisixRoute.routes,backends")
+  # shellcheck disable=SC2068
+  for l_configPath in ${l_configPaths[@]};do
+    # shellcheck disable=SC2206
+    l_array=(${l_configPath//,/ })
+    l_loopIndex=(0 0)
+    ((l_layerLevel = 2))
+    while true;do
+      readParam "${l_cicdYaml}" "${l_paramPath}.${l_array[0]}[${l_loopIndex[0]}].${l_array[1]}[${l_loopIndex[1]}].servicePort"
+      if [[ "${gDefaultRetVal}" == "null" ]];then
+        if [ "${l_layerLevel}" -eq 2 ];then
+          ((l_loopIndex[0] = l_loopIndex[0] + 1))
+          ((l_loopIndex[1] = 0))
+        else
+          break
+        fi
+        ((l_layerLevel = l_layerLevel - 1))
+        continue
+      fi
+      #恢复层级数。
+      ((l_layerLevel = 2))
+
+      if [[ "${l_portList}" =~ ^(.*)${gDefaultRetVal}( |$) ]];then
+        l_name="${_portAndServiceNameMap[${gDefaultRetVal}]}"
+        info "更新${l_cicdYaml##*/}文件中${l_array[0]##.*}配置中${gDefaultRetVal}端口对应的后端服务的名称为${l_name}..." "-n"
+        updateParam "${l_cicdYaml}" "${l_paramPath}.${l_array[0]}[${l_loopIndex[0]}].${l_array[1]}[${l_loopIndex[1]}].serviceName" "${l_name}"
+        if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
+          error "失败"
+        else
+          info "成功" "*"
+        fi
+      fi
+
+      ((l_loopIndex[1] = l_loopIndex[1] + 1))
+    done
+  done
+}
+
 function _initialPackageYamlFile() {
   export gDefaultRetVal
   export gCiCdYamlFile
@@ -1596,122 +1151,68 @@ function _initialPackageYamlFile() {
 
 }
 
-function _insertExternalDeployment(){
-  export gChartRepoName
+#获取参数的部署值。
+function getDeployValueOfParam() {
+  export gDefaultRetVal
+  export gCiCdYamlFile
+  export _paramDeployValueMap
 
-  local l_valuesYaml=$1
-  local l_curChartName=$2
-  local l_curChartVersion=$3
-  local l_refExternalChart=$4
-  local l_index=$5
+  local l_chartName=$1
+  local l_index
+  local l_array
+  local l_packageName
 
-  local l_chartName
-  local l_chartVersion
-  local l_valuesYaml1
-  local l_templateDir1
-  local l_templateDir
-
-  local l_paramPaths
-  local l_paramPath
-  local l_i
-
-  local l_fileList
-  local l_file
-  local l_content
-  local l_contentType
-  local l_tmpContent
-
-  #判断l_refExternalChart是否带有路径,如果没有路径，则从Chart仓库拉取外部Chart镜像
-  if [[ ! "${l_refExternalChart}" =~ ^(.*)/(.*)$ ]];then
-
-    [[ ! "${gChartRepoName}" ]] && \
-      error "没有配置Chart镜像仓库，无法拉取${l_refExternalChart}镜像。请指定Chart镜像仓库或${l_refExternalChart}镜像文件所在的本地路径。"
-    l_chartVersion="${l_refExternalChart##*-}"
-    l_chartVersion="${l_chartVersion%.*}"
-    l_chartName="${l_refExternalChart%-*}"
-    #拉取指定的chart镜像到gBuildPath目录中。
-    pullChartImage "${l_chartName}" "${l_chartVersion}" "${gChartRepoInstanceName}" "${gTempFileDir}"
-    l_refExternalChart="${gTempFileDir}/${l_refExternalChart}"
-  else
-    l_chartName="${l_refExternalChart##*/}"
-    l_chartVersion="${l_chartName##*-}"
-    l_chartVersion="${l_chartVersion%.*}"
-    l_chartName="${l_chartName%-*}"
+  ((l_index = -1))
+  info "根据chart打包项的名称，获取该chart镜像对应的部署配置节的序号(用于后续读取参数的初始化值) ..." "-n"
+  #根据l_chartName获取打包名。
+  getListIndexByPropertyName "${gCiCdYamlFile}" "package" "chartName" "${l_chartName}"
+  if [ "${gDefaultRetVal}" -ge 0 ];then
+    # shellcheck disable=SC2206
+    l_array=(${gDefaultRetVal})
+    #获取打包名称
+    readParam "${gCiCdYamlFile}" "package[${l_array[0]}].name"
+    if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
+      l_packageName="${gDefaultRetVal}"
+      #根据l_packageName获取打包名。
+      getListIndexByPropertyName "${gCiCdYamlFile}" "deploy" "packageName" "${l_packageName}"
+      #获得l_chartName对应的部署配置项的序号，根据这个序号读取各个参数的默认配置值。
+      # shellcheck disable=SC2206
+      l_index="${gDefaultRetVal}"
+    fi
   fi
 
-  if [ -f "${l_refExternalChart}" ];then
-    info "解压外部Chart镜像文件..."
-    tar -zxvf "${l_refExternalChart}" -C "${l_refExternalChart%/*}"
-    l_valuesYaml1="${l_refExternalChart%/*}/${l_chartName}/values.yaml"
-    l_templateDir1="${l_valuesYaml1%/*}/templates"
-    l_templateDir="${l_valuesYaml%/*}/templates"
-
-    ((l_i = 0))
-    while true;do
-      readRowRange "${l_valuesYaml1}" "deployment${l_i}"
-      [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && break
-
-      l_paramPaths=("params.deployment${l_i}|params.deployment${l_index}" \
-          "deployment${l_i}|deployment${l_index}")
-
-      # shellcheck disable=SC2068
-      for l_paramPath in ${l_paramPaths[@]};do
-        info "读取外部镜像${l_valuesYaml1##*/}文件中的${l_paramPath%%|*}参数值..."
-        readParam "${l_valuesYaml1}" "${l_paramPath%%|*}"
-        if [ "${gDefaultRetVal}" == "null" ];then
-          warn "外部Chart镜像的${l_valuesYaml1##*/}文件中不存在${l_paramPath%%|*}参数"
-          error "外部Chart镜像${l_externalChartImage##*/}不是使用wydevops生成的。"
-        fi
-        [[ ! "${gDefaultRetVal}" ]] && continue
-        info "将读取的参数值赋给当前镜像${l_valuesYaml##*/}文件中的${l_paramPath#*|}参数"
-        insertParam "${l_valuesYaml}" "${l_paramPath#*|}" "${gDefaultRetVal}"
-      done
-
-      #从外部镜像中拷贝与deployment${l_i}参数相关的所有文件到当前镜像的templates目录中。
-      l_fileList=$(find "${l_templateDir1}" -maxdepth 1 -type f -name "*.yaml")
-      # shellcheck disable=SC2068
-      for l_file in ${l_fileList[@]};do
-        # shellcheck disable=SC2002
-        l_content=$(cat "${l_file}")
-
-        l_contentType=$(echo -e "${l_content}" | grep -oP "^(kind: ConfigMap)$")
-        if [ "${l_contentType}" ];then
-          info "从外部镜像拷贝${l_file##*/}文件到当前镜像的templates目录中"
-          cp -f "${l_file}" "${l_templateDir}/"
-          continue
-        fi
-
-        l_contentType=$(echo -e "${l_content}" | grep -oP "\.Values\.deployment${l_i}")
-        [ ! "${l_contentType}" ] && continue
-
-        l_contentType=$(echo -e "${l_content}" | grep -oP "^kind: (Deployment|Service|ServiceAccount|HorizontalPodAutoscaler)$")
-        if [ "${l_contentType}" ];then
-          info "调整外部镜像中${l_file##*/}文件的参数..."
-          sed -i "s/\.deployment${l_i}/\.deployment${l_index}/g" "${l_file}"
-
-          l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -oP "^([ ]*)helm\.sh\/chart:(.*)$")
-          l_contentType="${l_tmpContent%%:*}"
-          sed -i "s/${l_tmpContent//\//\\\/}/${l_contentType//\//\\\/}: ${l_curChartName}-${l_curChartVersion}/g" "${l_file}"
-
-          l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -oP "^([ ]*)app.kubernetes.io\/version:(.*)$")
-          l_contentType="${l_tmpContent%%:*}"
-          sed -i "s/${l_tmpContent//\//\\\/}/${l_contentType//\//\\\/}: ${l_curChartVersion}/g" "${l_file}"
-
-          info "从外部镜像拷贝${l_file##*/}文件到当前镜像的templates目录中"
-          cp -f "${l_file}" "${l_templateDir}/"
-        fi
-
-      done
-      ((l_i = l_i + 1))
-      ((l_index = l_index + 1))
-    done
+  if [ "${l_index}" -lt 0 ];then
+    warn "获取序号失败" "*"
+    return
   fi
-  gDefaultRetVal="${l_index}"
+
+  info "成功获取序号：${l_index}" "*"
+  info "获取服务在部署阶段配置的参数及其值..."
+  ((l_i = 0))
+  while true;do
+    readParam "${gCiCdYamlFile}" "deploy[${l_index}].params[${l_i}]"
+    [[ "${gDefaultRetVal}" == "null" ]] && break
+    l_paramName=$(echo "${gDefaultRetVal}" | grep "^name:.*$")
+    l_paramName="${l_paramName//name:/}"
+    l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+    l_paramValue=$(echo "${gDefaultRetVal}" | grep "^value:.*$")
+    l_paramValue="${l_paramValue//value:/}"
+    l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+    l_paramName="${l_paramName/\.Values\./}"
+    # shellcheck disable=SC2034
+    _paramDeployValueMap["${l_paramName}"]="${l_paramValue}"
+    if [ "${l_paramValue}" ];then
+      info "加载参数默认值：${l_paramName}=>${l_paramValue}"
+    else
+      warn "加载参数默认值：${l_paramName}=> (值为空)"
+    fi
+    ((l_i = l_i + 1))
+  done
+
 }
-
 #**********************私有方法-结束***************************#
 
 #加载chart阶段脚本库文件
 loadExtendScriptFileForLanguage "chart"
-
-}
