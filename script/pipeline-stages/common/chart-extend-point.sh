@@ -259,7 +259,7 @@ function onModifyingValuesYaml_ex(){
   #在values.yaml文件中定义image.registry参数
   insertParam "${l_valuesYaml}" "image.registry" "${gDockerRepoName}"
   #在values.yaml文件中定义gatewayRoute.host参数
-  insertParam "${l_valuesYaml}" "gatewayRoute.host" "${gDockerRepoName}"
+  insertParam "${l_valuesYaml}" "gatewayRoute.host" ""
 
   #将l_packageYaml文件中的params参数配置节添加到values.yaml文件中。
   #并将l_packageYaml文件中configMaps[?].files参数中所有文件中配置的变量(”{{ .Values.* }}“)写入values.yaml的params配置节中。

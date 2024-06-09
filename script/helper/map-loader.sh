@@ -59,8 +59,16 @@ function initialParamValueByMappingConfigFiles() {
     else
       l_exitFlag="false"
     fi
+
     #将项目参数映射到wydevops对应的参数。
     _processProjectParamMapping "${l_buildPath}" "${l_value}" "${l_yamlFile}" "${l_key%%|*}" "${l_exitFlag}"
+
+    #初始化l_yamlFile文件中的configMapFiles参数。
+    if [[ "${l_value}" =~ ^(.*)\.(yml|yaml)(,| |$) ]];then
+      info "初始化${l_yamlFile##*/}文件中的configMapFiles参数的值为:${l_value}"
+      insertParam "${l_yamlFile}" "configMapFiles" "${l_value}"
+    fi
+
   fi
 }
 
@@ -98,7 +106,7 @@ function _processProjectParamMapping() {
   local l_array
 
   # shellcheck disable=SC2206
-  l_keyItems=(${l_sourceFiles})
+  l_keyItems=(${l_sourceFiles//,/ })
   l_shortFileNames=""
   # shellcheck disable=SC2068
   for l_keyItem in ${l_keyItems[@]};do
@@ -290,7 +298,7 @@ function _readParamValueEx() {
   gDefaultRetVal="null"
   l_found="false"
   # shellcheck disable=SC2206
-  l_sourceFiles=(${l_targetFiles})
+  l_sourceFiles=(${l_targetFiles//,/ })
   # shellcheck disable=SC2068
   for l_sourceFile in ${l_sourceFiles[@]};do
     #去掉引号

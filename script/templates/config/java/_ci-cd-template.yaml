@@ -73,7 +73,7 @@ globalParams:
   memoryRequests: 500Mi
 
   #需要放到项目默认ConfigMap中的文本文件的相对路径列表，文件间使用英文逗号分隔
-  configMapFiles: ./src/main/resources/config/application.yml,./src/main/resources/config/application-prod.yml
+  configMapFiles:
   #需要打包到离线安装包中镜像名称，格式：{镜像名称}:{镜像版本},...
   packageImages: ${baseImage}:${baseVersion},${businessImage}:${businessVersion}
 
