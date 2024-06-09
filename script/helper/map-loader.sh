@@ -65,8 +65,8 @@ function initialParamValueByMappingConfigFiles() {
 
     #初始化l_yamlFile文件中的configMapFiles参数。
     if [[ "${l_value}" =~ ^(.*)\.(yml|yaml)(,| |$) ]];then
-      info "初始化${l_yamlFile##*/}文件中的configMapFiles参数的值为:${l_value}"
-      insertParam "${l_yamlFile}" "configMapFiles" "${l_value}"
+      info "初始化${l_yamlFile##*/}文件中的configMapFiles参数的值为:${l_value//\"/}"
+      insertParam "${l_yamlFile}" "globalParams.configMapFiles" "${l_value//\"/}"
     fi
 
   fi
