@@ -258,6 +258,7 @@ function handleBuildingSingleImageForPackage_ex() {
   export gDefaultRetVal
   export gCiCdYamlFile
   export gBuildType
+  export gDockerRepoInstanceName
 
   local l_serviceName
   local l_businessVersion
@@ -292,7 +293,7 @@ function handleBuildingSingleImageForPackage_ex() {
     for (( l_j=0; l_j < l_arrayLen; l_j++ )) do
       #如果是单镜像打包模式，则需要移除可能存在的业务镜像和基础镜像。
       if [ "${gBuildType}" == "single" ];then
-        l_flag=$(echo -e "${l_images[${l_j}]}" | grep -ioP "^([ ]*)${l_serviceName//-/\-}(\-base|\-business)*:" )
+        l_flag=$(echo -e "${l_images[${l_j}]}" | grep -oP "${gDockerRepoInstanceName}/${l_serviceName//-/\-}(\-base|\-business)*:" )
         if [ "${l_flag}" ];then
           debug "从package[${l_i}].images参数值中移除${l_images[${l_j}]}镜像"
           #是基础镜像，则直接跳过。
@@ -308,9 +309,9 @@ function handleBuildingSingleImageForPackage_ex() {
 
     debug "添加单镜像名:${l_serviceName}:${l_businessVersion}"
     if [ "${l_paramValue}" ];then
-      l_paramValue="${l_serviceName}:${l_businessVersion},${l_paramValue:1}"
+      l_paramValue="${gDockerRepoInstanceName}/${l_serviceName}:${l_businessVersion},${l_paramValue:1}"
     else
-      l_paramValue="${l_serviceName}:${l_businessVersion}"
+      l_paramValue="${gDockerRepoInstanceName}/${l_serviceName}:${l_businessVersion}"
     fi
 
     debug "更新globalParams.packageImages参数的值为：${l_paramValue}"

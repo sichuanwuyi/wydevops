@@ -17,16 +17,21 @@ function onBeforeReplaceParamPlaceholder_ex() {
   export gBuildType
   export gDockerImageNameWithInstance
   export gDockerRepoInstanceName
+  export gDockerRepoType
 
   local l_cicdYaml=$1
   local l_placeholders
   local l_placeholder
 
   #为业务镜像和基础镜像添加项目名称前缀。
-  if [ "${gDockerImageNameWithInstance}" == "true" ];then
+  if [[ "${gDockerRepoType}" == "harbor" || "${gDockerImageNameWithInstance}" == "true" ]];then
+    info "为业务镜像和基础镜像添加仓库名称（nexus）或项目名称(harbor)前缀..."
     readParam "${l_cicdYaml}" "globalParams.businessImage"
+    info "更新globalParams.businessImage参数的值为:${gDockerRepoInstanceName}/${gDefaultRetVal}"
     updateParam "${l_cicdYaml}" "globalParams.businessImage" "${gDockerRepoInstanceName}/${gDefaultRetVal}"
+
     readParam "${l_cicdYaml}" "globalParams.baseImage"
+    info "更新globalParams.baseImage参数的值为:${gDockerRepoInstanceName}/${gDefaultRetVal}"
     updateParam "${l_cicdYaml}" "globalParams.baseImage" "${gDockerRepoInstanceName}/${gDefaultRetVal}"
   fi
 
@@ -138,6 +143,7 @@ function createCiCdConfigFile_ex() {
 function initialCiCdConfigFileByParamMappingFiles_ex() {
   export gLanguage
   export gBuildPath
+  export gHelmBuildDirName
   export gBuildScriptRootDir
 
   local l_templateFile=$1
@@ -155,7 +161,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   [[ ! -f "${l_tmpCiCdConfigFile}" ]] && l_cicdTargetFile="${l_templateFile}"
 
   #项目级参数应用文件优先级更高，放置_dirList中靠后面的位置。
-  l_dirList=("${gBuildScriptRootDir}/templates/config/${gLanguage}/param-mapping" "${gBuildPath}/wydevops/param-mapping")
+  l_dirList=("${gBuildScriptRootDir}/templates/config/${gLanguage}/param-mapping" "${gBuildPath}/${gHelmBuildDirName}/param-mapping")
   #预先定义好各个参数映射文件对应的
 
   l_loadOk="false"

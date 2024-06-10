@@ -5,6 +5,7 @@ function initialGlobalParamsForDeployStage_ex() {
   export gCiCdYamlFile
   export gBuildPath
   export gCiCdConfigYamlFileName
+  export gParamDeployedValueMap
 
   local l_saveBackStatus
   local l_cicdConfigFile
@@ -118,6 +119,9 @@ function initialGlobalParamsForDeployStage_ex() {
             fi
           fi
 
+          #缓存参数及其值。
+          gParamDeployedValueMap["${l_paramName}"]="${l_paramValue}"
+
           #不存在name=l_paramName的项，则插入之。
           getListIndexByPropertyName "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params" "name" "${l_paramName}" "true" "${gCiCdYamlFile}"
           if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
@@ -129,6 +133,12 @@ function initialGlobalParamsForDeployStage_ex() {
             insertParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params[${l_paramIndex}]" "${l_itemValue}"
           else
             info "--->检测到业务参数:${l_paramName}=" "-n"
+            # shellcheck disable=SC2206
+            l_array=(${gDefaultRetVal})
+            l_paramIndex="${l_array[0]}"
+            readParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params[${l_paramIndex}].value"
+            l_paramValue="${gDefaultRetVal}"
+            gParamDeployedValueMap["${l_paramName}"]="${l_paramValue}"
             if [ "${l_paramValue}" ];then
               info "${l_paramValue}" "*"
             else
@@ -138,14 +148,14 @@ function initialGlobalParamsForDeployStage_ex() {
 
           if [ "${l_businessParamNames}" ];then
             #从现有参数列表中删除l_paramName。
-            l_businessParamNames="${l_businessParamNames//${l_paramName},/,}"
+            l_businessParamNames="${l_businessParamNames//${l_paramName}/}"
           fi
         done
 
       fi
     done
 
-    if [ "${l_businessParamNames}" ];then
+    if [ "${l_businessParamNames//,/}" ];then
       warn "清除${l_cicdConfigFile##*/}文件deploy[${l_businessParamIndex}].params列表中未用到的参数项..."
       # shellcheck disable=SC2206
       l_array=(${l_businessParamNames//,/ })
@@ -276,6 +286,124 @@ function onBeforeDeployingServicePackageByK8sMode_ex() {
 }
 
 function onCheckAndInitialParamInConfigFile_ex(){
+  export gDefaultRetVal
+  export gCiCdYamlFile
+  export gBuildPath
+  export gParamDeployedValueMap
+
+  local l_index=$1
+  local l_chartName=$2
+  local l_chartVersion=$3
+  local l_localBaseDir=$4
+
+  local l_chartIndex
+  local l_loopIndex
+  local l_layerLevel
+
+  local l_configMapFiles
+  local l_configFile
+  local l_m
+
+  local l_paramName
+  local l_paramValue
+
+  local l_configFile
+  local l_paramList
+  local l_lines
+  local l_lineCount
+  local l_paramItem
+  local l_hasUndefineParam
+
+  local l_paramNameList
+  local l_result
+
+  l_hasUndefineParam="false"
+
+  l_localBaseDir="${l_localBaseDir}/${l_chartName}-${l_chartVersion}/config"
+  mkdir -p "${l_localBaseDir}"
+
+  getListIndexByPropertyName "${gCiCdYamlFile}" "chart" "name" "${l_chartName}"
+  [[  "${gDefaultRetVal}" =~ ^(\-1) ]] && error "${gCiCdYamlFile##*/}文件中未找到name=${l_chartName}的chart列表项"
+  l_chartIndex="${gDefaultRetVal}"
+
+  # shellcheck disable=SC2124
+  l_paramNameList="${!gParamDeployedValueMap[@]}"
+
+  l_loopIndex=(0 0)
+  ((l_layerLevel = 2))
+  while true;do
+    readParam "${gCiCdYamlFile}" "chart[${l_chartIndex}].deployments[${l_loopIndex[0]}].configMaps[${l_loopIndex[1]}].files"
+    if [[ "${gDefaultRetVal}" == "null" ]];then
+      if [ "${l_layerLevel}" -eq 2 ];then
+        ((l_loopIndex[0] = l_loopIndex[0] + 1))
+        ((l_loopIndex[1] = 0))
+      else
+        break
+      fi
+      ((l_layerLevel = l_layerLevel - 1))
+      continue
+    fi
+    #恢复层级数。
+    ((l_layerLevel = 2))
+
+    # shellcheck disable=SC2206
+    l_configMapFiles=(${gDefaultRetVal//,/ })
+    # shellcheck disable=SC2068
+    for l_configFile in ${l_configMapFiles[@]};do
+      info "检测并处理${l_configFile##*/}文件中的变量 ..."
+      if [[ "${l_configFile}" =~ ^(\.) ]];then
+        l_configFile="${gBuildPath}/${l_configFile#*/}"
+      fi
+
+      #拷贝配置文件到临时目录中。
+      cp -f "${l_configFile}" "${l_localBaseDir}/${l_configFile##*/}"
+
+      #切换到临时文件目录中的配置文件。
+      l_configFile="${l_localBaseDir}/${l_configFile##*/}"
+
+      #检测配置文件中是否存在动态配置的参数，如果存在则需要替换赋值。
+      # shellcheck disable=SC2002
+      l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
+      if [ "${l_paramList}" ];then
+
+        stringToArray "${l_paramList}" "l_lines"
+        l_lineCount="${#l_lines[@]}"
+        for ((l_m=0; l_m < l_lineCount; l_m++ ));do
+          l_paramItem="${l_lines[${l_m}]}"
+          l_paramName=".${l_paramItem#*.}"
+          l_paramName="${l_paramName%%\}*}"
+          #去掉缺少值设置。
+          l_paramName="${l_paramName%%|*}"
+          #去掉头部和尾部的空格。
+          l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+          l_result=$(echo -e "${l_paramNameList}" | grep -oP "${l_paramName}( |$)" )
+          if [ ! "${l_result}" ];then
+            #如果参数的值未定义，则告警输出。
+            l_hasUndefineParam="true"
+            warn "${l_configFile##*/}配置文件中存在未定义的变量：${l_paramName}"
+          fi
+
+          l_paramValue="${gParamDeployedValueMap[${l_paramName}]}"
+          #替换配置文件中的变量。
+          l_paramItem="{${l_paramItem#*\{}"
+          l_paramItem="${l_paramItem%\}*}}"
+          info "将临时目录中的${l_configFile##*/}文件中的变量${l_paramItem}替换为${l_paramValue}"
+          sed -i "s/${l_paramItem}/${l_paramValue}/g" "${l_configFile}"
+
+        done
+      fi
+    done
+
+    ((l_loopIndex[1] = l_loopIndex[1] + 1))
+  done
+
+  if [ "${l_hasUndefineParam}" == "true" ];then
+    error "项目配置文件中存在上述未定义的变量，请明确定义这些变量后再次尝试。"
+  fi
+}
+
+function onCheckAndInitialParamInConfigFile1_ex(){
   export gDefaultRetVal
   export gCiCdYamlFile
   export gBuildPath
@@ -867,6 +995,10 @@ function _readValueOfListItemNames() {
   gDefaultRetVal="${l_paramNames:1}"
 }
 #**********************私有方法-结束***************************#
+
+#参数部署值Map
+declare -A gParamDeployedValueMap
+export gParamDeployedValueMap
 
 #加载build阶段脚本库文件
 loadExtendScriptFileForLanguage "deploy"

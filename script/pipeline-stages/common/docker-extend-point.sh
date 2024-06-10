@@ -444,6 +444,7 @@ function handleBuildingSingleImageForDocker_ex() {
   local l_paramName1
   local l_paramValue
 
+  #对于单镜像打包，要修正docker.base.name和docker.base.version的值。
   l_paramArray=("docker.base.name|globalParams.businessImage" \
     "docker.base.version|globalParams.businessVersion" )
   # shellcheck disable=SC2068
@@ -455,6 +456,10 @@ function handleBuildingSingleImageForDocker_ex() {
       readParam "${gCiCdYamlFile}" "${l_paramName1}"
       [[ "${gDefaultRetVal}" == "null" ]] && error "读取${gCiCdYamlFile##*/}文件中${l_paramName1}参数失败"
       l_paramValue="${gDefaultRetVal}"
+      if [ "${l_paramName1}" == "globalParams.businessImage" ];then
+        #删除业务镜像的后缀"-business"
+        l_paramValue="${l_paramValue//-business/}"
+      fi
     else
       #直接将l_paramName1作为参数值。
       l_paramValue="${l_paramName1}"
@@ -464,7 +469,7 @@ function handleBuildingSingleImageForDocker_ex() {
     if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
       error "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数失败"
     else
-      info "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数的值为:${l_paramValue}"
+      warn "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数的值为:${l_paramValue}"
     fi
   done
 
