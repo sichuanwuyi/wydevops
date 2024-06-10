@@ -7,9 +7,11 @@ function executePackageStage() {
   export gCurrentStage
   export gServiceName
   export gCurrentStageResult
+  export gHelmBuildDir
   export gHelmBuildOutDir
   export gBuildPath
   export gBuildType
+  export gDockerRepoName
 
   local l_i
   local l_packageName
@@ -22,6 +24,7 @@ function executePackageStage() {
   local l_localBaseDir
   local l_deployType
 
+  local l_deployTempDirName
   local l_deployTempDir
   local l_deleteTempDirAfterDeployed
 
@@ -57,12 +60,13 @@ function executePackageStage() {
     l_chartVersion="${l_array[1]}"
     l_images="${l_array[2]}"
 
-    readParam "${gCiCdYamlFile}" "deploy[${l_i}].deployTempDir"
-    l_deployTempDir="${gDefaultRetVal}"
-    if [[ ! "${l_deployTempDir}" || "${l_deployTempDir}" == "null" ]];then
+    readParam "${gCiCdYamlFile}" "deploy[${l_i}].deployTempDirName"
+    l_deployTempDirName="${gDefaultRetVal}"
+    if [[ ! "${l_deployTempDirName}" || "${l_deployTempDirName}" == "null" ]];then
       #设置默认值
-      l_deployTempDir="./deploy"
+      l_deployTempDirName="deploy"
     fi
+    l_deployTempDir="${gHelmBuildDir}/${l_deployTempDirName}"
 
     readParam "${gCiCdYamlFile}" "deploy[${l_i}].deleteTempDirAfterDeployed"
     l_deleteTempDirAfterDeployed="${gDefaultRetVal}"
@@ -72,19 +76,22 @@ function executePackageStage() {
     fi
 
     # shellcheck disable=SC2088
-    l_remoteBaseDir="~/devops/${l_deployTempDir##*/}"
+    l_remoteBaseDir="~/devops/${l_deployTempDirName}"
     l_remoteDir="${l_remoteBaseDir}/${l_chartName}-${l_chartVersion}"
 
     l_localBaseDir="${l_deployTempDir}"
-    [[ "${l_deployTempDir}" =~ ^(\./) ]] && l_localBaseDir="${gBuildPath}${l_deployTempDir:1}"
     [[ -d "${l_localBaseDir}" ]] && rm -rf "${l_localBaseDir:?}"
     mkdir -p "${l_localBaseDir}"
 
     readParam "${gCiCdYamlFile}" "deploy[${l_i}].deployType"
     l_deployType="${gDefaultRetVal}"
+    if [[ "${l_deployType}" == "k8s" && ! "${gDockerRepoName}" ]];then
+      warn "未设置docker镜像仓库的情况下，部署方式deployType被强制设置为docker"
+      l_deployType="docker"
+    fi
 
     [[ "${l_deployType}" == "docker" && ${gBuildType} != "single" ]] && \
-      error "使用${gBuildType}构建类型打包的服务不能使用${l_deployType}方式部署(${l_deployType}部署方式仅适用于single构建类型打包的服务)"
+      error "使用${gBuildType}构建类型打包的服务不能使用${l_deployType}方式部署(该方式仅适用于single构建类型打包的服务)"
 
     #服务安装包部署前扩展
     invokeExtendPointFunc "onBeforeDeployingServicePackage" "服务安装包部署前扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \

@@ -17,12 +17,15 @@ function onBeforePushChartImage_harbor() {
   local l_imageVersion=$3
   local l_repoHostAndPort=$4
   local l_repoInstanceName=$5
+  local l_dockerRepoAccount=$6
+  local l_dockerRepoPassword=$7
 
   info "在${l_chartRepoType}类型的chart仓库中查找现存的${l_imageName}-${l_imageVersion}.tgz镜像..."
   existRepositoryInHarborProject "${l_repoHostAndPort}" "${l_repoInstanceName}" "${l_imageName}" "${l_imageVersion}"
   if [ "${gDefaultRetVal}" == "true" ];then
     info "找到了目标镜像，开始清除..."
-    deleteRepositoryInHarborProject "${l_repoHostAndPort}" "${l_repoInstanceName}" "${l_imageName}" "${l_imageVersion}"
+    deleteRepositoryInHarborProject "${l_repoHostAndPort}" "${l_repoInstanceName}" "${l_imageName}" "${l_imageVersion}" \
+      "${l_dockerRepoAccount}" "${l_dockerRepoPassword}"
     info "目标镜像清除成功"
   else
     warn "目标镜像不存在"

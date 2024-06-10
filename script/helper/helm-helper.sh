@@ -25,7 +25,7 @@ function pushChartImage() {
 
   #执行推送前调用链: 先删除已经存在的同名同版本镜像。
   invokeExtendChain "onBeforePushChartImage" "${gChartRepoType}" "${l_imageName}" "${l_imageVersion}" \
-    "${l_repoHostAndPort}" "${l_repoInstanceName}"
+    "${l_repoHostAndPort}" "${l_repoInstanceName}" "${l_account}" "${l_password}"
 
   #执行推送调用链
   invokeExtendChain "onPushChartImage" "${gChartRepoType}" "${l_chartFile}" "${l_repoHostAndPort}" \

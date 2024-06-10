@@ -13,9 +13,9 @@ function onGetSystemArchInfo_ubuntu() {
   if [[ ! "${l_content}" =~ ^(.*)(not found)(.*)$ ]];then
     l_content="${l_content// /\/}"
     if [[ ! "${l_content}" =~ ^(.*)(x86_64)(.*)$ ]];then
-      l_content="${l_content%%/*}/amd64"
+      l_content="linux/amd64"
     else
-      l_content="${l_content%%/*}/arm64"
+      l_content="linux/arm64"
     fi
     #全部转小写后返回。
     gDefaultRetVal="${l_content,,}"

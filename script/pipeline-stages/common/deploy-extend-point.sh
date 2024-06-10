@@ -403,141 +403,6 @@ function onCheckAndInitialParamInConfigFile_ex(){
   fi
 }
 
-function onCheckAndInitialParamInConfigFile1_ex(){
-  export gDefaultRetVal
-  export gCiCdYamlFile
-  export gBuildPath
-
-  local l_index=$1
-  local l_chartName=$2
-  local l_chartVersion=$3
-  local l_localBaseDir=$4
-
-  local l_array
-  local l_i
-  local l_j
-
-  local l_configMapFiles
-  declare -A l_paramDefaultValueMap
-  local l_k
-  local l_m
-  local l_paramName
-  local l_paramValue
-
-  local l_configFile
-  local l_paramList
-  local l_lines
-  local l_lineCount
-  local l_paramItem
-  local l_hasUndefineParam
-
-  l_hasUndefineParam="false"
-
-  l_localBaseDir="${l_localBaseDir}/${l_chartName}-${l_chartVersion}/config"
-  mkdir -p "${l_localBaseDir}"
-
-  getListIndexByPropertyName "${gCiCdYamlFile}" "chart" "name" "${l_chartName}"
-  [[  "${gDefaultRetVal}" =~ ^(\-1) ]] && error "${gCiCdYamlFile##*/}文件中未找到name=${l_chartName}的chart列表项"
-  # shellcheck disable=SC2206
-  l_array=(${gDefaultRetVal})
-
-  ((l_i = 0))
-  while true;do
-    readParam "${gCiCdYamlFile}" "chart[${l_array[0]}].deployments[${l_i}]"
-    [[ "${gDefaultRetVal}" == "null" ]] && break
-
-    ((l_j = 0))
-    while true;do
-      readParam "${gCiCdYamlFile}" "chart[${l_array[0]}].deployments[${l_i}].configMaps[${l_j}].files"
-      [[ "${gDefaultRetVal}" == "null" ]] && break
-      # shellcheck disable=SC2206
-      l_configMapFiles=(${gDefaultRetVal//,/ })
-      # shellcheck disable=SC2068
-      for l_configFile in ${l_configMapFiles[@]};do
-        info "检测并处理${l_configFile##*/}文件中的变量 ..."
-        if [[ "${l_configFile}" =~ ^(\.) ]];then
-          l_configFile="${gBuildPath}/${l_configFile#*/}"
-        fi
-
-        #拷贝配置文件到临时目录中。
-        cp -f "${l_configFile}" "${l_localBaseDir}/${l_configFile##*/}"
-
-        #切换到临时文件目录中的配置文件。
-        l_configFile="${l_localBaseDir}/${l_configFile##*/}"
-
-        #检测配置文件中是否存在动态配置的参数，如果存在则需要替换赋值。
-        # shellcheck disable=SC2002
-        l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
-        if [ "${l_paramList}" ];then
-
-          #如果l_paramDefaultValueMap变量未初始化，则先加载参数默认值配置Map
-          # shellcheck disable=SC2128
-          if [ ! "${l_paramDefaultValueMap}" ];then
-            #构造参数默认值Map
-            ((l_k = 0))
-            while true; do
-              readParam "${gCiCdYamlFile}" "deploy[${l_index}].params[${l_k}]"
-              [[ "${gDefaultRetVal}" == "null" ]] && break
-              l_paramName=$(echo "${gDefaultRetVal}" | grep "^name:.*$")
-              l_paramName="${l_paramName//name: /}"
-              #去掉头部和尾部的空格。
-              l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-              #补全参数格式，以便后续的匹配。
-              if [[ ! "${l_paramName}" =~ ^(\.Values\.) ]];then
-                #如果参数不是params.deployment开头的则要使用params.deployment0.补全
-                [[ ! "${l_paramName}" =~ ^(params\.deployment)[0-9]+ ]] && l_paramName="params.deployment0.${l_paramName}"
-                l_paramName=".Values.${l_paramName}"
-              fi
-
-              l_paramValue=$(echo "${gDefaultRetVal}" | grep "^value:.*$")
-              l_paramValue="${l_paramValue//value: /}"
-              #去掉头部和尾部的空格。
-              l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-
-              # shellcheck disable=SC2034
-              l_paramDefaultValueMap["${l_paramName}"]="${l_paramValue}"
-              info "加载参数默认值：${l_paramName}=>${l_paramValue}"
-              ((l_k = l_k + 1))
-            done
-          fi
-
-          stringToArray "${l_paramList}" "l_lines"
-          l_lineCount="${#l_lines[@]}"
-          for ((l_m=0; l_m < l_lineCount; l_m++ ));do
-            l_paramItem="${l_lines[${l_m}]}"
-            l_paramName=".${l_paramItem#*.}"
-            l_paramName="${l_paramName%%\}*}"
-            #去掉头部和尾部的空格。
-            l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-            l_paramValue="${l_paramDefaultValueMap[${l_paramName}]}"
-            if [ ! "${l_paramValue}" ];then
-              #如果参数的值未定义，则告警输出。
-              l_hasUndefineParam="true"
-              warn "${l_configFile##*/}配置文件中存在未定义的变量：${l_paramName}"
-            else
-              #替换配置文件中的变量。
-              l_paramItem="{${l_paramItem#*\{}"
-              l_paramItem="${l_paramItem%\}*}}"
-              info "将临时目录中的${l_configFile##*/}文件中的变量${l_paramItem}替换为${l_paramValue}"
-              sed -i "s/${l_paramItem}/${l_paramValue}/g" "${l_configFile}"
-            fi
-
-          done
-        fi
-      done
-
-      ((l_j = l_j + 1))
-    done
-
-    ((l_i = l_i + 1))
-  done
-
-  if [ "${l_hasUndefineParam}" == "true" ];then
-    error "项目配置文件中存在上述未定义的变量，请明确定义这些变量后再次尝试。"
-  fi
-
-}
-
 #**********************私有方法-开始***************************#
 
 function _deployServiceByDocker(){
@@ -608,7 +473,8 @@ function _deployServiceByDocker(){
     l_content=$(ssh -p "${l_port}" "${l_account}@${l_ip}" "uname -sm" )
     invokeExtendChain "onGetSystemArchInfo" "${l_content}"
     # shellcheck disable=SC2015
-    [[ "${gDefaultRetVal}" == "false" ]] && error "读取本地系统架构信息失败" || info "读取到当前系统架构为:${gDefaultRetVal}"
+    [[ "${gDefaultRetVal}" == "false" ]] && error "读取本地系统架构信息失败"
+    info "读取到当前系统架构为:${gDefaultRetVal}"
     l_archType="${gDefaultRetVal}"
 
     l_nodeItem="${l_archTypeMap[${l_archType}]},${l_nodeItem}"
@@ -695,6 +561,7 @@ function _deployServiceInK8S() {
   export gShellExecuteResult
   export gCiCdYamlFile
   export gHelmBuildOutDir
+  export gDockerRepoName
 
   local l_index=$1
   local l_chartName=$2
@@ -719,6 +586,8 @@ function _deployServiceInK8S() {
   local l_ip
   local l_port
   local l_account
+  local l_password
+
   local l_chartFile
   local l_settingFile
 
@@ -728,6 +597,8 @@ function _deployServiceInK8S() {
   local l_i
   local l_settingParams
   local l_customizedSetParams
+
+  local l_repoInfos
 
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].activeProfile"
   l_activeProfile="${gDefaultRetVal}"
@@ -757,6 +628,7 @@ function _deployServiceInK8S() {
     l_ip="${l_array[0]}"
     l_port="${l_array[1]}"
     l_account="${l_array[2]}"
+    l_password="${l_array[3]}"
 
     info "查找Chart镜像文件和其对应的setting.conf文件..."
     findChartImage "${l_chartName}" "${l_chartVersion}"
@@ -994,6 +866,7 @@ function _readValueOfListItemNames() {
   done
   gDefaultRetVal="${l_paramNames:1}"
 }
+
 #**********************私有方法-结束***************************#
 
 #参数部署值Map

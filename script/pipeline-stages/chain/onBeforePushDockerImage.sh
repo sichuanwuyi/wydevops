@@ -15,6 +15,8 @@ function onBeforePushDockerImage_harbor() {
   local l_dockerRepoHostAndPort=$3
   local l_dockerRepoInstanceName=$4
   local l_dockerRepoWebPort=$5
+  local l_dockerRepoAccount=$6
+  local l_dockerRepoPassword=$7
 
   local l_imageName
   local l_imageVersion
@@ -26,7 +28,8 @@ function onBeforePushDockerImage_harbor() {
   existRepositoryInHarborProject "${l_dockerRepoHostAndPort}" "${l_dockerRepoInstanceName}" "${l_imageName}" "${l_imageVersion}"
   if [ "${gDefaultRetVal}" == "true" ];then
     info "找到了目标镜像，开始清除..."
-    deleteRepositoryInHarborProject "${l_dockerRepoHostAndPort}" "${l_dockerRepoInstanceName}" "${l_imageName}" "${l_imageVersion}"
+    deleteRepositoryInHarborProject "${l_dockerRepoHostAndPort}" "${l_dockerRepoInstanceName}" "${l_imageName}" "${l_imageVersion}" \
+      "${l_dockerRepoAccount}" "${l_dockerRepoPassword}"
     info "目标镜像清除成功"
   else
     warn "目标镜像不存在"

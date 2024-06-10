@@ -1,0 +1,14 @@
+spring:
+  profiles:
+    active: prod
+
+url-prefix: /wydevops/v1/sample
+
+#服务就绪探活配置
+management:
+  endpoints:
+    enabled-by-default: true
+    web:
+      exposure:
+        include: "*"
+      base-path: ${url-prefix}

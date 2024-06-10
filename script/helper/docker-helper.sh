@@ -152,9 +152,6 @@ function pushImage() {
   local l_image=$1
   local l_archType=$2
   local l_repoName=$3
-  #对于nexus而言，l_instanceName是仓库名称
-  #对于harbor而言，l_instanceName是项目名称
-  local l_instanceName=$4
 
   local l_tmpFile
   local l_errorLog

@@ -25,13 +25,13 @@ function existRepositoryInHarborProject() {
 
 function deleteRepositoryInHarborProject() {
   export gDefaultRetVal
-  export gDockerRepoAccount
-  export gDockerRepoPassword
 
   local l_dockerRepoHostAndPort=$1
   local l_projectName=$2
   local l_imageFullName=$3
   local l_imageVersion=$4
+  local l_dockerRepoAccount=$5
+  local l_dockerRepoPassword=$6
 
   local l_imageName
   local l_result
@@ -41,7 +41,7 @@ function deleteRepositoryInHarborProject() {
 
   gDefaultRetVal="false"
 
-  l_result=$(curl -X 'DELETE' -H 'accept: application/json' -u "${gDockerRepoAccount}:${gDockerRepoPassword}" \
+  l_result=$(curl -X 'DELETE' -H 'accept: application/json' -u "${l_dockerRepoAccount}:${l_dockerRepoPassword}" \
     "http://${l_dockerRepoHostAndPort}/api/v2.0/projects/${l_projectName}/repositories/${l_imageName}/artifacts/${l_imageVersion}" 2>&1)
   l_errorLog=$(echo -e "${l_result}" | grep -oP "errors")
   [[ "${l_errorLog}" ]] && error "删除仓库中现有的同名同版本的镜像失败: ${l_result}"

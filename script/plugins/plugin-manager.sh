@@ -140,7 +140,7 @@ function loadPlugins() {
   l_pluginDirs=("${gBuildScriptRootDir}/plugins" "${gBuildPath}/${gHelmBuildDirName}/${gProjectPluginDirName}")
   # shellcheck disable=SC2068
   for l_pluginDir in ${l_pluginDirs[@]};do
-
+    [[ ! -d "${l_pluginDir}" ]] && continue
     l_pluginGeneratorList=$(find "${l_pluginDir}" -maxdepth 2 -type f -name "*-generator.sh")
     # shellcheck disable=SC2068
     for l_pluginGenerator in ${l_pluginGeneratorList[@]};do

@@ -105,12 +105,14 @@ spec:
           readinessProbe:
             {{- toYaml .readinessProbe | nindent 12 }}
           {{- end }}
+          {{- if \$.Values.params.${t_moduleName} }}
           {{- if \$.Values.params.${t_moduleName}.resources }}
           resources:
             {{- toYaml \$.Values.params.${t_moduleName}.resources | nindent 12 }}
           {{- else if .resources }}
           resources:
             {{- toYaml .resources | nindent 12 }}
+          {{- end }}
           {{- end }}
       {{- end }}
       {{- if .nodeSelector }}
