@@ -19,6 +19,7 @@ function initialMapFromConfigFile() {
 
   local l_exitOnError
   local l_defineBindingFiles
+  local l_configMapFiles
 
   # shellcheck disable=SC2002
   l_content=$(cat "${l_configFile}" | grep -noP "^([ ]*)[_a-zA-Z]+")
@@ -33,15 +34,18 @@ function initialMapFromConfigFile() {
       l_value="${l_line##*=}"
       if [ "${l_key}" == "define.exitOnError" ];then
         l_exitOnError="${l_value}"
-      elif [ "${l_key}" == "define.bindingFiles" ];then
+      elif [[ "${l_key}" =~ ^(define\.bindingFiles) ]];then
         l_defineBindingFiles="${l_value}"
+        if [[ "${l_key}" =~ ^(.*)|true$ ]];then
+          l_configMapFiles="${l_configMapFiles},${l_value}"
+        fi
       else
         eval "${l_mapName}[\"${l_key}\"]=${l_value}"
       fi
     fi
   done
 
-  gDefaultRetVal="${l_exitOnError}|${l_defineBindingFiles}"
+  gDefaultRetVal="${l_exitOnError}|${l_defineBindingFiles}|${l_configMapFiles:1}"
 }
 
 function initialParamValueByMappingConfigFiles() {
@@ -49,6 +53,7 @@ function initialParamValueByMappingConfigFiles() {
   local l_yamlFile=$2
   local l_key=$3
   local l_value=$4
+  local l_mapName=$5
 
   local l_exitFlag
 
@@ -61,13 +66,7 @@ function initialParamValueByMappingConfigFiles() {
     fi
 
     #将项目参数映射到wydevops对应的参数。
-    _processProjectParamMapping "${l_buildPath}" "${l_value}" "${l_yamlFile}" "${l_key%%|*}" "${l_exitFlag}"
-
-    #初始化l_yamlFile文件中的configMapFiles参数。
-    if [[ "${l_value}" =~ ^(.*)\.(yml|yaml)(,| |$) ]];then
-      info "初始化${l_yamlFile##*/}文件中的configMapFiles参数的值为:${l_value//\"/}"
-      insertParam "${l_yamlFile}" "globalParams.configMapFiles" "${l_value//\"/}"
-    fi
+    _processProjectParamMapping "${l_buildPath}" "${l_value}" "${l_yamlFile}" "${l_key%%|*}" "${l_exitFlag}" "${l_mapName}"
 
   fi
 }
@@ -76,6 +75,7 @@ function initialParamValueByMappingConfigFiles() {
 
 function _processProjectParamMapping() {
   export gDefaultRetVal
+  export _alreadyProcessedParamMap
 
   #文件列表，以空格隔开。
   local l_buildPath=$1
@@ -83,6 +83,7 @@ function _processProjectParamMapping() {
   local l_cicdConfigFile=$3
   local l_targetMapName=$4
   local l_exitOnFailure=$5
+  local l_mapName=$6
 
   local l_shortFileNames
   local l_paramTotal
@@ -100,6 +101,7 @@ function _processProjectParamMapping() {
   local l_valueItemCount
   local l_valueItem
   local l_subValueItems
+  local l_tmpParamNames
 
   local l_paramCount
   local l_hasError
@@ -207,6 +209,13 @@ function _processProjectParamMapping() {
             break
           fi
 
+          #判断是否已经赋值过该参数了，如果已经赋值过则不再赋值。
+          l_tmpParamNames=$(eval "echo -e \${!${l_mapName}[@]}")
+          if [[ "${l_tmpParamNames}" =~ ${l_subValueItems[0]}( |$) ]];then
+            warn "${l_cicdConfigFile##*/}文件中${l_subValueItems[0]}参数已经赋值，禁止再次赋值"
+            continue
+          fi
+
           #更新文件中的指定参数的值。
           updateParam "${l_cicdConfigFile}" "${l_subValueItems[0]}" "${l_paramValue}"
           if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
@@ -214,6 +223,8 @@ function _processProjectParamMapping() {
             l_hasError="true"
             break
           else
+            #记录已经赋过值的参数。
+            eval "${l_mapName}[${l_subValueItems[0]}]=\"${l_paramValue}\""
             info "更新${l_cicdConfigFile##*/}文件中${l_subValueItems[0]}参数值为:${l_paramValue}"
             l_hasError="false"
           fi

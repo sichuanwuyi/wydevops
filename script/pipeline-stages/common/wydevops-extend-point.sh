@@ -145,6 +145,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   export gBuildPath
   export gHelmBuildDirName
   export gBuildScriptRootDir
+  export gParamMappingDirName
 
   local l_templateFile=$1
   local l_tmpCiCdConfigFile=$2
@@ -156,12 +157,18 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   local l_paramMappingFiles
   local l_mappingFile
   local l_loadOk
+  local l_array
+  local l_configMapFiles
+
+  #文件及其已经处理过的参数Map。
+  # shellcheck disable=SC2034
+  declare -A _alreadyProcessedParamMap
 
   l_cicdTargetFile="${l_tmpCiCdConfigFile}"
   [[ ! -f "${l_tmpCiCdConfigFile}" ]] && l_cicdTargetFile="${l_templateFile}"
 
   #项目级参数应用文件优先级更高，放置_dirList中最前面的位置。
-  l_dirList=("${gBuildPath}/${gHelmBuildDirName}/param-mapping" "${gBuildScriptRootDir}/templates/config/${gLanguage}/param-mapping")
+  l_dirList=("${gBuildPath}/${gHelmBuildDirName}/${gParamMappingDirName}" "${gBuildScriptRootDir}/templates/config/${gLanguage}/${gParamMappingDirName}")
   #预先定义好各个参数映射文件对应的
 
   l_loadOk="false"
@@ -177,10 +184,20 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
           #将参数映射文件中的配置读取到_paramMappingMap变量中。
           initialMapFromConfigFile "${l_mappingFile}" "_paramMappingMap"
           if [ "${#_paramMappingMap[@]}" -gt 0 ];then
-            #根据参数映射文件初始化l_cicdTargetFile文件中的参数。
-            initialParamValueByMappingConfigFiles "${gBuildPath}" "${l_cicdTargetFile}" \
-              "_paramMappingMap|${gDefaultRetVal%%|*}" "${gDefaultRetVal#*|}"
-            l_loadOk="true"
+            # shellcheck disable=SC2206
+            l_array=(${gDefaultRetVal//|/ })
+            if [ "${#_paramMappingMap[@]}" -gt 0 ];then
+              #根据参数映射文件初始化l_cicdTargetFile文件中的参数。
+              initialParamValueByMappingConfigFiles "${gBuildPath}" "${l_cicdTargetFile}" \
+                "_paramMappingMap|${l_array[0]}" "${l_array[1]}" "_alreadyProcessedParamMap"
+              #收集部署时需要打包到ConfigMap中的配置文件
+              if [ "${#l_array[@]}" -gt 2 ];then
+                if [[ ! "${l_configMapFiles}" =~ ${l_array[2]//\"/}(,|$) ]];then
+                  l_configMapFiles="${l_configMapFiles},${l_array[2]//\"/}"
+                fi
+              fi
+              l_loadOk="true"
+            fi
           fi
           unset _paramMappingMap
         done
@@ -191,6 +208,13 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   if [ "${l_loadOk}" == "false" ];then
     error "缺少${gLanguage}语言级的参数映射配置文件，该配置文件定义了如何从项目配置文件中读取wyDevops需要的参数。"
   fi
+
+  #初始化l_cicdTargetFile文件中的configMapFiles参数。
+  if [ "${l_configMapFiles}" ];then
+    info "初始化${l_cicdTargetFile##*/}文件中的configMapFiles参数的值为:${l_configMapFiles:1}"
+    insertParam "${l_cicdTargetFile}" "globalParams.configMapFiles" "${l_configMapFiles:1}"
+  fi
+
 }
 
 #------------------------私有方法--开始-------------------------#
@@ -390,16 +414,18 @@ function _createGlobalDirectory() {
   export gProjectChartTemplatesDir
   export gProjectPluginDirName
   export gProjectPluginDir
+  export gParamMappingDirName
+  export gParamMappingDir
 
   gHelmBuildDir="${gBuildPath}/${gHelmBuildDirName}"
-  info "初始化构建主目录:${gHelmBuildDir}"
   if [[ ! -d "${gHelmBuildDir}" ]];then
+    info "初始化构建主目录:${gHelmBuildDir}"
     mkdir -p "${gHelmBuildDir}"
   fi
 
   gHelmBuildOutDir="${gHelmBuildDir}/${gHelmBuildOutDirName}"
-  info "初始化构建输出目录:${gHelmBuildOutDir}"
-  if [[ ! -d "${gHelmBuildDir}" ]];then
+  if [[ ! -d "${gHelmBuildOutDir}" ]];then
+    info "初始化构建输出目录:${gHelmBuildOutDir}"
     mkdir -p "${gHelmBuildOutDir}"
   fi
 
@@ -417,13 +443,19 @@ function _createGlobalDirectory() {
   info "初始化chart镜像构建目录:${gChartBuildDir}"
   mkdir -p "${gChartBuildDir}"
 
-  gTempFileDir="${gBuildPath}/${gTempFileDirName}"
+  gTempFileDir="${gHelmBuildDir}/${gTempFileDirName}"
   if [ -d "${gTempFileDir}" ];then
     #如果不为空，则删除该临时目录。
     rm -rf "${gTempFileDir:?}"
   fi
   info "初始化临时文件存储目录:${gTempFileDir}"
   mkdir -p "${gTempFileDir}"
+
+  gParamMappingDir=${gHelmBuildDir}/${gParamMappingDirName}
+  if [ ! -d "${gTempFileDir}" ];then
+    info "初始化项目参数映射配置文件存储目录:${gParamMappingDir}"
+    mkdir -p "${gParamMappingDir}"
+  fi
 
   gProjectShellDir="${gHelmBuildDir}/${gProjectShellDirName}"
   if [ ! -d "${gProjectShellDir}" ];then
@@ -456,17 +488,19 @@ function _checkGlobalDirectory() {
   export gProjectChartTemplatesDir
   export gProjectPluginDirName
   export gProjectPluginDir
+  export gParamMappingDirName
+  export gParamMappingDir
 
   info "检查并创建缺失的全局目录..."
 
   gHelmBuildDir="${gBuildPath}/${gHelmBuildDirName}"
-  info "初始化构建主目录:${gHelmBuildDir}"
   if [[ ! -d "${gHelmBuildDir}" ]];then
+    info "初始化构建主目录:${gHelmBuildDir}"
     mkdir -p "${gHelmBuildDir}"
   fi
 
   gHelmBuildOutDir="${gHelmBuildDir}/${gHelmBuildOutDirName}"
-  if [[ ! -d "${gHelmBuildDir}" ]];then
+  if [[ ! -d "${gHelmBuildOutDir}" ]];then
     info "初始化构建输出目录:${gHelmBuildOutDir}"
     mkdir -p "${gHelmBuildOutDir}"
   fi
@@ -489,13 +523,19 @@ function _checkGlobalDirectory() {
     rm -rf "${gChartBuildDir:?}/*"
   fi
 
-  gTempFileDir="${gBuildPath}/${gTempFileDirName}"
+  gTempFileDir="${gHelmBuildDir}/${gTempFileDirName}"
   if [ ! -d "${gTempFileDir}" ];then
     info "初始化临时文件存储目录:${gTempFileDir}"
     mkdir -p "${gTempFileDir}"
   else
     info "清空临时文件存储目录"
     rm -rf "${gTempFileDir:?}/*"
+  fi
+
+  gParamMappingDir=${gHelmBuildDir}/${gParamMappingDirName}
+  if [ ! -d "${gTempFileDir}" ];then
+    info "初始化项目参数映射配置文件存储目录:${gParamMappingDir}"
+    mkdir -p "${gParamMappingDir}"
   fi
 
   gProjectShellDir="${gHelmBuildDir}/${gProjectShellDirName}"

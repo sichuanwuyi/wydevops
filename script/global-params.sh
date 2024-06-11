@@ -14,6 +14,7 @@ export gGlobalParamNames=(
 "gChartBuildDirName=\"chart-build\"" \
 "gHelmBuildOutDirName=\"build-out\"" \
 "gTempFileDirName=\"temp\"" \
+"gParamMappingDirName=\"param-mapping\""
 "gProjectShellDirName=\"shell\"" \
 "gProjectPluginDirName=\"plugins\"" \
 
@@ -60,6 +61,7 @@ export gGlobalParamNames=(
 "gHelmBuildOutDir" \
 "gDockerBuildDir" \
 "gChartBuildDir" \
+"gParamMappingDir" \
 "gTempFileDir=\"/c/temp\"" \
 
 #docker仓库相关参数
