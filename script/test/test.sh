@@ -96,16 +96,14 @@ value: 123"
 }
 
 #确保文件不存在
-rm -f "${tmpFile}"
+#rm -f "${tmpFile}"
 
 #readAndWriteKVPair "简单键值对读写" "test|AAA test.test1|BBB test.test2|CCC test.test1.test3|DDD"
 #readAndWriteKVPair "简单KV键值对列表类读写" "test.test1.test3[0].name|DDD test.test1.test3[0]| test.test1.test3[0].name|kkk test.test1.test3[0].value|vvvv"
 #
 #readAndWriteList "列表项读写"
 
-#helm uninstall devops-test -n develop --kubeconfig /e/tmt/test/deploy/kube-config
+helm uninstall devops-test -n develop --kubeconfig /d/kube-config
 #helm uninstall devops-test1 -n develop --kubeconfig /e/tmt/test/deploy/kube-config
 #helm uninstall atom-hardware-manager -n develop --kubeconfig /e/tmt/test/deploy/kube-config
 
-l_registerContent="/e/tmt/wydevops/script/plugins/Ingress1/ingress-generator.sh|ingressGenerator_default,;/e/tmt/wydevops/script/plugins/Ingress2/ingress-generator.sh|ingressGenerator_default,"
-echo -e "${l_registerContent}" | grep -oP "[a-zA-Z0-9_\-]+," | sort | uniq -c | grep -oP "^([ ]*)[2-9]{1}[0-9]*(.*)$"

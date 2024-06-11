@@ -652,6 +652,15 @@ function _deployServiceInK8S() {
       warn "更新集群内拉取docker镜像使用的仓库地址为: ${l_array[2]}"
       #多个同名参数的设置，以最后一个为准。因此可以直接追加参数的最新值。
       l_settingParams="${l_settingParams},image.registry=${l_array[2]}"
+
+#      if [ ! "${gDockerRepoName}" ];then
+#        info "将离线包中的镜像推送到K8S集群使用的Docker仓库中..."
+#        l_repoInfos="${gDefaultRetVal}"
+#        readParam "${gCiCdYamlFile}" "deploy[${l_index}].packageName"
+#        _pushDockerImageForDeployStage "${gDefaultRetVal}" "${l_repoInfos}" "${l_ip}" "${l_port}" \
+#          "${l_account}" "${l_password}"
+#      fi
+
     fi
 
     #如果routeHosts参数配置有值，则需要更新gatewayRoute.host参数的值。
@@ -865,6 +874,84 @@ function _readValueOfListItemNames() {
     l_paramNames="${l_paramNames},${l_paramName}"
   done
   gDefaultRetVal="${l_paramNames:1}"
+}
+
+function _pushDockerImageForDeployStage() {
+  export gDefaultRetVal
+  export gCiCdYamlFile
+  export gHelmBuildOutDir
+
+  local l_packageName=$1
+  local l_dockerRepoInfo=$2
+  local l_ip
+  local l_port
+  local l_account
+  local l_password
+
+  local l_packageIndex
+  local l_images
+  local l_image
+  local l_array
+  local l_dockerOutDir
+
+  local l_result
+
+  getListIndexByPropertyName "${gCiCdYamlFile}" "package" "name" "${l_packageName}"
+  [[ "${gDefaultRetVal}" -eq -1 ]] && error "${gCiCdYamlFile##*/}文件中不存在name参数值为${l_packageName}的package项"
+
+  l_packageIndex="${gDefaultRetVal}"
+
+  readParam "${gCiCdYamlFile}" "package[${l_packageIndex}].images"
+  if [[ ! "${gDefaultRetVal}" ]];then
+    warn "${gCiCdYamlFile##*/}文件中package[${l_packageIndex}].images参数是空的"
+    return
+  fi
+
+  # shellcheck disable=SC2206
+  l_array=(${l_dockerRepoInfo//,/ })
+
+  # shellcheck disable=SC2206
+  l_images=(${gDefaultRetVal//,/ })
+  # shellcheck disable=SC2068
+  for l_image in ${l_images[@]};do
+    #先删除已经存在的镜像。
+    invokeExtendChain "onBeforePushDockerImage" "${l_array[0]}" "${l_image}" "${l_array[2]}" \
+                "${l_array[1]}" "${l_array[5]}}" "${l_array[3]}" "${l_array[4]}}"
+
+    info "检查服务器${l_ip}的硬件架构 ..."
+    l_content=$(ssh -p "${l_port}" "${l_account}@${l_ip}" "uname -sm" )
+    invokeExtendChain "onGetSystemArchInfo" "${l_content}"
+    # shellcheck disable=SC2015
+    [[ "${gDefaultRetVal}" == "false" ]] && error "读取本地系统架构信息失败"
+    info "读取到当前系统架构为:${gDefaultRetVal}"
+    l_archType="${gDefaultRetVal}"
+
+    #完成docker仓库登录
+    dockerLogin "${l_array[2]}" "${l_array[3]}" "${l_array[4]}"
+
+    #从docker构建输出目录中获取l_image镜像。
+    l_dockerOutDir="${l_image//\//-}"
+    l_dockerOutDir="${l_image//:/-}"
+    l_dockerOutDir="${gHelmBuildOutDir}/${l_archType//\//-}/${l_dockerOutDir}-${l_archType//\//-}.tar"
+    if [ -f "${l_dockerOutDir}" ];then
+      l_result=$(docker load -i "${l_dockerOutDir}" 2>&1 | grep -oP "^.*(Loaded image: ${l_image}).*$")
+      [[ ! "${l_result}" ]] && error "加载docker镜像失败：${l_dockerOutDir}"
+      warn "成功加载docker镜像：${l_result}"
+    else
+      error "文件不存在:${l_dockerOutDir}"
+    fi
+
+    #更名
+    l_result=$(docker tag "${l_image}" "${l_array[1]}/${l_image}" 2>&1)
+    l_image="${l_array[1]}/${l_image}"
+
+    info "将${l_image}镜像推送到${l_array[2]}仓库中..."
+    pushImage "${l_image}" "${l_archType}" "${l_array[2]}"
+    warn "删除之前加载的docker镜像:${l_image}"
+    docker rmi -f "${l_image}"
+    # shellcheck disable=SC2015
+    [[ "${gDefaultRetVal}" != "true" ]] && error "镜像推送失败" || info "镜像推送成功"
+  done
 }
 
 #**********************私有方法-结束***************************#

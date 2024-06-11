@@ -17,6 +17,6 @@ bash "${_SCRIPT_ROOT_DIR}/wydevops.sh" -c -e -d -m \
 -T true \
 -W "${_SCRIPT_ROOT_DIR}" \
 -P "${_PROJECT_MAIN_MODULE_DIR}" \
-#-C "harbor,chartmuseum,192.168.1.214:80,admin,Harbor12345,80" \
-#-D "harbor,registry.docker.home,192.168.1.214:80,admin,Harbor12345,80"
+-C "harbor,chartmuseum,192.168.1.214:8088,admin,Harbor12345,8088" \
+-D "harbor,wydevops,192.168.1.214:8088,admin,Harbor12345,8088"
 #-N "http://192.168.100.236:8000/atom/v1/deployPlatform/api/update" \

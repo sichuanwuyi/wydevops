@@ -606,7 +606,8 @@ function handleBuildingSingleImageForChart_ex() {
   export gServiceName
 
   local l_saveBackStatus
-  local l_businessVersion
+  local l_baseImage
+  local l_baseVersion
   local l_i
   local l_j
   local l_k
@@ -621,8 +622,12 @@ function handleBuildingSingleImageForChart_ex() {
   l_saveBackStatus="${gDefaultRetVal}"
 
   #读取业务镜像的版本号。
+  readParam "${gCiCdYamlFile}" "globalParams.baseImage"
+  l_baseImage="${gDefaultRetVal//-base/}"
+
+  #读取业务镜像的版本号。
   readParam "${gCiCdYamlFile}" "globalParams.businessVersion"
-  l_businessVersion="${gDefaultRetVal}"
+  l_baseVersion="${gDefaultRetVal}"
 
   ((l_i = 0))
   while true; do
@@ -667,7 +672,7 @@ function handleBuildingSingleImageForChart_ex() {
             l_param="chart[${l_i}].deployments[${l_j}].containers[${l_k}]"
 
             #对当前container中docker镜像相关的参数进行修正。
-            l_paramArray=("name|${gServiceName}" "repository|${gServiceName}" "tag|${l_businessVersion}")
+            l_paramArray=("name|${gServiceName}" "repository|${l_baseImage}" "tag|${l_baseVersion}")
             # shellcheck disable=SC2068
             for l_paramItem in ${l_paramArray[@]};do
               l_paramName="${l_paramItem%%|*}"
