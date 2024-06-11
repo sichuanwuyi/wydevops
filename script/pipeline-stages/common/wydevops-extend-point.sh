@@ -160,8 +160,8 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   l_cicdTargetFile="${l_tmpCiCdConfigFile}"
   [[ ! -f "${l_tmpCiCdConfigFile}" ]] && l_cicdTargetFile="${l_templateFile}"
 
-  #项目级参数应用文件优先级更高，放置_dirList中靠后面的位置。
-  l_dirList=("${gBuildScriptRootDir}/templates/config/${gLanguage}/param-mapping" "${gBuildPath}/${gHelmBuildDirName}/param-mapping")
+  #项目级参数应用文件优先级更高，放置_dirList中最前面的位置。
+  l_dirList=("${gBuildPath}/${gHelmBuildDirName}/param-mapping" "${gBuildScriptRootDir}/templates/config/${gLanguage}/param-mapping")
   #预先定义好各个参数映射文件对应的
 
   l_loadOk="false"
