@@ -462,7 +462,7 @@ deploy:
         apiServer: ${devApiServer}
         #发布服务的命名空间（必须配置）
         namespace: ${devNamespace}
-        #集群内部使用的docker仓库信息。
+        #目标集群使用的docker仓库信息。
         #格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},
         #{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)}
         dockerRepo:

@@ -9,14 +9,12 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
   export gChartRepoType
   export gChartRepoInstanceName
 
-  local l_content
   local l_systemType
   local l_archType
   local l_info
 
   #检查是否安装有helm工具。
-  l_content=$(helm version | grep -oP "not found" )
-  if [ "${l_content}" ];then
+  if ! command -v helm &> /dev/null; then
     #检查当前操作系统类型
     invokeExtendChain "onGetSystemArchInfo"
     # shellcheck disable=SC2015
@@ -348,7 +346,8 @@ function installHelm_ex() {
   export gBuildScriptRootDir
   local l_systemType=$1
   local l_archType=$2
-  installHelmTool "${gBuildScriptRootDir}" "${l_systemType}" "${l_archType}"
+  #调用扩展链，不同系统下安装的方法不同。
+  invokeExtendChain "onInstallHelmTool" "${gBuildScriptRootDir}" "${l_systemType}" "${l_archType}"
 }
 
 function addHelmRepo_ex(){
@@ -384,6 +383,7 @@ function onBeforeHelmPackage_ex() {
 }
 
 function helmPushChartImage_ex() {
+  export gChartRepoType
   export gChartRepoName
   export gChartRepoInstanceName
   export gChartRepoAccount
@@ -391,7 +391,7 @@ function helmPushChartImage_ex() {
 
   local l_chartFile=$1
   #调用helm-helper.sh文件中的方法。
-  pushChartImage "${l_chartFile}" "${gChartRepoInstanceName}" "${gChartRepoName}" \
+  pushChartImage "${l_chartFile}" "${gChartRepoType}" "${gChartRepoInstanceName}" "${gChartRepoName}" \
     "${gChartRepoAccount}" "${gChartRepoPassword}"
 }
 

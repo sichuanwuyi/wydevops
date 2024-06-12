@@ -46,6 +46,8 @@ function externalChartGenerator_default() {
 function _insertExternalDeployment(){
   export gChartRepoName
   export gChartRepoType
+  export gChartRepoInstanceName
+  export gTempFileDir
 
   local l_valuesYaml=$1
   local l_curChartName=$2
@@ -78,7 +80,8 @@ function _insertExternalDeployment(){
     l_chartVersion="${l_chartVersion%.*}"
     l_chartName="${l_refExternalChart%-*}"
     #拉取指定的chart镜像到gBuildPath目录中。
-    pullChartImage "${gChartRepoType}" "${l_chartName}" "${l_chartVersion}" "${gChartRepoInstanceName}" "${gTempFileDir}"
+    pullChartImage "${l_chartName}" "${l_chartVersion}" "${gChartRepoType}" "${gChartRepoName}" \
+      "${gChartRepoInstanceName}" "${gTempFileDir}"
     l_refExternalChart="${gTempFileDir}/${l_refExternalChart}"
   else
     l_chartName="${l_refExternalChart##*/}"

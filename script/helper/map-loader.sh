@@ -21,6 +21,8 @@ function initialMapFromConfigFile() {
   local l_defineBindingFiles
   local l_configMapFiles
 
+  local l_array
+
   # shellcheck disable=SC2002
   l_content=$(cat "${l_configFile}" | grep -noP "^([ ]*)[_a-zA-Z]+")
   stringToArray "${l_content}" "l_lines"
@@ -36,8 +38,15 @@ function initialMapFromConfigFile() {
         l_exitOnError="${l_value}"
       elif [[ "${l_key}" =~ ^(define\.bindingFiles) ]];then
         l_defineBindingFiles="${l_value}"
-        if [[ "${l_key}" =~ ^(.*)|true$ ]];then
-          l_configMapFiles="${l_configMapFiles},${l_value}"
+        if [[ "${l_key}" =~ ^(.*)\|true(\|.*$|$) ]];then
+          # shellcheck disable=SC2206
+          l_array=(${l_key//|/ })
+          if [ "${#l_array[@]}" -gt 2 ];then
+            #带上configMapName一起输出。
+            l_configMapFiles="${l_configMapFiles},${l_array[2]}=${l_value}"
+          else
+            l_configMapFiles="${l_configMapFiles},${l_value}"
+          fi
         fi
       else
         eval "${l_mapName}[\"${l_key}\"]=${l_value}"

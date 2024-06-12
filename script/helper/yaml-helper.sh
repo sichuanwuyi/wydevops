@@ -2273,8 +2273,9 @@ function _updateMultipleRowValue() {
   fi
   #l_startRowNum行的下一行数据的前导空格数等于(l_tmpSpaceNum + 2)
   ((l_tmpSpaceNum = l_tmpSpaceNum + 2))
-  #在获取新数据第一行的前导空格数量。
-  l_tmpSpaceNum1=$(echo -e "${l_rowData}" | grep -m 1 -oP "^[ ]*[a-zA-Z_\-]+.*$" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
+  #在获取新数据第一行的前导空格数量.
+  #todo: 正则表达式兼容了”<“（xml格式）和”[“（ini格式）开头的内容。
+  l_tmpSpaceNum1=$(echo -e "${l_rowData}" | grep -m 1 -oP "^[ ]*[a-zA-Z_\-\<\[]+.*$" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
   #计算前导空格数量的差值。
   ((l_tmpSpaceNum = l_tmpSpaceNum - l_tmpSpaceNum1))
   #将l_rowData数据整体左移或右移l_tmpSpaceNum个字符。l_tmpSpaceNum为负数时向左移动，为正数时向右移动。

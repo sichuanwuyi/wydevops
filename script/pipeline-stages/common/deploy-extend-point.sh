@@ -473,8 +473,8 @@ function _deployServiceByDocker(){
     l_content=$(ssh -p "${l_port}" "${l_account}@${l_ip}" "uname -sm" )
     invokeExtendChain "onGetSystemArchInfo" "${l_content}"
     # shellcheck disable=SC2015
-    [[ "${gDefaultRetVal}" == "false" ]] && error "读取本地系统架构信息失败"
-    info "读取到当前系统架构为:${gDefaultRetVal}"
+    [[ "${gDefaultRetVal}" == "false" ]] && error "读取${l_ip}服务器系统架构信息失败"
+    info "读取到${l_ip}服务器的系统架构为:${gDefaultRetVal}"
     l_archType="${gDefaultRetVal}"
 
     l_nodeItem="${l_archTypeMap[${l_archType}]},${l_nodeItem}"
@@ -632,7 +632,7 @@ function _deployServiceInK8S() {
     l_password="${l_array[3]}"
 
     info "查找Chart镜像文件和其对应的setting.conf文件..."
-    findChartImage "${l_chartName}" "${l_chartVersion}"
+    _findChartImage "${l_chartName}" "${l_chartVersion}"
     [[ ! "${gDefaultRetVal}" ]] && error "失败"
     # shellcheck disable=SC2206
     l_array=(${gDefaultRetVal})
@@ -645,7 +645,7 @@ function _deployServiceInK8S() {
       l_settingParams="${l_settingParams%,*}"
     fi
 
-    #如果dockerRepo参数配置有值，则需要更新image.registry参数的值。
+    #如果dockerRepo参数配置有值且与当前使用的docker镜像仓库不是同一个，则需要推送docker镜像到新的仓库中。
     readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.dockerRepo"
     if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
       # shellcheck disable=SC2206
@@ -659,10 +659,9 @@ function _deployServiceInK8S() {
         info "将离线包中的镜像推送到K8S集群使用的Docker仓库中..."
         l_repoInfos="${gDefaultRetVal}"
         readParam "${gCiCdYamlFile}" "deploy[${l_index}].packageName"
-        _pushDockerImageForDeployStage "${gDefaultRetVal}" "${l_repoInfos}" "${l_ip}" "${l_port}" \
+        _pushDockerImageForDeployStage "${gDefaultRetVal}" "${l_repoInfos}" "${l_chartFile}" "${l_ip}" "${l_port}" \
           "${l_account}" "${l_password}"
       fi
-
     fi
 
     #如果routeHosts参数配置有值，则需要更新gatewayRoute.host参数的值。
@@ -718,11 +717,12 @@ function _deployServiceInK8S() {
   done
 }
 
-function findChartImage() {
+function _findChartImage() {
   export gDefaultRetVal
   export gHelmBuildOutDir
   export gChartRepoInstanceName
   export gChartRepoType
+  export gChartRepoName
 
   local l_chartName=$1
   local l_chartVersion=$2
@@ -742,8 +742,8 @@ function findChartImage() {
       info "未找到" "*"
       if [ "${gChartRepoInstanceName}" ];then
         info "从Chart镜像仓库中拉取版本为${l_chartVersion}的${l_chartName}镜像..." "-n"
-        pullChartImage "${gChartRepoType}" "${l_chartName}" "${l_chartVersion}" "${gChartRepoInstanceName}" \
-          "${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/chart"
+        pullChartImage "${l_chartName}" "${l_chartVersion}" "${gChartRepoType}" "${gChartRepoName}" \
+          "${gChartRepoInstanceName}" "${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/chart"
         [[ ! -f "${l_chartFile}" ]] && error "拉取失败"
         info "拉取成功" "*"
       fi
@@ -885,10 +885,11 @@ function _pushDockerImageForDeployStage() {
 
   local l_packageName=$1
   local l_dockerRepoInfo=$2
-  local l_ip=$3
-  local l_port=$4
-  local l_account=$5
-  local l_password=$6
+  local l_chartFile=$3
+  local l_ip=$4
+  local l_port=$5
+  local l_account=$6
+  local l_password=$7
 
   local l_packageIndex
   local l_images
@@ -899,15 +900,10 @@ function _pushDockerImageForDeployStage() {
 
   local l_result
 
-  getListIndexByPropertyName "${gCiCdYamlFile}" "package" "name" "${l_packageName}"
-  [[ "${gDefaultRetVal}" -eq -1 ]] && error "${gCiCdYamlFile##*/}文件中不存在name参数值为${l_packageName}的package项"
-
-  l_packageIndex="${gDefaultRetVal}"
-
-  readParam "${gCiCdYamlFile}" "package[${l_packageIndex}].images"
-  if [[ ! "${gDefaultRetVal}" ]];then
-    warn "${gCiCdYamlFile##*/}文件中package[${l_packageIndex}].images参数是空的"
-    return
+  #获取需要推送的镜像名称信息。
+  _getDockerImageInChart "${l_packageName}" "${l_chartFile}"
+  if [ ! "${gDefaultRetVal}" ];then
+    warn "未找到需要推送的docker镜像"
   fi
 
   # shellcheck disable=SC2206
@@ -917,8 +913,8 @@ function _pushDockerImageForDeployStage() {
   l_content=$(ssh -p "${l_port}" "${l_account}@${l_ip}" "uname -sm" )
   invokeExtendChain "onGetSystemArchInfo" "${l_content}"
   # shellcheck disable=SC2015
-  [[ "${gDefaultRetVal}" == "false" ]] && error "读取本地系统架构信息失败"
-  info "读取到当前系统架构为:${gDefaultRetVal}"
+  [[ "${gDefaultRetVal}" == "false" ]] && error "读取${l_ip}服务器系统架构信息失败"
+  info "读取到${l_ip}服务器的系统架构为:${gDefaultRetVal}"
   l_archType="${gDefaultRetVal}"
 
   #获取到需要推送的镜像
@@ -961,6 +957,61 @@ function _pushDockerImageForDeployStage() {
     [[ "${gDefaultRetVal}" != "true" ]] && error "镜像推送失败" || info "镜像推送成功"
 
   done
+}
+
+function _getDockerImageInChart() {
+  export gDefaultRetVal
+  export gCiCdYamlFile
+
+  local l_packageName=$1
+  local l_chartFile=$2
+
+  local l_packageIndex
+  local l_images
+
+  local l_registryKey
+  local l_result
+  local l_lines
+  local l_lineCount
+  local l_i
+  local l_line
+
+  getListIndexByPropertyName "${gCiCdYamlFile}" "package" "name" "${l_packageName}"
+  if [[ "${gDefaultRetVal}" -eq -1 ]];then
+    warn "${gCiCdYamlFile##*/}文件中不存在name参数值为${l_packageName}的package项, 尝试从chart镜像中获取..."
+  else
+    l_packageIndex="${gDefaultRetVal}"
+    readParam "${gCiCdYamlFile}" "package[${l_packageIndex}].images"
+    if [[ "${gDefaultRetVal}" ]];then
+      l_images="${gDefaultRetVal}"
+    else
+      warn "${gCiCdYamlFile##*/}文件中package[${l_packageIndex}].images参数是空的"
+    fi
+  fi
+
+  if [ "${l_images}" ];then
+    gDefaultRetVal="${l_images}"
+    return
+  fi
+
+  #如果没有从配置文件中读取到，则尝试从chart镜像中获取。
+  #todo: 这里说明一下，为什么不直接从chart镜像中获取而先要从配置文件中读取？ 这是为了留一个上其他镜像到仓库的接口。某些情况下需要上传chart镜像中没有使用的镜像。
+  gDefaultRetVal=""
+
+  l_registryKey="wydevops${RANDOM}"
+  l_result=$(helm template "${l_chartFile}" -n test --set image.registry=${l_registryKey} 2>&1)
+  l_result=$(echo -e "${l_result}" | grep -oP "^([ ]*)image: ${l_registryKey}/.*$")
+  if [ "${l_result}" ];then
+    stringToArray "${l_result}" "l_lines"
+    l_lineCount=${#l_lines[@]}
+    for ((l_i=0; l_i < l_lineCount; l_i++));do
+      l_line="${l_lines[${l_i}]}"
+      l_line="${l_line#*/}"
+      l_images="${l_images},${l_line}"
+    done
+    gDefaultRetVal="${l_images:1}"
+  fi
+
 }
 
 #**********************私有方法-结束***************************#

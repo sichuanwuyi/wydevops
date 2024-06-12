@@ -159,10 +159,18 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   local l_loadOk
   local l_array
   local l_configMapFiles
+  local l_tmpFile
+  local l_mapKeys
+  local l_mapKey
+  local l_mapValue
+  local l_index
+  local l_content
 
   #文件及其已经处理过的参数Map。
   # shellcheck disable=SC2034
   declare -A _alreadyProcessedParamMap
+  #configMapName与其内的文件Map
+  declare -A configMapNameAndFilesMap
 
   l_cicdTargetFile="${l_tmpCiCdConfigFile}"
   [[ ! -f "${l_tmpCiCdConfigFile}" ]] && l_cicdTargetFile="${l_templateFile}"
@@ -186,16 +194,16 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
           if [ "${#_paramMappingMap[@]}" -gt 0 ];then
             # shellcheck disable=SC2206
             l_array=(${gDefaultRetVal//|/ })
+            #收集部署时需要打包到ConfigMap中的配置文件
+            if [ "${#l_array[@]}" -gt 2 ];then
+              if [[ ! "${l_configMapFiles}" =~ ${l_array[2]//\"/}(,|$) ]];then
+                l_configMapFiles="${l_configMapFiles},${l_array[2]//\"/}"
+              fi
+            fi
             if [ "${#_paramMappingMap[@]}" -gt 0 ];then
               #根据参数映射文件初始化l_cicdTargetFile文件中的参数。
               initialParamValueByMappingConfigFiles "${gBuildPath}" "${l_cicdTargetFile}" \
                 "_paramMappingMap|${l_array[0]}" "${l_array[1]}" "_alreadyProcessedParamMap"
-              #收集部署时需要打包到ConfigMap中的配置文件
-              if [ "${#l_array[@]}" -gt 2 ];then
-                if [[ ! "${l_configMapFiles}" =~ ${l_array[2]//\"/}(,|$) ]];then
-                  l_configMapFiles="${l_configMapFiles},${l_array[2]//\"/}"
-                fi
-              fi
               l_loadOk="true"
             fi
           fi
@@ -211,8 +219,33 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
 
   #初始化l_cicdTargetFile文件中的configMapFiles参数。
   if [ "${l_configMapFiles}" ];then
-    info "初始化${l_cicdTargetFile##*/}文件中的configMapFiles参数的值为:${l_configMapFiles:1}"
-    insertParam "${l_cicdTargetFile}" "globalParams.configMapFiles" "${l_configMapFiles:1}"
+    # shellcheck disable=SC2206
+    l_array=(${l_configMapFiles//,/ })
+    # shellcheck disable=SC2068
+    for l_tmpFile in ${l_array[@]};do
+      if [[ "${l_tmpFile}" =~ ^(.*)=(.*)$ ]];then
+        configMapNameAndFilesMap["${l_tmpFile%%=*}"]="${configMapNameAndFilesMap[${l_tmpFile%%=*}]},${l_tmpFile#*=}"
+      else
+        configMapNameAndFilesMap["_A_"]="${configMapNameAndFilesMap[_A_]},${l_tmpFile}"
+      fi
+    done
+    # shellcheck disable=SC2124
+    l_mapKeys=${!configMapNameAndFilesMap[@]}
+    # shellcheck disable=SC2145
+    (( l_index = 1))
+    # shellcheck disable=SC2068
+    for l_mapKey in ${l_mapKeys[@]};do
+      l_mapValue="${configMapNameAndFilesMap[${l_mapKey}]}"
+      if [ "${l_mapKey}" == "_A_" ];then
+        info "初始化${l_cicdTargetFile##*/}文件中的configMapFiles参数的值为:${l_mapValue:1}"
+        insertParam "${l_cicdTargetFile}" "globalParams.configMapFiles" "${l_mapValue:1}"
+      else
+        info "初始化${l_cicdTargetFile##*/}文件中的chart[0].deployments[0].configMaps[${l_index}].files参数的值为:${l_mapValue:1}"
+        l_content="name: ${l_mapKey}\nfiles: ${l_mapValue:1}"
+        insertParam "${l_cicdTargetFile}" "chart[0].deployments[0].configMaps[${l_index}]" "${l_content}"
+        ((l_index = l_index + 1))
+      fi
+    done
   fi
 
 }

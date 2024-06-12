@@ -80,7 +80,8 @@ function _processExternalChart_default() {
     l_chartVersion="${l_chartVersion%.*}"
     l_chartName="${l_externalChartImage%-*}"
     #拉取指定的chart镜像到gBuildPath目录中。
-    pullChartImage "${gChartRepoType}" "${l_chartName}" "${l_chartVersion}" "${gChartRepoInstanceName}" "${gTempFileDir}"
+    pullChartImage "${l_chartName}" "${l_chartVersion}" "${gChartRepoType}" "${gChartRepoName}" \
+      "${gChartRepoInstanceName}" "${gTempFileDir}"
     l_externalChartImage="${gTempFileDir}/${l_externalChartImage}"
   else
     l_chartName="${l_externalChartImage##*/}"

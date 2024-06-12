@@ -103,7 +103,6 @@ value: 123"
 #
 #readAndWriteList "列表项读写"
 
-helm uninstall devops-test -n develop --kubeconfig /d/kube-config
+#helm uninstall devops-test -n develop --kubeconfig /d/kube-config
 #helm uninstall devops-test1 -n develop --kubeconfig /e/tmt/test/deploy/kube-config
 #helm uninstall atom-hardware-manager -n develop --kubeconfig /e/tmt/test/deploy/kube-config
-

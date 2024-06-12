@@ -14,9 +14,20 @@ function onPushChartImage_harbor() {
   local l_chartFile=$2
   local l_repoHostAndPort=$3
   local l_repoInstanceName=$4
+  local l_account=$5
+  local l_password=$6
 
   local l_result
   local l_errorLog
+
+  info "推送前先登录Harbor仓库(helm registry login ${l_repoHostAndPort} --insecure -u ${l_account} -p ${l_password})"
+  l_result=$(helm registry login "${l_repoHostAndPort}" --insecure -u "${l_account}" -p "${l_password}" 2>&1)
+  l_errorLog=$(echo "${l_result}" | grep -ioP "Login Succeeded")
+  if [ ! "${l_errorLog}" ];then
+    error "登录失败:\n${l_result}" "*"
+  else
+    info "登录成功" "*"
+  fi
 
   info "正在推送${l_chartFile##*/}镜像到chart仓库中..." "-n"
   l_result=$(helm push "${l_chartFile}" "oci://${l_repoHostAndPort}/${l_repoInstanceName}" --plain-http)

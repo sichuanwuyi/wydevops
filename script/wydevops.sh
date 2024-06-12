@@ -8,10 +8,23 @@ _selfRootDir=$(cd "$(dirname "$0")"; pwd)
 source "${_selfRootDir}/helper/yaml-helper.sh"
 source "${_selfRootDir}/helper/docker-helper.sh"
 source "${_selfRootDir}/helper/helm-helper.sh"
-source "${_selfRootDir}/helper/helm-installer.sh"
 source "${_selfRootDir}/helper/map-loader.sh"
 #3.引入全局变量及其默认值定义文件。
 source "${_selfRootDir}/global-params.sh"
+
+info "检测helm是否已安装..." "-n"
+if command -v helm &> /dev/null; then
+  info "已安装" "*"
+elif [[ ! "${PATH}" =~ ^(.*)(:${HOME}/helm)(:|$) ]];then
+  info "未安装" "*"
+  warn "稍后wydevops会将helm安装到${HOME}/helm目录中，请将${HOME}/helm路径添加到系统环境变量PATH中"
+  export PATH=${PATH}:${HOME}/helm
+  info "重新加载当前脚本文件"
+  #shellcheck disable=SC1090
+  source "$0"
+else
+  info "暂未安装，稍后会自动安装" "*"
+fi
 
 # 临时文件注册表, error方法中要负责清除这些文件。
 declare -A gTempFileRegTables

@@ -78,6 +78,7 @@ function standardCICD(){
     #清空执行结果信息
     gCurrentStageResult=""
   done
+  exit 0
 }
 
 #------------------------------执行流程------------------------------#
