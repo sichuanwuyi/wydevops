@@ -651,8 +651,8 @@ function _deployServiceInK8S() {
       # shellcheck disable=SC2206
       l_array=(${gDefaultRetVal//,/ })
       warn "更新集群内拉取docker镜像使用的仓库地址为: ${l_array[2]}"
-      #多个同名参数的设置，以最后一个为准。因此可以直接追加参数的最新值。
-      l_settingParams="${l_settingParams},image.registry=${l_array[2]}"
+
+
 
       l_repoInfos="${gDefaultRetVal}"
       if [[ "${l_array[1]}" != "${gDockerRepoInstanceName}" || "${l_array[2]}" != "${gDockerRepoName}" ]];then
@@ -661,7 +661,14 @@ function _deployServiceInK8S() {
         readParam "${gCiCdYamlFile}" "deploy[${l_index}].packageName"
         _pushDockerImageForDeployStage "${gDefaultRetVal}" "${l_repoInfos}" "${l_chartFile}" "${l_ip}" "${l_port}" \
           "${l_account}" "${l_password}"
+        if [ ! "${gDockerRepoInstanceName}" ];then
+          #如果未定义docker镜像仓库，则要将集群docker镜像仓库名称追加在image.registry参数的后面。
+          l_array[2]="${l_array[2]}/${l_array[1]}"
+        fi
       fi
+      #多个同名参数的设置，以最后一个为准。因此可以直接追加参数的最新值。
+      l_settingParams="${l_settingParams},image.registry=${l_array[2]}"
+
     fi
 
     #如果routeHosts参数配置有值，则需要更新gatewayRoute.host参数的值。
@@ -909,7 +916,7 @@ function _pushDockerImageForDeployStage() {
   # shellcheck disable=SC2206
   l_images=(${gDefaultRetVal//,/ })
 
-  info "检查服务器${l_ip}的硬件架构 ..."
+  info "检查服务器${l_ip}的硬件架构(ssh -p ${l_port} ${l_account}@${l_ip} uname -sm)..."
   l_content=$(ssh -p "${l_port}" "${l_account}@${l_ip}" "uname -sm" )
   invokeExtendChain "onGetSystemArchInfo" "${l_content}"
   # shellcheck disable=SC2015

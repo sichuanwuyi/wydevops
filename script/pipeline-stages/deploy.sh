@@ -23,6 +23,7 @@ function executePackageStage() {
   local l_remoteBaseDir
   local l_localBaseDir
   local l_deployType
+  local l_deployDockerRepo
 
   local l_deployTempDirName
   local l_deployTempDir
@@ -85,9 +86,12 @@ function executePackageStage() {
 
     readParam "${gCiCdYamlFile}" "deploy[${l_i}].deployType"
     l_deployType="${gDefaultRetVal}"
-    if [[ "${l_deployType}" == "k8s" && ! "${gDockerRepoName}" ]];then
-      warn "未设置docker镜像仓库的情况下，部署方式deployType被强制设置为docker"
-      l_deployType="docker"
+
+    readParam "${gCiCdYamlFile}" "deploy[${l_i}].k8s.dockerRepo"
+    l_deployDockerRepo="${gDefaultRetVal}"
+
+    if [[ "${l_deployType}" == "k8s" && ! "${gDockerRepoName}" && ! "${l_deployDockerRepo}" ]];then
+      error "未设置docker镜像仓库(-D参数)并且目标K8S集群也未配置docker镜像仓库(deploy[${l_i}].k8s.dockerRepo)的情况下，k8s部署方式无效"
     fi
 
     [[ "${l_deployType}" == "docker" && ${gBuildType} != "single" ]] && \

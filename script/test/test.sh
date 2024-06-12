@@ -106,3 +106,5 @@ value: 123"
 #helm uninstall devops-test -n develop --kubeconfig /d/kube-config
 #helm uninstall devops-test1 -n develop --kubeconfig /e/tmt/test/deploy/kube-config
 #helm uninstall atom-hardware-manager -n develop --kubeconfig /e/tmt/test/deploy/kube-config
+type="externalChart"
+cat "/e/tmt/wydevops/script/plugins/ExternalChart/externalChart-generator.sh" | grep -ioP "^(function ${type}Generator_)(.*)\(\)([ ]*)\{"

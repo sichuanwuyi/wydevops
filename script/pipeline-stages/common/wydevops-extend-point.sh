@@ -343,7 +343,6 @@ function _initGlobalParams() {
   export gBuildType
 
   local l_templateFile
-  local l_tmpTemplateFile
   local l_ciCdConfigFile
   local l_tmpCiCdConfigFile
 
@@ -355,9 +354,11 @@ function _initGlobalParams() {
     info "使用${gLanguage}语言级配置文件：${gLanguage}/_${gCiCdTemplateFileName}"
   fi
 
-  l_tmpTemplateFile="${gBuildPath}/${gCiCdTemplateFileName}"
-  #判断项目中是否存在ci-cd-template.yaml配置文件？
-  if [ ! -f "${l_tmpTemplateFile}" ];then
+  #获取ci-cd.yaml文件的绝对路径。
+  gCiCdYamlFile="${gBuildPath}/${gCiCdYamlFileName}"
+
+  #判断项目中是否存在ci-cd.yaml配置文件？
+  if [ ! -f "${gCiCdYamlFile}" ];then
     #如果不存在，则复制公共模板(ci-cd-template.yaml)创建一个项目级的_ci-cd-template.yaml文件。
     info "未检测到自定义模板文件，使用默认的_${gCiCdTemplateFileName}模板文件 ..."
     invokeExtendPointFunc "createCiCdTemplateFile" "创建_ci-cd-template.yaml配置文件" "${l_templateFile}"
@@ -395,30 +396,24 @@ function _initGlobalParams() {
       info "直接将_ci-cd-config.yaml配置文件的内容合并到_ci-cd-template.yaml文件中"
       combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "" "true" "true"
     fi
-
     #删除临时文件
     rm -f "${l_tmpCiCdConfigFile}" || true
 
-  else
-    info "检测到自定义配置文件：${gCiCdTemplateFileName}"
-    cat "${l_tmpTemplateFile}" > "${l_templateFile}"
+    info "从_ci-cd-template.yaml文件创建ci-cd.yaml文件"
+    #将ci-cd-template.yaml文件更名为ci-cd.yaml文件中。
+    cat "${l_templateFile}" > "${gCiCdYamlFile}"
+
+    #删除临时文件
+    rm -f "${l_templateFile}" || true
+
+    #调用：替换变量引用前扩展点。
+    invokeExtendPointFunc "onBeforeReplaceParamPlaceholder" "ci-cd.yaml文件中变量引用处理前" "${gCiCdYamlFile}"
+    #调用：替换变量引用扩展点。
+    invokeExtendPointFunc "replaceParamPlaceholder" "处理ci-cd.yaml文件中变量引用" "${gCiCdYamlFile}"
+    #调用：替换变量引用后扩展点。
+    invokeExtendPointFunc "onAfterReplaceParamPlaceholder" "ci-cd.yaml文件中变量引用处理后" "${gCiCdYamlFile}"
+
   fi
-
-  info "从_ci-cd-template.yaml文件创建ci-cd.yaml文件"
-  #获取ci-cd.yaml文件的绝对路径。
-  gCiCdYamlFile="${gBuildPath}/${gCiCdYamlFileName}"
-  #将ci-cd-template.yaml文件更名为ci-cd.yaml文件中。
-  cat "${l_templateFile}" > "${gCiCdYamlFile}"
-
-  #删除临时文件
-  rm -f "${l_templateFile}" || true
-
-  #调用：替换变量引用前扩展点。
-  invokeExtendPointFunc "onBeforeReplaceParamPlaceholder" "ci-cd.yaml文件中变量引用处理前" "${gCiCdYamlFile}"
-  #调用：替换变量引用扩展点。
-  invokeExtendPointFunc "replaceParamPlaceholder" "处理ci-cd.yaml文件中变量引用" "${gCiCdYamlFile}"
-  #调用：替换变量引用后扩展点。
-  invokeExtendPointFunc "onAfterReplaceParamPlaceholder" "ci-cd.yaml文件中变量引用处理后" "${gCiCdYamlFile}"
 
   info "从ci-cd.yaml文件中统一读取全局配置参数..."
   _loadGlobalParamsFromCiCdYaml "${gCiCdYamlFile}"

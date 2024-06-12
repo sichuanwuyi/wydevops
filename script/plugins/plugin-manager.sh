@@ -115,62 +115,6 @@ function unregisterPlugin() {
   fi
 }
 
-function loadPlugins() {
-  export gBuildScriptRootDir
-  export gBuildPath
-  export gHelmBuildDirName
-  export gProjectPluginDirName
-
-  local l_pluginDirs
-  local l_pluginDir
-
-  local l_pluginGeneratorList
-  local l_pluginGenerator
-  local l_generatorFile
-  local l_resourceType
-
-  local l_funcNames
-  local l_lines
-  local l_lineCount
-  local l_i
-  local l_funcName
-  local l_funcNameStr
-  local l_result
-
-  l_pluginDirs=("${gBuildScriptRootDir}/plugins" "${gBuildPath}/${gHelmBuildDirName}/${gProjectPluginDirName}")
-  # shellcheck disable=SC2068
-  for l_pluginDir in ${l_pluginDirs[@]};do
-    [[ ! -d "${l_pluginDir}" ]] && continue
-    l_pluginGeneratorList=$(find "${l_pluginDir}" -maxdepth 2 -type f -name "*-generator.sh")
-    # shellcheck disable=SC2068
-    for l_pluginGenerator in ${l_pluginGeneratorList[@]};do
-      l_generatorFile="${l_pluginGenerator##*/}"
-      l_resourceType="${l_generatorFile%%-*}"
-      # shellcheck disable=SC2002
-      l_funcNames=$(cat "${l_pluginGenerator}" | grep -oP "^(function) ${l_resourceType,}Generator_(.*)\(\)([ ]*)\{([ ]*)$")
-      stringToArray "${l_funcNames}" "l_lines"
-      l_lineCount=${#l_lines[@]}
-
-      l_funcNameStr=""
-      for ((l_i = 0; l_i < l_lineCount; l_i ++));do
-        l_funcName="${l_lines[${l_i}]}"
-        l_funcName="${l_funcName// /}"
-        l_funcName="${l_funcName//function/}"
-        l_funcName="${l_funcName%%(*}"
-        l_result=$(echo -e "${l_funcNameStr}," | grep -oP "${l_funcName},")
-        [[ "${l_result}" ]] && error "${l_resourceType}类型的资源生成器名称冲突：${l_resourceType,}Generator_${l_funcName}名称已经存在"
-        l_funcNameStr="${l_funcNameStr}${l_funcName},"
-      done
-      #注册调用链。
-      info "注册${l_resourceType^}类型的资源生成器插件:${l_funcNameStr}"
-      registerPlugin "${l_resourceType^}" "${l_pluginGenerator}|${l_funcNameStr}"
-      # shellcheck disable=SC1090
-      source "${l_pluginGenerator}"
-    done
-
-  done
-}
-
 function commonGenerator_default() {
   export gDefaultRetVal
   export gBuildPath
@@ -221,6 +165,62 @@ function commonGenerator_default() {
   echo "${l_content}" > "${l_targetFile}"
 
   gDefaultRetVal="true"
+}
+
+function loadPlugins() {
+  export gBuildScriptRootDir
+  export gBuildPath
+  export gHelmBuildDirName
+  export gProjectPluginDirName
+
+  local l_pluginDirs
+  local l_pluginDir
+
+  local l_pluginGeneratorList
+  local l_pluginGenerator
+  local l_generatorFile
+  local l_resourceType
+
+  local l_funcNames
+  local l_lines
+  local l_lineCount
+  local l_i
+  local l_funcName
+  local l_funcNameStr
+  local l_result
+
+  l_pluginDirs=("${gBuildScriptRootDir}/plugins" "${gBuildPath}/${gHelmBuildDirName}/${gProjectPluginDirName}")
+  # shellcheck disable=SC2068
+  for l_pluginDir in ${l_pluginDirs[@]};do
+    [[ ! -d "${l_pluginDir}" ]] && continue
+    l_pluginGeneratorList=$(find "${l_pluginDir}" -maxdepth 2 -type f -name "*-generator.sh")
+    # shellcheck disable=SC2068
+    for l_pluginGenerator in ${l_pluginGeneratorList[@]};do
+      l_generatorFile="${l_pluginGenerator##*/}"
+      l_resourceType="${l_generatorFile%%-*}"
+      # shellcheck disable=SC2002
+      l_funcNames=$(cat "${l_pluginGenerator}" | grep -oP "^(function)[ ]+${l_resourceType,}Generator_(.*)\(\)([ ]*)\{")
+      stringToArray "${l_funcNames}" "l_lines"
+      l_lineCount=${#l_lines[@]}
+
+      l_funcNameStr=""
+      for ((l_i = 0; l_i < l_lineCount; l_i ++));do
+        l_funcName="${l_lines[${l_i}]}"
+        l_funcName="${l_funcName// /}"
+        l_funcName="${l_funcName//function/}"
+        l_funcName="${l_funcName%%(*}"
+        l_result=$(echo -e "${l_funcNameStr}," | grep -oP "${l_funcName},")
+        [[ "${l_result}" ]] && error "${l_resourceType}类型的资源生成器名称冲突：${l_resourceType,}Generator_${l_funcName}名称已经存在"
+        l_funcNameStr="${l_funcNameStr}${l_funcName},"
+      done
+      #注册调用链。
+      info "注册${l_resourceType^}类型的资源生成器插件:${l_funcNameStr}"
+      registerPlugin "${l_resourceType^}" "${l_pluginGenerator}|${l_funcNameStr}"
+      # shellcheck disable=SC1090
+      source "${l_pluginGenerator}"
+    done
+
+  done
 }
 
 #定义全局调用链注册表

@@ -15,7 +15,7 @@ function onGetSystemArchInfo_ubuntu() {
     fi
   fi
 
-  if [[ ! "${l_content}" =~ ^(.*)(not found|No such file or directory)(.*)$ ]];then
+  if [[ ! "${l_content}" =~ ^(.*)(not found)(.*)$ ]];then
     l_content="${l_content// /\/}"
     if [[ ! "${l_content}" =~ ^(.*)(x86_64)(.*)$ ]];then
       l_content="linux/amd64"
