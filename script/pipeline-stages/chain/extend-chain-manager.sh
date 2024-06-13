@@ -121,7 +121,7 @@ function loadExtendChain() {
     l_chainName="${l_shellFile##*/}"
     l_chainName="${l_chainName%%.*}"
     # shellcheck disable=SC2002
-    l_funcNames=$(cat "${l_shellFile}" | grep -oP "^(function) ${l_chainName}_(.*)\(\)([ ]*)\{([ ]*)$")
+    l_funcNames=$(cat "${l_shellFile}" | grep -oP "^(function)[ ]+${l_chainName}_(.*)\(\)([ ]*)\{")
     stringToArray "${l_funcNames}" "l_lines"
     l_lineCount=${#l_lines[@]}
 

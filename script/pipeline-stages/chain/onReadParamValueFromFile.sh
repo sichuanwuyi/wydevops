@@ -7,7 +7,7 @@ function onReadParamValueFromFile_yaml() {
   local l_paramPath=$2
 
   #不是yaml文件则直接返回(gDefaultRetVal=false)继续调用下一个方法
-  if [[ ! "${l_sourceFile##*/}" =~ ^(.*)\.yaml$ && ! "${l_sourceFile##*/}" =~ ^(.*)\.yml$ ]];then
+  if [[ ! "${l_sourceFile##*/}" =~ ^(.*)\.(yaml|yml)$ ]];then
     gDefaultRetVal="false|"
     return
   fi

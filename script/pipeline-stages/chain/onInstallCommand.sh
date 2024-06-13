@@ -2,7 +2,7 @@
 
 #本调用链主要是用来在不同系统下自动安装需要的命令或工具。
 
-function onInstallTool_windows() {
+function onInstallCommand_windows() {
   export gDefaultRetVal
   local l_command=$1
 
@@ -20,7 +20,7 @@ function onInstallTool_windows() {
   gDefaultRetVal="true|${gDefaultRetVal}"
 }
 
-function onInstallTool_ubuntu() {
+function onInstallCommand_ubuntu() {
   export gDefaultRetVal
   local l_command=$1
   local l_errorLog
@@ -38,7 +38,7 @@ function onInstallTool_ubuntu() {
   gDefaultRetVal="true|${gDefaultRetVal}"
 }
 
-function onInstallTool_centos() {
+function onInstallCommand_centos() {
   export gDefaultRetVal
   local l_command=$1
   info "-------centos系统下安装${l_command}命令--------"

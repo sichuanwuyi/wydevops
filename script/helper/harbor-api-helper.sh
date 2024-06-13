@@ -21,6 +21,7 @@ function existRepositoryInHarborProject() {
     "http://${l_dockerRepoHostAndPort}/api/v2.0/projects/${l_projectName}/repositories/${l_imageName}/artifacts/${l_imageVersion}?page=1&page_size=10&with_tag=true&with_label=false&with_scan_overview=false&with_sbom_overview=false&with_accessory=false&with_signature=false&with_immutable_status=false" 2>&1)
   l_errorLog=$(echo -e "${l_result}" | grep -oP "errors")
   [[ ! "${l_errorLog}" ]] && gDefaultRetVal="true"
+
 }
 
 function deleteRepositoryInHarborProject() {

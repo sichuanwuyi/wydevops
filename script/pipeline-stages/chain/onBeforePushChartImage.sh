@@ -11,7 +11,9 @@ function onBeforePushChartImage_harbor() {
     return
   fi
 
-  source "${gBuildScriptRootDir}/helper/harbor-api-helper.sh"
+  if ! type -t "existRepositoryInHarborProject" > /dev/null; then
+    source "${gBuildScriptRootDir}/helper/harbor-api-helper.sh"
+  fi
 
   local l_imageName=$2
   local l_imageVersion=$3
@@ -46,7 +48,9 @@ function onBeforePushChartImage_nexus() {
     return
   fi
 
-  source "${gBuildScriptRootDir}/helper/nexus-api-helper.sh"
+  if ! type -t "existRepositoryInHarborProject" > /dev/null; then
+    source "${gBuildScriptRootDir}/helper/nexus-api-helper.sh"
+  fi
 
   local l_imageName=$2
   local l_imageVersion=$3

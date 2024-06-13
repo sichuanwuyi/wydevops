@@ -30,7 +30,6 @@ function pushChartImage() {
   #执行推送调用链
   invokeExtendChain "onPushChartImage" "${l_chartRepoType}" "${l_chartFile}" "${l_repoHostAndPort}" \
     "${l_repoInstanceName}" "${l_account}" "${l_password}"
-
 }
 
 function pullChartImage() {
