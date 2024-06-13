@@ -88,3 +88,5 @@ parseOptions2 "${@}"
 
 info "执行CI/CD标准流程..."
 source "${_selfRootDir}/cicd-entry.sh"
+
+exit 0
