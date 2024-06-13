@@ -190,7 +190,7 @@ function copyDockerImage_ex() {
   local l_image
   local l_tmpImage
   local l_exportedFile
-
+  local l_savedFile
 
   #读取需要打包的镜像名称列表。
   readParam "${gCiCdYamlFile}" "package[${l_i}].images"
@@ -205,12 +205,13 @@ function copyDockerImage_ex() {
     for l_image in ${l_images[@]};do
 
       l_tmpImage="${l_image//\//_}"
-      l_exportedFile="${gHelmBuildOutDir}/${l_archType//\//-}/${l_tmpImage//:/-}-${l_archType//\//-}.tar"
+      l_savedFile="${gHelmBuildOutDir}/${l_archType//\//-}/${l_tmpImage//:/-}-${l_archType//\//-}.tar"
+      l_exportedFile="${l_savedFile}"
       if [ ! -f "${l_exportedFile}" ];then
         l_exportedFile="${gImageCacheDir}/${l_tmpImage//:/-}-${l_archType//\//-}.tar"
         if [ ! -f  "${l_exportedFile}" ];then
           #拉取镜像，并导出到本地镜像缓存目录gImageCacheDir中。
-          pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}"
+          pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}" "${l_savedFile}"
           #删除拉取得镜像。
           docker rmi -f "${l_image}"
         fi

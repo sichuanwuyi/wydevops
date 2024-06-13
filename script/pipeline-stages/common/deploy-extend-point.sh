@@ -445,6 +445,7 @@ function _deployServiceByDocker(){
   local l_configMapFiles
   local l_configFile
   local l_nodeIps
+  local l_errorLog
 
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].activeProfile"
   l_activeProfile="${gDefaultRetVal}"
@@ -470,8 +471,7 @@ function _deployServiceByDocker(){
     l_account="${l_array[2]}"
 
     info "检查服务器${l_ip}的硬件架构 ..."
-    l_content=$(ssh -p "${l_port}" "${l_account}@${l_ip}" "uname -sm" )
-    invokeExtendChain "onGetSystemArchInfo" "${l_content}"
+    invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}"
     # shellcheck disable=SC2015
     [[ "${gDefaultRetVal}" == "false" ]] && error "读取${l_ip}服务器系统架构信息失败"
     info "读取到${l_ip}服务器的系统架构为:${gDefaultRetVal}"
@@ -516,38 +516,46 @@ function _deployServiceByDocker(){
       fi
 
       info "检测服务器${l_ip}是否已安装docker ..." "-n"
-      l_content=$(ssh -p "${l_port}" "${l_account}@${l_ip}" "docker -v")
-      l_content=$(echo -e "${l_content}" | grep -oP "command not found")
-      [[ "${l_content}" ]] && error "服务器${l_ip}上未安装docker，请正确安装后再试。"
+      l_content=$(timeout 3s ssh -p "${l_port}" "${l_account}@${l_ip}" "docker -v")
+      #连接被拒绝或超时
+      l_errorLog=$(echo -e "${l_content}" | grep -ioP "(refused|timed[ ]*out)")
+      [[ "${l_errorLog}" ]] && error "SSH连接${l_ip}服务失败：\n${l_content}"
+      #命令不存在则报错退出。
+      l_errorLog=$(echo -e "${l_content}" | grep -ioP "not[ ]*found")
+      [[ "${l_errorLog}" ]] && error "服务器${l_ip}上未安装docker，请正确安装后再试。"
       info "已安装" "*"
 
       if [ "${l_mode}" == "docker-compose" ];then
         info "检测服务器${l_ip}是否已安装docker compose ..." "-n"
-        l_content=$(ssh -p "${l_port}" "${l_account}@${l_ip}" "docker compose version")
-        l_content=$(echo -e "${l_content}" | grep -oP "command not found")
-        [[ "${l_content}" ]] && error "服务器${l_ip}上未安装docker compose，请正确安装后再试。"
+        l_content=$(timeout 3s ssh -p "${l_port}" "${l_account}@${l_ip}" "docker compose version")
+        #连接被拒绝或超时
+        l_errorLog=$(echo -e "${l_content}" | grep -ioP "(refused|timed[ ]*out)")
+        [[ "${l_errorLog}" ]] && error "SSH连接${l_ip}服务失败：\n${l_content}"
+        #命令不存在则报错退出。
+        l_errorLog=$(echo -e "${l_content}" | grep -ioP "not[ ]*found")
+        [[ "${l_errorLog}" ]] && error "服务器${l_ip}上未安装docker compose，请正确安装后再试。"
         info "已安装" "*"
       fi
 
       info "将${l_shellOrYamlFile##*/}文件复制到本地${l_localDir##*/}目录中"
-      scp "${l_shellOrYamlFile}" "${l_localDir}/${l_shellOrYamlFile##*/}"
+      timeout 60s scp "${l_shellOrYamlFile}" "${l_localDir}/${l_shellOrYamlFile##*/}"
 
       info "将${l_remoteInstallProxyShell##*/}文件复制到本地${l_localDir##*/}目录下"
-      scp "${l_remoteInstallProxyShell}" "${l_localDir}/${l_remoteInstallProxyShell##*/}"
+      timeout 60s scp "${l_remoteInstallProxyShell}" "${l_localDir}/${l_remoteInstallProxyShell##*/}"
 
       info "在本地${l_localBaseDir##*/}目录下创建install.sh"
       l_nodeIps="${l_archTypeMap[${l_archType}]//,${l_proxyNode}/}"
       echo -e "#!/usr/bin/env bash\n source ${l_remoteDir}/${l_remoteInstallProxyShell##*/} \"${l_chartName}\" \"${l_chartVersion}\" \"${l_offlinePackage}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \"${gDockerRepoPassword}\" \"${l_nodeIps}\"" > "${l_localDir}/install.sh"
 
       info "在服务器(${l_ip})上创建${l_remoteDir}目录"
-      ssh -p "${l_port}" "${l_account}@${l_ip}" "rm -rf ${l_remoteDir} && mkdir -p ${l_remoteDir}"
+      timeout 3s ssh -p "${l_port}" "${l_account}@${l_ip}" "rm -rf ${l_remoteDir} && mkdir -p ${l_remoteDir}"
 
       info "将本地${l_localBaseDir##*/}目录中的文件和子目录复制到服务器${l_ip}上的${l_remoteDir}目录中"
-      scp -P "${l_port}" -r "${l_localDir}/" "${l_account}@${l_ip}:${l_remoteDir%/*}/"
+      timeout 60s scp -P "${l_port}" -r "${l_localDir}/" "${l_account}@${l_ip}:${l_remoteDir%/*}/"
 
       info "远程执行服务器${l_ip}上的脚本：${l_remoteDir}/install.sh"
       # shellcheck disable=SC2088
-      ssh -p "${l_port}" "${l_account}@${l_ip}" "bash ${l_remoteDir}/install.sh"
+      timeout 30s ssh -p "${l_port}" "${l_account}@${l_ip}" "bash ${l_remoteDir}/install.sh"
 
       [[ "${l_enableProxy}" == "true" ]] && break
 
@@ -652,8 +660,6 @@ function _deployServiceInK8S() {
       l_array=(${gDefaultRetVal//,/ })
       warn "更新集群内拉取docker镜像使用的仓库地址为: ${l_array[2]}"
 
-
-
       l_repoInfos="${gDefaultRetVal}"
       if [[ "${l_array[1]}" != "${gDockerRepoInstanceName}" || "${l_array[2]}" != "${gDockerRepoName}" ]];then
         info "将离线包中的镜像推送到K8S集群使用的Docker仓库中..."
@@ -694,7 +700,7 @@ function _deployServiceInK8S() {
     fi
 
     info "获取服务器上~/.kube/config文件的内容"
-    ssh -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
+    timeout 5s ssh -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
 
     info "先尝试卸载正在运行的${l_chartName}服务"
     l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
@@ -916,11 +922,10 @@ function _pushDockerImageForDeployStage() {
   # shellcheck disable=SC2206
   l_images=(${gDefaultRetVal//,/ })
 
-  info "检查服务器${l_ip}的硬件架构(ssh -p ${l_port} ${l_account}@${l_ip} uname -sm)..."
-  l_content=$(ssh -p "${l_port}" "${l_account}@${l_ip}" "uname -sm" )
-  invokeExtendChain "onGetSystemArchInfo" "${l_content}"
+  info "检查服务器${l_ip}的硬件架构..."
+  invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}"
   # shellcheck disable=SC2015
-  [[ "${gDefaultRetVal}" == "false" ]] && error "读取${l_ip}服务器系统架构信息失败"
+  [[ "${gDefaultRetVal}" == "false" ]] && error "读取${l_ip}服务器系统架构信息失败: ${l_content}"
   info "读取到${l_ip}服务器的系统架构为:${gDefaultRetVal}"
   l_archType="${gDefaultRetVal}"
 

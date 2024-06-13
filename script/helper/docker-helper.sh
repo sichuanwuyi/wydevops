@@ -38,6 +38,7 @@ function pullImage(){
   local l_archType=$2
   local l_repoName=$3
   local l_imageCachedDir=$4
+  local l_savedFile=$5
 
   local l_repoName1="${l_repoName}"
 
@@ -201,7 +202,7 @@ function saveImage(){
     fi
   fi
 
-  l_fileName="${l_image//\//-}"
+  l_fileName="${l_image//\//_}"
   l_fileName="${l_fileName//:/-}-${l_archType//\//-}.tar"
   if [ -f "${l_savePath}/${l_fileName}" ];then
     info "删除现存的同名导出文件:${l_fileName}"
@@ -240,14 +241,13 @@ function _pullImageFromPrivateRepository(){
   local l_archType=$2
   local l_repoName=$3
   local l_imageCachedDir=$4
+  local l_savedFilePath=$5
 
   info "检查本地是否存在${l_archType}架构的目标镜像:${l_image} ..." "-n"
   existDockerImage "${l_image}" "${l_archType}"
   # shellcheck disable=SC2015
   if [[ "${gDefaultRetVal}" == "true" ]];then
     info "存在" "*"
-    info "将本地${l_archType}架构的镜像${l_image}缓存到本地镜像缓存目录${l_imageCachedDir}中 ..."
-    _cacheImageToDir "${l_image}" "${l_archType}" "${l_imageCachedDir}"
   else
     info "不存在" "*"
   fi
@@ -260,13 +260,17 @@ function _pullImageFromPrivateRepository(){
   fi
 
   if [[ "${gDefaultRetVal}" == "false" && "${l_repoName}" ]];then
-    info "尝试从${l_repoName}仓库中获取${l_archType}架构的镜像:${l_image} ..."
+    info "尝试从${l_repoName}仓库中获取${l_archType}架构的镜像:${l_image}..."
     pullAndCheckImage "${l_image}" "${l_archType}" "${l_repoName}" "true"
-    if [ "${gDefaultRetVal}" == "true" ];then
-      info "将从私库${l_repoName}拉取的${l_archType}架构的镜像${l_image}缓存到本地镜像缓存目录${l_imageCachedDir}中 ..."
-      _cacheImageToDir "${l_image}" "${l_archType}" "${l_imageCachedDir}"
-    fi
+    # shellcheck disable=SC2015
+    [[ "${gDefaultRetVal}" == "true" ]] && info "成功" "*" || info "失败" "*"
   fi
+
+  if [[ "${gDefaultRetVal}" == "true" && "${l_savedFilePath}" ]];then
+    info "将本地${l_archType}架构的镜像${l_image}导出到${l_savedFilePath}目录中..."
+    _cacheImageToDir "${l_image}" "${l_archType}" "${l_savedFilePath}"
+  fi
+
 }
 
 function _pullImageFromPublicRepository(){

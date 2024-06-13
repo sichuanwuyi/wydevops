@@ -2,62 +2,50 @@
 
 function onGetSystemArchInfo_ubuntu() {
   export gDefaultRetVal
-  local l_content=$1
+
+  local l_ip=$1
+  local l_port=$2
+  local l_account=$3
+
+  local l_result
+  local l_errorLog
+  local l_systemType
 
   gDefaultRetVal="false|"
 
-  if [ ! "${l_content}" ];then
-    [[ ! -d "/usr/local/bin" ]] && return
-    l_content=$(uname -sm)
-    # shellcheck disable=SC2181
-    if [[ "$?" -ne 0 ]];then
-      return
-    fi
+  #先判断是否是linux系统
+  if [ "${l_ip}" ];then
+    info "执行命令: timeout 3s ssh -p ${l_port} ${l_account}@${l_ip} uname -sm"
+    #3秒超时
+    l_result=$(timeout 3s ssh -p "${l_port}" "${l_account}@${l_ip}" "uname -sm")
+  else
+    info "执行命令: uname -sm"
+    #本地执行uname命令
+    l_result=$(uname -sm)
   fi
 
-  if [[ ! "${l_content}" =~ ^(.*)(not found)(.*)$ ]];then
-    l_content="${l_content// /\/}"
-    if [[ ! "${l_content}" =~ ^(.*)(x86_64)(.*)$ ]];then
-      l_content="linux/amd64"
-    else
-      l_content="linux/arm64"
-    fi
-    #全部转小写后返回。
-    gDefaultRetVal="${l_content,,}"
+  #连接被拒绝或超时
+  l_errorLog=$(echo -e "${l_result}" | grep -ioP "(refused|timed[ ]*out)")
+  [[ "${l_errorLog}" ]] && error "SSH连接${l_ip}服务失败：\n${l_result}"
+
+  #uname命令不存在，肯定不是linux系统，直接返回。
+  l_errorLog=$(echo -e "${l_result}" | grep -ioP "not[ ]*found")
+  [[ "${l_errorLog}" ]] && return
+
+  #如果命令执行结果中没有linux串，则判定为windows系统
+  l_systemType="linux"
+  l_errorLog=$(echo -e "${l_result}" | grep -ioP "linux")
+  [[ ! "${l_errorLog}" ]] && l_systemType="windows"
+
+  #如果命令执行结果中包含了x86串，则判定为linux/amd64架构，反之为linux/arm64
+  l_errorLog=$(echo -e "${l_result}" | grep -ioP "x86")
+  if [[ "${l_errorLog}" ]];then
+    l_result="${l_systemType}/amd64"
+  else
+    l_result="${l_systemType}/arm64"
   fi
 
-  gDefaultRetVal="true|${gDefaultRetVal}"
-}
+  #全部转小写后返回。
+  gDefaultRetVal="true|${l_result}"
 
-function onGetSystemArchInfo_windows() {
-  export gDefaultRetVal
-  local l_content=$1
-
-  gDefaultRetVal="false|"
-
-  if [ ! "${l_content}" ];then
-    l_content=$(systeminfo)
-    # shellcheck disable=SC2181
-    if [[ "$?" -ne 0 ]];then
-      return
-    fi
-  fi
-
-  l_content=$(echo "${l_content}" | grep "Microsoft Windows")
-  if [ "${l_content}" ];then
-    l_content=$(arch | grep "x86_64")
-    if [ "${l_content}" ];then
-      gDefaultRetVal="windows/amd64"
-    else
-      gDefaultRetVal="windows/arm64"
-    fi
-  fi
-
-  gDefaultRetVal="true|${gDefaultRetVal}"
-}
-
-function onGetSystemArchInfo_centos() {
-  export gDefaultRetVal
-  #与ubuntu系统相同的方式获取系统架构信息。
-  onGetLocalSystemArchInfo_ubuntu "${@}"
 }
