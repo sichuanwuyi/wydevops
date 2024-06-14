@@ -17,6 +17,8 @@ export gGlobalParamNames=(
 "gParamMappingDirName=\"param-mapping\""
 "gProjectShellDirName=\"shell\"" \
 "gProjectPluginDirName=\"plugins\"" \
+"gProjectTemplateDirName=\"templates\"" \
+"gProjectDockerTemplateDirName=\"docker\"" \
 
 #项目历史更新文件名称
 "gReleaseNoteFileName=\"release_notes.txt\"" \
@@ -52,6 +54,8 @@ export gGlobalParamNames=(
 "gProjectShellDir" \
 "gProjectPluginDir" \
 "gProjectChartTemplatesDir" \
+"gProjectTemplateDir" \
+"gProjectDockerTemplateDir" \
 
 #项目工程名称
 "gServiceName" \

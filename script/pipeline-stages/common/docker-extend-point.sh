@@ -18,10 +18,6 @@ function createThirdPartyImage_ex(){
     gCurrentStageResult="INFO|成功拉取${l_archType}架构的${l_image}镜像"
     gDefaultRetVal="${l_image}"
   fi
-
-  unset l_image
-  unset l_archType
-  unset l_exportFile
 }
 
 function onAfterCreatingThirdPartyImage_ex() {
@@ -46,10 +42,6 @@ function onAfterCreatingThirdPartyImage_ex() {
   fi
 
   gDefaultRetVal="成功处理${l_archType}架构的第三方镜像：${l_image}"
-
-  unset l_image
-  unset l_archType
-  unset l_exportFile
 }
 
 function onBeforeCreatingCustomizedImage_ex() {
@@ -94,18 +86,6 @@ function onBeforeCreatingCustomizedImage_ex() {
     pullImage "${l_fromImage}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}"
     gDockerFileTemplateParamMap["_FROM-IMAGE${l_i}_"]="${l_fromImage}"
   done
-
-  unset l_image
-  unset l_archType
-  unset l_dockerFile
-
-  unset l_content
-  unset l_lines
-  unset l_lineCount
-  unset l_i
-  unset l_fromLine
-  unset l_params
-  unset l_fromImage
 }
 
 function creatingCustomizedImage_ex() {
@@ -114,10 +94,6 @@ function creatingCustomizedImage_ex() {
   local l_dockerFile=$3
 
   _createDockerImage "${l_image}" "${l_archType}" "${l_dockerFile}"
-
-  unset l_image
-  unset l_archType
-  unset l_dockerFile
 }
 
 function onAfterCreatingCustomizedImage_ex(){
@@ -126,9 +102,6 @@ function onAfterCreatingCustomizedImage_ex(){
   local l_archType=$2
 
   _onAfterCreatingDockerImage "${l_image}" "${l_archType}"
-
-  unset l_image
-  unset l_archType
 }
 
 function onBeforeInitialingGlobalParamsForDockerStage_ex(){
@@ -149,6 +122,7 @@ function initialGlobalParamsForDockerStage_ex(){
   export gUseTemplate
   export gBuildPath
   export gLanguage
+  export gProjectDockerTemplateDir
 
   #docker阶段特有的全局变量
   export gDockerfileTemplates
@@ -256,11 +230,14 @@ function initialGlobalParamsForDockerStage_ex(){
       l_dockerFiles=(${l_dockerFiles})
       # shellcheck disable=SC2068
       for l_dockerFile in ${l_dockerFiles[@]};do
-        if [ -f "${gBuildPath}/${l_dockerFile}" ];then
-          gDockerfileTemplates="${gDockerfileTemplates} ${gBuildPath}/${l_dockerFile}"
+        if [ -f "${gProjectDockerTemplateDir}/${l_dockerFile}" ];then
+          #使用项目级Dockerfile文件
+          gDockerfileTemplates="${gDockerfileTemplates} ${gProjectDockerTemplateDir}/${l_dockerFile}"
         elif [ -f "${gBuildScriptRootDir}/templates/docker/${gLanguage}/${l_dockerFile}" ];then
+          #使用语言级Dockerfile文件
           gDockerfileTemplates="${gDockerfileTemplates} ${gBuildScriptRootDir}/templates/docker/${gLanguage}/${l_dockerFile}"
         elif [ -f "${gBuildScriptRootDir}/templates/docker/${l_dockerFile}" ];then
+          #使用公共级Dockerfile文件
           gDockerfileTemplates="${gDockerfileTemplates} ${gBuildScriptRootDir}/templates/docker/${l_dockerFile}"
         else
           error "指定的模板文件不存在:${l_dockerFile}"

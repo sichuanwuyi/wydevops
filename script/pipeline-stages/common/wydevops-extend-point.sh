@@ -444,6 +444,10 @@ function _createGlobalDirectory() {
   export gProjectPluginDir
   export gParamMappingDirName
   export gParamMappingDir
+  export gProjectTemplateDirName
+  export gProjectTemplateDir
+  export gProjectDockerTemplateDirName
+  export gProjectDockerTemplateDir
 
   gHelmBuildDir="${gBuildPath}/${gHelmBuildDirName}"
   if [[ ! -d "${gHelmBuildDir}" ]];then
@@ -496,6 +500,18 @@ function _createGlobalDirectory() {
     info "初始化项目级资源生成器插件存储目录:${gProjectPluginDir}"
     mkdir -p "${gProjectPluginDir}"
   fi
+
+ gProjectTemplateDir="${gHelmBuildDir}/${gProjectTemplateDirName}"
+ if [ ! -d "${gProjectTemplateDir}" ];then
+   info "初始化项目级模板文件存储目录:${gProjectTemplateDir}"
+   mkdir -p "${gProjectTemplateDir}"
+ fi
+
+ gProjectDockerTemplateDir="${gProjectTemplateDir}/${gProjectDockerTemplateDirName}"
+ if [ ! -d "${gProjectDockerTemplateDir}" ];then
+   info "初始化项目级Dockerfile模板文件存储目录:${gProjectDockerTemplateDir}"
+   mkdir -p "${gProjectDockerTemplateDir}"
+ fi
 
 }
 
@@ -577,6 +593,18 @@ function _checkGlobalDirectory() {
     info "初始化项目级资源生成器插件存储目录:${gProjectPluginDir}"
     mkdir -p "${gProjectPluginDir}"
   fi
+
+   gProjectTemplateDir="${gHelmBuildDir}/${gProjectTemplateDirName}"
+   if [ ! -d "${gProjectTemplateDir}" ];then
+     info "初始化项目级模板文件存储目录:${gProjectTemplateDir}"
+     mkdir -p "${gProjectTemplateDir}"
+   fi
+
+   gProjectDockerTemplateDir="${gProjectTemplateDir}/${gProjectDockerTemplateDirName}"
+   if [ ! -d "${gProjectDockerTemplateDir}" ];then
+     info "初始化项目级Dockerfile模板文件存储目录:${gProjectDockerTemplateDir}"
+     mkdir -p "${gProjectDockerTemplateDir}"
+   fi
 }
 
 function _onAfterInitGlobalParams(){
