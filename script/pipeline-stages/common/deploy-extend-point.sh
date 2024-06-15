@@ -702,14 +702,18 @@ function _deployServiceInK8S() {
     info "获取服务器上~/.kube/config文件的内容"
     timeout 5s ssh -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
 
-    info "先尝试卸载正在运行的${l_chartName}服务"
+    info "卸载${l_namespace}命名空间中正在运行的${l_chartName}服务..." "-n"
     l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
     l_errorLog=$(echo -e "${l_content}" | grep -ioP "^(.*)Error:(.*)$")
     if [ "${l_errorLog}" ];then
+      warn "失败" "*"
       warn "未找到正在运行的${l_chartName}服务:${l_errorLog}"
     else
-      info "${l_chartName}服务卸载成功:\n${l_content}"
+      info "成功" "*"
     fi
+
+    #等待3秒
+    sleep 3s
 
     if [ "${l_settingParams}" ];then
       info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
@@ -736,6 +740,8 @@ function _findChartImage() {
   export gChartRepoInstanceName
   export gChartRepoType
   export gChartRepoName
+  export gChartRepoAccount
+  export gChartRepoPassword
 
   local l_chartName=$1
   local l_chartVersion=$2
@@ -756,7 +762,8 @@ function _findChartImage() {
       if [ "${gChartRepoInstanceName}" ];then
         info "从Chart镜像仓库中拉取版本为${l_chartVersion}的${l_chartName}镜像..." "-n"
         pullChartImage "${l_chartName}" "${l_chartVersion}" "${gChartRepoType}" "${gChartRepoName}" \
-          "${gChartRepoInstanceName}" "${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/chart"
+          "${gChartRepoInstanceName}" "${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/chart" \
+          "${gChartRepoAccount}" "${gChartRepoPassword}"
         [[ ! -f "${l_chartFile}" ]] && error "拉取失败"
         info "拉取成功" "*"
       fi

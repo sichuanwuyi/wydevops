@@ -15,12 +15,23 @@ function onPullChartImage_harbor() {
   local l_projectName=$4
   local l_destination=$5
   local l_harborAddress=$6
+  local l_account=$7
+  local l_password=$8
 
   local l_result
   local l_errorLog
 
-  echo "helm pull oci://${l_harborAddress}/${l_projectName}/${l_chartName} --version ${l_chartVersion}"
-  l_result=$(helm pull "oci://${l_harborAddress}/${l_projectName}/${l_chartName}" --version "${l_chartVersion}")
+  info "拉取前先登录Harbor仓库(helm registry login ${l_harborAddress} --insecure -u ${l_account} -p ${l_password})"
+  l_result=$(helm registry login "${l_harborAddress}" --insecure -u "${l_account}" -p "${l_password}" 2>&1)
+  l_errorLog=$(echo "${l_result}" | grep -ioP "Login Succeeded")
+  if [ ! "${l_errorLog}" ];then
+    error "登录失败:\n${l_result}" "*"
+  else
+    info "登录成功" "*"
+  fi
+
+  echo "helm pull oci://${l_harborAddress}/${l_projectName}/${l_chartName} --version ${l_chartVersion} --plain-http"
+  l_result=$(helm pull "oci://${l_harborAddress}/${l_projectName}/${l_chartName}" --destination "${l_destination}" --version "${l_chartVersion}" --plain-http)
   l_errorLog=$(echo -e "${l_errorLog}" | grep -ioP "^(.*)(Error|failed)(.*)$")
   if [ "${l_errorLog}" ];then
     error "从chart镜像仓库拉取镜像失败:${l_result}"

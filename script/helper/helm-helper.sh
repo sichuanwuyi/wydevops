@@ -39,6 +39,8 @@ function pullChartImage() {
   local l_chartRepoName=$4
   local l_repoInstanceName=$5
   local l_destination=$6
+  local l_account=$7
+  local l_password=$8
 
   if [ ! -d "${l_destination}" ];then
     mkdir -p "${l_destination}"
@@ -46,6 +48,6 @@ function pullChartImage() {
 
   #执行推送调用链
   invokeExtendChain "onPullChartImage" "${l_chartRepoType}" "${l_chartName}" "${l_chartVersion}" \
-    "${l_repoInstanceName}" "${l_destination}" "${l_chartRepoName}"
+    "${l_repoInstanceName}" "${l_destination}" "${l_chartRepoName}" "${l_account}" "${l_password}"
 
 }
