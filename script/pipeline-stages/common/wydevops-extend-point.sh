@@ -74,7 +74,7 @@ function onBeforeReplaceParamPlaceholder_ex() {
 
   #检查文件中是否存在未定义好的占位符号。
   # shellcheck disable=SC2002
-  l_placeholders=$(cat "${l_cicdYaml}" | grep -oP "_([A-Z]?[A-Z0-9\-]+)_" | sort | uniq -c)
+  l_placeholders=$(cat "${l_cicdYaml}" | grep -oP "^([ ]*[a-zA-Z_\-]+)" |grep -oP "_([A-Z]?[A-Z0-9\-]+)_" | sort | uniq -c)
   # shellcheck disable=SC2068
   for l_placeholder in ${l_placeholders[@]};do
     if [[ "${l_placeholder}" =~ ^(_).*$ ]];then
