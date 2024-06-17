@@ -137,6 +137,22 @@ function clearFileDataBlockMap(){
   done
 }
 
+function getAllParamPathAndValue() {
+  export gDefaultRetVal
+  local l_yamlFile=$1
+  local l_paramPath=$2
+  local l_resultMapName=$3
+  local l_paramPathPrefix=$4
+
+
+  readParam "${l_yamlFile}" "${l_paramPath}"
+  [ "${gDefaultRetVal}" == "null" ] && error "${l_yamlFile##*/}文件中不存在${l_paramPath}参数"
+
+  _getAllParamPathAndValueByParentPath "${l_yamlFile}" "${l_paramPath}" "${l_resultMapName}" \
+    "${gDefaultRetVal}" "${l_paramPathPrefix}"
+
+}
+
 function getListTypeByContent() {
   export gDefaultRetVal
 
@@ -3074,6 +3090,87 @@ function _convertToNameIndexMap() {
   done
 
 }
+
+function _getAllParamPathAndValueByParentPath() {
+  export gDefaultRetVal
+
+  local l_yamlFile=$1
+  local l_paramPath=$2
+  local l_resultMapName=$3
+  local l_paramDataBlock=$4
+  local l_paramPathPrefix=$5
+
+  local l_firstLine
+  local l_content
+  local l_listItemCount
+  local l_i
+
+  local l_paramLines
+  local l_paramLine
+  local l_paramName
+  local l_paramValue
+  local l_tmpParamPath
+  local l_lineCount
+
+  if [[ "${l_paramPathPrefix}" && ! "${l_paramPathPrefix}" =~ ^(.*)(\.)$ ]];then
+    l_paramPathPrefix="${l_paramPathPrefix}."
+  fi
+
+  l_firstLine=$(echo -e  "${l_paramDataBlock}" | grep -m 1 -oP "^[a-zA-Z_\-]+" )
+  [[ ! "${l_firstLine}" ]] && return
+
+  if [[ "${l_firstLine}" =~ ^(\-) ]];then
+    l_content=$(echo -e  "${l_paramDataBlock}" | grep -oP "^(\-)" )
+    l_listItemCount=$(echo -e  "${l_content}" | wc -l )
+    getListTypeByContent "${l_content}"
+    if [ "${gDefaultRetVal}" == "array" ];then
+      #处理数组项
+      for (( l_i=0; l_i < l_listItemCount; l_i++ ));do
+        readParam "${l_yamlFile}" "${l_paramPath[${l_i}]}"
+        info "将${l_paramPath}[${l_i}]参数及其值${gDefaultRetVal}放入${l_resultMapName}中"
+        eval "${l_resultMapName}[${l_paramPathPrefix}${l_paramPath}[${l_i}]]=\"${gDefaultRetVal}\""
+      done
+    else
+      for (( l_i=0; l_i < l_listItemCount; l_i++ ));do
+        #递归处理列表项
+        _getAllParamPathAndValueByParentPath "${l_yamlFile}" "${l_paramPath}[${l_i}]" \
+          "${l_resultMapName}" "${l_paramDataBlock}" "${l_paramPathPrefix}"
+      done
+    fi
+    return
+  fi
+
+  l_content=$(echo -e  "${l_paramDataBlock}" | grep -oP "^([a-zA-Z_]+).*$" )
+  stringToArray "${l_content}" "l_paramLines"
+  l_listItemCount=${#l_paramLines[@]}
+  # shellcheck disable=SC2068
+  for (( l_i=0; l_i < l_listItemCount; l_i++ ));do
+    l_paramLine="${l_paramLines[${l_i}]}"
+    l_paramName="${l_paramLine%%:*}"
+    l_paramValue="${l_paramLine#*:}"
+    #去掉头尾空格
+    l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+    l_tmpParamPath="${l_paramPath}.${l_paramName}"
+    readParam "${l_yamlFile}" "${l_tmpParamPath}"
+    if [[ "${l_paramValue}" =~ ^([ ]*\|[ ]*$) ]];then
+      info "将${l_paramPathPrefix}${l_tmpParamPath}参数及其值(多行数据)放入${l_resultMapName}中"
+      eval "${l_resultMapName}[${l_paramPathPrefix}${l_tmpParamPath}]=\"${gDefaultRetVal}\""
+    elif [ "${l_paramValue}" ];then
+      info "将${l_paramPathPrefix}${l_tmpParamPath}参数及其值${l_paramValue}放入${l_resultMapName}"
+      eval "${l_resultMapName}[${l_paramPathPrefix}${l_tmpParamPath}]=\"${l_paramValue}\""
+    elif [ ! "${gDefaultRetVal}" ];then
+      info "将${l_paramPathPrefix}${l_tmpParamPath}参数及其值(空)放入${l_resultMapName}中"
+      eval "${l_resultMapName}[${l_paramPathPrefix}${l_tmpParamPath}]=\"\""
+    else
+      #递归处理列表项
+      _getAllParamPathAndValueByParentPath "${l_yamlFile}" "${l_tmpParamPath}" \
+        "${l_resultMapName}" "${gDefaultRetVal}" "${l_paramPathPrefix}"
+    fi
+  done
+
+}
+
 
 #-------------------------------------主流程-------------------------------------------#
 

@@ -696,11 +696,11 @@ function _deployServiceInK8S() {
 
     if [ "${l_customizedSetParams}" ];then
       l_settingParams="${l_settingParams},${l_customizedSetParams}"
-      l_settingParams="${l_settingParams:1}"
     fi
 
     info "获取服务器上~/.kube/config文件的内容"
-    timeout 5s ssh -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
+    #todo: 这里不要在前面添加timeout指令
+    ssh -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
 
     info "卸载${l_namespace}命名空间中正在运行的${l_chartName}服务..." "-n"
     l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
@@ -716,7 +716,10 @@ function _deployServiceInK8S() {
     sleep 3s
 
     if [ "${l_settingParams}" ];then
+      [[ "${l_settingParams}" =~ ^(,) ]] && l_settingParams="${l_settingParams:1}"
       info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
+      _convertToSingleRow "${l_settingParams}"
+      l_settingParams="${gDefaultRetVal}"
       l_content=$(helm install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" 2>&1)
     else
       info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config"

@@ -115,14 +115,9 @@ function createConfigFile_ex() {
   local l_valuesYaml
   local l_settingFile
   local l_curDir
-  local l_index
-  local l_content
+  local l_keys
+  local l_key
 
-  local l_paramLines
-  local l_lineCount
-  local l_i
-  local l_paramName
-  local l_paramPath
 
   #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成setting.conf文件。
   if [ -f "${l_targetDir}/chart/${l_chartName}-${l_chartVersion}.tgz" ];then
@@ -131,8 +126,8 @@ function createConfigFile_ex() {
 
     #创建setting.conf文件。
     l_settingFile="${l_targetDir}/setting.conf"
-    echo "image.registry=${gDockerRepoName},\\" > "${l_settingFile}"
-    echo "gatewayRoute.host=,\\" >> "${l_settingFile}"
+    echo "image.registry=${gDockerRepoName}," > "${l_settingFile}"
+    echo "gatewayRoute.host=," >> "${l_settingFile}"
 
     l_curDir=$(pwd)
 
@@ -141,29 +136,14 @@ function createConfigFile_ex() {
     cd "${l_targetDir}/chart"
     tar -zxf "${l_chartName}-${l_chartVersion}.tgz"
 
-    ((l_index = 0))
-    while true;do
-      readParam "${l_chartName}/values.yaml" "params.deployment${l_index}"
-      if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
-        break
-      fi
+    declare -A paramMaps
+    getAllParamPathAndValue "${l_valuesYaml}" "params" "paramMaps"
 
-      #过滤出有效行
-      l_content=$(echo "${gDefaultRetVal}" | grep -oP "^[a-zA-Z]+(.*)$")
-      stringToArray "${l_content}" "l_paramLines"
-      l_lineCount="${#l_paramLines[@]}"
-
-      # shellcheck disable=SC2068
-      for ((l_i = 0; l_i < l_lineCount; l_i++));do
-        l_paramName="${l_paramLines[${l_i}]}"
-        l_paramName="${l_paramName%%:*}"
-        l_paramName="${l_paramName// /}"
-        l_paramPath="params.deployment${l_index}.${l_paramName}"
-        info "正在向setting.conf文件写入${l_paramPath}参数 ..."
-        _writeSettingConfFile "${l_valuesYaml}" "${l_paramPath}" "${l_settingFile}"
-      done
-
-      ((l_index = l_index + 1))
+    # shellcheck disable=SC2124
+    l_keys=${!paramMaps[@]}
+    # shellcheck disable=SC2068
+    for l_key in ${l_keys[@]};do
+      echo "${l_key}=${paramMaps[${l_key}]}," >> "${l_settingFile}"
     done
 
     #删除解压出的目录
@@ -333,72 +313,6 @@ function handleBuildingSingleImageForPackage_ex() {
 }
 
 #**********************私有方法-开始***************************#
-
-function _writeSettingConfFile() {
-  export gDefaultRetVal
-
-  local l_valuesYaml=$1
-  local l_paramPath=$2
-  local l_settingFile=$3
-
-  local l_content
-  local l_dataLines
-  local l_lineCount
-  local l_paramName
-  local l_i
-
-  readParam "${l_valuesYaml}" "${l_paramPath}"
-  if [ ! "${gDefaultRetVal}" ];then
-    info "设置参数${l_paramPath}的值为："
-    echo "${l_paramPath}=,\\" >> "${l_settingFile}"
-  elif [ "${gDefaultRetVal}" != "null" ];then
-    if [[ "${gDefaultRetVal}" =~ ^(\-) ]];then
-      #处理列表项
-      l_lineCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\-)" | wc -l)
-      for ((l_i = 0; l_i < l_lineCount; l_i++));do
-        info "正在向setting.conf文件写入${l_paramPath}[${l_i}]参数..."
-        _writeSettingConfFile "${l_valuesYaml}" "${l_paramPath}[${l_i}]" "${l_settingFile}"
-      done
-    elif [[ "${gDefaultRetVal}" =~ ^([ ]*)\[.*\]([ ]*)$ ]];then
-      #处理数组项
-      l_content="${gDefaultRetVal//[/}"
-      l_content="${l_content//]/}"
-      # shellcheck disable=SC2206
-      l_dataLines=(${l_content//,/ })
-      l_lineCount="${#l_dataLines[@]}"
-      for ((l_i = 0; l_i < l_lineCount; l_i++));do
-        info "正在向setting.conf文件写入${l_paramPath}[${l_i}]参数..."
-        _writeSettingConfFile "${l_valuesYaml}" "${l_paramPath}[${l_i}]" "${l_settingFile}"
-      done
-    else
-      #将字符串转换为多行数组
-      stringToArray "${gDefaultRetVal}" "l_dataLines"
-      l_lineCount="${#l_dataLines[@]}"
-
-      if [[ "${l_lineCount}" -eq 1 ]];then
-        #如果该行是以冒号结尾，则继续递归
-        if [[ "${l_dataLines[0]}" =~ ^(.*):([ ]*)$ ]];then
-          l_paramName="${l_dataLines[0]%%:*}"
-          info "正在向setting.conf文件写入${l_paramPath}.${l_paramName}参数..."
-          _writeSettingConfFile "${l_valuesYaml}" "${l_paramPath}.${l_paramName}" "${l_settingFile}"
-        else
-          info "设置参数${l_paramPath}的值为：${l_dataLines[0]}"
-          echo "${l_paramPath}=${l_dataLines[0]},\\" >> "${l_settingFile}"
-        fi
-      else
-        for ((l_i = 0; l_i < l_lineCount; l_i++));do
-          l_paramName="${l_dataLines[${l_i}]}"
-          l_paramName="${l_paramName%%:*}"
-          if [[ ! "${l_paramName}" =~ ^([ ]+) ]];then
-            info "正在向setting.conf文件写入${l_paramPath}.${l_paramName}参数..."
-            _writeSettingConfFile "${l_valuesYaml}" "${l_paramPath}.${l_paramName}" "${l_settingFile}"
-          fi
-        done
-      fi
-
-    fi
-  fi
-}
 
 #收集某个Chart镜像需要的所有docker镜像。
 function _scanAllDockerImages() {
@@ -618,3 +532,4 @@ function filterValidDockerImages() {
 
 #加载package阶段脚本库文件
 loadExtendScriptFileForLanguage "package"
+}
