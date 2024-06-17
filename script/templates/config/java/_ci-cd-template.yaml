@@ -93,7 +93,7 @@ globalParams:
   activeProfile: dev
   #K8S集群的ApiServer服务器的地址信息（必须配置）
   #格式：{服务器IP地址}|{SSH连接账号}|{SSH连接密码}
-  devApiServer: 172.28.8.251|22|wuyi|Wpl118124
+  devApiServer: 172.29.20.205|22|wuyi|Wpl118124
   #在开发集群中使用域名分割子集群时，网关需要的特殊配置。
   #开发环境中发布的命名空间。这个配置仅用于开发环境
   devNamespace: develop
@@ -490,7 +490,7 @@ deploy:
         nodeIPs:
           #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
           #第一个节点必须是能免密直连其他节点。
-          - 172.28.8.251|22|wuyi|Wpl118124
+          - 172.29.20.205|22|wuyi|Wpl118124
       #测试集群环境
       #test:
       #  ...
