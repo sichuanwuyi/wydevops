@@ -141,16 +141,20 @@ function _combineExternalContainerCreatedByWydevops() {
   local l_tmpFile
   local l_content
 
+  local l_array
+  local l_pathIndex
+  local l_routeIndex
+
   ((l_i = 0))
   while true;do
     readRowRange "${l_valuesYaml1}" "deployment${l_i}"
     [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && break
 
-    l_paramPaths=("params.deployment${l_i}|params.deployment${l_index}" \
+    l_paramPaths=("gatewayRoute.host|gatewayRoute.host" \
+      "params.deployment${l_i}|params.deployment${l_index}" \
       "deployment${l_i}.volumes|deployment${l_index}.volumes"
       "deployment${l_i}.initContainers|deployment${l_index}.initContainers" \
-      "deployment${l_i}.containers|deployment${l_index}.containers" \
-      "deployment${l_i}.gatewayRoute.routes|deployment${l_index}.gatewayRoute.routes")
+      "deployment${l_i}.containers|deployment${l_index}.containers")
 
     # shellcheck disable=SC2068
     for l_paramPath in ${l_paramPaths[@]};do
@@ -163,6 +167,33 @@ function _combineExternalContainerCreatedByWydevops() {
       [[ ! "${gDefaultRetVal}" ]] && continue
       #合并到l_valuesYaml文件中。
       combine "${l_valuesYaml1}" "${l_valuesYaml}" "${l_paramPath%%|*}" "${l_paramPath#*|}" "true" "false"
+    done
+
+    #合并路由信息
+    getListIndexByPropertyName "${l_valuesYaml}" "deployment${l_index}.ingressRoute.rules[0].paths" "" "" "true"
+    # shellcheck disable=SC2206
+    l_array=(${gDefaultRetVal})
+    l_pathIndex="${l_array[1]}"
+
+    getListIndexByPropertyName "${l_valuesYaml}" "deployment${l_index}.apisixRoute.routes" "" "" "true"
+    # shellcheck disable=SC2206
+    l_array=(${gDefaultRetVal})
+    l_routeIndex="${l_array[1]}"
+
+    l_paramPaths=("deployment${l_i}.ingressRoute.rules[0].paths[0]|deployment${l_index}.ingressRoute.rules[0].paths[${l_pathIndex}]" \
+          "deployment${l_i}.apisixRoute.routes[0]|deployment${l_index}.apisixRoute.routes[${l_routeIndex}]")
+
+    # shellcheck disable=SC2068
+    for l_paramPath in ${l_paramPaths[@]};do
+      #读取l_valuesYaml1文件中的参数，判断是否存在，不存在则报错。
+      readParam "${l_valuesYaml1}" "${l_paramPath%%|*}"
+      if [ "${gDefaultRetVal}" == "null" ];then
+        warn "外部Chart镜像的${l_valuesYaml1##*/}文件中不存在${l_paramPath%%|*}参数"
+        continue
+      fi
+      [[ ! "${gDefaultRetVal}" ]] && continue
+      #合并到l_valuesYaml文件中。
+      insertParam "${l_valuesYaml}" "${l_paramPath#*|}" "${gDefaultRetVal}"
     done
 
     ((l_i = l_i + 1))

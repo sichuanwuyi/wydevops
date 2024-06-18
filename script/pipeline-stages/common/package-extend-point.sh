@@ -421,26 +421,6 @@ function _scanAllDockerImages() {
 
   l_imageArray="${l_imageArray%,*}"
   gDefaultRetVal="${l_imageArray:1}"
-
-  unset l_index
-  unset l_chartImage
-
-  unset l_tmpFile
-  unset l_content
-  unset l_splitLines
-  unset l_splitLine
-
-  unset l_startRow
-  unset l_endRow
-  unset l_subContent
-  unset l_flag
-  unset l_subTempFile
-
-  unset l_i
-  unset l_imageArray
-  unset l_images
-  unset l_image
-  unset l_tmpImage
 }
 
 function filterValidDockerImages() {
@@ -518,18 +498,8 @@ function filterValidDockerImages() {
 
   l_imageArray="${l_imageArray%,*}"
   gDefaultRetVal="${l_imageArray:1}"
-
-  unset l_imageArray
-
-  unset l_images
-  unset l_dockerName
-  unset l_dockerVersion
-
-  unset l_baseImage
-  unset l_businessImage
 }
 #**********************私有方法-结束***************************#
 
 #加载package阶段脚本库文件
 loadExtendScriptFileForLanguage "package"
-}

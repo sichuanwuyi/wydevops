@@ -210,12 +210,16 @@ function _combineExternalChartCreatedByWydevops() {
     l_externalFileContent=$(cat "${l_file}")
 
     l_tmpContent=$(echo -e "${l_externalFileContent}" | grep -m 1 -oP "^([ ]*)helm\.sh\/chart:(.*)$")
-    l_contentType="${l_tmpContent%%:*}"
-    sed -i "s/${l_tmpContent//\//\\\/}/${l_contentType//\//\\\/}: ${l_curChartName}-${l_curChartVersion}/g" "${l_file}"
+    if [ "${l_tmpContent}" ];then
+      l_contentType="${l_tmpContent%%:*}"
+      sed -i "s/${l_tmpContent//\//\\\/}/${l_contentType//\//\\\/}: ${l_curChartName}-${l_curChartVersion}/g" "${l_file}"
+    fi
 
     l_tmpContent=$(echo -e "${l_externalFileContent}" | grep -m 1 -oP "^([ ]*)app.kubernetes.io\/version:(.*)$")
-    l_contentType="${l_tmpContent%%:*}"
-    sed -i "s/${l_tmpContent//\//\\\/}/${l_contentType//\//\\\/}: ${l_curChartVersion}/g" "${l_file}"
+    if [ "${l_tmpContent}" ];then
+      l_contentType="${l_tmpContent%%:*}"
+      sed -i "s/${l_tmpContent//\//\\\/}/${l_contentType//\//\\\/}: ${l_curChartVersion}/g" "${l_file}"
+    fi
 
     info "从外部镜像拷贝${l_file##*/}文件到当前镜像的templates目录中"
     cp -f "${l_file}" "${l_currentTemplateDir}/"

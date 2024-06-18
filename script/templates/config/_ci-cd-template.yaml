@@ -343,6 +343,45 @@ chart:
             #名称必须与volumes中的某个ConfigMap名相同
           - name: ${serviceName}-configmap
             files: ${configMapFiles}
+
+        resourcePlugins:
+          - name: ConfigMap
+            generatorName: default
+            enable: true
+            configPath:
+          - name: Deployment
+            generatorName: default
+            enable: true
+            configPath:
+          - name: DaemonSet
+            generatorName: default
+            enable: true
+            configPath:
+          - name: StatefulSet
+            generatorName: default
+            enable: true
+            configPath:
+          - name: Service
+            generatorName: default
+            enable: true
+            configPath:
+          - name: ServiceAccount
+            generatorName: default
+            enable: true
+            configPath:
+          - name: HorizontalPodAutoscaler
+            generatorName: default
+            enable: true
+            configPath:
+          - name: Ingress
+            generatorName: default
+            enable: true
+            configPath: ingressRoute
+          - name: ApisixRoute
+            generatorName: my
+            enable: true
+            configPath: apisixRoute
+
         #Ingress网关路由配置
         ingressRoute:
           type: Ingress
@@ -358,6 +397,7 @@ chart:
                   pathType: Prefix
                   serviceName: ${serviceName}-clusterip
                   servicePort: ${mainPort}
+
         #Apisix网关路由配置
         apisixRoute:
           type: ApisixRoute
@@ -387,6 +427,7 @@ chart:
         requests:
           cpu: ${cpuRequests}
           memory: ${memoryRequests}
+
 package:
     #离线包的名称
   - name: ${chartName}

@@ -343,6 +343,7 @@ chart:
             #名称必须与volumes中的某个ConfigMap名相同
           - name: ${serviceName}-configmap
             files: ${configMapFiles}
+
         resourcePlugins:
           - name: ConfigMap
             generatorName: default
