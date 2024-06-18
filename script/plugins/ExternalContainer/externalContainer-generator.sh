@@ -142,8 +142,12 @@ function _combineExternalContainerCreatedByWydevops() {
   local l_content
 
   local l_array
-  local l_pathIndex
-  local l_routeIndex
+  local l_paramPathCount
+  local l_j
+  local l_k
+  local l_srcParamPath
+  local l_targetParamPath
+  local l_indexArray
 
   ((l_i = 0))
   while true;do
@@ -169,31 +173,38 @@ function _combineExternalContainerCreatedByWydevops() {
       combine "${l_valuesYaml1}" "${l_valuesYaml}" "${l_paramPath%%|*}" "${l_paramPath#*|}" "true" "false"
     done
 
-    #合并路由信息
-    getListIndexByPropertyName "${l_valuesYaml}" "deployment${l_index}.ingressRoute.rules[0].paths" "" "" "true"
-    # shellcheck disable=SC2206
-    l_array=(${gDefaultRetVal})
-    l_pathIndex="${l_array[1]}"
+    #定义路由参数映射。
+    l_paramPaths=("deployment${l_i}.ingressRoute.rules[0].paths|deployment${l_index}.ingressRoute.rules[0].paths" \
+          "deployment${l_i}.apisixRoute.routes|deployment${l_index}.apisixRoute.routes")
 
-    getListIndexByPropertyName "${l_valuesYaml}" "deployment${l_index}.apisixRoute.routes" "" "" "true"
-    # shellcheck disable=SC2206
-    l_array=(${gDefaultRetVal})
-    l_routeIndex="${l_array[1]}"
+    #依次获取目标路由参数的当前项数，并保存的l_indexArray数组中。
+    l_paramPathCount=${#l_paramPaths[@]}
+    for (( l_j = 0; l_j < l_paramPathCount; l_j++ ));do
+      l_targetParamPath="${l_paramPaths[${l_j}]}"
+      l_targetParamPath="${l_targetParamPath#*|}"
+      getListIndexByPropertyName "${l_valuesYaml}" "${l_targetParamPath}" "" "" "true"
+      # shellcheck disable=SC2206
+      l_array=(${gDefaultRetVal})
+      l_indexArray["${l_j}"]="${l_array[1]}"
+    done
 
-    l_paramPaths=("deployment${l_i}.ingressRoute.rules[0].paths[0]|deployment${l_index}.ingressRoute.rules[0].paths[${l_pathIndex}]" \
-          "deployment${l_i}.apisixRoute.routes[0]|deployment${l_index}.apisixRoute.routes[${l_routeIndex}]")
+    #再次循环处理路由参数的读取和赋值。
+    for (( l_j = 0; l_j < l_paramPathCount; l_j++ ));do
+      ((l_k = 0))
+      while true; do
+        l_paramPath="${l_paramPaths[${l_j}]}"
+        l_srcParamPath="${l_paramPath%%|*}[${l_k}]"
+        #读取l_valuesYaml1文件中的参数，判断是否存在，不存在则报错。
+        readParam "${l_valuesYaml1}" "${l_srcParamPath}"
+        [[ "${gDefaultRetVal}" == "null" ]] && break
 
-    # shellcheck disable=SC2068
-    for l_paramPath in ${l_paramPaths[@]};do
-      #读取l_valuesYaml1文件中的参数，判断是否存在，不存在则报错。
-      readParam "${l_valuesYaml1}" "${l_paramPath%%|*}"
-      if [ "${gDefaultRetVal}" == "null" ];then
-        warn "外部Chart镜像的${l_valuesYaml1##*/}文件中不存在${l_paramPath%%|*}参数"
-        continue
-      fi
-      [[ ! "${gDefaultRetVal}" ]] && continue
-      #合并到l_valuesYaml文件中。
-      insertParam "${l_valuesYaml}" "${l_paramPath#*|}" "${gDefaultRetVal}"
+        l_targetParamPath="${l_paramPath#*|}[${l_indexArray[${l_j}]}]"
+        #合并到l_valuesYaml文件中。
+        insertParam "${l_valuesYaml}" "${l_targetParamPath}" "${gDefaultRetVal}"
+        #累进l_indexArray[${l_j}]的值。
+        ((l_indexArray["${l_j}"] = l_indexArray["${l_j}"] + 1 ))
+        ((l_k = l_k + 1))
+      done
     done
 
     ((l_i = l_i + 1))
