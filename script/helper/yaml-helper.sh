@@ -702,8 +702,7 @@ function __readOrWriteYamlFile() {
         return
         ;;
       "delete")
-        #删除成功，则返回：${删除的起始行号(含)} ${删除的截至行号(含)} ${实际删除的行数}
-        #删除成功，则返回: -1 -1 0
+        #返回错误信息格式：${删除的起始行号(含)} ${删除的截至行号(含)} ${实际删除的行数} ${删除的目标列表项序号} ${删除前列表项总数}
         gDefaultRetVal="-1 -1 0"
         return
         ;;
@@ -770,6 +769,7 @@ function __readOrWriteYamlFile() {
         error "${l_mode}模式下出现目标列表项序号大于等于列表项总数的异常"
         ;;
       "delete")
+        #返回错误信息格式：${删除的起始行号(含)} ${删除的截至行号(含)} ${实际删除的行数} ${删除的目标列表项序号} ${删除前列表项总数}
         gDefaultRetVal="-1 -1 0 ${l_curItemIndex} ${l_array[3]}"
         ;;
       *)
@@ -1575,6 +1575,8 @@ function _deleteContentInFile(){
 #{数据块的起始行号} {数据块的截止行号} {数据块的前导空格数} {现有列表项总数} {执行过程中新增的列表项数} {执行过程中删除的文件行数}
 function _getDataBlockRowNum() {
   export gDefaultRetVal
+  export gArrayItemEmptyValue
+
   export _yamlFileContent
 
   local l_mode=$1
@@ -1604,6 +1606,32 @@ function _getDataBlockRowNum() {
   local l_tmpSpaceStr
   local l_addItemCount
   local l_delLineCount
+
+  local l_array
+
+  ((l_itemCount = -1))
+  ((l_addItemCount = 0))
+  ((l_delLineCount = 0))
+
+  #先判断是否是数组类型的参数
+  l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_paramRowNum},${l_paramRowNum}p")
+  if [[ "${l_content}" && "${l_content}" =~ ^([ ]*)(.*):(.*)$ ]];then
+    l_content="${l_content#*:}"
+    if [[ "${l_content}" =~ ^([ ]*)(\[).*(\])$ ]];then
+      l_content="${l_content#*[}"
+      l_content="${l_content%]*}"
+      # shellcheck disable=SC2206
+      l_array=(${l_content//,/ })
+      l_itemCount=${#l_array[@]}
+      if [[ "${l_curArrayIndex}" -ge "${l_itemCount}" && "${l_mode}" == "insert" ]];then
+        ((l_itemCount = l_itemCount + l_addItemCount))
+      fi
+      #设置返回值。
+      gDefaultRetVal="${l_paramRowNum} ${l_paramRowNum} ${l_paramRowPrefixSpaceNum} ${l_itemCount} ${l_addItemCount} ${l_delLineCount}"
+      return
+    fi
+  fi
+
 
   #预设参数下属数据块的起始行号=参数所在行的下一行。
   ((l_tmpStartRowNum = l_paramRowNum + 1))
@@ -1674,11 +1702,6 @@ function _getDataBlockRowNum() {
     fi
   fi
 
-
-  ((l_itemCount = -1))
-  ((l_addItemCount = 0))
-  ((l_delLineCount = 0))
-
   if [ "${l_curArrayIndex}" -ge 0 ];then
     ((l_itemCount = 0))
     #先获取现有列表项的总数。
@@ -1705,238 +1728,6 @@ function _getDataBlockRowNum() {
         ((l_tmpRowNum = l_curArrayIndex + 1 ))
         l_tmpContent1=$(echo -e "${l_tmpContent}" | sed -n "${l_tmpRowNum}p")
         l_tmpRowNum="${l_tmpContent1%%:*}"
-        #相对行号转绝对行号
-        ((l_blockStartRowNum = l_blockStartRowNum + l_tmpRowNum -1))
-      elif [[ "${l_itemCount}" == 0 && ${l_mode} == "insert" ]];then
-        #清除旧有的非列表类型的数据块。
-        _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_blockStartRowNum},${l_blockEndRowNum}d")
-        #设置删除的文件行数。
-        ((l_delLineCount = l_blockStartRowNum - l_blockEndRowNum + 1))
-        ((l_blockStartRowNum = -1))
-        ((l_blockEndRowNum = -1))
-      fi
-    fi
-
-    if [ "${l_curArrayIndex}" -ge "${l_itemCount}" ];then
-      if [ "${l_mode}" == "insert" ];then
-        #默认插入到数据块结尾行的下一行。
-        l_insertPosition="${l_blockEndRowNum}"
-        #如果截止行号为-1，则插入到参数行的下一行。
-        if [[ "${l_blockEndRowNum}" -eq -1 ]];then
-          l_insertPosition="${l_paramRowNum}"
-          #需要清除l_paramRowNum行可能存在的值域。
-          l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_paramRowNum}p")
-          if [[ "${l_tmpContent}" =~ ^([ ]*)[a-zA-Z_\-]+(.*)(: )(.*)$ ]];then
-            l_tmpContent="${l_tmpContent%%:*}:"
-            _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_paramRowNum}c\\${l_tmpContent}")
-          fi
-        fi
-        #构造替换行的内容：将新增项放置在替换行的末尾，中间用\n隔开，
-        l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_insertPosition}p")
-        l_tmpSpaceStr=$(printf "%${l_blockPrefixSpaceNum}s")
-        l_tmpContent="${l_tmpContent}\n${l_tmpSpaceStr}- "
-        #补上缺失的列表项
-        ((l_addItemCount = l_curArrayIndex + 1 - l_itemCount))
-        #设置新增后列表项的总数量
-        ((l_itemCount = l_curArrayIndex + 1))
-        ((l_tmpIndex = 0))
-        while [ "${l_tmpIndex}" -lt "${l_addItemCount}" ];do
-          _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_insertPosition}c\\${l_tmpContent}")
-          ((l_tmpIndex = l_tmpIndex + 1))
-        done
-        #设置数据块起止行号：都等于最后一个列表项所在行的行号
-        ((l_blockStartRowNum = l_insertPosition + l_addItemCount))
-        ((l_blockEndRowNum = l_blockStartRowNum))
-      else
-        #不是插入模式，则设置数据块起止行号为-1.
-        ((l_blockStartRowNum = -1))
-        ((l_blockEndRowNum = -1))
-      fi
-    fi
-  fi
-
-  #删除数据块的开始和结尾部分的注释行。
-  if [[ "${l_blockStartRowNum}" -gt 0 && "${l_blockStartRowNum}" -le "${l_blockEndRowNum}" ]];then
-    #读取数据块内容。
-    l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_blockStartRowNum},${l_blockEndRowNum}p")
-    if [ "${l_content}" ];then
-      #去掉结尾部分的注释行
-      l_tmpContent=$(echo -e "${l_content}" | grep -noP "^([ ]*)[a-zA-Z_\-]+" | tail -n 1)
-      l_tmpRowNum="${l_tmpContent%%:*}"
-      ((l_blockEndRowNum=l_blockStartRowNum + l_tmpRowNum - 1))
-      #去掉前导部分注释行
-      l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+")
-      l_tmpRowNum="${l_tmpContent%%:*}"
-      ((l_blockStartRowNum=l_blockStartRowNum + l_tmpRowNum - 1))
-    fi
-  fi
-
-  #设置返回值。
-  gDefaultRetVal="${l_blockStartRowNum} ${l_blockEndRowNum} ${l_blockPrefixSpaceNum} ${l_itemCount} ${l_addItemCount} ${l_delLineCount}"
-}
-
-#读取指定参数的数据块信息，返回数据格式：
-#{数据块的起始行号} {数据块的截止行号} {数据块的前导空格数} {现有列表项总数} {执行过程中新增的列表项数} {执行过程中删除的文件行数}
-function _getDataBlockRowNum1() {
-  export gDefaultRetVal
-  export _yamlFileContent
-
-  local l_mode=$1
-  local l_yamlFile=$2
-  #参数所在行的行号
-  local l_paramRowNum=$3
-  local l_maxRowNum=$4
-  local l_curArrayIndex=$5
-  #参数行前导空格数量。
-  local l_paramRowPrefixSpaceNum=$6
-  #参数行是否有列表项前缀符
-  local l_hasListItemPrefix=$7
-
-  local l_tmpStartRowNum
-  local l_blockStartRowNum
-  local l_blockEndRowNum
-  local l_blockPrefixSpaceNum
-
-  local l_content
-  local l_tmpContent
-  local l_tmpSpaceNum
-  local l_tmpRowNum
-  local l_itemCount
-  local l_tmpIndex
-  local l_insertPosition
-  local l_tmpSpaceStr
-  local l_addItemCount
-  local l_delLineCount
-
-  #预设参数下属数据块的起始行号=参数所在行的下一行。
-  ((l_tmpStartRowNum = l_paramRowNum + 1))
-  #预设参数下属数据块的前导空格数量=参数所在行前导空格数量 + 2
-  ((l_blockPrefixSpaceNum = l_paramRowPrefixSpaceNum + 2))
-
-
-#  if [[ "${l_hasListItemPrefix}" == "true" ]];then
-#    if [[ "${l_curArrayIndex}" -ge 0 ]];then
-#      #读取的是列表项，则数据块的起始行就是l_paramRowNum。
-#      ((l_tmpStartRowNum = l_paramRowNum))
-#      #设置数据块的前导空格(需要将首行的”-“替换为空格)
-#      ((l_blockPrefixSpaceNum = l_paramRowPrefixSpaceNum + 2))
-#    else
-#      #如果读取的不是列表项，而刚好是列表项第一行所在的参数的下属数据块，此时数据块的起始位置为(l_paramRowNum + 1)
-#      ((l_tmpStartRowNum = l_paramRowNum + 1))
-#      #设置数据块的前导空格（列表项前缀符占1空格 + 后跟的l个空格 + 下属数据块需要缩进的两个空格）
-#      ((l_blockPrefixSpaceNum = l_paramRowPrefixSpaceNum + 4))
-#    fi
-#  else
-#    #参数所在行不是列表项的首行，此时数据块的起始位置为(l_paramRowNum + 1)
-#    ((l_tmpStartRowNum = l_paramRowNum + 1))
-#    #设置数据块的前导空格
-#    ((l_blockPrefixSpaceNum = l_paramRowPrefixSpaceNum + 2))
-#  fi
-
-  if [ "${l_tmpStartRowNum}" -gt "${l_paramRowNum}" ];then
-    #获取l_paramRowNum行下的第一个有效行，并重新赋值给l_tmpStartRowNum。这是为了避免注释行的影响。
-    l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpStartRowNum}p")
-    #如果是注释行或空白行，则需要重新定位和修正l_tmpStartRowNum的值。
-    if [[ "${l_tmpContent}" =~ ^([ ]*)# || "${l_tmpContent}" =~ ^([ ]*)$ ]];then
-      l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpStartRowNum},${l_maxRowNum}p")
-      if [ "${l_tmpContent}" ];then
-        l_tmpContent=$(echo -e "${l_tmpContent}" | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+" )
-        l_tmpRowNum="${l_tmpContent%%:*}"
-        ((l_tmpStartRowNum = l_tmpStartRowNum + l_tmpRowNum -1))
-      fi
-    fi
-  fi
-
-  ((l_blockStartRowNum = -1))
-  ((l_blockEndRowNum = -1))
-  if [ "${l_tmpStartRowNum}" -le "${l_maxRowNum}" ];then
-    #直接从文件中读取l_tmpStartRowNum至l_maxRowNum间的数据。
-    l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpStartRowNum},${l_maxRowNum}p")
-    #事实上l_content不可能是空的。
-    if [ "${l_content}" ];then
-      #查找兄弟行或父级行的查询匹配字符串。
-      #兄弟行的前导空格数应是数据块的前导空格数减2。
-      ((l_tmpSpaceNum = l_blockPrefixSpaceNum - 2))
-      #构造兄弟行或父级行的正则表达式。
-      l_tmpRegex="^[ ]{0,${l_tmpSpaceNum}}[a-zA-Z_\-]+"
-      if [[ "${l_hasListItemPrefix}" == "true" ]];then
-         #父级列表项前导空格数还要减2
-        ((l_tmpSpaceNum = l_tmpSpaceNum - 2))
-        l_tmpRegex="^[ ]{0,${l_tmpSpaceNum}}(\-)|${l_tmpRegex:1}"
-      fi
-
-      #找到第一个兄弟行或父级行的
-      if [[ "${l_tmpStartRowNum}" -eq "${l_paramRowNum}" ]];then
-        #第一个是列表项自己所在的行，第二个才是其兄弟行或父级行所在的行号。
-        l_tmpContent=$(echo -e "${l_content}" | grep -m 2 -noP "${l_tmpRegex}")
-        l_itemCount=$(echo -e "${l_tmpContent}" | wc -l)
-        if [ "${l_itemCount}" -le 1 ];then
-          #说明从l_tmpStartRowNum到l_maxRowNum行都是参数的下属数据块。
-          #特殊地，如果l_tmpStartRowNum等于l_maxRowNum，说明数据块退化为了简单的KV值对，由后续代码处理。
-          if [ "${l_tmpStartRowNum}" -lt "${l_maxRowNum}" ];then
-            l_blockStartRowNum="${l_tmpStartRowNum}"
-            l_blockEndRowNum="${l_maxRowNum}"
-          fi
-        else
-          #调整兄弟行信息，指向第二个。
-          l_tmpContent=$(echo -e "${l_tmpContent}" | sed -n "2p")
-        fi
-      else
-        l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -noP "${l_tmpRegex}")
-        if [ ! "${l_tmpContent}" ];then
-          #说明从l_tmpStartRowNum到l_maxRowNum行都是参数的下属数据块。
-          l_blockStartRowNum="${l_tmpStartRowNum}"
-          l_blockEndRowNum="${l_maxRowNum}"
-        fi
-      fi
-
-      #如果l_blockStartRowNum=-1，说明还没有确定数据块的起始行号，继续后续处理。
-      if [ "${l_blockStartRowNum}" -eq -1 ];then
-        #得到兄弟行或父级行的相对行号
-        l_tmpRowNum="${l_tmpContent%%:*}"
-        if [ "${l_tmpRowNum}" -gt 1 ];then
-          #截止行应是兄弟行行号减1，再转换为文件绝对行号还需要减1
-          ((l_tmpRowNum = l_tmpStartRowNum + l_tmpRowNum - 2))
-          if [ "${l_tmpRowNum}" -ge "${l_tmpStartRowNum}" ];then
-            ((l_blockStartRowNum = l_tmpStartRowNum))
-            ((l_blockEndRowNum = l_tmpRowNum))
-          fi
-        fi
-      fi
-
-    fi
-  fi
-
-  ((l_itemCount = -1))
-  ((l_addItemCount = 0))
-  ((l_delLineCount = 0))
-
-  if [ "${l_curArrayIndex}" -ge 0 ];then
-    ((l_itemCount = 0))
-    #先获取现有列表项的总数。
-    if [ "${l_blockStartRowNum}" -gt 0 ];then
-      #读取数据块内容
-      l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_blockStartRowNum},${l_blockEndRowNum}p")
-      #获取前导空格数量。
-      l_tmpRowNum=$(echo -e "${l_content}" | grep -m 1 -oP "^[ ]*" | grep -oP " " | wc -l)
-      l_tmpRegex="^[ ]{0,${l_tmpRowNum}}[\-]+"
-      l_tmpContent=$(echo -e "${l_content}" | grep -noP "${l_tmpRegex}")
-      #获取现有列表项的数量。
-      l_itemCount=$(echo -e "${l_tmpContent}" | wc -l)
-      if [ "${l_curArrayIndex}" -lt "${l_itemCount}" ];then
-        #定位截止行号
-        ((l_tmpRowNum = l_curArrayIndex + 2 ))
-        #当l_tmpRowNum小于等于l_itemCount时，才修改l_blockEndRowNum的值，否则保持l_blockEndRowNum的值。
-        if [ "${l_tmpRowNum}" -le "${l_itemCount}" ];then
-          l_tmpContent=$(echo -e "${l_tmpContent}" | sed -n "${l_tmpRowNum}p")
-          l_tmpRowNum="${l_tmpContent%%:*}"
-          #相对行号转绝对行号
-          ((l_blockEndRowNum = l_blockStartRowNum + l_tmpRowNum -1))
-        fi
-        #定位起始行号。
-        ((l_tmpRowNum = l_curArrayIndex + 1 ))
-        l_tmpContent=$(echo -e "${l_tmpContent}" | sed -n "${l_tmpRowNum}p")
-        l_tmpRowNum="${l_tmpContent%%:*}"
         #相对行号转绝对行号
         ((l_blockStartRowNum = l_blockStartRowNum + l_tmpRowNum -1))
       elif [[ "${l_itemCount}" == 0 && ${l_mode} == "insert" ]];then
@@ -3199,6 +2990,8 @@ fi
 
 #本文件中所有函数默认的返回变量。
 export gDefaultRetVal
+
+export gArrayItemEmptyValue="NULL"
 
 #是否立即将内存缓存中的文件内容变更回写到文件中。
 export gSaveBackImmediately
