@@ -36,7 +36,7 @@ pipeline {
       steps {
         sh 'chmod -R 777 ${WORKSPACE}/script/*'
         echo "currentBuild.result: ${currentBuild.result} ${JOB_LANGUAGE}"
-        sh "${WORKSPACE}/wydevops/script/wydevops.sh -S 'deploy' -L ${JOB_LANGUAGE} -M 'jenkins'"
+        sh "${WORKSPACE}/script/wydevops.sh -S 'deploy' -L ${JOB_LANGUAGE} -M 'jenkins'"
         echo 'Deploy'
       }
     }
