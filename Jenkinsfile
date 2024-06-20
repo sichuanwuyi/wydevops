@@ -5,7 +5,7 @@ pipeline {
         GITHUB_GROUP = 'tmt_china'
         JOB_NAME='wydevops'
         AGENT_LABEL = 'maven1'
-        JENKINS_SCRIPT = '${BUILD_SCRIPT_ROOT}/wydevops.sh'
+        JENKINS_SCRIPT = '${env.BUILD_SCRIPT_ROOT}/wydevops.sh'
         IS_BUILD = 'true'
   }
   parameters {
