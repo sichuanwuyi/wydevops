@@ -660,73 +660,67 @@ function _loadJenkinsGlobalParams() {
   fi
   info "--->设置gBuildPath=\${BUILD_PATH}"
 
-  export gDockerRepoType="${DOCKER_REPO_TYPE}"
+  #解析Docker镜像仓库
+  parseDockerRepoInfo "${DOCKER_REPO_INFO}"
+
   if [ ! "${gDockerRepoType}" ];then
     error "未配置Docker镜像仓库类型(nexus或harbor)(DOCKER_REPO_TYPE)"
   fi
   info "--->gDockerRepoType=\${DOCKER_REPO_TYPE}"
 
-  export gDockerRepoInstanceName="${DOCKER_REPO_INSTANCE_NAME}"
   if [ ! "${gDockerRepoInstanceName}" ];then
     error "未配置Docker镜像仓库实例名称(nexus)或项目名称(harbor)(DOCKER_REPO_INSTANCE_NAME)"
   fi
   info "--->gDockerRepoInstanceName=\${DOCKER_REPO_INSTANCE_NAME}"
 
-  export gDockerRepoName="${DOCKER_REPO_NAME}"
   if [ ! "${gDockerRepoName}" ];then
     error "未配置Docker镜像仓库名称(DOCKER_REPO_NAME)"
   fi
   info "--->设置gDockerRepoName=\${DOCKER_REPO_NAME}"
 
-  export gDockerRepoAccount="${DOCKER_REPO_ACCOUNT}"
   if [ ! "${gDockerRepoAccount}" ];then
     error "未配置Docker镜像仓库登录账号(DOCKER_REPO_ACCOUNT)"
   fi
   info "--->设置gDockerRepoAccount=\${DOCKER_REPO_ACCOUNT}"
 
-  export gDockerRepoPassword="${DOCKER_REPO_PASSWORD}"
   if [ ! "${gDockerRepoPassword}" ];then
     error "未配置Docker镜像仓库登录密码(DOCKER_REPO_PASSWORD)"
   fi
   info "--->设置gDockerRepoPassword=\${DOCKER_REPO_PASSWORD}"
 
-  export gDockerRepoWebPort="${DOCKER_REPO_WEB_PORT}"
   if [ ! "${gDockerRepoWebPort}" ];then
     error "未配置Docker镜像仓Web管理端口(DOCKER_REPO_WEB_PORT)"
   fi
   info "--->gDockerRepoWebPort=\${DOCKER_REPO_WEB_PORT}"
 
-  export gChartRepoType="${CHART_REPO_TYPE}"
+  #解析Chart镜像仓库
+  parseChartRepoInfo "${CHART_REPO_INFO}"
+
   if [ ! "${gChartRepoType}" ];then
     error "未配置Chart镜像仓库类型(nexus或harbor)(CHART_REPO_TYPE)"
   fi
   info "--->gChartRepoType=\${CHART_REPO_TYPE}"
 
-  export gChartRepoInstanceName="${CHART_REPO_INSTANCE_NAME}"
   if [ ! "${gChartRepoInstanceName}" ];then
     error "未配置Docker镜像仓库实例名称(nexus)或项目名称(harbor)(CHART_REPO_INSTANCE_NAME)"
   fi
   info "--->gChartRepoInstanceName=\${CHART_REPO_INSTANCE_NAME}"
 
-  export gChartRepoName="${CHART_REPO_NAME}"
   if [ ! "${gChartRepoName}" ];then
     error "未配置Chart镜像仓库名称(CHART_REPO_NAME)"
   fi
   info "--->设置gChartRepoName=\${CHART_REPO_NAME}"
 
-  export gChartRepoAccount="${CHART_REPO_ACCOUNT}"
   if [ ! "${gChartRepoAccount}" ];then
     error "未配置Chart镜像仓库登录账号(CHART_REPO_ACCOUNT)"
   fi
   info "--->设置gChartRepoAccount=\${CHART_REPO_ACCOUNT}"
 
-  export gChartRepoPassword="${CHART_REPO_PASSWORD}"
   if [ ! "${gChartRepoPassword}" ];then
     error "未配置Chart镜像仓库登录密码(CHART_REPO_PASSWORD)"
   fi
   info "--->设置gChartRepoPassword=\${CHART_REPO_PASSWORD}"
 
-  export gChartRepoWebPort="${CHART_REPO_WEB_PORT}"
   if [ ! "${gChartRepoWebPort}" ];then
     error "未配置Chart镜像仓库Web管理端口(CHART_REPO_WEB_PORT)"
   fi
