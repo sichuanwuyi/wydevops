@@ -1,8 +1,8 @@
 pipeline {
   agent { label "${AGENT_LABEL}"}
   environment {
-        GITHUB_USER_ID = '10a765cfbbfffb758bce51c7d80b1733'
-        GITHUB_GROUP = 'atomdatatech'
+        GITHUB_USER_ID = 'XXXXXXXX'
+        GITHUB_GROUP = 'XXXXXX'
         AGENT_LABEL = 'maven1'
         JENKINS_SCRIPT = '${BUILD_SCRIPT_ROOT}/atom-jenkins.sh'
         IS_BUILD = 'true'
