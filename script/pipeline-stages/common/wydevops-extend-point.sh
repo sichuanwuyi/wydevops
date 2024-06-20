@@ -271,13 +271,13 @@ function _onBeforeInitGlobalParams() {
     error "未指定项目语言类型"
   fi
 
-  if [ ! "${gBuildPath}" ];then
-    error "未指定构建项目主模块路径"
-  fi
-
   if [ "${gWorkMode}" == "jenkins" ];then
     info "从Jenkins全局参数中初始化全局变量"
     _loadJenkinsGlobalParams
+
+    if [ ! "${gBuildPath}" ];then
+      error "未指定构建项目主模块路径"
+    fi
 
     info "检测项目是否是多模块项目,并确定项目的构建根目录"
     #修正构建项目根路径。
