@@ -5,7 +5,7 @@ pipeline {
         GITHUB_GROUP = 'tmt_china'
         JOB_NAME='wydevops'
         AGENT_LABEL = 'maven1'
-        JENKINS_SCRIPT = '${env.BUILD_SCRIPT_ROOT}/wydevops.sh'
+        JENKINS_SCRIPT = '${BUILD_SCRIPT_ROOT}/wydevops.sh'
         IS_BUILD = 'true'
   }
   parameters {
@@ -34,7 +34,7 @@ pipeline {
       steps {
         sh 'chmod -R 777 ${WORKSPACE}/script/*'
         echo "currentBuild.result: ${currentBuild.result} ${JOB_LANGUAGE}"
-        sh "${JENKINS_SCRIPT} -S 'deploy' -L ${JOB_LANGUAGE} -M 'jenkins'"
+        sh "${WORKSPACE}/wydevops/script/wydevops.sh -S 'deploy' -L ${JOB_LANGUAGE} -M 'jenkins'"
         echo 'Deploy'
       }
     }
