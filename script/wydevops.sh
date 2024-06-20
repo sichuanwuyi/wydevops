@@ -41,6 +41,7 @@ export gClearCachedParams
 export gGlobalParamCacheFileName
 export gArchTypes
 export gPipelineScriptsDir
+export gLanguage
 
 parseOptions1 "${@}"
 
@@ -75,7 +76,7 @@ if [ -f "${gBuildPath}/${gGlobalParamCacheFileName}" ];then
   loadGlobalParamsFromCacheFile
   #检查并创建缺失的全局目录
   _checkGlobalDirectory
-else
+elif [ "${gLanguage}" != "shell" ];then
   warn "完整执行全局参数初始化过程..."
   invokeExtendPointFunc "initGlobalParams" "全局参数初始化功能扩展点"
   invokeExtendPointFunc "onAfterInitGlobalParams" "全局参数初始化后扩展点"
