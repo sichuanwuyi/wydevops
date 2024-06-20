@@ -8,10 +8,10 @@ pipeline {
   }
 
   parameters {
-      string(name: 'GIT_PROJECT_NAME', defaultValue: '', description: 'gitee仓库名')
+      string(name: 'GIT_PROJECT_NAME', defaultValue: 'java-sample', description: 'gitee仓库名')
       //GITHUB_GROUP的取值由Gitee仓库决定。
-      choice(name: 'GITHUB_GROUP', choices: ['tech', 'java'], description: 'checkout git group')
-      choice(name: 'GITHUB_BRANCH', choices: ['develop', 'master'], description: 'checkout git branch')
+      choice(name: 'GITHUB_GROUP', choices: ['tmt_china'], description: 'checkout git group')
+      choice(name: 'GITHUB_BRANCH', choices: ['master', 'develop'], description: 'checkout git branch')
       choice(name: 'JOB_LANGUAGE', choices: ['java', 'golang', 'c++', 'python', 'shell', 'vue'], description: '')
       choice(name: 'ARCH_TYPES', choices: ['undefine', 'linux/amd64,linux/arm64', 'linux/amd64', 'linux/arm64'], description: '架构类型')
       choice(name: 'BUILD_TYPE', choices: ['single', 'double', 'base', 'business'], description: '构建类型')
