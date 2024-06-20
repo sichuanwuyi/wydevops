@@ -11,6 +11,7 @@ pipeline {
   parameters {
       choice(name: 'GITHUB_BRANCH', choices: [ 'develop', 'master'], description: 'checkout git branch')
       choice(name: 'GITHUB_GROUP', choices: ['tmt_china', 'bill_wy'], description: 'checkout git group')
+      choice(name: 'JOB_LANGUAGE', choices: ['shell'], description: '')
       string(name: 'AGENT_LABEL', defaultValue: 'maven1', description: 'agent label')
   }
   stages {
