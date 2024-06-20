@@ -4,7 +4,7 @@ pipeline {
         GITHUB_USER_ID = 'XXXXXXXX'
         GITHUB_GROUP = 'XXXXXX'
         AGENT_LABEL = 'maven1'
-        JENKINS_SCRIPT = '${BUILD_SCRIPT_ROOT}/atom-jenkins.sh'
+        JENKINS_SCRIPT = '${BUILD_SCRIPT_ROOT}/wydevops.sh'
         IS_BUILD = 'true'
   }
   parameters {
