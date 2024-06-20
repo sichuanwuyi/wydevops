@@ -11,8 +11,9 @@ pipeline {
   parameters {
       choice(name: 'GITHUB_BRANCH', choices: [ 'develop', 'master'], description: 'checkout git branch')
       choice(name: 'GITHUB_GROUP', choices: ['tmt_china', 'bill_wy'], description: 'checkout git group')
-      choice(name: 'JOB_LANGUAGE', choices: ['shell'], description: '')
       string(name: 'AGENT_LABEL', defaultValue: 'maven1', description: 'agent label')
+      string(name: 'GIT_PROJECT_NAME', defaultValue: 'wydevops', description: 'gitee仓库名')
+      choice(name: 'JOB_LANGUAGE', choices: ['shell'], description: '')
       string(name: 'BUILD_PATH', defaultValue: './', description: '执行编译的路径')
   }
   stages {
