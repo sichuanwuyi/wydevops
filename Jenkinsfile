@@ -13,6 +13,7 @@ pipeline {
       choice(name: 'GITHUB_GROUP', choices: ['tmt_china', 'bill_wy'], description: 'checkout git group')
       choice(name: 'JOB_LANGUAGE', choices: ['shell'], description: '')
       string(name: 'AGENT_LABEL', defaultValue: 'maven1', description: 'agent label')
+      string(name: 'BUILD_PATH', defaultValue: './', description: '执行编译的路径')
   }
   stages {
     stage('checkout') {

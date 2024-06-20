@@ -14,7 +14,7 @@ pipeline {
       choice(name: 'GITHUB_BRANCH', choices: ['develop', 'master'], description: 'checkout git branch')
       choice(name: 'JOB_LANGUAGE', choices: ['java', 'golang', 'c++', 'python', 'shell', 'vue'], description: '')
       choice(name: 'ARCH_TYPES', choices: ['undefine', 'linux/amd64,linux/arm64', 'linux/amd64', 'linux/arm64'], description: '架构类型')
-      choice(name: 'BUILD_TYPE', choices: ['single', 'double', 'base', 'business', 'all'], description: '构建类型')
+      choice(name: 'BUILD_TYPE', choices: ['single', 'double', 'base', 'business'], description: '构建类型')
       //AGENT_LABEL取值由Jenkins各节点的标签决定。
       string(name: 'AGENT_LABEL', defaultValue: 'maven1', description: 'agent label')
       string(name: 'BUILD_PATH', defaultValue: './', description: '执行编译的路径')
