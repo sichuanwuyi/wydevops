@@ -23,7 +23,15 @@ function extendLog() {
   #内容输出文件名称
   local l_outFileName=$2
 
-  log "\e[32m${l_info}\e[0m" "info" "${l_outFileName}"
+  local l_start
+  local l_end
+
+  if [ "${gWorkMode}" == "local" ];then
+    l_start="\e[32m"
+    l_end="\e[0m"
+  fi
+
+  log "${l_start}${l_info}${l_end}" "info" "${l_outFileName}"
 }
 
 #调用log函数输出信息
@@ -35,14 +43,22 @@ function info() {
   #内容输出文件名称
   local l_outFileName=$3
 
+  local l_start
+  local l_end
+
+  if [ "${gWorkMode}" == "local" ];then
+    l_start="\e[32m"
+    l_end="\e[0m"
+  fi
+
   if [ "${l_options}" ];then
     if [[ "${l_options}" =~ ^(\-) ]];then
-      log "\e[32m【信息】${l_info}\e[0m" "info" "${l_options}" "${l_outFileName}"
+      log "${l_start}【信息】${l_info}${l_end}" "info" "${l_options}" "${l_outFileName}"
     else
-      log "\e[32m${l_info}\e[0m" "info" "" "${l_outFileName}"
+      log "${l_start}【信息】${l_info}${l_end}" "info" "" "${l_outFileName}"
     fi
   else
-    log "\e[32m【信息】${l_info}\e[0m" "info" "" "${l_outFileName}"
+    log "${l_start}【信息】${l_info}${l_end}" "info" "" "${l_outFileName}"
   fi
 }
 
@@ -58,14 +74,22 @@ function error() {
 
   local l_tempFile
 
+  local l_start
+  local l_end
+
+  if [ "${gWorkMode}" == "local" ];then
+    l_start="\e[5;31m"
+    l_end="\e[0m"
+  fi
+
   if [ "${l_options}" ];then
     if [[ "${l_options}" =~ ^(\-) ]];then
-      log "\e[5;31m【错误】${l_info}\e[0m" "error" "${l_options}" "${l_outFileName}"
+      log "${l_start}【错误】${l_info}${l_end}" "error" "${l_options}" "${l_outFileName}"
     else
-      log "\e[5;31m${l_info}\e[0m" "error" "" "${l_outFileName}"
+      log "${l_start}${l_info}${l_end}" "error" "" "${l_outFileName}"
     fi
   else
-    log "\e[5;31m【错误】${l_info}\e[0m" "error" "" "${l_outFileName}"
+    log "${l_start}【错误】${l_info}${l_end}" "error" "" "${l_outFileName}"
   fi
 
   #清除注册的临时文件。
@@ -123,14 +147,22 @@ function debug() {
   #内容输出文件名称
   local l_outFileName=$3
 
+  local l_start
+  local l_end
+
+  if [ "${gWorkMode}" == "local" ];then
+    l_start="\e[33m"
+    l_end="\e[0m"
+  fi
+
   if [ "${l_options}" ];then
     if [[ "${l_options}" =~ ^(\-) ]];then
-      log "\e[33m【调试】\e[0m ${l_info}" "debug" "${l_options}" "${l_outFileName}"
+      log "${l_start}【调试】${l_end} ${l_info}" "debug" "${l_options}" "${l_outFileName}"
     else
-      log "\e[33m\e[0m${l_info}" "debug" "" "${l_outFileName}"
+      log "${l_start}${l_end}${l_info}" "debug" "" "${l_outFileName}"
     fi
   else
-    log "\e[33m【调试】\e[0m${l_info}" "debug" "" "${l_outFileName}"
+    log "${l_start}【调试】${l_end}${l_info}" "debug" "" "${l_outFileName}"
   fi
 }
 
@@ -142,14 +174,22 @@ function warn() {
   #内容输出文件名称
   local l_outFileName=$3
 
+  local l_start
+  local l_end
+
+  if [ "${gWorkMode}" == "local" ];then
+    l_start="\e[33m"
+    l_end="\e[0m"
+  fi
+
   if [ "${l_options}" ];then
     if [[ "${l_options}" =~ ^(\-) ]];then
-      log "\e[33m【警告】${l_info}\e[0m" "warn" "${l_options}" "${l_outFileName}"
+      log "${l_start}【警告】${l_info}${l_end}" "warn" "${l_options}" "${l_outFileName}"
     else
-      log "\e[33m${l_info}\e[0m" "warn" "" "${l_outFileName}"
+      log "${l_start}${l_info}${l_end}" "warn" "" "${l_outFileName}"
     fi
   else
-    log "\e[33m【警告】${l_info}\e[0m" "warn" "" "${l_outFileName}"
+    log "${l_start}【警告】${l_info}${l_end}" "warn" "" "${l_outFileName}"
   fi
 }
 
@@ -275,6 +315,8 @@ function _getStringLen() {
   fi
 }
 
+#引入工作模式全局变量,jenkins模式下输出的日志不设置颜色。
+export gWorkMode
 # 申明全局调试模式指示变量，用于debug函数内控制信息的显示
 export gDebugMode
 # 申明默认调试文件输出目录
