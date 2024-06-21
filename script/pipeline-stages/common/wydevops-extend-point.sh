@@ -259,6 +259,7 @@ function _onBeforeInitGlobalParams() {
   export gLanguage
   export gWorkSpace
   export gMultipleModelProject
+  export gCiCdYamlFileName
 
   local l_value
   local l_array
@@ -322,6 +323,9 @@ function _onBeforeInitGlobalParams() {
         warn "--->获取git提交随机码失败：执行命令失败(git log -n 1)"
       fi
     fi
+
+    #删除存在的ci-cd.yaml文件。
+    rm -rf "${gBuildPath:?}/${gCiCdYamlFileName}"
 
   fi
 }
