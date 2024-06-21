@@ -294,6 +294,10 @@ function _onBeforeInitGlobalParams() {
       gMultipleModelProject="false"
       info "--->检测到当前项目为单模块项目"
     fi
+
+    #删除存在的ci-cd.yaml文件。
+    rm -rf "${gBuildPath:?}/${gCiCdYamlFileName}"
+
   else
     if [[ "${gBuildPath}" =~ ^(\.\/[a-zA-Z_]+) ]];then
       error "本地构建项目时，主模块路径（gBuildPath）必须是绝对路径"
@@ -323,9 +327,6 @@ function _onBeforeInitGlobalParams() {
         warn "--->获取git提交随机码失败：执行命令失败(git log -n 1)"
       fi
     fi
-
-    #删除存在的ci-cd.yaml文件。
-    rm -rf "${gBuildPath:?}/${gCiCdYamlFileName}"
 
   fi
 }
