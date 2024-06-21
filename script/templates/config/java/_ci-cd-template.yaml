@@ -444,6 +444,7 @@ package:
 deploy:
     #列表项的唯一名称
   - name: ${chartName}
+    #要部署的离线包名称。
     packageName: ${chartName}
     #发布类型：k8s或docker
     deployType: ${deployType}
