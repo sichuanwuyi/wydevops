@@ -295,7 +295,7 @@ function _onBeforeInitGlobalParams() {
       info "--->检测到当前项目为单模块项目"
     fi
 
-    #删除存在的ci-cd.yaml文件。
+    info "删除当前存在的ci-cd.yaml文件"
     rm -rf "${gBuildPath:?}/${gCiCdYamlFileName}"
 
   else
