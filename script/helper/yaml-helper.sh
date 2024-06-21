@@ -1575,7 +1575,6 @@ function _deleteContentInFile(){
 #{数据块的起始行号} {数据块的截止行号} {数据块的前导空格数} {现有列表项总数} {执行过程中新增的列表项数} {执行过程中删除的文件行数}
 function _getDataBlockRowNum() {
   export gDefaultRetVal
-  export gArrayItemEmptyValue
 
   export _yamlFileContent
 
@@ -2990,8 +2989,6 @@ fi
 
 #本文件中所有函数默认的返回变量。
 export gDefaultRetVal
-
-export gArrayItemEmptyValue="NULL"
 
 #是否立即将内存缓存中的文件内容变更回写到文件中。
 export gSaveBackImmediately

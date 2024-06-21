@@ -55,7 +55,7 @@ function info() {
     if [[ "${l_options}" =~ ^(\-) ]];then
       log "${l_start}【信息】${l_info}${l_end}" "info" "${l_options}" "${l_outFileName}"
     else
-      log "${l_start}【信息】${l_info}${l_end}" "info" "" "${l_outFileName}"
+      log "${l_start}${l_info}${l_end}" "info" "" "${l_outFileName}"
     fi
   else
     log "${l_start}【信息】${l_info}${l_end}" "info" "" "${l_outFileName}"
@@ -281,7 +281,10 @@ function part() {
   l_tail="${l_tail//[0-9]/}"
 
   #定义Part的显示格式
-  local l_content="\n\e[${l_color}m${l_lineFlag}\n${l_head}${l_info}${l_tail}\n${l_lineFlag}\e[0m\n"
+  local l_content="\n${l_lineFlag}\n${l_head}${l_info}${l_tail}\n${l_lineFlag}\n"
+  if [ "${gWorkMode}" == "local" ];then
+    l_content="\n\e[${l_color}m${l_lineFlag}\n${l_head}${l_info}${l_tail}\n${l_lineFlag}\e[0m\n"
+  fi
 
   #输出信息
   log "${l_content}" "info" "${l_outFileName}"
