@@ -260,6 +260,7 @@ function _onBeforeInitGlobalParams() {
   export gWorkSpace
   export gMultipleModelProject
   export gCiCdYamlFileName
+  export gClearCachedParams
 
   local l_value
   local l_array
@@ -295,8 +296,10 @@ function _onBeforeInitGlobalParams() {
       info "--->检测到当前项目为单模块项目"
     fi
 
-    info "删除当前存在的ci-cd.yaml文件"
-    rm -rf "${gBuildPath:?}/${gCiCdYamlFileName}"
+    if [ "${gClearCachedParams}" == "true" ];then
+      info "删除当前存在的ci-cd.yaml文件"
+      rm -rf "${gBuildPath:?}/${gCiCdYamlFileName}"
+    fi
 
   else
     if [[ "${gBuildPath}" =~ ^(\.\/[a-zA-Z_]+) ]];then
