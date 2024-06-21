@@ -700,7 +700,7 @@ function _deployServiceInK8S() {
 
     info "获取服务器上~/.kube/config文件的内容"
     #todo: 这里不要在前面添加timeout指令
-    ssh -o StrictHostKeyChecking=no -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
+    ssh -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
 
     info "卸载${l_namespace}命名空间中正在运行的${l_chartName}服务..." "-n"
     l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
