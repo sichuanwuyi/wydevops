@@ -48,7 +48,7 @@ pipeline {
           script {
             catchError {
               echo "Build with ${JENKINS_SCRIPT} ${JOB_LANGUAGE}"
-                sh "${JENKINS_SCRIPT} -c -e -S 'build' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
+                sh "${JENKINS_SCRIPT} -c -e -d -m -S 'build' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
               }
             }
         }
@@ -69,7 +69,7 @@ pipeline {
         dir("${GIT_PROJECT_NAME}") {
             script {
                 catchError {
-                    sh "${JENKINS_SCRIPT} -e -S 'docker' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
+                    sh "${JENKINS_SCRIPT} -e -d -m -S 'docker' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
                 }
                 echo 'finish creating docker images'
                 currentBuild.result = 'SUCCESS'
@@ -88,7 +88,7 @@ pipeline {
           dir("${GIT_PROJECT_NAME}") {
               script {
                   catchError {
-                      sh "${JENKINS_SCRIPT} -e -S 'chart' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
+                      sh "${JENKINS_SCRIPT} -e -d -m -S 'chart' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
                   }
                   echo 'finish creating chart image'
                   currentBuild.result = 'SUCCESS'
@@ -107,7 +107,7 @@ pipeline {
           dir("${GIT_PROJECT_NAME}") {
               script {
                   catchError {
-                      sh "${JENKINS_SCRIPT} -e -S 'package' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
+                      sh "${JENKINS_SCRIPT} -e -d -m -S 'package' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
                   }
                   echo 'finish creating offline package'
                   currentBuild.result = 'SUCCESS'
@@ -127,7 +127,7 @@ pipeline {
         dir("${GIT_PROJECT_NAME}") {
             script {
                 catchError {
-                    sh "${JENKINS_SCRIPT} -e -S 'deploy' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
+                    sh "${JENKINS_SCRIPT} -e -d -m -S 'deploy' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
                 }
                 echo 'Deploy completed'
             }
