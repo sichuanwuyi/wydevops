@@ -58,6 +58,7 @@ pipeline {
         }
       }
     }
+
     stage('Docker') {
       when {
         allOf{
@@ -76,6 +77,7 @@ pipeline {
         }
       }
     }
+
     stage('Chart') {
      when {
           allOf{
@@ -94,6 +96,26 @@ pipeline {
           }
       }
     }
+
+    stage('Package') {
+        when {
+          allOf{
+              expression {currentBuild.result == 'SUCCESS'}
+          }
+        }
+        steps {
+          dir("${GIT_PROJECT_NAME}") {
+              script {
+                  catchError {
+                      sh "${JENKINS_SCRIPT} -e -S 'package' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
+                  }
+                  echo 'finish creating offline package'
+                  currentBuild.result = 'SUCCESS'
+              }
+          }
+        }
+    }
+
     stage('Deploy') {
       when {
         allOf{
