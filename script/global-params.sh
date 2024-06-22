@@ -450,7 +450,8 @@ function parseOptions1() {
         l_param="${2}"
         if [[ "${l_param}" &&  "${l_param}" != "undefine" ]];then
           # shellcheck disable=SC2206
-          gArchTypes=${l_param}
+          gArchTypes="${l_param}"
+          [[ ! "${gOfflineArchTypes}" ]] && gOfflineArchTypes="${l_param}"
           debug "从命令行读取的目标架构类型(gArchTypes)参数值为：${gArchTypes}"
         fi
         shift 2
@@ -501,7 +502,7 @@ function parseOptions1() {
         l_param="${2}"
          if [[ "${l_param}" && "${l_param}" != "undefine" ]];then
           # shellcheck disable=SC2206
-          gOfflineArchTypes=${l_param}
+          gOfflineArchTypes="${l_param}"
           debug "从命令行读取的离线安装包构建类型(gOfflineArchTypes)参数值为: ${gOfflineArchTypes}"
         fi
         shift 2
