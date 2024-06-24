@@ -4,7 +4,7 @@ pipeline {
         AGENT_LABEL = 'maven1'
         JENKINS_SCRIPT = '${BUILD_SCRIPT_ROOT}/wydevops.sh'
         //此处填入从Gitee拉取源码时使用的用户ID
-        GITHUB_USER_ID = '924b45239b2ef132f34d03d671865767'
+        GITHUB_USER_ID = '1'
   }
 
   parameters {
