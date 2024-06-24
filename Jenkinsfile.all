@@ -3,16 +3,16 @@ pipeline {
   environment {
         AGENT_LABEL = 'maven1'
         JENKINS_SCRIPT = '${BUILD_SCRIPT_ROOT}/wydevops.sh'
-        //此处填入从Gitee拉取源码时使用的用户ID
-        GITHUB_USER_ID = '1'
+        //此处填入在Jenkins中创建的凭据的ID
+        GIT_USER_ID = '1'
   }
 
   parameters {
       string(name: 'GIT_PROJECT_NAME', defaultValue: 'java-sample', description: 'gitee仓库名')
-      //GITHUB_GROUP的取值由Gitee仓库决定。
-      choice(name: 'GITHUB_GROUP', choices: ['tmt_china'], description: 'checkout git group')
-      choice(name: 'GITHUB_BRANCH', choices: ['master', 'develop'], description: 'checkout git branch')
-      choice(name: 'JOB_LANGUAGE', choices: ['java', 'golang', 'c++', 'python', 'shell', 'vue'], description: '')
+      //GIT_GROUP的取值由Gitee仓库决定。
+      choice(name: 'GIT_GROUP', choices: ['tmt_china'], description: 'checkout git group')
+      choice(name: 'GIT_BRANCH', choices: ['master', 'develop'], description: 'checkout git branch')
+      choice(name: 'PROJECT_LANGUAGE', choices: ['java', 'golang', 'c++', 'python', 'shell', 'vue'], description: '')
       choice(name: 'ARCH_TYPES', choices: ['undefine', 'linux/amd64,linux/arm64', 'linux/amd64', 'linux/arm64'], description: '架构类型')
       choice(name: 'BUILD_TYPE', choices: ['single', 'double', 'base', 'business'], description: '构建类型')
       //AGENT_LABEL取值由Jenkins各节点的标签决定。
@@ -28,11 +28,11 @@ pipeline {
         steps {
             dir("${GIT_PROJECT_NAME}") {
                 echo "----Checkout----"
-                git credentialsId: "${GITHUB_USER_ID}", url: "https://gitee.com/${GITHUB_GROUP}/${GIT_PROJECT_NAME}.git", branch: "${GITHUB_BRANCH}".split("/")[-1]
+                git credentialsId: "${GIT_USER_ID}", url: "https://gitee.com/${GIT_GROUP}/${GIT_PROJECT_NAME}.git", branch: "${GIT_BRANCH}".split("/")[-1]
             }
             script{
                 currentBuild.result = 'SUCCESS'
-                echo "${JOB_LANGUAGE}"
+                echo "${PROJECT_LANGUAGE}"
             }
         }
     }
@@ -47,8 +47,8 @@ pipeline {
         dir("${GIT_PROJECT_NAME}") {
           script {
             catchError {
-              echo "Build with ${JENKINS_SCRIPT} ${JOB_LANGUAGE}"
-                sh "${JENKINS_SCRIPT} -c -e -d -m -S 'build' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
+              echo "Build with ${JENKINS_SCRIPT} ${PROJECT_LANGUAGE}"
+                sh "${JENKINS_SCRIPT} -c -e -d -m -S 'build' -L ${PROJECT_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
               }
             }
         }
@@ -69,7 +69,7 @@ pipeline {
         dir("${GIT_PROJECT_NAME}") {
             script {
                 catchError {
-                    sh "${JENKINS_SCRIPT} -e -d -m -S 'docker' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
+                    sh "${JENKINS_SCRIPT} -e -d -m -S 'docker' -L ${PROJECT_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
                 }
                 echo 'finish creating docker images'
                 currentBuild.result = 'SUCCESS'
@@ -88,7 +88,7 @@ pipeline {
           dir("${GIT_PROJECT_NAME}") {
               script {
                   catchError {
-                      sh "${JENKINS_SCRIPT} -e -d -m -S 'chart' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
+                      sh "${JENKINS_SCRIPT} -e -d -m -S 'chart' -L ${PROJECT_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
                   }
                   echo 'finish creating chart image'
                   currentBuild.result = 'SUCCESS'
@@ -107,7 +107,7 @@ pipeline {
           dir("${GIT_PROJECT_NAME}") {
               script {
                   catchError {
-                      sh "${JENKINS_SCRIPT} -e -d -m -S 'package' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
+                      sh "${JENKINS_SCRIPT} -e -d -m -S 'package' -L ${PROJECT_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
                   }
                   echo 'finish creating offline package'
                   currentBuild.result = 'SUCCESS'
@@ -127,7 +127,7 @@ pipeline {
         dir("${GIT_PROJECT_NAME}") {
             script {
                 catchError {
-                    sh "${JENKINS_SCRIPT} -e -d -m -S 'deploy' -L ${JOB_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
+                    sh "${JENKINS_SCRIPT} -e -d -m -S 'deploy' -L ${PROJECT_LANGUAGE} -P ${BUILD_PATH} -B ${BUILD_TYPE} -A ${ARCH_TYPES} -M 'jenkins'"
                 }
                 echo 'Deploy completed'
             }
