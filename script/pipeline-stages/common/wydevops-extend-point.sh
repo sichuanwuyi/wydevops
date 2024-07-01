@@ -354,20 +354,15 @@ function _initGlobalParams() {
   local l_ciCdConfigFile
   local l_tmpCiCdConfigFile
 
-  l_templateFile="${gBuildPath}/${gLanguage}/_${gCiCdTemplateFileName}"
-  if [ ! -f "${l_templateFile}" ];then
-    l_templateFile="${gBuildPath}/_${gCiCdTemplateFileName}"
-    info "使用公共配置文件：_${gCiCdTemplateFileName}"
-  else
-    info "使用${gLanguage}语言级配置文件：${gLanguage}/_${gCiCdTemplateFileName}"
-  fi
+  #项目本地_ci-cd-template.yaml.yaml文件。
+  l_templateFile="${gBuildScriptRootDir}/_${gCiCdTemplateFileName}"
 
   #获取ci-cd.yaml文件的绝对路径。
   gCiCdYamlFile="${gBuildPath}/${gCiCdYamlFileName}"
 
   #判断项目中是否存在ci-cd.yaml配置文件？
   if [ ! -f "${gCiCdYamlFile}" ];then
-    #如果不存在，则复制公共模板(ci-cd-template.yaml)创建一个项目级的_ci-cd-template.yaml文件。
+    #如果不存在，则复制语言级公共模板(_ci-cd-template.yaml)创建一个项目级的_ci-cd-template.yaml文件。
     info "未检测到自定义模板文件，使用默认的_${gCiCdTemplateFileName}模板文件 ..."
     invokeExtendPointFunc "createCiCdTemplateFile" "创建_ci-cd-template.yaml配置文件" "${l_templateFile}"
 

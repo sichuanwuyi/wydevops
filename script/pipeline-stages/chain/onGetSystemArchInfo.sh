@@ -15,14 +15,15 @@ function onGetSystemArchInfo_ubuntu() {
 
   #先判断是否是linux系统
   if [ "${l_ip}" ];then
-    info "执行命令: timeout 3s ssh -p ${l_port} ${l_account}@${l_ip} uname -sm"
+    info "执行命令: ssh -p ${l_port} ${l_account}@${l_ip} uname -sm"
     #3秒超时
-    l_result=$(timeout 3s ssh -p "${l_port}" "${l_account}@${l_ip}" "uname -sm")
+    l_result=$(ssh -p "${l_port}" "${l_account}@${l_ip}" "uname -sm")
   else
     info "执行命令: uname -sm"
     #本地执行uname命令
     l_result=$(uname -sm)
   fi
+  info "返回结果：${l_result}"
 
   #连接被拒绝或超时
   l_errorLog=$(echo -e "${l_result}" | grep -ioP "(refused|timed[ ]*out)")
