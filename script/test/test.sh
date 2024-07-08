@@ -96,15 +96,10 @@ value: 123"
 }
 
 #确保文件不存在
-#rm -f "${tmpFile}"
+rm -f "${tmpFile}"
 
-#readAndWriteKVPair "简单键值对读写" "test|AAA test.test1|BBB test.test2|CCC test.test1.test3|DDD"
-#readAndWriteKVPair "简单KV键值对列表类读写" "test.test1.test3[0].name|DDD test.test1.test3[0]| test.test1.test3[0].name|kkk test.test1.test3[0].value|vvvv"
+readAndWriteKVPair "简单键值对读写" "test|AAA test.test1|BBB test.test2|CCC test.test1.test3|DDD"
+readAndWriteKVPair "简单KV键值对列表类读写" "test.test1.test3[0].name|DDD test.test1.test3[0]| test.test1.test3[0].name|kkk test.test1.test3[0].value|vvvv"
 #
-#readAndWriteList "列表项读写"
+readAndWriteList "列表项读写"
 
-#helm uninstall devops-test -n develop --kubeconfig /d/kube-config
-#helm uninstall devops-test1 -n develop --kubeconfig /e/tmt/test/deploy/kube-config
-#helm uninstall atom-hardware-manager -n develop --kubeconfig /e/tmt/test/deploy/kube-config
-type="externalChart"
-cat "/e/tmt/wydevops/script/plugins/ExternalChart/externalChart-generator.sh" | grep -ioP "^(function ${type}Generator_)(.*)\(\)([ ]*)\{"
