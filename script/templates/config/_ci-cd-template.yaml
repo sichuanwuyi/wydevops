@@ -55,16 +55,22 @@ globalParams:
   #默认范围：30000-32767
   nodePorts:
 
-  #gateway网关相关配置
+  #网关相关配置
   gatewayVersion: _GATEWAY-VERSION_
   gatewayPath: _GATEWAY-ROUTE_
   #是否为当前服务启用网关的websocket功能
   websocket: _GATEWAYS-WEB-SOCKET_
+  #启用HTTPS协议的域名列表：
+  ingressTlsHosts:
+  #启用HTTPS时需要的secret名称。
+  ingressSecretName:
 
   #是否启用K8S服务存活探针
   livenessProbeEnable: _LIVENESS-PROBE_
   #是否启用K8S服务就绪探针
   readinessProbeEnable: _READINESS-PROBE_
+  #探活和就绪使用的HTTP还是HTTPS
+  httpGetScheme: HTTP
 
   #K8S服务资源配置相关参数的默认值
   cpuLimits: _CPU-LIMITS_
@@ -326,8 +332,9 @@ chart:
               successThreshold: 1
               timeoutSeconds: 5
               httpGet:
-                path: ${gatewayPath}/health/liveness
+                scheme: ${httpGetScheme}
                 port: ${mainPort}
+                path: ${gatewayPath}/health/liveness
             readinessProbeEnable: ${readinessProbeEnable}
             readinessProbe:
               initialDelaySeconds: 15
@@ -336,8 +343,9 @@ chart:
               successThreshold: 1
               timeoutSeconds: 5
               httpGet:
-                path: ${gatewayPath}/health/readiness
+                scheme: ${httpGetScheme}
                 port: ${mainPort}
+                path: ${gatewayPath}/health/readiness
         #定义configmap名称（格式：{服务名称}-configmap）及其包含的文件列表
         configMaps:
             #名称必须与volumes中的某个ConfigMap名相同
@@ -387,9 +395,9 @@ chart:
           type: Ingress
           version: networking.k8s.io/v1
           className: nginx
-          #tls:
-          #  - hosts: []
-          #    secretName:
+#          tls:
+#            - hosts: [ ${ ingressTlsHosts } ]
+#              secretName: ${ingressSecretName}
           rules:
             - host:
               paths:

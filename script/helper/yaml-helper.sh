@@ -1701,7 +1701,7 @@ function _getDataBlockRowNum() {
     fi
   fi
 
-  if [ "${l_curArrayIndex}" -ge 0 ];then
+  if [ "${l_curArrayIndex}" ] && [ "${l_curArrayIndex}" -ge 0 ];then
     ((l_itemCount = 0))
     #先获取现有列表项的总数。
     if [ "${l_blockStartRowNum}" -gt 0 ];then
@@ -2505,6 +2505,9 @@ function _combine(){
         else
           info "列表项参数整体插入成功"
           #将其追加到_targetParamNameIndexMap变量中。
+          if [ ! "${l_paramName}" ];then
+             l_paramName="name${l_targetParamItemCount}"
+          fi
           _targetParamNameIndexMap["${l_paramName}"]="${l_targetParamItemCount}"
         fi
       else

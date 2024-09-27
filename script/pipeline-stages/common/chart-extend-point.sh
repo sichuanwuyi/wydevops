@@ -8,10 +8,15 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
   export gCiCdYamlFile
   export gChartRepoType
   export gChartRepoInstanceName
+  export gProjectChartTemplatesDir
+  export gProjectTemplateDirName
 
   local l_systemType
   local l_archType
   local l_info
+
+
+  gProjectChartTemplatesDir="${gHelmBuildDir}/${gProjectTemplateDirName}/chart/templates"
 
   #检查是否安装有helm工具。
   if ! command -v helm &> /dev/null; then
@@ -388,7 +393,7 @@ function onBeforeHelmPackage_ex() {
       # shellcheck disable=SC2068
       for l_ymalFile in ${l_yamlList[@]};do
         info "将项目配置的额外的${l_ymalFile##*/}文件复制到chart镜像的templates目录中"
-        cp "${l_ymalFile}" "./templates/"
+        cp -f "${l_ymalFile}" "./templates/"
       done
     fi
   fi

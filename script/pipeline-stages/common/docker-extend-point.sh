@@ -123,6 +123,7 @@ function initialGlobalParamsForDockerStage_ex(){
   export gBuildPath
   export gLanguage
   export gProjectDockerTemplateDir
+  export gJdkVersion
 
   #docker阶段特有的全局变量
   export gDockerfileTemplates
@@ -230,12 +231,12 @@ function initialGlobalParamsForDockerStage_ex(){
       l_dockerFiles=(${l_dockerFiles})
       # shellcheck disable=SC2068
       for l_dockerFile in ${l_dockerFiles[@]};do
-        if [ -f "${gProjectDockerTemplateDir}/${l_dockerFile}" ];then
+        if [ -f "${gProjectDockerTemplateDir}/${gLanguage}/${gJdkVersion}/${l_dockerFile}" ];then
           #使用项目级Dockerfile文件
-          gDockerfileTemplates="${gDockerfileTemplates} ${gProjectDockerTemplateDir}/${l_dockerFile}"
-        elif [ -f "${gBuildScriptRootDir}/templates/docker/${gLanguage}/${l_dockerFile}" ];then
+          gDockerfileTemplates="${gDockerfileTemplates} ${gProjectDockerTemplateDir}/${gLanguage}/${gJdkVersion}/${l_dockerFile}"
+        elif [ -f "${gBuildScriptRootDir}/templates/docker/${gLanguage}/${gJdkVersion}/${l_dockerFile}" ];then
           #使用语言级Dockerfile文件
-          gDockerfileTemplates="${gDockerfileTemplates} ${gBuildScriptRootDir}/templates/docker/${gLanguage}/${l_dockerFile}"
+          gDockerfileTemplates="${gDockerfileTemplates} ${gBuildScriptRootDir}/templates/docker/${gLanguage}/${gJdkVersion}/${l_dockerFile}"
         elif [ -f "${gBuildScriptRootDir}/templates/docker/${l_dockerFile}" ];then
           #使用公共级Dockerfile文件
           gDockerfileTemplates="${gDockerfileTemplates} ${gBuildScriptRootDir}/templates/docker/${l_dockerFile}"
@@ -457,6 +458,7 @@ function handleBuildingSingleImageForDocker_ex() {
 function _copyFilesIntoDockerBuildDir() {
   export gBuildPath
   export gDockerBuildDir
+  export gActiveProfile
 
   local l_ciCdYamlFile=$1
 
@@ -467,6 +469,8 @@ function _copyFilesIntoDockerBuildDir() {
 
   local l_targetFiles
   local l_targetFile
+  local l_arrays
+  local l_arrayLen
 
   readParam "${l_ciCdYamlFile}" "docker.copyFiles"
   if [ "${gDefaultRetVal}" != "null" ];then
@@ -483,12 +487,36 @@ function _copyFilesIntoDockerBuildDir() {
         l_copyFile="${gBuildPath}/${l_copyFile}"
       fi
 
-      l_path="${l_copyFile%/*}"
-      l_fileName="${l_copyFile##*/}"
+      # shellcheck disable=SC2206
+      l_arrays=(${l_copyFile//|/ })
+      l_arrayLen="${#l_arrays[@]}"
+
+      l_path="${l_arrays[0]%/*}"
+      l_fileName="${l_arrays[0]##*/}"
+
+      # shellcheck disable=SC2081
+      if [ "${l_fileName}" != *\** ] && [ "${l_fileName}" != *"${gActiveProfile}"* ];then
+        l_fileName="${l_fileName%.*}-${gActiveProfile}.${l_fileName##*.}"
+      fi
+
       l_targetFiles=$(find "${l_path}" -maxdepth 1 -type f -name "${l_fileName}")
+      if [ ! "${l_targetFiles}" ];then
+        error "配置文件${l_copyFile}不存在"
+        exit
+      fi
+
       for l_targetFile in ${l_targetFiles[@]};do
-        info "复制${l_fileName}文件到Docker构建目录中"
-        cp -f "${l_targetFile}" "${gDockerBuildDir}"
+        if  [ "${l_arrayLen}" -ge 2 ];then
+          #如果目录不存在则创建之。
+          if [ ! -d "${gDockerBuildDir}/${l_arrays[1]}" ];then
+            mkdir -p "${gDockerBuildDir}/${l_arrays[1]}"
+          fi
+          info "复制${l_arrays[0]}文件到Docker构建目录中${l_arrays[1]}子目录中"
+          cp -f "${l_targetFile}" "${gDockerBuildDir}/${l_arrays[1]}"
+        else
+          info "复制${l_fileName}文件到Docker构建目录中"
+          cp -f "${l_targetFile}" "${gDockerBuildDir}"
+        fi
       done
 
     done

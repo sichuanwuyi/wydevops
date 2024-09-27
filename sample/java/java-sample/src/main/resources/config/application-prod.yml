@@ -1,2 +1,17 @@
 server:
-  port: 8052
+  port: 8062
+
+mysql-params:
+  host: {{ .Values.params.mysql.host | default "192.168.1.214" }}
+  port: {{ .Values.params.mysql.port | default "3307" }}
+  username: {{ .Values.params.mysql.username | default "root" }}
+  password: {{ .Values.params.mysql.password | default "123456" }}
+
+myName: {{ .Values.params.myName | default "wydevops" }}
+
+#以下是具体使用上面定义的变量。
+#spring:
+#  datasource:
+#    url: jdbc:mysql://${mysql-params.host}:${mysql-params.port}/test2?useUnicode=true&characterEncoding=utf-8&serverTimezone=GMT%2B8
+#    username: ${mysql-params.username}
+#    password: ${mysql-params.password}

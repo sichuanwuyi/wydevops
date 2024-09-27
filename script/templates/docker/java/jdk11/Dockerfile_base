@@ -5,7 +5,7 @@ USER root
 ENV TZ=_TZ_
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-ENV JAVA_OPTS="-Dspring.config.location=_WORK-DIR-IN-CONTAINER_/config/application.yml"
+ENV JAVA_OPTS="-Dspring.config.location=_WORK-DIR-IN-CONTAINER_/config/"
 ENV LANG C.UTF-8
 
 EXPOSE _EXPOSE_

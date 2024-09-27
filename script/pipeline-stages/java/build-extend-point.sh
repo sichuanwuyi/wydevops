@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
 
 function _onBeforeProjectBuilding_ex() {
-  export gDefaultRetVal
   export gBuildPath
   export gMultipleModelProject
 
-  local l_resourcesDir
-  local l_yamlList
-  local l_ymalFile
 
   info "进入项目主模块目录"
   cd "${gBuildPath}" || true
@@ -17,21 +13,6 @@ function _onBeforeProjectBuilding_ex() {
     cd ..
   fi
 
-  l_resourcesDir="${gBuildPath}/src/main/resources"
-  info "查询并修改application*.yaml文件中的spring.profiles.active=prod"
-  l_yamlList=$(find "${l_resourcesDir}" -type f -name "application*.yml")
-  if [ "${l_yamlList}" ];then
-    # shellcheck disable=SC2068
-    for l_ymalFile in ${l_yamlList[@]}
-    do
-      updateParam "${l_ymalFile}" "spring.profiles.active" "prod"
-      if [[ ! "${gDefaultRetVal}" =~ ^(\-1) ]];then
-        info "--->修改${l_ymalFile##*/}文件中的spring.profiles.active=prod---成功"
-      fi
-    done
-  else
-    error "未检测到任何application*.yaml文件"
-  fi
 }
 
 #执行java项目的编译

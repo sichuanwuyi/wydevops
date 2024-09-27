@@ -15,24 +15,25 @@ function _onAfterInitialingGlobalParamsForDockerStage_ex() {
   export gBuildPath
   export gProjectBuildOutDir
   export gDockerBuildDir
+  export gDefaultRetVal
+
+  local l_ciCdYamlFile=$1
 
   local l_targetFiles
   local l_targetFile
-  local l_resourceDir
   local l_applicationYamls
 
   if [ "${gBuildType}" != "thirdParty" ];then
-    #拷贝java项目中的application.yaml、application-prod.yaml文件到Docker构建目录中
-    l_resourceDir="${gBuildPath}/src/main/resources"
-    l_applicationYamls=("application.yml" "application-prod.yml")
+    mkdir -p "${gDockerBuildDir}/config"
+    #读取globalParams.configMapFiles参数的值。
+    readParam "${l_ciCdYamlFile}" "globalParams.configMapFiles"
+    l_targetFiles="${gDefaultRetVal}"
+    # shellcheck disable=SC2206
+    l_applicationYamls=(${l_targetFiles//,/ })
     # shellcheck disable=SC2068
-    # shellcheck disable=SC2167
     for l_targetFile in ${l_applicationYamls[@]};do
-      l_targetFiles=$(find "${l_resourceDir}" -maxdepth 2 -type f -name "${l_targetFile}")
-      # shellcheck disable=SC2165
-      for l_targetFile in ${l_targetFiles[@]};do
-        cp -f "${l_targetFile}" "${gDockerBuildDir}" || true
-      done
+      [[ "${l_targetFile}" =~ ^(\.) ]] && l_targetFile="${gBuildPath}/${l_targetFile#*/}"
+      cp -f "${l_targetFile}" "${gDockerBuildDir}/config" || true
     done
   fi
 }

@@ -176,7 +176,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   [[ ! -f "${l_tmpCiCdConfigFile}" ]] && l_cicdTargetFile="${l_templateFile}"
 
   #项目级参数应用文件优先级更高，放置_dirList中最前面的位置。
-  l_dirList=("${gBuildPath}/${gHelmBuildDirName}/${gParamMappingDirName}" "${gBuildScriptRootDir}/templates/config/${gLanguage}/${gParamMappingDirName}")
+  l_dirList=("${gBuildPath}/${gHelmBuildDirName}/templates/config/${gLanguage}/${gParamMappingDirName}" "${gBuildScriptRootDir}/templates/config/${gLanguage}/${gParamMappingDirName}")
   #预先定义好各个参数映射文件对应的
 
   l_loadOk="false"
@@ -188,6 +188,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
       if [ "${l_paramMappingFiles}" ];then
         # shellcheck disable=SC2068
         for l_mappingFile in ${l_paramMappingFiles[@]};do
+
           declare -A _paramMappingMap
           #将参数映射文件中的配置读取到_paramMappingMap变量中。
           initialMapFromConfigFile "${l_mappingFile}" "_paramMappingMap"
@@ -200,6 +201,14 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
                 l_configMapFiles="${l_configMapFiles},${l_array[2]//\"/}"
               fi
             fi
+
+            #如果${l_array[1]}里面包含了application.yml文件，则尝试读取当前环境的配置文件。
+            invokeExtendPointFunc "onLoadMatchedAdditionalConfigFiles" "获取当前部署环境对应的配置文件" "${l_array[1]}"
+            if [ "${gDefaultRetVal}" ] && [ "${gDefaultRetVal}" != "null" ];then
+              l_array[1]="${gDefaultRetVal},${l_array[1]//\"/}"
+              l_configMapFiles="${gDefaultRetVal},${l_configMapFiles:1}"
+            fi
+
             if [ "${#_paramMappingMap[@]}" -gt 0 ];then
               #根据参数映射文件初始化l_cicdTargetFile文件中的参数。
               initialParamValueByMappingConfigFiles "${gBuildPath}" "${l_cicdTargetFile}" \

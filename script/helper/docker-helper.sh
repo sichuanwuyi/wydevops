@@ -12,12 +12,12 @@ function dockerLogin(){
   local l_errorLog
 
   if [ "${l_repoName}" ];then
-    info "执行命令(docker logout && docker login ${l_repoName} -u ${l_account} -p ${l_password})..." "-n"
+    info "执行命令(docker logout ${l_repoName} && docker login ${l_repoName} -u ${l_account} -p ${l_password})..." "-n"
     # shellcheck disable=SC2088
     l_tmpFile="${gTempFileDir}/docker-${RANDOM}.tmp"
     registerTempFile "${l_tmpFile}"
     #先执行登出（避免某些情况下直接登入失败）,再执行登入。
-    docker logout && docker login "${l_repoName}" -u "${l_account}" -p "${l_password}" 2>&1 | tee "${l_tmpFile}"
+    docker logout "${l_repoName}" && docker login "${l_repoName}" -u "${l_account}" -p "${l_password}" 2>&1 | tee "${l_tmpFile}"
     # shellcheck disable=SC2002
     l_tmpFileContent=$(cat "${l_tmpFile}")
     l_errorLog=$(echo "${l_tmpFileContent}" | grep -oP "^.*(Error|failed|panic).*$")

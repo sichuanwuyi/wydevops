@@ -72,6 +72,7 @@ if [[ "${gClearCachedParams}" == "true" ]];then
 fi
 
 if [ -f "${gBuildPath}/${gGlobalParamCacheFileName}" ];then
+  warn "从缓存文件中加载全局参数..."
   #从文件中加载缓存的全局参数的值
   loadGlobalParamsFromCacheFile
   #检查并创建缺失的全局目录

@@ -5,14 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.tmt.wydevops</groupId>
-    <artifactId>java-sample</artifactId>
-    <version>1.0.0</version>
+    <artifactId>java-sample1</artifactId>
+    <version>1.0.2</version>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <cicdName>唯一DevOps</cicdName>
+        <cicdName>唯一DevOps1.0.2</cicdName>
     </properties>
 
     <dependencies>
