@@ -364,7 +364,7 @@ function _initGlobalParams() {
   local l_tmpCiCdConfigFile
 
   #项目本地_ci-cd-template.yaml.yaml文件。
-  l_templateFile="${gBuildScriptRootDir}/_${gCiCdTemplateFileName}"
+  l_templateFile="${gBuildPath}/_${gCiCdTemplateFileName}"
 
   #获取ci-cd.yaml文件的绝对路径。
   gCiCdYamlFile="${gBuildPath}/${gCiCdYamlFileName}"
