@@ -500,9 +500,8 @@ function _copyFilesIntoDockerBuildDir() {
       fi
 
       l_targetFiles=$(find "${l_path}" -maxdepth 1 -type f -name "${l_fileName}")
-      if [ ! "${l_targetFiles}" ];then
-        error "配置文件${l_copyFile}不存在"
-        exit
+      if [ ! -f "${l_targetFiles}" ];then
+        l_targetFiles="${l_arrays[0]}"
       fi
 
       for l_targetFile in ${l_targetFiles[@]};do
@@ -511,10 +510,10 @@ function _copyFilesIntoDockerBuildDir() {
           if [ ! -d "${gDockerBuildDir}/${l_arrays[1]}" ];then
             mkdir -p "${gDockerBuildDir}/${l_arrays[1]}"
           fi
-          info "复制${l_arrays[0]}文件到Docker构建目录中${l_arrays[1]}子目录中"
+          info "复制${l_targetFile}文件到Docker构建目录中${l_arrays[1]}子目录中"
           cp -f "${l_targetFile}" "${gDockerBuildDir}/${l_arrays[1]}"
         else
-          info "复制${l_fileName}文件到Docker构建目录中"
+          info "复制${l_targetFile}文件到Docker构建目录中"
           cp -f "${l_targetFile}" "${gDockerBuildDir}"
         fi
       done
