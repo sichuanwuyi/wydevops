@@ -495,7 +495,7 @@ function _copyFilesIntoDockerBuildDir() {
       l_fileName="${l_arrays[0]##*/}"
 
       # shellcheck disable=SC2081
-      if [ "${l_fileName}" != *\** ] && [ "${l_fileName}" != *"${gActiveProfile}"* ];then
+      if [[ "${l_fileName}" != *\** && "${l_fileName}" != *"${gActiveProfile}"* ]];then
         l_fileName="${l_fileName%.*}-${gActiveProfile}.${l_fileName##*.}"
       fi
 
