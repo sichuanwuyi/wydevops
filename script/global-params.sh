@@ -112,7 +112,9 @@ export gGlobalParamNames=(
 #例如，对于Java项目，如果是多模块项目则build时会从gBuildPath目录回退一级目录后再执行build。
 "gMultipleModelProject=\"false\"" \
 
-#---------------------与业务相关的参数----------------------#
+#---------------------与语言相关的参数----------------------#
+#java项目使用的JDK版本
+"gJdkVersion"
 
 )
 
