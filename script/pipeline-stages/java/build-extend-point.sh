@@ -60,11 +60,11 @@ function _buildSubModule() {
 
    mvn clean package -DskipTests=true 2>&1 | tee "./build.tmp"
    # shellcheck disable=SC2002
-   l_errorLog=$(cat "./build.tmp" | grep -ioP "^(.*)(ERROR|timed out).*$")
+   l_errorLog=$(cat "./build.tmp" | grep -ioP "^(.*)(BUILD SUCCESS).*$")
    rm -f "./build.tmp" || true
 
-   if [ "${l_errorLog}" ];then
-     error "项目${gServiceName}编译失败： ${l_errorLog}"
+   if [ ! "${l_errorLog}" ];then
+     error "项目${gServiceName}编译失败"
    fi
 
    l_info="项目${gServiceName}编译成功：mvn clean package -DskipTests=true"
