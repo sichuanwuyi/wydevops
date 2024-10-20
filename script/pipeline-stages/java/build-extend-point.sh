@@ -60,7 +60,7 @@ function _buildSubModule() {
 
    mvn clean package -DskipTests=true 2>&1 | tee "./build.tmp"
    # shellcheck disable=SC2002
-   l_errorLog=$(cat "./build.tmp" | grep -ioP "^(.*)(BUILD SUCCESS).*$")
+   l_errorLog=$(cat "./build.tmp" | grep "BUILD SUCCESS")
    rm -f "./build.tmp" || true
 
    if [ ! "${l_errorLog}" ];then
