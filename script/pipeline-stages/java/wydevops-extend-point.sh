@@ -34,7 +34,7 @@ function _createCiCdConfigFile_ex() {
 
 function _onBeforeReplaceParamPlaceholder_ex() {
   export gBuildPath
-  export gJdkVersion
+  export gRuntimeVersion
 
   local l_cicdFile=$1
   local l_pomXmlFile
@@ -52,11 +52,11 @@ function _onBeforeReplaceParamPlaceholder_ex() {
   fi
 
   #读取JDK的版本
-  gJdkVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.target"]/text()' "${l_pomXmlFile}" 2>&1)
-  if [ ! "${gJdkVersion}" ];then
-    gJdkVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.source"]/text()' "${l_pomXmlFile}" 2>&1)
+  gRuntimeVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.target"]/text()' "${l_pomXmlFile}" 2>&1)
+  if [ ! "${gRuntimeVersion}" ];then
+    gRuntimeVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.source"]/text()' "${l_pomXmlFile}" 2>&1)
   fi
-  gJdkVersion="jdk${gJdkVersion}"
+  gRuntimeVersion="jdk${gRuntimeVersion}"
 
 }
 
@@ -104,8 +104,13 @@ function _onLoadMatchedAdditionalConfigFiles_ex() {
   gDefaultRetVal="${l_targetFile}"
 }
 
+function _onFailToLoadingParamMappingFiles_ex(){
+  export gLanguage
+  error "缺少${gLanguage}语言级的参数映射配置文件，该配置文件定义了如何从项目配置文件中读取wyDevops需要的参数。"
+}
+
 export gActiveProfile
-export gJdkVersion
+export gRuntimeVersion
 
 #-------------------------私有方法----------------------------#
 

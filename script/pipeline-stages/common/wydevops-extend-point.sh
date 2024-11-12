@@ -223,7 +223,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   done
 
   if [ "${l_loadOk}" == "false" ];then
-    error "缺少${gLanguage}语言级的参数映射配置文件，该配置文件定义了如何从项目配置文件中读取wyDevops需要的参数。"
+    invokeExtendPointFunc "onFailToLoadingParamMappingFiles" "处理加载参数映射文件失败异常" "${l_array[1]}"
   fi
 
   #初始化l_cicdTargetFile文件中的configMapFiles参数。
@@ -853,6 +853,7 @@ function _loadGlobalParamsFromCiCdYaml() {
 
   #以下3个配置参数以命令行输入值为最高优先级的配置值。
   export gUseTemplate
+  export gRuntimeVersion
   export gBuildType
   export gArchTypes
   export gOfflineArchTypes
@@ -862,6 +863,13 @@ function _loadGlobalParamsFromCiCdYaml() {
   export gDevNamespace
   export gDevGatewayHosts
   export gServiceName
+
+  if [ ! "${gRuntimeVersion}" ];then
+    #初始化gRuntimeVersion参数。
+    readParam "${l_cicdYaml}" "globalParams.runtimeVersion"
+    gRuntimeVersion="${gDefaultRetVal}"
+  fi
+  info "gRuntimeVersion参数高优先配置值为：${gRuntimeVersion}"
 
   if [ ! "${gBuildType}" ];then
     #初始化gBuildType参数。

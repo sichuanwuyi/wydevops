@@ -123,7 +123,7 @@ function initialGlobalParamsForDockerStage_ex(){
   export gBuildPath
   export gLanguage
   export gProjectDockerTemplateDir
-  export gJdkVersion
+  export gRuntimeVersion
 
   #docker阶段特有的全局变量
   export gDockerfileTemplates
@@ -231,12 +231,15 @@ function initialGlobalParamsForDockerStage_ex(){
       l_dockerFiles=(${l_dockerFiles})
       # shellcheck disable=SC2068
       for l_dockerFile in ${l_dockerFiles[@]};do
-        if [ -f "${gProjectDockerTemplateDir}/${gLanguage}/${gJdkVersion}/${l_dockerFile}" ];then
-          #使用项目级Dockerfile文件
-          gDockerfileTemplates="${gDockerfileTemplates} ${gProjectDockerTemplateDir}/${gLanguage}/${gJdkVersion}/${l_dockerFile}"
-        elif [ -f "${gBuildScriptRootDir}/templates/docker/${gLanguage}/${gJdkVersion}/${l_dockerFile}" ];then
-          #使用语言级Dockerfile文件
-          gDockerfileTemplates="${gDockerfileTemplates} ${gBuildScriptRootDir}/templates/docker/${gLanguage}/${gJdkVersion}/${l_dockerFile}"
+        if [ -f "${gProjectDockerTemplateDir}/${gLanguage}/${gRuntimeVersion}/${l_dockerFile}" ];then
+          #使用项目级配置的Dockerfile文件
+          gDockerfileTemplates="${gDockerfileTemplates} ${gProjectDockerTemplateDir}/${gLanguage}/${gRuntimeVersion}/${l_dockerFile}"
+        elif [ -f "${gBuildScriptRootDir}/templates/docker/${gLanguage}/${gRuntimeVersion}/${l_dockerFile}" ];then
+          #使用语言级指定SDK版本的Dockerfile文件
+          gDockerfileTemplates="${gDockerfileTemplates} ${gBuildScriptRootDir}/templates/docker/${gLanguage}/${gRuntimeVersion}/${l_dockerFile}"
+       elif [ -f "${gBuildScriptRootDir}/templates/docker/${gLanguage}/${l_dockerFile}" ];then
+          #使用语言级通用Dockerfile文件
+          gDockerfileTemplates="${gDockerfileTemplates} ${gBuildScriptRootDir}/templates/docker/${gLanguage}/${l_dockerFile}"
         elif [ -f "${gBuildScriptRootDir}/templates/docker/${l_dockerFile}" ];then
           #使用公共级Dockerfile文件
           gDockerfileTemplates="${gDockerfileTemplates} ${gBuildScriptRootDir}/templates/docker/${l_dockerFile}"
@@ -479,7 +482,7 @@ function _copyFilesIntoDockerBuildDir() {
     # shellcheck disable=SC2068
     for l_copyFile in ${l_copyFiles[@]};do
 
-      if [[ "${l_copyFile}" =~ ^([ ]*)\. ]];then
+      if [[ "${l_copyFile}" =~ ^([ ]*)\.\/ ]];then
         #相对路径转绝对路径
         l_copyFile="${gBuildPath}${l_copyFile:1}"
       elif [[ "${l_copyFile}" =~ ^([ ]*)([a-zA-Z_]?) ]];then
@@ -540,8 +543,7 @@ function _copyDirsIntoDockerBuildDir() {
     l_copyDirs=(${gDefaultRetVal//,/ })
     # shellcheck disable=SC2068
     for l_copyDir in ${l_copyDirs[@]};do
-
-      if [[ "${l_copyDir}" =~ ^([ ]*)\. ]];then
+      if [[ "${l_copyDir}" =~ ^([ ]*)\.\/ ]];then
         #相对路径转绝对路径
         l_copyDir="${gBuildPath}${l_copyDir:1}"
       elif [[ "${l_copyDir}" =~ ^([ ]*)([a-zA-Z_]?) ]];then
@@ -556,6 +558,11 @@ function _copyDirsIntoDockerBuildDir() {
         fi
         info "复制${l_copyDir##*/}/${l_archType//\//-}目录中的文件到Docker构建目录中"
         cp -rf "${l_copyDir}/${l_archType//\//-}/" "${gDockerBuildDir}/${l_copyDir##*/}"
+      else
+        #先删除存在的目标目录。
+        rm -rf "${gDockerBuildDir:?}/${l_copyDir##*/}" 2>&1
+        info "复制${l_copyDir##*/}目录中的文件到Docker构建目录中"
+        cp -rf "${l_copyDir}/" "${gDockerBuildDir}/${l_copyDir##*/}"
       fi
 
     done

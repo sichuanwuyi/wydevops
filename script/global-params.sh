@@ -114,7 +114,7 @@ export gGlobalParamNames=(
 
 #---------------------与语言相关的参数----------------------#
 #java项目使用的JDK版本
-"gJdkVersion"
+"gRuntimeVersion"
 
 )
 

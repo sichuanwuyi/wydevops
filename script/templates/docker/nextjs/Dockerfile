@@ -1,0 +1,26 @@
+FROM --platform=_PLATFORM_ _FROM-IMAGE0_
+
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
+
+USER root
+
+ENV NODE_ENV=production
+ENV HOSTNAME="0.0.0.0"
+ENV PORT=_EXPOSE_
+
+RUN mkdir -p _WORK-DIR-IN-CONTAINER_
+
+WORKDIR _WORK-DIR-IN-CONTAINER_
+
+# Install dependencies based on the preferred package manager
+#COPY ./app ./app
+COPY ./public ./public
+COPY ./.next ./.next
+COPY .env pnpm-lock.yaml *.ts *.js *.json ./
+#生成node_modules目录
+RUN corepack enable pnpm && pnpm i --frozen-lockfile
+
+EXPOSE _EXPOSE_
+
+CMD ["pnpm", "run", "start"]

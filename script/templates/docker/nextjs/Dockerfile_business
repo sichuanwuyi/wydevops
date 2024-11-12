@@ -1,0 +1,8 @@
+FROM --platform=_PLATFORM_ busybox:latest
+USER root
+
+RUN mkdir -p _APP-DIR-IN-CONTAINER_
+
+COPY ./public ./.next _APP-DIR-IN-CONTAINER_/
+
+ENTRYPOINT ["sh", "-c", "cp -rf _APP-DIR-IN-CONTAINER_/* _WORK-DIR-IN-CONTAINER_/" ]
