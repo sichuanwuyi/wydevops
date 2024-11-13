@@ -95,7 +95,7 @@ function copyChartImage_ex() {
     #通过chart镜像收集所有需要的docker镜像，并与package[l_index].images参数合并。
     _scanAllDockerImages "${l_index}" "${l_targetDir}/${l_chartName}-${l_chartVersion}.tgz"
     #过滤出有效的docker镜像信息
-    filterValidDockerImages "${gDefaultRetVal}"
+    _filterValidDockerImages "${gDefaultRetVal}"
     #更新需要打包到安装包中的docker镜像参数。
     updateParam "${gCiCdYamlFile}" "package[${l_index}].images" "${gDefaultRetVal}"
   else
@@ -253,7 +253,7 @@ function handleBuildingSingleImageForPackage_ex() {
   local l_paramValue
 
   #读取服务名称
-  readParam "${gCiCdYamlFile}" "globalParams.serviceCode"
+  readParam "${gCiCdYamlFile}" "globalParams.serviceName"
   l_serviceName="${gDefaultRetVal}"
 
   #读取服务的版本
@@ -423,7 +423,7 @@ function _scanAllDockerImages() {
   gDefaultRetVal="${l_imageArray:1}"
 }
 
-function filterValidDockerImages() {
+function _filterValidDockerImages() {
   export gDefaultRetVal
   export gCiCdYamlFile
 

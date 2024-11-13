@@ -7,7 +7,7 @@ function _onBeforeCreatingDockerImage_ex() {
   local l_dockerfile=$3
 
   if [[ "${l_dockerfile}" =~ ^(.*)_base$ ]];then
-    cp -f "${gBuildPath}/.env" "${gDockerBuildDir}/"
+    cp -f "${gBuildPath}"/.env* "${gDockerBuildDir}/"
     cp -f "${gBuildPath}/pnpm-lock.yaml" "${gDockerBuildDir}/"
     cp "${gBuildPath}"/*.ts "${gDockerBuildDir}/"
     cp "${gBuildPath}"/*.js "${gDockerBuildDir}/"
@@ -18,7 +18,7 @@ function _onBeforeCreatingDockerImage_ex() {
   else
     cp -rf "${gBuildPath}/public" "${gDockerBuildDir}/"
     cp -rf "${gBuildPath}/.next" "${gDockerBuildDir}/"
-    cp -f "${gBuildPath}/.env" "${gDockerBuildDir}/"
+    cp -f "${gBuildPath}"/.env* "${gDockerBuildDir}/"
     cp -f "${gBuildPath}/pnpm-lock.yaml" "${gDockerBuildDir}/"
     cp "${gBuildPath}"/*.ts "${gDockerBuildDir}/"
     cp "${gBuildPath}"/*.js "${gDockerBuildDir}/"

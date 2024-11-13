@@ -10,7 +10,7 @@ globalParams:
   nameEn: _NAME-EN_
   #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
   serviceCode: ${serviceName}
-  #运行时Runtime的版本
+  #运行时Runtime的版本(nextjs的版本)
   runtimeVersion: 15.0.0
 
   businessImage: ${serviceName}-business
@@ -190,7 +190,7 @@ docker:
       #举例：bitnami/prometheus:2.51.2镜像的导出文件名称为bitnami-prometheus-1.0.0-linux-amd64.tar
       location:
   customizes:
-      #自定义Docker构建目录中生成的镜像名称和版本，不能空。
+    #自定义Docker构建目录中生成的镜像名称和版本，不能空。
     - name: ${serviceName}-linux-amd64:${businessVersion}
       #目标架构类型, 当buildType=customize时，会忽略docker.archTypes参数。
       #该值必须与下面的dockerfile参数指定的文件中的From语句中的--platform参数保持一致，否则会报错。
@@ -208,7 +208,7 @@ docker:
 #每一项对应一个chart镜像打包配置；即同时可支持多个chart镜像的打包。
 #绝大多数项目只会存在一个chart镜像打包配置项。
 chart:
-    #列表项的唯一名称
+  #列表项的唯一名称
   - name: ${chartName}
     version: ${chartVersion}
     appVersion: ${appVersion}
@@ -238,13 +238,13 @@ chart:
         kind: Deployment
         replicaCount: 1
         priorityClassName: ${priorityClassName}
-        imagePullSecrets: []
+        imagePullSecrets: [ ]
         serviceAccount:
           create: true
-          annotations: {}
+          annotations: { }
           name: ""
-        podSecurityContext: {}
-        securityContext: {}
+        podSecurityContext: { }
+        securityContext: { }
         autoscaling:
           enabled: false
           minReplicas: 1
@@ -252,20 +252,20 @@ chart:
           targetCPUUtilizationPercentage: 80
           # targetMemoryUtilizationPercentage: 80
         nodeSelector: ${nodeSelector}
-        tolerations: []
-        affinity: {}
-        podLabels: {}
+        tolerations: [ ]
+        affinity: { }
+        podLabels: { }
         podAnnotations:
           app.kubernetes.io/service-name: \"${name}\"
           app.kubernetes.io/service-en-name: \"${nameEn}\"
         volumes:
           - name: ${serviceName}-workdir
-            emptyDir: {}
-          - name: ${serviceName}-config
-            configMap:
-              defaultMode: 493
-              name: ${serviceName}-configmap
-              optional: false
+            emptyDir: { }
+          #- name: ${serviceName}-config
+          #  configMap:
+          #    defaultMode: 493
+          #    name: ${serviceName}-configmap
+          #    optional: false
           #挂载公共配置信息
           #- name: public-params
           #  configMap:
@@ -281,7 +281,7 @@ chart:
             repository: ${businessImage}
             pullPolicy: Always
             tag: ${businessVersion}
-            args: []
+            args: [ ]
             command:
               - "sh"
               - "-c"
@@ -311,9 +311,9 @@ chart:
             volumeMounts:
               - name: ${serviceName}-workdir
                 mountPath: ${baseWorkDir}
-              - name: ${serviceName}-config
+                #- name: ${serviceName}-config
                 #mountPath参数的前缀必须与docker.workDir参数一致。
-                mountPath: ${workDirInContainer}/config
+              #  mountPath: ${workDirInContainer}/config
               #挂载公共配置信息
               #- name: public-params
               #  mountPath: /var/config
@@ -349,16 +349,17 @@ chart:
                 scheme: ${httpGetScheme}
                 port: ${mainPort}
                 path: ${gatewayPath}/health/readiness
-        #定义configmap名称（格式：{服务名称}-configmap）及其包含的文件列表
-        configMaps:
+            #定义configmap名称（格式：{服务名称}-configmap）及其包含的文件列表
+            #configMaps:
             #名称必须与volumes中的某个ConfigMap名相同
-          - name: ${serviceName}-configmap
-            files: ${configMapFiles}
+          #- name: ${serviceName}-configmap
+          #  files: ${configMapFiles}
 
         resourcePlugins:
           - name: ConfigMap
             generatorName: default
-            enable: true
+            #nextjs项目不需要configmap
+            enable: false
             configPath:
           - name: Deployment
             generatorName: default
@@ -418,8 +419,8 @@ chart:
               #是否使能Websocket功能
               websocket: ${websocket}
               match:
-                hosts: []
-                paths: ["${gatewayPath}*"]
+                hosts: [ ]
+                paths: [ "${gatewayPath}*" ]
               plugins:
                 #是否开启跨域
                 - name: cors
@@ -453,7 +454,7 @@ package:
     images: ${packageImages}
 
 deploy:
-    #列表项的唯一名称
+  #列表项的唯一名称
   - name: ${chartName}
     #要部署的离线包名称。
     packageName: ${chartName}

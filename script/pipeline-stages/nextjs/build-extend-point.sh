@@ -16,7 +16,8 @@ function _onBeforeProjectBuilding_ex() {
 #执行java项目的编译
 function _buildProject_ex() {
   info "构建整个项目..."
-  _buildSubModule
+  #_buildSubModule
+  warn "跳过构建项目阶段"
 }
 
 #******************私有方法********************#
