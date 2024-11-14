@@ -14,15 +14,17 @@ function _onBeforeCreatingDockerImage_ex() {
   l_distDir=".next"
   # shellcheck disable=SC2002
   l_content=$(cat "${gBuildPath}/next.config.ts" | grep -noP "^(.*):[ ]*NextConfig[ ]*=[ ]*\{[ ]*$")
-  l_rowNumber=${l_content%%:*}
-  l_content=$(awk "NR==${l_rowNumber},NR==-1" "${gBuildPath}/next.config.ts" | grep -m 1 -oP "^[ ]*distDir:.*$")
   if [ "${l_content}" ];then
-    l_content="${l_content##*:}"
-    l_content=$(echo -e "${l_content}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-    l_content="${l_content%,*}"
-    l_content="${l_content//\'/}"
-    l_content="${l_content//\"/}"
-    l_distDir="${l_content}"
+    l_rowNumber=${l_content%%:*}
+    l_content=$(awk "NR==${l_rowNumber},NR==-1" "${gBuildPath}/next.config.ts" | grep -m 1 -oP "^[ ]*distDir:.*$")
+    if [ "${l_content}" ];then
+      l_content="${l_content##*:}"
+      l_content=$(echo -e "${l_content}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+      l_content="${l_content%,*}"
+      l_content="${l_content//\'/}"
+      l_content="${l_content//\"/}"
+      l_distDir="${l_content}"
+    fi
   fi
 
   if [[ "${l_dockerfile}" =~ ^(.*)_base$ ]];then
