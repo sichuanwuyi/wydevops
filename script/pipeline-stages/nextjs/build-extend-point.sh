@@ -9,15 +9,12 @@ function _onBeforeProjectBuilding_ex() {
 
   info "强行设置gMultipleModelProject变量为false"
   gMultipleModelProject="false"
-
-  rm -rf .next || true
 }
 
 #执行java项目的编译
 function _buildProject_ex() {
-  info "构建整个项目..."
+  info "跳过项目构建..."
   #_buildSubModule
-  warn "跳过构建项目阶段"
 }
 
 #******************私有方法********************#

@@ -1,15 +1,42 @@
 #!/usr/bin/env bash
 
+function _onAfterInitialingGlobalParamsForDockerStage_ex() {
+
+  export gDockerFileTemplateParamMap
+
+  local l_distDir
+
+  #获取nextjs项目build输出目录。
+  _getNextJsBuildOutDir "${l_dockerfile}"
+  l_distDir="${gDefaultRetVal}"
+
+  gDockerFileTemplateParamMap["_DOT-NEXT_"]="${l_distDir}"
+}
+
 function _onBeforeCreatingDockerImage_ex() {
   export gBuildPath
   export gDockerBuildDir
+  export gDefaultRetVal
 
   local l_dockerfile=$3
+
+  cp -rf "${gBuildPath}/app" "${gDockerBuildDir}/"
+  cp -rf "${gBuildPath}/public" "${gDockerBuildDir}/"
+  cp -f "${gBuildPath}"/.env* "${gDockerBuildDir}/"
+  cp -f "${gBuildPath}/pnpm-lock.yaml" "${gDockerBuildDir}/"
+  cp "${gBuildPath}"/*.ts "${gDockerBuildDir}/"
+  cp "${gBuildPath}"/*.js "${gDockerBuildDir}/"
+  cp "${gBuildPath}"/*.json "${gDockerBuildDir}/"
+}
+
+function _getNextJsBuildOutDir() {
+  export gDefaultRetVal
+
+  local l_dockerfile=$1
   local l_rowNumber
   local l_content
   local l_distDir
 
-  #默认项目静态资源存放在public目录下。
   #从next.config.ts文件中读取distDir参数的值,默认值为distDir。
   l_distDir=".next"
   # shellcheck disable=SC2002
@@ -27,22 +54,5 @@ function _onBeforeCreatingDockerImage_ex() {
     fi
   fi
 
-  if [[ "${l_dockerfile}" =~ ^(.*)_base$ ]];then
-    cp -f "${gBuildPath}"/.env* "${gDockerBuildDir}/"
-    cp -f "${gBuildPath}/pnpm-lock.yaml" "${gDockerBuildDir}/"
-    cp "${gBuildPath}"/*.ts "${gDockerBuildDir}/"
-    cp "${gBuildPath}"/*.js "${gDockerBuildDir}/"
-    cp "${gBuildPath}"/*.json "${gDockerBuildDir}/"
-  elif [[ "${l_dockerfile}" =~ ^(.*)_business$ ]];then
-    cp -rf "${gBuildPath}/public" "${gDockerBuildDir}/"
-    cp -rf "${gBuildPath}/${l_distDir}" "${gDockerBuildDir}/"
-  else
-    cp -rf "${gBuildPath}/public" "${gDockerBuildDir}/"
-    cp -rf "${gBuildPath}/${l_distDir}" "${gDockerBuildDir}/"
-    cp -f "${gBuildPath}"/.env* "${gDockerBuildDir}/"
-    cp -f "${gBuildPath}/pnpm-lock.yaml" "${gDockerBuildDir}/"
-    cp "${gBuildPath}"/*.ts "${gDockerBuildDir}/"
-    cp "${gBuildPath}"/*.js "${gDockerBuildDir}/"
-    cp "${gBuildPath}"/*.json "${gDockerBuildDir}/"
-  fi
+  gDefaultRetVal="${l_distDir}"
 }

@@ -275,6 +275,8 @@ function onAfterInitialingGlobalParamsForDockerStage_ex() {
   export gWorkDirInDocker
   export gAppDirInDocker
 
+  export gDockerFileTemplateParamMap
+
   local l_ciCdYamlFile=$1
 
   #定义Dockerfile文件中占位符的具体值。
@@ -605,10 +607,10 @@ function _createDockerImage() {
   info "构建docker镜像:${l_image} ..."
   docker build --no-cache -t "${l_image}" -f "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
   # shellcheck disable=SC2002
-  l_errorLog=$(cat "${l_tmpFile}" | grep -oP "^.*(Error|failed).*$")
+  l_errorLog=$(cat "${l_tmpFile}" | grep -oP "^(.*)naming to docker.io/${l_image} done$")
   unregisterTempFile "${l_tmpFile}"
 
-  if [ "${l_errorLog}" ];then
+  if [ ! "${l_errorLog}" ];then
     error "docker镜像构建(docker build --no-cache -t ${l_image} -f ${l_dockerFile} ${l_dockerBuildDir})失败:${l_errorLog}"
   fi
 

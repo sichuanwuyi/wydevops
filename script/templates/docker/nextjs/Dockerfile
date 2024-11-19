@@ -1,26 +1,45 @@
-FROM --platform=_PLATFORM_ _FROM-IMAGE0_
+FROM --platform=_PLATFORM_ _FROM-IMAGE0_ AS base
 
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+# Install dependencies only when needed
+FROM base AS deps
+
 RUN apk add --no-cache libc6-compat
+WORKDIR _WORK-DIR-IN-CONTAINER_
 
-USER root
+COPY .env* pnpm-lock.yaml *.ts *.js *.json ./
+RUN corepack enable pnpm && pnpm i --frozen-lockfile
+
+
+FROM base AS builder
+WORKDIR _WORK-DIR-IN-CONTAINER_
+
+COPY --from=deps _WORK-DIR-IN-CONTAINER_/node_modules ./node_modules
+COPY ./app ./app
+COPY ./public ./public
+COPY .env* pnpm-lock.yaml *.ts *.js *.json ./
 
 ENV NODE_ENV=production
+RUN corepack enable pnpm && pnpm run build
+
+# Production image, copy all the files and run next
+FROM base AS runner
+
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=_EXPOSE_
 
-RUN mkdir -p _WORK-DIR-IN-CONTAINER_
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+USER nextjs
 
 WORKDIR _WORK-DIR-IN-CONTAINER_
 
-# Install dependencies based on the preferred package manager
-#COPY ./app ./app
-COPY ./public ./public
-COPY ./.next ./.next
-COPY .env pnpm-lock.yaml *.ts *.js *.json ./
-#生成node_modules目录
-RUN corepack enable pnpm && pnpm i --frozen-lockfile
+RUN mkdir _DOT-NEXT_
+
+COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/public ./public
+COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/standalone ./
+COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/static ./_DOT-NEXT_/static
 
 EXPOSE _EXPOSE_
 
-CMD ["pnpm", "run", "start"]
+CMD ["node", "server.js"]

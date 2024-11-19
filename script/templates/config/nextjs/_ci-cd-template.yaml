@@ -7,7 +7,7 @@ globalParams:
   #服务中文名称
   name: _NAME_
   #服务英文名称
-  nameEn: _NAME-EN_
+  nameEn: ${serviceName}
   #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
   serviceCode: ${serviceName}
   #运行时Runtime的版本(nextjs的版本)
@@ -50,9 +50,9 @@ globalParams:
   #服务主端口，也是k8s服务探活和就绪的检测端口，默认是containerPorts参数中第一个端口。
   mainPort: _MAIN-PORT_
   #申明docker容器需要开放的端口列表，端口间使用逗号隔开。
-  containerPorts: _CONTAINER-PORT_
+  containerPorts: ${mainPort}
   #ClusterIP类型的Service资源开放的服务端口列表，端口间使用逗号隔开。
-  servicePorts: _SERVICE-PORTS_
+  servicePorts: ${mainPort}
   #NodePort类型的Service资源绑定的容器端口列表，端口间使用逗号隔开。
   #默认范围：30000-32767
   nodePorts:
@@ -68,9 +68,9 @@ globalParams:
   ingressSecretName:
 
   #是否启用K8S服务存活探针
-  livenessProbeEnable: true
+  livenessProbeEnable: false
   #是否启用K8S服务就绪探针
-  readinessProbeEnable: true
+  readinessProbeEnable: false
   #探活和就绪使用的HTTP还是HTTPS
   httpGetScheme: HTTP
 
@@ -285,10 +285,10 @@ chart:
             command:
               - "sh"
               - "-c"
-              - "mkdir -p ${workDirInContainer} && cp -rf ${appDirInContainer}/* ${workDirInContainer}"
+              - "mkdir -p ${workDirInContainer} && cp -arf ${appDirInContainer}/. ${workDirInContainer}"
             volumeMounts:
               - name: ${serviceName}-workdir
-                mountPath: ${baseWorkDir}
+                mountPath: ${workDirInContainer}
         #如果没有initContainers配置（即buildType=single），
         #则containers的第一个容器其名称默认应该等于服务名称。
         containers:
@@ -310,7 +310,7 @@ chart:
             #   value: "80"
             volumeMounts:
               - name: ${serviceName}-workdir
-                mountPath: ${baseWorkDir}
+                mountPath: ${workDirInContainer}
                 #- name: ${serviceName}-config
                 #mountPath参数的前缀必须与docker.workDir参数一致。
               #  mountPath: ${workDirInContainer}/config

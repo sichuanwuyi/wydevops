@@ -20,7 +20,6 @@ function generateDockerRunShellFile() {
   local l_port
   local l_exposePorts
   local l_mainImage
-  local l_workDirInContainer
 
   #获取需要暴露的端口号。
   readParam "${gCiCdYamlFile}" "docker.exposePorts"
@@ -36,10 +35,6 @@ function generateDockerRunShellFile() {
   #删除镜像名称中可能存在的_base后缀(docker发布模式只能使用single模式构建的镜像)。
   l_mainImage="${l_mainImage//-base:/:}"
 
-  #获取配置文件挂载路径。
-  readParam "${gCiCdYamlFile}" "docker.workDir"
-  l_workDirInContainer="${gDefaultRetVal}"
-
   #在gBuildPath路径中输出docker-run.sh文件。
   if [ "${l_repoName}" ];then
   echo "#!/usr/bin/env bash
@@ -48,14 +43,14 @@ function generateDockerRunShellFile() {
   docker login \"${l_repoName}\" -u \"${l_account}\" -p \"${l_password}\"
   echo \"docker rm -f ${l_chartName}\"
   docker rm -f \"${l_chartName}\"
-  echo \"docker run -d ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}\"
-  docker run -d ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}" > "${gBuildPath}/docker-run.sh"
+  echo \"docker run -d ${l_exposePorts:1} --name ${l_chartName} ${l_repoName}/${l_mainImage}\"
+  docker run -d ${l_exposePorts:1} --name ${l_chartName} ${l_repoName}/${l_mainImage}" > "${gBuildPath}/docker-run.sh"
   else
   echo "#!/usr/bin/env bash
   echo \"docker rm -f ${l_chartName}\"
   docker rm -f \"${l_chartName}\"
-  echo \"docker run -d ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}\"
-  docker run -d ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}" > "${gBuildPath}/docker-run.sh"
+  echo \"docker run -d ${l_exposePorts:1} --name ${l_chartName} ${l_mainImage}\"
+  docker run -d ${l_exposePorts:1} --name ${l_chartName} ${l_mainImage}" > "${gBuildPath}/docker-run.sh"
   fi
 }
 

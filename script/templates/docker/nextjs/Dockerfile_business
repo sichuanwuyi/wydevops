@@ -1,8 +1,39 @@
+FROM --platform=_PLATFORM_ node:23-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+
+RUN apk add --no-cache libc6-compat
+WORKDIR _WORK-DIR-IN-CONTAINER_
+
+COPY .env* pnpm-lock.yaml *.ts *.js *.json ./
+RUN corepack enable pnpm && pnpm i --frozen-lockfile
+
+
+FROM base AS builder
+
+RUN mkdir -p _WORK-DIR-IN-CONTAINER_/node_modules _WORK-DIR-IN-CONTAINER_/app _WORK-DIR-IN-CONTAINER_/public
+WORKDIR _WORK-DIR-IN-CONTAINER_
+
+COPY --from=deps _WORK-DIR-IN-CONTAINER_/node_modules ./node_modules
+COPY ./app ./app
+COPY ./public ./public
+COPY .env* pnpm-lock.yaml *.ts *.js *.json ./
+
+ENV NODE_ENV=production
+RUN corepack enable pnpm && pnpm run build
+
+RUN cd ./_DOT-NEXT_/standalone && rm -rf ./node_modules
+
+# Production image, copy all the files and run next
 FROM --platform=_PLATFORM_ busybox:latest
 USER root
 
-RUN mkdir -p _APP-DIR-IN-CONTAINER_
+RUN mkdir -p _APP-DIR-IN-CONTAINER_/public _APP-DIR-IN-CONTAINER_/_DOT-NEXT_
+WORKDIR _APP-DIR-IN-CONTAINER_
 
-COPY ./public ./.next _APP-DIR-IN-CONTAINER_/
+COPY --from=builder _WORK-DIR-IN-CONTAINER_/public ./public
+COPY --from=builder _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/standalone/. ./
+COPY --from=builder _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/static ./_DOT-NEXT_/static
 
-ENTRYPOINT ["sh", "-c", "cp -rf _APP-DIR-IN-CONTAINER_/* _WORK-DIR-IN-CONTAINER_/" ]
+ENTRYPOINT ["sh", "-c", "cp -arf _APP-DIR-IN-CONTAINER_/. _WORK-DIR-IN-CONTAINER_/" ]

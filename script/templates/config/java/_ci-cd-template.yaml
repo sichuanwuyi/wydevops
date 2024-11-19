@@ -283,10 +283,10 @@ chart:
             command:
               - "sh"
               - "-c"
-              - "mkdir -p ${workDirInContainer} && cp -rf ${appDirInContainer}/* ${workDirInContainer}"
+              - "mkdir -p ${workDirInContainer} && cp -arf ${appDirInContainer}/. ${workDirInContainer}"
             volumeMounts:
               - name: ${serviceName}-workdir
-                mountPath: ${baseWorkDir}
+                mountPath: ${workDirInContainer}
         #如果没有initContainers配置（即buildType=single），
         #则containers的第一个容器其名称默认应该等于服务名称。
         containers:
@@ -308,7 +308,7 @@ chart:
             #   value: "80"
             volumeMounts:
               - name: ${serviceName}-workdir
-                mountPath: ${baseWorkDir}
+                mountPath: ${workDirInContainer}
               - name: ${serviceName}-config
                 #mountPath参数的前缀必须与docker.workDir参数一致。
                 mountPath: ${workDirInContainer}/config
