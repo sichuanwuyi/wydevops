@@ -89,7 +89,11 @@ function executePackageStage() {
     l_deployType="${gDefaultRetVal}"
 
     readParam "${gCiCdYamlFile}" "deploy[${l_i}].uninstall"
-    l_uninstallMode="${gDefaultRetVal}"
+    if [ "${gDefaultRetVal}" != "null" ];then
+      l_uninstallMode="${gDefaultRetVal}"
+    else
+      l_uninstallMode="false"
+    fi
 
     readParam "${gCiCdYamlFile}" "deploy[${l_i}].k8s.dockerRepo"
     l_deployDockerRepo="${gDefaultRetVal}"
