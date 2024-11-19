@@ -210,19 +210,20 @@ function deployServicePackage_ex() {
   local l_chartName=$2
   local l_chartVersion=$3
   local l_deployType=$4
-  local l_images=$5
-  local l_remoteDir=$6
-  local l_localBaseDir=$7
-  local l_shellOrYamlFile=$8
-  local l_remoteInstallProxyShell=$9
+  local l_uninstallMode=$5
+  local l_images=$6
+  local l_remoteDir=$7
+  local l_localBaseDir=$8
+  local l_shellOrYamlFile=$9
+  local l_remoteInstallProxyShell=${10}
 
   if [ "${l_deployType}" == "docker" ];then
     #调用标准发布流程
     _deployServiceByDocker "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_shellOrYamlFile}" \
-      "${l_remoteInstallProxyShell}" "${l_localBaseDir}" "${l_remoteDir}"
+      "${l_remoteInstallProxyShell}" "${l_localBaseDir}" "${l_remoteDir}" "${l_uninstallMode}"
   else
     #调用标准发布流程
-    _deployServiceInK8S "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_localBaseDir}"
+    _deployServiceInK8S "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_localBaseDir}" "${l_uninstallMode}"
   fi
   gCurrentStageResult="INFO|${l_packageName}安装包部署成功"
 }
@@ -576,6 +577,7 @@ function _deployServiceInK8S() {
   local l_chartName=$2
   local l_chartVersion=$3
   local l_localBaseDir=$4
+  local l_uninstallMode=$5
 
   local l_activeProfile
   local l_apiServers
@@ -710,6 +712,11 @@ function _deployServiceInK8S() {
       warn "未找到正在运行的${l_chartName}服务:${l_errorLog}"
     else
       info "成功" "*"
+    fi
+
+    if [ "${l_uninstallMode}" == "true" ];then
+      info "检测到处于卸载服务模式，直接退出。"
+      exit
     fi
 
     #等待3秒
@@ -1041,6 +1048,8 @@ function _getDockerImageInChart() {
 #参数部署值Map
 declare -A gParamDeployedValueMap
 export gParamDeployedValueMap
+export gUninstallMode
+
 
 #加载build阶段脚本库文件
 loadExtendScriptFileForLanguage "deploy"
