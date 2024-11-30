@@ -621,7 +621,7 @@ function _createDockerImage() {
 
   docker build"${l_noCacheParam}" -t "${l_image}" -f "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
   # shellcheck disable=SC2002
-  l_errorLog=$(cat "${l_tmpFile}" | grep -oP "^(.*)naming to docker.io/${l_image} (.*)done$")
+  l_errorLog=$(cat "${l_tmpFile}" | grep -oP "^(.*)naming to docker.io/(wydevops|library)/${l_image} (.*)done$")
   unregisterTempFile "${l_tmpFile}"
 
   if [ ! "${l_errorLog}" ];then
