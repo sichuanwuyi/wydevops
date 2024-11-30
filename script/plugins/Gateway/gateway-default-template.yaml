@@ -1,0 +1,25 @@
+{{- with \$.Values.${t_moduleName} }}
+---
+apiVersion: ${t_apiVersion}
+kind: Gateway
+metadata:
+  namespace: {{ \$.Release.Namespace }}
+  name: {{ .name | trunc 53 | trimSuffix \"-\" }}-gateway
+  labels:
+    helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
+    app.kubernetes.io/version: ${gCurrentChartVersion}
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
+    app.kubernetes.io/instance: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
+spec:
+  selector:
+    #选中istio-ingressgateway相关Pod。
+    istio: ingressgateway
+  servers:
+    - port:
+        number: {{ .istioRoute.gateway.portNumber }}
+        name: http
+        protocol: HTTP
+      hosts:
+        {{- toYaml .istioRoute.gateway.hosts | nindent 8 }}
+{{- end }}

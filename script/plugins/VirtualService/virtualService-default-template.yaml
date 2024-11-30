@@ -1,0 +1,24 @@
+{{- with \$.Values.${t_moduleName} }}
+---
+apiVersion: ${t_apiVersion}
+kind: VirtualService
+metadata:
+  namespace: {{ \$.Release.Namespace }}
+  name: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
+  labels:
+    helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
+    app.kubernetes.io/version: ${gCurrentChartVersion}
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
+    app.kubernetes.io/instance: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
+spec:
+  hosts:
+    {{- toYaml .istioRoute.virtualService.hosts | nindent 4 }}
+  gateways:
+    {{- toYaml .istioRoute.virtualService.gateways | nindent 4 }}
+  http:
+    - match:
+        {{- toYaml .istioRoute.virtualService.match | nindent 8 }}
+      route:
+        {{- toYaml .istioRoute.virtualService.route | nindent 8 }}
+{{- end }}

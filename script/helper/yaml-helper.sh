@@ -667,7 +667,7 @@ function __readOrWriteYamlFile() {
   #确定参数匹配正则字符串。
   if [ "${l_isDataBlock}" == "true" ];then
     #读取数据块第一个有效行。
-    l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_dataBlockStartRowNum},${l_dataBlockEndRowNum}p"  | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+")
+    l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_dataBlockStartRowNum},${l_dataBlockEndRowNum}p"  | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+(.*)$")
     if [ "${l_lastArrayIndex}" -ge 0 ];then
       #是列表项的情况：目标参数可能存在列表项的第一行，也可能在后续行中，因此正则式有两种情况。
       ((l_tmpSpaceNum = l_dataBlockPrefixSpaceNum + 2))
@@ -752,6 +752,8 @@ function __readOrWriteYamlFile() {
   l_array=(${gDefaultRetVal})
   #l_curParamRowNum参数下属的数据块起始行号
   l_blockStartRowNum="${l_array[0]}"
+  #l_curParamRowNum参数下属的数据块截止行号
+  l_blockEndRowNum="${l_array[1]}"
   if [[ "${l_curItemIndex}" -ge 0 && "${l_curItemIndex}" -ge "${l_array[3]}" ]];then
     #处理指定序号的列表项不存在的情况
     case "${l_mode}" in
@@ -777,9 +779,8 @@ function __readOrWriteYamlFile() {
         ;;
     esac
     return
-  elif [ "${l_blockStartRowNum}" -ge 1 ];then
+  elif [[ "${l_blockStartRowNum}" -ge 1 ]];then
     #l_curParamRowNum参数下属的数据块截止行号
-    l_blockEndRowNum="${l_array[1]}"
     l_blockPrefixSpaceNum="${l_array[2]}"
     l_isDataBlock="true"
     if [[ "${l_curItemIndex}" -ge 0 ]];then
@@ -1631,7 +1632,6 @@ function _getDataBlockRowNum() {
     fi
   fi
 
-
   #预设参数下属数据块的起始行号=参数所在行的下一行。
   ((l_tmpStartRowNum = l_paramRowNum + 1))
   #预设参数下属数据块的前导空格数量=参数所在行前导空格数量 + 2
@@ -1670,11 +1670,6 @@ function _getDataBlockRowNum() {
       ((l_tmpSpaceNum = l_blockPrefixSpaceNum - 2))
       #构造兄弟行或父级行的正则表达式。
       l_tmpRegex="^[ ]{0,${l_tmpSpaceNum}}[a-zA-Z_\-]+"
-      if [[ "${l_hasListItemPrefix}" == "true" ]];then
-         #父级列表项前导空格数还要减2
-        ((l_tmpSpaceNum = l_tmpSpaceNum - 2))
-        l_tmpRegex="^[ ]{0,${l_tmpSpaceNum}}(\-)|${l_tmpRegex:1}"
-      fi
 
       #找到第一个兄弟行或父级行的行号。
       l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -noP "${l_tmpRegex}")

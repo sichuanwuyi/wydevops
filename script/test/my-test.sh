@@ -12,7 +12,13 @@ source "${_selfRootDir}/helper/yaml-helper.sh"
 export gDefaultRetVal
 
 #定义测试文件名称。
-tmpFile="${_selfRootDir}test/my-test.yaml"
+tmpFile="/d/react/react-next-app/react-next-app-demo/nextjs-dashboard/ci-cd.yaml"
 
-insertParam "${tmpFile}" "test.content" "This is a test"
+#readParam "${tmpFile}" "chart[0].deployments[0].name"
+#readParam "${tmpFile}" "destination" "" 467 470 14 0 false 0 true
+
+updateParam "${tmpFile}" "chart[0].deployments[0].name" "- a: 1\n  b: 2\n- c: 3\n  d: 4"
+updateParam "${tmpFile}" "chart[0].deployments[0].name[0]" "a"
+updateParam "${tmpFile}" "chart[0].deployments[0].name[1]" "b"
+
 echo "----gDefaultRetVal=${gDefaultRetVal}---"

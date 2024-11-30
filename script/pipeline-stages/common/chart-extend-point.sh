@@ -1080,6 +1080,7 @@ function _updateServiceNameOfBackendInGatewayRoute() {
   local l_paramPath=$2
 
   local l_loopIndex
+  local l_loopIndex1
   local l_layerLevel
 
   local l_portList
@@ -1127,6 +1128,29 @@ function _updateServiceNameOfBackendInGatewayRoute() {
       ((l_loopIndex[1] = l_loopIndex[1] + 1))
     done
   done
+
+  #单独处理istio相关配置中的服务名称。
+  ((l_loopIndex1=0))
+  while true;do
+    readParam "${l_cicdYaml}" "${l_paramPath}.istioRoute.virtualService.route[${l_loopIndex1}].destination.port.number"
+    if [[ "${gDefaultRetVal}" == "null" ]];then
+      break
+    fi
+
+    if [[ "${l_portList}" =~ ^(.*)${gDefaultRetVal}( |$) ]];then
+      l_name="${_portAndServiceNameMap[${gDefaultRetVal}]}"
+      info "更新${l_cicdYaml##*/}文件中istioRoute.virtualService配置中${gDefaultRetVal}端口对应的后端服务的名称为${l_name}..." "-n"
+      updateParam "${l_cicdYaml}" "${l_paramPath}.istioRoute.virtualService.route[${l_loopIndex1}].destination.host" "${l_name}"
+      if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
+        error "失败"
+      else
+        info "成功" "*"
+      fi
+    fi
+
+    ((l_loopIndex1 = l_loopIndex1 + 1))
+  done
+
 }
 
 function _initialPackageYamlFile() {

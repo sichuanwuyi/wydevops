@@ -134,6 +134,7 @@ function initialGlobalParamsForDockerStage_ex(){
   export gProjectBuildOutDir
   export gThirdParties
   export gSaveBackImmediately
+  export gEnableNoCacheOnDockerBuild
 
   local l_cicdYaml=$1
   local l_dockerFiles
@@ -152,6 +153,12 @@ function initialGlobalParamsForDockerStage_ex(){
     gBuildType="${gDefaultRetVal}"
   fi
   info "读取参数docker.buildType的值:${gBuildType}"
+
+  if [ ! "${gEnableNoCacheOnDockerBuild}" ];then
+    readParam "${l_cicdYaml}" "docker.enableNoCache"
+    gEnableNoCacheOnDockerBuild="${gDefaultRetVal}"
+  fi
+  info "读取参数docker.enableNoCache的值:${gEnableNoCacheOnDockerBuild}"
 
   if [ ! "${gArchTypes}" ];then
     readParam "${l_cicdYaml}" "docker.archTypes"
@@ -592,6 +599,8 @@ function _createDockerImage() {
   local l_dockerBuildDir
   local l_errorLog
 
+  local l_noCacheParam
+
   l_dockerBuildDir="${l_dockerFile%/*}"
 
   existDockerImage "${l_image}"
@@ -605,13 +614,18 @@ function _createDockerImage() {
   l_tmpFile="${gTempFileDir}/docker-build-${RANDOM}.tmp"
   registerTempFile "${l_tmpFile}"
   info "构建docker镜像:${l_image} ..."
-  docker build --no-cache -t "${l_image}" -f "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
+
+  #设置noCacheParam参数值。
+  l_noCacheParam=""
+  [[ "${gEnableNoCacheOnDockerBuild}" == "true" ]] && l_noCacheParam=" --no-cache"
+
+  docker build"${l_noCacheParam}" -t "${l_image}" -f "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
   # shellcheck disable=SC2002
-  l_errorLog=$(cat "${l_tmpFile}" | grep -oP "^(.*)naming to docker.io/${l_image} done$")
+  l_errorLog=$(cat "${l_tmpFile}" | grep -oP "^(.*)naming to docker.io/${l_image} (.*)done$")
   unregisterTempFile "${l_tmpFile}"
 
   if [ ! "${l_errorLog}" ];then
-    error "docker镜像构建(docker build --no-cache -t ${l_image} -f ${l_dockerFile} ${l_dockerBuildDir})失败:${l_errorLog}"
+    error "docker镜像构建(docker build${l_noCacheParam} -t ${l_image} -f ${l_dockerFile} ${l_dockerBuildDir})失败:${l_errorLog}"
   fi
 
   #将生成的镜像推送到私有仓库（测试环境使用的仓库）中
@@ -648,3 +662,5 @@ loadExtendScriptFileForLanguage "docker"
 
 declare -A gDockerFileTemplateParamMap
 export gDockerFileTemplateParamMap
+
+export gEnableNoCacheOnDockerBuild

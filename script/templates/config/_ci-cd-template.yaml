@@ -55,14 +55,17 @@ globalParams:
   #默认范围：30000-32767
   nodePorts:
 
-  #网关相关配置
-  gatewayVersion: _GATEWAY-VERSION_
-  gatewayPath: _GATEWAY-ROUTE_
-  #是否为当前服务启用网关的websocket功能
-  websocket: _GATEWAYS-WEB-SOCKET_
-  #启用HTTPS协议的域名列表：
+  #应用设置的路由前缀参数。
+  gatewayPath: /${serviceName}
+  #使用istio时Gateway资源绑定的Host名称，*表示任意Host。
+  istioGatewayHost: *
+  #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
+  istioVirtualServiceHost: *
+  #使用apisixRoute时，是否为当前服务启用网关的websocket功能
+  websocket: false
+  #使用ingress-nginx时，启用HTTPS协议的域名列表：
   ingressTlsHosts:
-  #启用HTTPS时需要的secret名称。
+  #使用ingress-nginx时，启用HTTPS时需要的secret名称。
   ingressSecretName:
 
   #是否启用K8S服务存活探针
@@ -142,6 +145,8 @@ docker:
   # thirdParty: 打包第三方镜像：拉取第三方镜像，缓存到本地镜像缓存目录中，然后推送到私库中，最后导出到gDockerBuildOutDir目录中。
   # customize: 自定义模式，指定docker构建目录后由本脚本自动完成构建。
   buildType: ${buildType}
+  #执行docker build命令时是否添加--no-cache参数。
+  enableNoCache: true
   #是否强制使用Docker模板文件。
   useTemplate: ${useTemplate}
   #projectType参数决定了生成时使用的默认Dockerfile模板。
@@ -373,6 +378,14 @@ chart:
             generatorName: default
             enable: true
             configPath:
+          - name: Gateway
+            generatorName: default
+            enable: true
+            configPath: istioRoute
+          - name: VirtualService
+            generatorName: default
+            enable: true
+            configPath: istioRoute
           - name: ServiceAccount
             generatorName: default
             enable: true
@@ -424,6 +437,27 @@ chart:
               backends:
                 serviceName: ${serviceName}-clusterip
                 servicePort: ${mainPort}
+
+        istioRoute:
+          apiVersion: networking.istio.io/v1beta1
+          gateway:
+            #这个端口号是由istio-ingressgateway服务决定。
+            portNumber: 80
+            hosts:
+              - \"${istioGatewayHost}\"
+          virtualService:
+            hosts:
+              - \"${istioVirtualServiceHost}\"
+            gateways:
+              - ${serviceName}-gateway
+            match:
+              - uri:
+                  prefix: \"${gatewayPath}\"
+            route:
+              - destination:
+                  port:
+                    number: ${mainPort}
+                  host: ${serviceName}-clusterip
 
     #需要写入values.yaml文件的自定义配置信息。
     params:
