@@ -23,7 +23,7 @@ COPY .env* pnpm-lock.yaml *.ts *.js *.json ./
 ENV NODE_ENV=production
 RUN corepack enable pnpm && pnpm run build
 
-RUN cd ./_DOT-NEXT_/standalone && rm -rf ./node_modules
+RUN cd ./_DOT-NEXT_/_OUTPUT_ && rm -rf ./node_modules
 
 # Production image, copy all the files and run next
 FROM --platform=_PLATFORM_ busybox:latest
@@ -33,7 +33,7 @@ RUN mkdir -p _APP-DIR-IN-CONTAINER_/public _APP-DIR-IN-CONTAINER_/_DOT-NEXT_
 WORKDIR _APP-DIR-IN-CONTAINER_
 
 COPY --from=builder _WORK-DIR-IN-CONTAINER_/public ./public
-COPY --from=builder _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/standalone/. ./
+COPY --from=builder _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/_OUTPUT_/. ./
 COPY --from=builder _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/static ./_DOT-NEXT_/static
 
 ENTRYPOINT ["sh", "-c", "cp -arf _APP-DIR-IN-CONTAINER_/. _WORK-DIR-IN-CONTAINER_/" ]

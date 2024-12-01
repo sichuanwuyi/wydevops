@@ -37,7 +37,7 @@ WORKDIR _WORK-DIR-IN-CONTAINER_
 RUN mkdir _DOT-NEXT_
 
 COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/public ./public
-COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/standalone ./
+COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/_OUTPUT_ ./
 COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/static ./_DOT-NEXT_/static
 
 EXPOSE _EXPOSE_
