@@ -1,0 +1,144 @@
+#本文件为本脚本项目使用的全功能配置文件。
+#不同语言项目使用这个统一的全功能配置文件。
+#不同语言项目可能存在不同的参数默认值，请在对应的语言子目录下的_ci-cd-config.yaml文件中配置。
+globalParams:
+  #CICD Java流程会自动从Pom.yml文件中读取服务名称信息覆盖serviceName参数。
+  serviceName: nextjs-dashboard
+  #服务中文名称
+  name: 仪表盘前端应用
+
+  businessImage: ${serviceName}-business
+  #CICD Java流程会自动从Pom.yml文件中读取版本信息覆盖businessVersion参数。
+  businessVersion: 1.0.0
+  baseImage: ${serviceName}-base
+  baseVersion: 1.0.0
+
+  mainPort: 3003
+
+  #应用设置的路由前缀参数。
+  gatewayPath: /test
+  #使用istio时Gateway资源绑定的Host名称，*表示任意Host。
+  istioGatewayHost: www.axure.com
+
+deploy:
+  #列表项的唯一名称
+  - name: ${chartName}
+    params:
+    #是否处于k8s服务删除模式，本参数仅当deployType为k8s时有效。
+    uninstall: false
+    k8s:
+      #开发集群环境
+      dev:
+        #K8S集群的ApiServer服务器的地址信息（必须配置）
+        #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
+        #多个集群的ApiServer服务器地址间使用英文逗号隔开。
+        apiServer: 172.24.42.155|22|wuyi|Wpl118124
+        #发布服务的命名空间（必须配置）
+        namespace: default
+        #目标集群使用的docker仓库信息。
+        #格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},
+        #{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)}
+        dockerRepo:
+        #部署时指定的网关路由hosts/host参数的值(可不配置),目前只支持设置一个域名
+        routeHosts:
+  - name: 
+      packageName: ${chartName}
+      #发布类型：k8s或docker
+      deployType: ${deployType}
+      #是否处于k8s服务删除模式，本参数仅当deployType为k8s时有效。
+      uninstall: false
+      #部署的目标环境。
+      activeProfile: ${activeProfile}
+      #部署时使用的临时目录名称，
+      deployTempDirName: deploy
+      #部署完毕后是否删除使用的临时文件
+      deleteTempDirAfterDeployed: false
+      #为Chart镜像values.yaml配置文件params配置节中的参数提供默认值
+      #如果部署时deployType=docker，则wydevops会自动更新docker镜像外挂的配置文件中对应参数的值。
+      params:
+      k8s:
+        #开发集群环境
+        dev:
+          #K8S集群的ApiServer服务器的地址信息（必须配置）
+          #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
+          #多个集群的ApiServer服务器地址间使用英文逗号隔开。
+          apiServer: ${devApiServer}
+          #发布服务的命名空间（必须配置）
+          namespace: ${devNamespace}
+          #目标集群使用的docker仓库信息。
+          #格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},
+          #{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)}
+          dockerRepo:
+          #部署时指定的网关路由hosts/host参数的值(可不配置),目前只支持设置一个域名
+          routeHosts: ${devRouteHosts}
+        #测试集群环境
+        #test:
+        #  ...
+      docker:
+        #发布模式：docker或docker-compose
+        mode: docker
+        #指定用于生成docker-run.sh文件的生成器脚本，或者直接是docker run命令字符串。
+        dockerRunShellGenerator:
+        #指定用于生成docker-compose.yaml的生成器脚本，或者直接是docker-compose.yaml文件。
+        dockerComposeYamlGenerator:
+        #开发集群环境
+        dev:
+          #设置是否启用代理模式。
+          #如果设置enableProxy=ture,则仅向同架构的第一个节点部署服务，由该节点完成向其他节点的部署服务的任务。
+          #如果设置enableProxy=false,则会循环向给定的服务器部署服务。
+          enableProxy: false
+          #docker部署方式时，需要部署的节点信息列表。
+          nodeIPs:
+            #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
+            #第一个节点必须是能免密直连其他节点。
+            - 172.29.181.139|22|wuyi|Wpl118124
+    #要部署的离线包名称。
+    #发布类型：k8s或docker
+    deployType: k8s
+    #是否处于k8s服务删除模式，本参数仅当deployType为k8s时有效。
+    uninstall: false
+    #部署的目标环境。
+    activeProfile: dev
+    #部署时使用的临时目录名称，
+    deployTempDirName: deploy
+    #部署完毕后是否删除使用的临时文件
+    #为Chart镜像values.yaml配置文件params配置节中的参数提供默认值
+    #如果部署时deployType=docker，则wydevops会自动更新docker镜像外挂的配置文件中对应参数的值。
+    params:
+    k8s:
+      #开发集群环境
+      dev:
+        #K8S集群的ApiServer服务器的地址信息（必须配置）
+        #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
+        #多个集群的ApiServer服务器地址间使用英文逗号隔开。
+        apiServer: 172.24.42.155|22|wuyi|Wpl118124
+        #发布服务的命名空间（必须配置）
+        namespace: default
+        #目标集群使用的docker仓库信息。
+        #格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},
+        #{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)}
+        dockerRepo: nexus,wydevops,192.168.31.218:8001,admin,Wpl118124,8081
+        #部署时指定的网关路由hosts/host参数的值(可不配置),目前只支持设置一个域名
+        routeHosts: 
+      #测试集群环境
+      #test:
+      #  ...
+    docker:
+      #发布模式：docker或docker-compose
+      mode: docker
+      #指定用于生成docker-run.sh文件的生成器脚本，或者直接是docker run命令字符串。
+      #指定用于生成docker-compose.yaml的生成器脚本，或者直接是docker-compose.yaml文件。
+      #开发集群环境
+      dev:
+        #设置是否启用代理模式。
+        #如果设置enableProxy=ture,则仅向同架构的第一个节点部署服务，由该节点完成向其他节点的部署服务的任务。
+        #如果设置enableProxy=false,则会循环向给定的服务器部署服务。
+        enableProxy: false
+        #docker部署方式时，需要部署的节点信息列表。
+        nodeIPs:
+          #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
+          #第一个节点必须是能免密直连其他节点。
+          - 172.29.181.139|22|wuyi|Wpl118124
+      #测试集群环境
+      #test:
+      #  ...
