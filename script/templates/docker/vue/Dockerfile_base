@@ -1,0 +1,6 @@
+FROM --platform=_PLATFORM_ _FROM-IMAGE0_
+USER root
+
+EXPOSE _EXPOSE_
+
+COPY ./default.conf /etc/nginx/conf.d/default.conf

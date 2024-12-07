@@ -53,7 +53,7 @@ function configMapGenerator_default() {
     # shellcheck disable=SC2068
     for l_configFile in ${l_configMapFiles[@]};do
       info "正在将${l_configFile##*/}文件写入ConfigMap配置文件中..."
-      [[ "${l_configFile}" =~ ^(\.) ]] && l_configFile="${gBuildPath}/${l_configFile#*/}"
+      [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
       #将文件内容插入ConfigMap配置文件中。
       l_configFileContent=$(cat "${l_configFile}")

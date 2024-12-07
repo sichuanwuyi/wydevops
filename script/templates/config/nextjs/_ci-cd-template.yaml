@@ -11,7 +11,10 @@ globalParams:
   #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
   serviceCode: ${serviceName}
   #运行时Runtime的版本(nextjs的版本)
-  runtimeVersion: 15.0.0
+  runtimeVersion:
+
+  #是否使能离线构建，为true则会使用offline子目录下的Dockerfile文件。
+  enableOfflineBuild: false
 
   businessImage: ${serviceName}-business
   #CICD Java流程会自动从Pom.yml文件中读取版本信息覆盖businessVersion参数。
@@ -110,12 +113,17 @@ globalParams:
   devNamespace: develop
   #开发环境使用的路由的hosts参数。这个配置仅用于开发环境。
   devRouteHosts:
+  #参数不为空时即表示需要挂载PVC，参数值即为PVC资源名称。
+  #挂载路径默认为${serviceName}-workdir
+  persistentVolumeClaimName:
 
 #------以下配置为高级配置，在未充分理解的情况下不要轻易改动------#
 
 #项目编译阶段的配置参数
 #（Java项目可本地构建异构项目，直接忽略这个配置节）
 build:
+  #是否使能离线构建，为true则会使用offline子目录下的Dockerfile文件。
+  enableOfflineBuild: ${enableOfflineBuild}
   #目标架构linux/arm64
   linux-arm64:
     #项目编译节点的IP地址
@@ -263,6 +271,9 @@ chart:
         podAnnotations:
           app.kubernetes.io/service-name: \"${name}\"
           app.kubernetes.io/service-en-name: \"${nameEn}\"
+        #参数不为空时即表示需要挂载PVC，参数值即为PVC资源名称。
+        #挂载路径默认为${serviceName}-workdir
+        persistentVolumeClaimName: ${persistentVolumeClaimName}
         volumes:
           - name: ${serviceName}-workdir
             emptyDir: { }
@@ -342,7 +353,7 @@ chart:
               httpGet:
                 scheme: ${httpGetScheme}
                 port: ${mainPort}
-                path: ${gatewayPath}/health/liveness
+                path: /health/liveness
             readinessProbeEnable: ${readinessProbeEnable}
             readinessProbe:
               initialDelaySeconds: 15
@@ -353,7 +364,7 @@ chart:
               httpGet:
                 scheme: ${httpGetScheme}
                 port: ${mainPort}
-                path: ${gatewayPath}/health/readiness
+                path: /health/readiness
             #定义configmap名称（格式：{服务名称}-configmap）及其包含的文件列表
             #configMaps:
             #名称必须与volumes中的某个ConfigMap名相同
@@ -400,28 +411,65 @@ chart:
             configPath:
           - name: Ingress
             generatorName: default
-            enable: true
+            enable: false
             configPath: ingressRoute
           - name: ApisixRoute
             generatorName: default
             enable: false
             configPath: apisixRoute
 
-        #Ingress网关路由配置
+        #Ingress-nginx网关路由配置
         ingressRoute:
           type: Ingress
           version: networking.k8s.io/v1
           className: nginx
-#          tls:
-#            - hosts: [ ${ingressTlsHosts} ]
-#              secretName: ${ingressSecretName}
+          #annotations下属参数用于路由重写配置
+          #其中app-root与use-regex、rewrite-target不能同时配置。
+          annotations:
+            #下面app-root参数可以给所有请求的URI添加一个路径前缀。
+            #nginx.ingress.kubernetes.io/app-root: /app1
+            #下面的use-regex和rewrite-target配合可以删除请求的URI中的某个子路径。
+            nginx.ingress.kubernetes.io/use-regex: "true"
+            #$2表示rules[0].paths[0].path的值中第二个圆括号中的子路径。
+            nginx.ingress.kubernetes.io/rewrite-target: /$2
+#         tls:
+#           - hosts: [ ${ingressTlsHosts} ]
+#             secretName: ${ingressSecretName}
           rules:
             - host:
               paths:
-                - path: ${gatewayPath}
+                - path: ${gatewayPath}(/|$)(.*)
                   pathType: Prefix
                   serviceName: ${serviceName}-clusterip
                   servicePort: ${mainPort}
+
+        #ingress-apisix网关路由配置
+#        ingressRoute:
+#          name: ${serviceName}
+#          type: Ingress
+#          version: networking.k8s.io/v1
+#          className: apisix
+#          #annotations下属参数用于路由重写配置
+#          #其中app-root与use-regex、rewrite-target不能同时配置。
+#          annotations:
+#            #使能跨越访问功能
+#            k8s.apisix.apache.org/enable-cors: "true"
+#            #使能websocket功能
+#            k8s.apisix.apache.org/enable-websocket: "${websocket}"
+#            #下面的rewrite-target-regex和rewrite-target-regex-template配合可以删除请求的URI中的某个子路径。
+#            k8s.apisix.apache.org/rewrite-target-regex: "/${gatewayPath}/(.*)"
+#            #$1表示rewrite-target-regex的值中第一个圆括号中的子路径。
+#            k8s.apisix.apache.org/rewrite-target-regex-template: "/$1"
+#          #         tls:
+#          #           - hosts: [ ${ingressTlsHosts} ]
+#          #             secretName: ${ingressSecretName}
+#          rules:
+#            - host:
+#              paths:
+#                - path: ${gatewayPath}(/|$)(.*)
+#                  pathType: Prefix
+#                  serviceName: ${serviceName}-clusterip
+#                  servicePort: ${mainPort}
 
         #Apisix网关路由配置
         apisixRoute:
@@ -457,6 +505,10 @@ chart:
             match:
               - uri:
                   prefix: \"${gatewayPath}\"
+            #如果需要重写路由，则打开下面的rewrite配置项
+            rewrite:
+              #以下配置将删除路由路径中的${gatewayPath}部分。
+              uri: " "
             route:
               - destination:
                   port:

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 function _onBeforeProjectBuilding_ex() {
+  export gDefaultRetVal
   export gBuildPath
   export gMultipleModelProject
 
@@ -11,10 +12,26 @@ function _onBeforeProjectBuilding_ex() {
   gMultipleModelProject="false"
 }
 
-#执行java项目的编译
+#执行项目的编译
 function _buildProject_ex() {
-  info "跳过项目构建..."
-  #_buildSubModule
+  info "跳过项目编译过程(在docker build过程中编译项目)..."
+#  export gDefaultRetVal
+#
+#  local l_distDir
+#  local l_startRowRegex="^(.*):[ ]*NextConfig[ ]*=[ ]*\{[ ]*$"
+#
+#  #获取nextjs项目next.config.ts文件中distDir参数的值。
+#  getParamValueInJsonConfigFile "${gBuildPath}/next.config.ts" "${l_startRowRegex}" "distDir" ".next" "false"
+#  l_distDir="${gDefaultRetVal}"
+#
+#  info "删除已经存在的${l_distDir}目录"
+#  # shellcheck disable=SC2115
+#  rm -rf "${gBuildPath}/${l_distDir}" || true
+#  info "删除已经存在的node_modules目录"
+#  rm -rf "${gBuildPath}/node_modules" || true
+#
+#  info "开始执行项目构建..."
+#  _buildSubModule
 }
 
 #******************私有方法********************#
@@ -36,6 +53,9 @@ function _buildSubModule() {
       error "安装pnpm失败"
     fi
   fi
+
+  info "安装项目依赖库(pnpm i --frozen-lockfile)..."
+  pnpm i --frozen-lockfile
 
   info "开始构建项目(pnpm run build)..."
   pnpm run build 2>&1 | tee "./build.tmp"

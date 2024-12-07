@@ -88,6 +88,8 @@ fi
 info "二次解析命令选项和传入参数"
 parseOptions2 "${@}"
 
+invokeExtendPointFunc "onValidateGlobalParams" "全局参数有效性检查扩展点"
+
 info "执行CI/CD标准流程..."
 source "${_selfRootDir}/cicd-entry.sh"
 

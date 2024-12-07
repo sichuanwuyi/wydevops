@@ -123,6 +123,8 @@ function initialGlobalParamsForDockerStage_ex(){
   export gBuildPath
   export gLanguage
   export gProjectDockerTemplateDir
+  export gProjectTemplateDirName
+  export gProjectDockerTemplateDirName
   export gRuntimeVersion
 
   #docker阶段特有的全局变量
@@ -135,10 +137,15 @@ function initialGlobalParamsForDockerStage_ex(){
   export gThirdParties
   export gSaveBackImmediately
   export gEnableNoCacheOnDockerBuild
+  export gOfflineDockerFileDir
 
   local l_cicdYaml=$1
   local l_dockerFiles
   local l_dockerFile
+
+  local l_offlineDir
+  local l_runtimeVersion
+  local l_dockerFilePath
 
   local l_typeNames
   local l_typeName
@@ -232,24 +239,42 @@ function initialGlobalParamsForDockerStage_ex(){
         ;;
     esac
 
+    l_offlineDir=""
+    [[ "${gOfflineDockerFileDir}" ]] && l_offlineDir="${gOfflineDockerFileDir}/"
+
+    l_runtimeVersion=""
+    [[ "${gRuntimeVersion}" ]] && l_runtimeVersion="${gRuntimeVersion}/"
+
+    l_dockerFilePath="${gBuildScriptRootDir}/${gProjectTemplateDirName}/${gProjectDockerTemplateDirName}"
+
     if [[ "${gBuildType}" != "thirdParty" && "${gBuildType}" != "customize" ]];then
       gDockerfileTemplates=""
       # shellcheck disable=SC2206
       l_dockerFiles=(${l_dockerFiles})
       # shellcheck disable=SC2068
       for l_dockerFile in ${l_dockerFiles[@]};do
-        if [ -f "${gProjectDockerTemplateDir}/${gLanguage}/${gRuntimeVersion}/${l_dockerFile}" ];then
+        if [ -f "${gProjectDockerTemplateDir}/${l_runtimeVersion}${l_offlineDir}${l_dockerFile}" ];then
           #使用项目级配置的Dockerfile文件
-          gDockerfileTemplates="${gDockerfileTemplates} ${gProjectDockerTemplateDir}/${gLanguage}/${gRuntimeVersion}/${l_dockerFile}"
-        elif [ -f "${gBuildScriptRootDir}/templates/docker/${gLanguage}/${gRuntimeVersion}/${l_dockerFile}" ];then
+          gDockerfileTemplates="${gDockerfileTemplates} ${gProjectDockerTemplateDir}/${l_runtimeVersion}${l_offlineDir}${l_dockerFile}"
+        elif  [ -f "${gProjectDockerTemplateDir}/${l_offlineDir}${l_dockerFile}" ];then
+          #使用项目级配置的Dockerfile文件
+          gDockerfileTemplates="${gDockerfileTemplates} ${gProjectDockerTemplateDir}/${l_offlineDir}${l_dockerFile}"
+        elif  [ -f "${gProjectDockerTemplateDir}/${l_dockerFile}" ];then
+          #使用项目级配置的Dockerfile文件
+          gDockerfileTemplates="${gDockerfileTemplates} ${gProjectDockerTemplateDir}/${l_dockerFile}"
+
+        elif [ -f "${l_dockerFilePath}/${gLanguage}/${l_runtimeVersion}${l_offlineDir}${l_dockerFile}" ];then
           #使用语言级指定SDK版本的Dockerfile文件
-          gDockerfileTemplates="${gDockerfileTemplates} ${gBuildScriptRootDir}/templates/docker/${gLanguage}/${gRuntimeVersion}/${l_dockerFile}"
-       elif [ -f "${gBuildScriptRootDir}/templates/docker/${gLanguage}/${l_dockerFile}" ];then
-          #使用语言级通用Dockerfile文件
-          gDockerfileTemplates="${gDockerfileTemplates} ${gBuildScriptRootDir}/templates/docker/${gLanguage}/${l_dockerFile}"
-        elif [ -f "${gBuildScriptRootDir}/templates/docker/${l_dockerFile}" ];then
+          gDockerfileTemplates="${gDockerfileTemplates} ${l_dockerFilePath}/${gLanguage}/${l_runtimeVersion}${l_offlineDir}${l_dockerFile}"
+        elif [ -f "${l_dockerFilePath}/${gLanguage}/${l_offlineDir}${l_dockerFile}" ];then
+          #使用语言级指定Dockerfile文件
+          gDockerfileTemplates="${gDockerfileTemplates} ${l_dockerFilePath}/${gLanguage}/${l_offlineDir}${l_dockerFile}"
+        elif [ -f "${l_dockerFilePath}/${gLanguage}/${l_dockerFile}" ];then
+          #使用语言级指定Dockerfile文件
+          gDockerfileTemplates="${gDockerfileTemplates} ${l_dockerFilePath}/${gLanguage}/${l_dockerFile}"
+        elif [ -f "${l_dockerFilePath}/${l_dockerFile}" ];then
           #使用公共级Dockerfile文件
-          gDockerfileTemplates="${gDockerfileTemplates} ${gBuildScriptRootDir}/templates/docker/${l_dockerFile}"
+          gDockerfileTemplates="${gDockerfileTemplates} ${l_dockerFilePath}/${l_dockerFile}"
         else
           error "指定的模板文件不存在:${l_dockerFile}"
         fi
@@ -281,6 +306,7 @@ function onAfterInitialingGlobalParamsForDockerStage_ex() {
   export gTimeZone
   export gWorkDirInDocker
   export gAppDirInDocker
+  export gServiceName
 
   export gDockerFileTemplateParamMap
 
@@ -291,10 +317,13 @@ function onAfterInitialingGlobalParamsForDockerStage_ex() {
   gDockerFileTemplateParamMap["_TZ_"]="${gTimeZone}"
   gDockerFileTemplateParamMap["_WORK-DIR-IN-CONTAINER_"]="${gWorkDirInDocker}"
   gDockerFileTemplateParamMap["_APP-DIR-IN-CONTAINER_"]="${gAppDirInDocker}"
+  gDockerFileTemplateParamMap["_SERVICE-NAME_"]="${gServiceName}"
   #以下参数必须知道当前Dockerfile文件名称后才能确定。
   gDockerFileTemplateParamMap["_FROM-IMAGE0_"]=""
   #以下参数必须知道当前处理的架构类型后才能确定。
   gDockerFileTemplateParamMap["_PLATFORM_"]=""
+  gDockerFileTemplateParamMap["_OS-TYPE_"]=""
+  gDockerFileTemplateParamMap["_ARCH-TYPE_"]=""
   gDockerFileTemplateParamMap["_ARCH_"]=""
 
   info "处理docker.copyFiles参数"
@@ -351,7 +380,8 @@ function initialDockerFile_ex() {
         l_value="${l_value//\//\\\/}"
         sed -i "s/${l_placeholder}/${l_value}/g" "${l_targetDockerFile}"
       else
-        warn "未配置${l_targetDockerFile##*/}文件中占位符${l_placeholder}的值"
+        warn "未配置${l_targetDockerFile##*/}文件中占位符${l_placeholder}的值,默认设置为空串"
+        sed -i "s/${l_placeholder}//g" "${l_targetDockerFile}"
       fi
     fi
   done
@@ -591,6 +621,7 @@ function _createDockerImage() {
   export gCurrentStageResult
   export gTempFileDir
   export gDockerRepoType
+  export gEnableNoCacheOnDockerBuild
 
   local l_image=$1
   local l_archType=$2
@@ -598,8 +629,6 @@ function _createDockerImage() {
 
   local l_dockerBuildDir
   local l_errorLog
-
-  local l_noCacheParam
 
   l_dockerBuildDir="${l_dockerFile%/*}"
 
@@ -615,17 +644,20 @@ function _createDockerImage() {
   registerTempFile "${l_tmpFile}"
   info "构建docker镜像:${l_image} ..."
 
-  #设置noCacheParam参数值。
-  l_noCacheParam=""
-  [[ "${gEnableNoCacheOnDockerBuild}" == "true" ]] && l_noCacheParam=" --no-cache"
+  if [ "${gEnableNoCacheOnDockerBuild}" == "true" ];then
+    info "执行命令:docker build --no-cache --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir} ..."
+    docker build --no-cache --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
+  else
+    info "执行命令:docker build --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir} ..."
+    docker build --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
+  fi
 
-  docker build"${l_noCacheParam}" -t "${l_image}" -f "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
   # shellcheck disable=SC2002
-  l_errorLog=$(cat "${l_tmpFile}" | grep -oP "^(.*)naming to docker.io/(wydevops|library)/${l_image} (.*)done$")
+  l_errorLog=$(cat "${l_tmpFile}" | grep -oP "^(.*)naming to docker.io/(${l_image}|library/${l_image}) (.*)done$")
   unregisterTempFile "${l_tmpFile}"
 
   if [ ! "${l_errorLog}" ];then
-    error "docker镜像构建(docker build${l_noCacheParam} -t ${l_image} -f ${l_dockerFile} ${l_dockerBuildDir})失败:${l_errorLog}"
+    error "docker镜像构建失败:${l_errorLog}"
   fi
 
   #将生成的镜像推送到私有仓库（测试环境使用的仓库）中

@@ -1,19 +1,51 @@
 #!/usr/bin/env bash
 
-#执行项目的编译
-function _buildProject_ex() {
-  error "暂未实现，实现说明如下：
-调用buildProject扩展，各个语言可按自己的要求完成项目编译过程。
-对于Java语言可以直接在本地系统中构建异构镜像。（需要在docker.json配置文件中设置experimental=true)
-对于C++或Go这类需要在目标架构系统中才能完成构建的项目：
-首先，需要预先搭建好一个目标架构节点。
-其次，需要预先构建一个用于特定语言项目编译的镜像，并安装到目标架构节点中。
-最后，通过SSH连接到目标架构节点上，通过docker run命令运行这个项目编译镜像，
-至少需要向该镜像输入目标项目Git的地址和编译输出路径（外挂的）。
-在该镜像运行起来后会先使用Git拉取源码,再使用gcc或go build完成源码编译，最后将编译结果输出到指定的目录中"
+function _onBeforeProjectBuilding_ex() {
+  export gDefaultRetVal
+  export gBuildPath
+  export gMultipleModelProject
+
+  info "进入项目主模块目录：${gBuildPath}"
+  cd "${gBuildPath}" || true
+
+  info "强行设置gMultipleModelProject变量为false"
+  gMultipleModelProject="false"
 }
 
+function _buildProject_ex() {
+  export gDefaultRetVal
+  export gBuildPath
+  export gServiceName
 
+  local l_cicdYamlFile=$1
+
+  local l_archTypes
+  local l_osType
+  local l_archType
+  local l_errorLog
+
+  readParam "${l_cicdYamlFile}" "globalParams.enableOfflineBuild"
+  if [[ "${gDefaultRetVal}" == "null" || "${gDefaultRetVal}" == "false" ]];then
+    info "跳过项目编译过程(在docker build过程中编译项目)..."
+    return
+  fi
+
+  readParam "${l_cicdYamlFile}" "globalParams.archTypes"
+  # shellcheck disable=SC2206
+  l_archTypes=(${gDefaultRetVal//,/ })
+  # shellcheck disable=SC2068
+  for l_archType in ${l_archTypes[@]};do
+    l_osType="${l_archType%%/*}"
+    l_archType="${l_archType##*/}"
+    info "开始执行项目编译过程..."
+    l_errorLog=$(CGO_ENABLED=0 GOOS="${l_osType}" GOARCH="${l_archType}" go build -o "${gServiceName}-${l_osType}-${l_archType}.out" "${gBuildPath}")
+    if [ "${l_errorLog}" ];then
+      error "编译${l_osType}/${l_archType}类型的应用失败: ${l_errorLog}"
+    fi
+    info "成功编译${l_osType}/${l_archType}类型的应用"
+  done
+
+}
 
 
 

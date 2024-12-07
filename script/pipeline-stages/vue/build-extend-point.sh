@@ -1,16 +1,54 @@
 #!/usr/bin/env bash
 
+function _onBeforeProjectBuilding_ex() {
+  export gBuildPath
+  export gMultipleModelProject
+
+  info "进入项目主模块目录：${gBuildPath}"
+  cd "${gBuildPath}" || true
+
+  info "强行设置gMultipleModelProject变量为false"
+  gMultipleModelProject="false"
+}
+
 #执行项目的编译
 function _buildProject_ex() {
-  error "暂未实现，实现说明如下：
-调用buildProject扩展，各个语言可按自己的要求完成项目编译过程。
-对于Java语言可以直接在本地系统中构建异构镜像。（需要在docker.json配置文件中设置experimental=true)
-对于C++或Go这类需要在目标架构系统中才能完成构建的项目：
-首先，需要预先搭建好一个目标架构节点。
-其次，需要预先构建一个用于特定语言项目编译的镜像，并安装到目标架构节点中。
-最后，通过SSH连接到目标架构节点上，通过docker run命令运行这个项目编译镜像，
-至少需要向该镜像输入目标项目Git的地址和编译输出路径（外挂的）。
-在该镜像运行起来后会先使用Git拉取源码,再使用gcc或go build完成源码编译，最后将编译结果输出到指定的目录中"
+  info "开始编译项目..."
+  _buildSubModule
+}
+
+#******************私有方法********************#
+
+function _buildSubModule() {
+  export gServiceName
+  export gCurrentStageResult
+
+  local l_errorLog
+  local l_info
+
+  info "检查pnpm的版本..."
+  pnpm -v
+  if [ "$?" -ne 0 ];then
+    info "开始安装pnpm..."
+    npm install -g pnpm
+    pnpm -v
+    if [ "$?" -ne 0 ];then
+      error "安装pnpm失败"
+    fi
+  fi
+
+  info "开始构建项目(pnpm run build)..."
+  pnpm run build 2>&1 | tee "./build.tmp"
+  # shellcheck disable=SC2002
+  l_errorLog=$(cat "./build.tmp" | grep "Build failed")
+  rm -f "./build.tmp" || true
+
+  if [ "${l_errorLog}" ];then
+    error "项目${gServiceName}编译失败"
+  fi
+
+  l_info="项目${gServiceName}编译成功：pnpm_run_build"
+  gCurrentStageResult="INFO|${l_info}"
 }
 
 

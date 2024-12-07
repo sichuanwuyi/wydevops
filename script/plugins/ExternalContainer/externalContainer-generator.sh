@@ -27,9 +27,7 @@ function externalContainerGenerator_default() {
     l_externalChartImages=(${gDefaultRetVal//,/ })
     # shellcheck disable=SC2068
     for l_externalChartImage in ${l_externalChartImages[@]};do
-      if [[ "${l_externalChartImage}" =~ ^(\./) ]];then
-        l_externalChartImage="${gBuildPath}${l_externalChartImage:1}"
-      fi
+      [[ "${l_externalChartImage}" =~ ^(\./) ]] && l_externalChartImage="${gBuildPath}${l_externalChartImage:2}"
       info "正在处理引用的外部Chart镜像中的容器：${l_externalChartImage}"
       #将外部Chart镜像中values.yaml文件中的params.deployment0配置节复制到l_valuesYaml文件中。
       #并将外部chart镜像中deployment[0]的initialContainers和containers合并到当前chart的deployment0中。

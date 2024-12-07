@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @Version 1.0
  **/
 @RestController
-@RequestMapping("${url-prefix}")
+@RequestMapping("/java")
 public class HelloController {
 
     @Value("${myName}")

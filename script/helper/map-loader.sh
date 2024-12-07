@@ -67,7 +67,7 @@ function initialParamValueByMappingConfigFiles() {
   local l_exitFlag
 
   if [ "${l_value}" ];then
-    info "从${l_value}系列文件中读取需要的全局参数初始化值:"
+    info "从${l_value//\"/}系列文件中读取需要的全局参数初始化值:"
     if [[ "${l_key}" =~ ^(.*)\|(.*)$ ]];then
       l_exitFlag="${l_key#*|}"
     else
@@ -132,7 +132,7 @@ function _processProjectParamMapping() {
   ((l_paramCount = 0))
 
   for l_key in ${l_targetMapKey}; do
-    info "从${l_shortFileNames}文件中读取参数${l_key}..."
+    info "从${l_shortFileNames//\"/}文件中读取参数${l_key}..."
     #读取需要设置的l_cicdConfigFile文件中的参数名称列表。
     l_value=$(eval "echo -e \${${l_targetMapName}[\"${l_key}\"]}")
     if [ ! "${l_value}" ];then
@@ -324,9 +324,7 @@ function _readParamValueEx() {
     #去掉引号
     l_sourceFile=${l_sourceFile//\"/}
     #相对路径转绝对路径
-    if [[ "${l_sourceFile}" =~ ^(\./) ]];then
-      l_sourceFile="${l_buildPath}/${l_sourceFile#*/}"
-    fi
+    [[ "${l_sourceFile}" =~ ^(\./) ]] && l_sourceFile="${l_buildPath}/${l_sourceFile:2}"
 
     if [ ! -f "${l_sourceFile}" ];then
       warn "${l_sourceFile##*/}文件不存在，直接跳过"

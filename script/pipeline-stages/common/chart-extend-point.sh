@@ -337,6 +337,10 @@ function onModifyingValuesYaml_ex(){
     #最后删除l_valuesYaml文件中deployment${l_index}.resourcePlugins配置。
     deleteParam "${l_valuesYaml}" "${l_moduleName}.resourcePlugins"
 
+    #根据persistentVolumeClaimName参数的值，对volumes列表项进行修正。
+    invokeExtendPointFunc "onEnablePersistentVolumeClaim" "挂载PersistentVolumeClaim资源扩展" \
+      "${l_valuesYaml}" "${l_moduleName}" "persistentVolumeClaimName"
+
     ((l_index = l_index + 1))
   done
 
@@ -357,6 +361,34 @@ function onModifyingValuesYaml_ex(){
 function generateResourceByPlugin_ex() {
   #直接调用资源生成器。
   invokeResourceGenerator "${@}"
+}
+
+function onEnablePersistentVolumeClaim_ex() {
+  export gDefaultRetVal
+  export gServiceName
+
+  local l_valuesYaml=$1
+  local l_moduleName=$2
+  local l_paramName=$3
+
+  local l_pvcName
+  local l_index
+
+  readParam "${l_valuesYaml}" "${l_moduleName}.${l_paramName}"
+  if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
+    return
+  fi
+  l_pvcName="${gDefaultRetVal}"
+  #deleteParam "${l_valuesYaml}" "${l_moduleName}.${l_paramName}"
+
+  getListIndexByPropertyName "${l_valuesYaml}" "${l_moduleName}.volumes" "name" "${gServiceName}-workdir"
+  l_index="${gDefaultRetVal}"
+  if [ "${l_index}" -eq -1 ];then
+    return
+  fi
+
+  deleteParam "${l_valuesYaml}" "${l_moduleName}.volumes[${l_index}].emptyDir"
+  insertParam "${l_valuesYaml}" "${l_moduleName}.volumes[${l_index}].persistentVolumeClaim" "claimName: ${l_pvcName}"
 }
 
 function installHelm_ex() {
@@ -558,7 +590,7 @@ function combineParamsToValuesYaml_ex() {
     # shellcheck disable=SC2068
     for l_configFile in ${l_configMapFiles[@]};do
       info "正在检测${l_configFile##*/}文件中的变量..."
-      [[ "${l_configFile}" =~ ^(\.) ]] && l_configFile="${gBuildPath}/${l_configFile#*/}"
+      [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
       # shellcheck disable=SC2002
       l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)

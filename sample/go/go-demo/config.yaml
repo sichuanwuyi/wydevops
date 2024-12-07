@@ -1,0 +1,6 @@
+app:
+  env: local
+  port: 8888
+  appName: gin-app123
+  appUrl: http://localhost
+  api_url_prefix: /test

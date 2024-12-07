@@ -12,9 +12,16 @@ function initialGlobalParamsForPackageStage_ex() {
   export gChartRepoPassword
   export gChartRepoType
 
+  local l_suffix
+
   if [ "${gBuildType}" == "single" ];then
     #制作单镜像时，对ci-cd.yaml文件进行特殊处理。
-    invokeExtendPointFunc "handleBuildingSingleImageForPackage" "package阶段单镜像构建模式下对ci-cd.yaml文件中参数的特殊调整" "${gCiCdYamlFile}"
+    invokeExtendPointFunc "handleBuildingSingleImageForPackage" "package阶段single构建模式下对ci-cd.yaml文件中参数的特殊调整" "${gCiCdYamlFile}"
+  fi
+
+  if [[ "${gBuildType}" == "base" || "${gBuildType}" == "business" ]];then
+    #制作单镜像时，对ci-cd.yaml文件进行特殊处理。
+    invokeExtendPointFunc "handleBuildingOneImageForPackage" "package阶段${gBuildType}构建模式下对ci-cd.yaml文件中参数的特殊调整" "${gCiCdYamlFile}"
   fi
 
   if [[ "${gChartRepoInstanceName}" ]];then
@@ -237,11 +244,12 @@ function zipOfflinePackage_ex() {
 
 function handleBuildingSingleImageForPackage_ex() {
   export gDefaultRetVal
-  export gCiCdYamlFile
   export gBuildType
   export gDockerRepoType
   export gDockerRepoInstanceName
   export gDockerImageNameWithInstance
+
+  local l_ciCdYamlFile=$1
 
   local l_serviceName
   local l_businessVersion
@@ -253,16 +261,16 @@ function handleBuildingSingleImageForPackage_ex() {
   local l_paramValue
 
   #读取服务名称
-  readParam "${gCiCdYamlFile}" "globalParams.serviceName"
+  readParam "${l_ciCdYamlFile}" "globalParams.serviceName"
   l_serviceName="${gDefaultRetVal}"
 
   #读取服务的版本
-  readParam "${gCiCdYamlFile}" "globalParams.businessVersion"
+  readParam "${l_ciCdYamlFile}" "globalParams.businessVersion"
   l_businessVersion="${gDefaultRetVal}"
 
   ((l_i = 0))
   while true; do
-    readParam "${gCiCdYamlFile}" "package[${l_i}].images"
+    readParam "${l_ciCdYamlFile}" "package[${l_i}].images"
     if [ "${gDefaultRetVal}" == "null" ];then
       break
     fi
@@ -276,7 +284,7 @@ function handleBuildingSingleImageForPackage_ex() {
     for (( l_j=0; l_j < l_arrayLen; l_j++ )) do
       #如果是单镜像打包模式，则需要移除可能存在的业务镜像和基础镜像。
       if [ "${gBuildType}" == "single" ];then
-        l_flag=$(echo -e "${l_images[${l_j}]}" | grep -oP "^(.*)${l_serviceName//-/\-}(\-base|\-business)*:" )
+        l_flag=$(echo -e "${l_images[${l_j}]}" | grep -oP "^(.*)${l_serviceName//-/\-}(\-base|\-business):" )
         if [ "${l_flag}" ];then
           debug "从package[${l_i}].images参数值中移除${l_images[${l_j}]}镜像"
           #是基础镜像，则直接跳过。
@@ -302,10 +310,143 @@ function handleBuildingSingleImageForPackage_ex() {
     fi
 
     debug "更新globalParams.packageImages参数的值为：${l_paramValue}"
-    updateParam "${gCiCdYamlFile}" "globalParams.packageImages" "${l_paramValue}"
+    updateParam "${l_ciCdYamlFile}" "globalParams.packageImages" "${l_paramValue}"
 
     debug "更新package[${l_i}].images参数的值为：${l_paramValue}"
-    updateParam "${gCiCdYamlFile}" "package[${l_i}].images" "${l_paramValue}"
+    updateParam "${l_ciCdYamlFile}" "package[${l_i}].images" "${l_paramValue}"
+
+    ((l_i = l_i + 1))
+  done
+
+}
+
+function handleBuildingOneImageForPackage_ex() {
+  export gDefaultRetVal
+  export gBuildType
+
+  local l_ciCdYamlFile=$1
+
+  local l_serviceName
+  local l_businessVersion
+  local l_suffix
+
+  local l_i
+  local l_j
+  local l_images
+  local l_arrayLen
+  local l_flag
+  local l_paramValue
+
+  #读取服务名称
+  readParam "${l_ciCdYamlFile}" "globalParams.serviceName"
+  l_serviceName="${gDefaultRetVal}"
+
+  #读取服务的版本
+  readParam "${l_ciCdYamlFile}" "globalParams.businessVersion"
+  l_businessVersion="${gDefaultRetVal}"
+
+  l_suffix="base"
+  [[ "${gBuildType}" == "base" ]] && l_suffix="business"
+
+  ((l_i = 0))
+  while true; do
+    readParam "${l_ciCdYamlFile}" "package[${l_i}].images"
+    if [ "${gDefaultRetVal}" == "null" ];then
+      break
+    fi
+
+    #将gDefaultRetVal值转换成数组。
+    stringToArray "${gDefaultRetVal}" "l_images" $','
+    #获取数组的长度
+    l_arrayLen="${#l_images[@]}"
+
+    l_paramValue=""
+    for (( l_j=0; l_j < l_arrayLen; l_j++ )) do
+      #如果是单镜像打包模式，则需要移除可能存在的业务镜像和基础镜像。
+      l_flag=$(echo -e "${l_images[${l_j}]}" | grep -oP "^(.*)${l_serviceName//-/\-}\-${l_suffix}:" )
+      if [ "${l_flag}" ];then
+        debug "从package[${l_i}].images参数值中移除${l_images[${l_j}]}镜像"
+        #直接跳过。
+        continue
+      fi
+
+      #去重后追加到l_paramValue参数后面，英文逗号隔开。
+      l_flag=$(echo "${l_paramValue}" | grep -ioP "^(.*)${l_images[${l_j}]//-/\-}(.*)$" )
+      if [ ! "${l_flag}" ];then
+        l_paramValue="${l_paramValue},${l_images[${l_j}]}"
+      fi
+    done
+
+    debug "更新globalParams.packageImages参数的值为：${l_paramValue:1}"
+    updateParam "${l_ciCdYamlFile}" "globalParams.packageImages" "${l_paramValue:1}"
+
+    debug "更新package[${l_i}].images参数的值为：${l_paramValue:1}"
+    updateParam "${l_ciCdYamlFile}" "package[${l_i}].images" "${l_paramValue:1}"
+
+    ((l_i = l_i + 1))
+  done
+
+}
+
+function handleBuildingBusinessImageForPackage_ex() {
+  export gDefaultRetVal
+  export gBuildType
+
+  local l_ciCdYamlFile=$1
+
+  local l_serviceName
+  local l_businessVersion
+
+  local l_i
+  local l_j
+  local l_images
+  local l_arrayLen
+  local l_flag
+  local l_paramValue
+
+  #读取服务名称
+  readParam "${l_ciCdYamlFile}" "globalParams.serviceName"
+  l_serviceName="${gDefaultRetVal}"
+
+  #读取服务的版本
+  readParam "${l_ciCdYamlFile}" "globalParams.businessVersion"
+  l_businessVersion="${gDefaultRetVal}"
+
+  ((l_i = 0))
+  while true; do
+    readParam "${l_ciCdYamlFile}" "package[${l_i}].images"
+    if [ "${gDefaultRetVal}" == "null" ];then
+      break
+    fi
+
+    #将gDefaultRetVal值转换成数组。
+    stringToArray "${gDefaultRetVal}" "l_images" $','
+    #获取数组的长度
+    l_arrayLen="${#l_images[@]}"
+
+    l_paramValue=""
+    for (( l_j=0; l_j < l_arrayLen; l_j++ )) do
+      #如果是单镜像打包模式，则需要移除可能存在的业务镜像和基础镜像。
+      if [ "${gBuildType}" == "business" ];then
+        l_flag=$(echo -e "${l_images[${l_j}]}" | grep -oP "^(.*)${l_serviceName//-/\-}\-base:" )
+        if [ "${l_flag}" ];then
+          debug "从package[${l_i}].images参数值中移除${l_images[${l_j}]}镜像"
+          #是基础镜像，则直接跳过。
+          continue
+        fi
+      fi
+      #去重后追加到l_paramValue参数后面，英文逗号隔开。
+      l_flag=$(echo "${l_paramValue}" | grep -ioP "^(.*)${l_images[${l_j}]//-/\-}(.*)$" )
+      if [ ! "${l_flag}" ];then
+        l_paramValue="${l_paramValue},${l_images[${l_j}]}"
+      fi
+    done
+
+    debug "更新globalParams.packageImages参数的值为：${l_paramValue:1}"
+    updateParam "${l_ciCdYamlFile}" "globalParams.packageImages" "${l_paramValue:1}"
+
+    debug "更新package[${l_i}].images参数的值为：${l_paramValue:1}"
+    updateParam "${l_ciCdYamlFile}" "package[${l_i}].images" "${l_paramValue:1}"
 
     ((l_i = l_i + 1))
   done

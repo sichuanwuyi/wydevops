@@ -167,6 +167,7 @@ function _createDockerImageByDockerfile() {
   export gPipelineScriptsDir
   export gCiCdYamlFile
   export gArchTypes
+  export gServiceName
   export gDockerRepoName
   export gCurrentStageResult
 
@@ -195,6 +196,8 @@ function _createDockerImageByDockerfile() {
     for l_archType in ${l_allArchTypes[@]};do
       #设置DockerFile文件中_FROM-IMAGE_占位符的值。
       gDockerFileTemplateParamMap["_PLATFORM_"]="${l_archType}"
+      gDockerFileTemplateParamMap["_OS-TYPE_"]="${l_archType%%/*}"
+      gDockerFileTemplateParamMap["_ARCH-TYPE_"]="${l_archType##*/}"
       gDockerFileTemplateParamMap["_ARCH_"]="${l_archType//\//-}"
       #根据模板文件生成目标Dockerfile文件，并完成初始化(除架构参数外)
       invokeExtendPointFunc "initialDockerFile" "生成并初始化${l_dockerFileTemplate##*/}文件" "${gCiCdYamlFile}" "${l_dockerFileTemplate}"

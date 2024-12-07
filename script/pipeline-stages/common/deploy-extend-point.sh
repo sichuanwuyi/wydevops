@@ -93,7 +93,7 @@ function initialGlobalParamsForDeployStage_ex() {
     # shellcheck disable=SC2068
     for l_configFile in ${l_configMapFiles[@]};do
       info "正在检测${l_configFile##*/}文件中的变量..."
-      [[ "${l_configFile}" =~ ^(\.) ]] && l_configFile="${gBuildPath}/${l_configFile#*/}"
+      [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
       # shellcheck disable=SC2002
       l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
@@ -352,9 +352,7 @@ function onCheckAndInitialParamInConfigFile_ex(){
     # shellcheck disable=SC2068
     for l_configFile in ${l_configMapFiles[@]};do
       info "检测并处理${l_configFile##*/}文件中的变量 ..."
-      if [[ "${l_configFile}" =~ ^(\.) ]];then
-        l_configFile="${gBuildPath}/${l_configFile#*/}"
-      fi
+      [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
       #拷贝配置文件到临时目录中。
       cp -f "${l_configFile}" "${l_localBaseDir}/${l_configFile##*/}"
@@ -833,6 +831,8 @@ function _getDeployIndexByChartIndex(){
 
 function _createDeployItem(){
   export gDefaultRetVal
+  export gBuildPath
+  export gHelmBuildDirName
   export gBuildScriptRootDir
   export gLanguage
   export gCiCdTemplateFileName
@@ -866,9 +866,10 @@ function _createDeployItem(){
 
     #从模板文件中读取deploy[${l_targetIndex}].name未替换成实际参数前的标识。
     #因为wydevops开始进行全局参数合并的时机是在实际参数值替换动作之前。
-    l_templateFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/_${gCiCdTemplateFileName}"
+    l_templateFile="${gBuildPath}/${gHelmBuildDirName}/templates/config/${gLanguage}/_${gCiCdTemplateFileName}"
+    [[ ! -f "${l_templateFile}" ]] && l_templateFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/_${gCiCdTemplateFileName}"
     [[ ! -f "${l_templateFile}" ]] && l_templateFile="${gBuildScriptRootDir}/templates/config/_${gCiCdTemplateFileName}"
-    [[ ! -f "${l_templateFile}" ]] && error "wydevops脚本根目录中/templates/config/子目录下未找到_${gCiCdTemplateFileName}模板文件"
+    [[ ! -f "${l_templateFile}" ]] && error "未找到_${gCiCdTemplateFileName}模板文件"
     readParam "${l_templateFile}" "deploy[${l_deployIndex}].name"
     info "更新deploy[${l_targetIndex}]配置项的name属性为：${gDefaultRetVal}"
     updateParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].name" "${gDefaultRetVal}"

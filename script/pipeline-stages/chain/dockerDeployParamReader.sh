@@ -22,7 +22,7 @@ function readDockerDeployParam() {
       warn "${gCiCdYamlFile##*/}文件中deploy[${l_index}].docker.${l_configParamName}参数配置无效：未设置"
       l_shellFile=""
     else
-      [[ "${l_shellFile}" =~ ^(\.) ]] && l_shellFile="${gBuildPath}/${l_shellFile#*/}"
+      [[ "${l_shellFile}" =~ ^(\./) ]] && l_shellFile="${gBuildPath}/${l_shellFile:2}"
       if [[ ! -f "${l_shellFile}" ]];then
         warn "${gCiCdYamlFile##*/}文件中deploy[${l_index}].docker.${l_configParamName}参数配置无效：指定的文件不存在"
         l_shellFile=""

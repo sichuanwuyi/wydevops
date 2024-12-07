@@ -600,7 +600,7 @@ function __readOrWriteYamlFile() {
 
   if [ "${gEnableCache}" == "true" ];then
     _deletedParamPath="${_deletedParamPath}.${l_curParamPath}"
-    [[ "${_deletedParamPath}" =~ ^(\.) ]] && _deletedParamPath="${_deletedParamPath:1}"
+    [[ "${_deletedParamPath}" =~ ^(\./) ]] && _deletedParamPath="${_deletedParamPath:2}"
   fi
 
   if [ ! -f "${l_yamlFile}" ];then

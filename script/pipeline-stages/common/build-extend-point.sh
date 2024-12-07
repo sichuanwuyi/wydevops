@@ -4,6 +4,7 @@ function initialGlobalParamsForBuildStage_ex() {
   export gDefaultRetVal
   export gCiCdYamlFile
   export gLanguage
+  export gOfflineDockerFileDir
 
   local l_content
   local l_archTypes
@@ -17,7 +18,7 @@ function initialGlobalParamsForBuildStage_ex() {
     #初始化C++项目编译阶段需要的全局变量
     readParam "${gCiCdYamlFile}" "build"
     l_content="${gDefaultRetVal}"
-    l_archTypes=$(echo "${l_content}" | grep -oP "^[a-zA-Z_]+.*$")
+    l_archTypes=$(echo "${l_content}" | grep -oP "^[a-zA-Z_]+(\-)(amd64|arm64).*$")
     # shellcheck disable=SC2068
     for l_archType in ${l_archTypes[@]};do
       l_archType="${l_archType%%:*}"
@@ -31,6 +32,11 @@ function initialGlobalParamsForBuildStage_ex() {
     done
   fi
 
+  #读取离线构建目录
+  readParam "${gCiCdYamlFile}" "build.enableOfflineBuild"
+  if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" == "true" ]];then
+    gOfflineDockerFileDir="offline"
+  fi
 }
 
 function buildProject_ex() {

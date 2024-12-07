@@ -93,6 +93,9 @@ function replaceParamPlaceholder_ex() {
 
 function createCiCdTemplateFile_ex() {
   export gDefaultRetVal
+  export gBuildPath
+  export gHelmBuildDirName
+  export gCiCdTemplateFileName
   export gBuildScriptRootDir
   export gLanguage
 
@@ -101,11 +104,17 @@ function createCiCdTemplateFile_ex() {
   local l_templateFile
   local l_info
 
-  l_info="将/templates/config/${gLanguage}/_ci-cd-template.yaml模板文件内容复制到${l_cicdTemplateFile##*/}文件中"
-  l_templateFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/_ci-cd-template.yaml"
-  if [ ! -f "${l_templateFile}" ];then
-    l_info="将/templates/config/_ci-cd-template.yaml模板文件内容复制到${l_cicdTemplateFile##*/}文件中"
-    l_templateFile="${gBuildScriptRootDir}/templates/config/_ci-cd-template.yaml"
+  l_templateFile="${gBuildPath}/${gHelmBuildDirName}/templates/config/_${gCiCdTemplateFileName}"
+  if [ -f "${l_templateFile}" ];then
+    l_info="将项目级_ci-cd-template.yaml模板文件内容复制到${l_cicdTemplateFile##*/}文件中"
+  else
+    l_templateFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/_${gCiCdTemplateFileName}"
+    if [ -f "${l_templateFile}" ];then
+      l_info="将语言级_ci-cd-template.yaml模板文件内容复制到${l_cicdTemplateFile##*/}文件中"
+    else
+      l_templateFile="${gBuildScriptRootDir}/templates/config/_ci-cd-template.yaml"
+      l_info="将公共级_ci-cd-template.yaml模板文件内容复制到${l_cicdTemplateFile##*/}文件中"
+    fi
   fi
 
   if [ ! -f "${l_templateFile}" ];then
@@ -141,6 +150,7 @@ function createCiCdConfigFile_ex() {
 }
 
 function initialCiCdConfigFileByParamMappingFiles_ex() {
+  export gDefaultRetVal
   export gLanguage
   export gBuildPath
   export gHelmBuildDirName
@@ -192,6 +202,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
           declare -A _paramMappingMap
           #将参数映射文件中的配置读取到_paramMappingMap变量中。
           initialMapFromConfigFile "${l_mappingFile}" "_paramMappingMap"
+
           if [ "${#_paramMappingMap[@]}" -gt 0 ];then
             # shellcheck disable=SC2206
             l_array=(${gDefaultRetVal//|/ })
@@ -202,8 +213,9 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
               fi
             fi
 
+            gDefaultRetVal=""
             #如果${l_array[1]}里面包含了application.yml文件，则尝试读取当前环境的配置文件。
-            invokeExtendPointFunc "onLoadMatchedAdditionalConfigFiles" "获取当前部署环境对应的配置文件" "${l_array[1]}"
+            invokeExtendPointFunc "onLoadMatchedAdditionalConfigFiles" "获取当前部署环境对应的配置文件" "${l_array[1]//\"/}"
             if [ "${gDefaultRetVal}" ] && [ "${gDefaultRetVal}" != "null" ];then
               l_array[1]="${gDefaultRetVal},${l_array[1]//\"/}"
               l_configMapFiles="${gDefaultRetVal},${l_configMapFiles:1}"
@@ -225,6 +237,8 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   if [ "${l_loadOk}" == "false" ];then
     invokeExtendPointFunc "onFailToLoadingParamMappingFiles" "处理加载参数映射文件失败异常" "${l_array[1]}"
   fi
+
+  [[ "${l_configMapFiles}" =~ ^(,) ]] && l_configMapFiles="${l_configMapFiles:1}"
 
   #初始化l_cicdTargetFile文件中的configMapFiles参数。
   if [ "${l_configMapFiles}" ];then
@@ -363,7 +377,7 @@ function _initGlobalParams() {
   local l_ciCdConfigFile
   local l_tmpCiCdConfigFile
 
-  #项目本地_ci-cd-template.yaml.yaml文件。
+  #项目本地_ci-cd-template.yaml文件。
   l_templateFile="${gBuildPath}/_${gCiCdTemplateFileName}"
 
   #获取ci-cd.yaml文件的绝对路径。

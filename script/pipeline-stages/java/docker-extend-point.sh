@@ -32,7 +32,7 @@ function _onAfterInitialingGlobalParamsForDockerStage_ex() {
     l_applicationYamls=(${l_targetFiles//,/ })
     # shellcheck disable=SC2068
     for l_targetFile in ${l_applicationYamls[@]};do
-      [[ "${l_targetFile}" =~ ^(\.) ]] && l_targetFile="${gBuildPath}/${l_targetFile#*/}"
+      [[ "${l_targetFile}" =~ ^(\./) ]] && l_targetFile="${gBuildPath}/${l_targetFile:2}"
       cp -f "${l_targetFile}" "${gDockerBuildDir}/config" || true
     done
   fi
