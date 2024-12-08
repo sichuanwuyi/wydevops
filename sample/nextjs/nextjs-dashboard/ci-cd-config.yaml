@@ -16,7 +16,12 @@ globalParams:
   mainPort: 3003
 
   #应用设置的路由前缀参数。
+  #todo: 应等于next.config.ts配置文件中的basePath(必须配置)参数的值。
   gatewayPath: /test
+  #路由重写Uri参数, 设置为空串表示不启用路由重写功能。
+  #默认设置为仅包含一个空格的字符串，表示删除路由路径中前导的gatewayPath参数串。
+  #todo: 特别说明，nextjs项目不要启用路由重写，如果启用则会导致部分静态资源访问失败。
+  rewriteUri: ""
   #使用istio时Gateway资源绑定的Host名称，*表示任意Host。
   istioGatewayHost: www.axure.com
 

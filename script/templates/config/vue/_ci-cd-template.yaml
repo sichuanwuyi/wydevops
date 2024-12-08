@@ -25,7 +25,7 @@ globalParams:
   #Dockerfile文件中From语言中定义的基础镜像。
   #支持多个基础镜像，相互之间使用英文逗号隔开。
   #注意：注意多个基础镜像间的顺序应与在Dockerfile文件中出现的顺序保持一致。
-  baseFromImage: nginx:1.27.3
+  baseFromImage: node:23-alpine,nginx:1.27.3
   #需要拷贝到docker构建目录中的目录，多个目录间使用英文逗号隔开。
   copyDirsIntoDocker:
   #需要拷贝到docker构建目录中的文件，多个文件间使用英文逗号隔开。
@@ -62,6 +62,9 @@ globalParams:
 
   #应用设置的路由前缀参数。
   gatewayPath: /${serviceName}
+  #路由重写Uri参数, 设置为空串表示不启用路由重写功能。
+  #默认设置为仅包含一个空格的字符串，表示删除路由路径中前导的gatewayPath参数串。
+  rewriteUri: " "
   #使用istio时Gateway资源绑定的Host名称，*表示任意Host。
   istioGatewayHost: *
   #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
@@ -508,7 +511,7 @@ chart:
             #如果需要重写路由，则打开下面的rewrite配置项
             rewrite:
               #以下配置将删除路由路径中的${gatewayPath}部分。
-              uri: " "
+              uri: ${rewriteUri}
             route:
               - destination:
                   port:

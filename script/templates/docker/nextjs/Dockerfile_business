@@ -26,7 +26,7 @@ RUN corepack enable pnpm && pnpm run build
 RUN cd ./_DOT-NEXT_/_OUTPUT_ && rm -rf ./node_modules
 
 # Production image, copy all the files and run next
-FROM --platform=_PLATFORM_ busybox:latest
+FROM --platform=_PLATFORM_ scratch
 USER root
 
 RUN mkdir -p _APP-DIR-IN-CONTAINER_/public _APP-DIR-IN-CONTAINER_/_DOT-NEXT_

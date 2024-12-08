@@ -1,4 +1,4 @@
-FROM --platform=_PLATFORM_ _FROM-IMAGE0_
+FROM --platform=_PLATFORM_ scratch
 USER root
 
 RUN mkdir -p _APP-DIR-IN-CONTAINER__PUBLIC-PATH_

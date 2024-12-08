@@ -19,7 +19,7 @@ spec:
   http:
     - match:
         {{- toYaml .istioRoute.virtualService.match | nindent 8 }}
-      {{- if .istioRoute.virtualService.rewrite }}
+      {{- if .istioRoute.virtualService.rewrite.uri }}
       rewrite:
         {{- toYaml .istioRoute.virtualService.rewrite | nindent 8 }}
       {{- end }}

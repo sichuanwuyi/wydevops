@@ -1,4 +1,4 @@
-FROM --platform=_PLATFORM_ _FROM-IMAGE0_
+FROM --platform=_PLATFORM_ _FROM-IMAGE1_
 USER root
 
 EXPOSE _EXPOSE_

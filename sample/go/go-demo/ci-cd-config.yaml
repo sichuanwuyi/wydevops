@@ -8,7 +8,7 @@ globalParams:
   name: gin微服务示例
 
   #是否使能离线构建，为true则会使用offline子目录下的Dockerfile文件。
-  enableOfflineBuild: true
+  enableOfflineBuild: false
 
   #默认范围：30000-32767
   nodePorts: 31011
@@ -38,7 +38,7 @@ deploy:
         #K8S集群的ApiServer服务器的地址信息（必须配置）
         #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
         #多个集群的ApiServer服务器地址间使用英文逗号隔开。
-        apiServer: 172.29.214.110|22|wuyi|Wpl118124
+        apiServer: 172.20.171.73|22|wuyi|Wpl118124
         #发布服务的命名空间（必须配置）
         namespace: default
         #目标集群使用的docker仓库信息。
@@ -67,7 +67,7 @@ deploy:
         nodeIPs:
           #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
           #第一个节点必须是能免密直连其他节点。
-          - 172.29.214.110|22|wuyi|Wpl118124
+          - 172.20.171.73|22|wuyi|Wpl118124
       #测试集群环境
       #test:
       #  ...

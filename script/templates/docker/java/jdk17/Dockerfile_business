@@ -1,5 +1,5 @@
 
-FROM --platform=_PLATFORM_ busybox:latest
+FROM --platform=_PLATFORM_ scratch
 USER root
 
 RUN mkdir -p _APP-DIR-IN-CONTAINER_

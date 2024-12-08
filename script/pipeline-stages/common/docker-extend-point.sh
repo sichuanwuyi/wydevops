@@ -399,7 +399,9 @@ function onBeforeCreatingDockerImage_ex() {
   local l_archType=$2
   local l_dockerFile=$3
 
+  local l_content
   local l_image
+  local l_images
 
   #将配置的目录拷贝到Docker构建目录中。
   _copyDirsIntoDockerBuildDir "${l_ciCdYamlFile}" "${l_archType}"
@@ -408,13 +410,18 @@ function onBeforeCreatingDockerImage_ex() {
   #如果配置了私库信息，则尝试将拉取的镜像推送到私库中。
   #为封闭网络环境下开发做好工作。
   if [[ "${l_dockerFile}" =~ ^(.*)_business$ ]];then
-    l_image="${gTargetDockerFromImage_business}"
+    l_content="${gTargetDockerFromImage_business}"
   else
-    l_image="${gTargetDockerFromImage_base}"
+    l_content="${gTargetDockerFromImage_base}"
   fi
 
-  #提前拉取好fromImage镜像。
-  pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}"
+  # shellcheck disable=SC2206
+  l_images=(${l_content//,/ })
+  # shellcheck disable=SC2068
+  for l_image in ${l_images[@]};do
+    info "提前拉取镜像:${l_image}"
+    pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}"
+  done
 }
 
 function createDockerImage_ex() {
