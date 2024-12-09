@@ -8,7 +8,7 @@ globalParams:
   name: gin微服务示例
 
   #是否使能离线构建，为true则会使用offline子目录下的Dockerfile文件。
-  enableOfflineBuild: false
+  enableOfflineBuild: true
 
   #默认范围：30000-32767
   nodePorts: 31011

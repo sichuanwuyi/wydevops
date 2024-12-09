@@ -280,6 +280,8 @@ function initialGlobalParamsForDockerStage_ex(){
         fi
       done
 
+      warn "启用的Dockerfile文件包括:${gDockerfileTemplates}"
+
       #定义项目默认的编译输出目录，各语言项目可在语言级扩展中重新定义各个变量。
       gProjectBuildOutDir="${gBuildPath}/out"
 
