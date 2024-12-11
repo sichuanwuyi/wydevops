@@ -1,6 +1,6 @@
 {{- with \$.Values.${t_moduleName} }}
 ---
-apiVersion: {{ .istioRoute.virtualService.version }}
+apiVersion: ${t_apiVersion}
 kind: VirtualService
 metadata:
   namespace: {{ \$.Release.Namespace }}

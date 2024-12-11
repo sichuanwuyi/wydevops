@@ -1,6 +1,6 @@
 {{- with \$.Values.${t_moduleName} }}
 ---
-apiVersion: {{ .istioRoute.destinationRule.version }}
+apiVersion: ${t_apiVersion}
 kind: DestinationRule
 metadata:
   namespace: {{ \$.Release.Namespace }}

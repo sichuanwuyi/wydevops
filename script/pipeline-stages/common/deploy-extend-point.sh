@@ -284,9 +284,6 @@ function onBeforeDeployingServicePackageByK8sMode_ex() {
     invokeExtendPointFunc "installHelm" "在本地系统中安装helm工具" "${gDefaultRetVal%%/*}" "${gDefaultRetVal#*/}"
   fi
 
-  #如果开启了istio的Gateway或VirtualService资源生成器，
-  #则需要检查发布的命名空间是否打上了istio-injection=enabled标签。
-
 }
 
 function onCheckAndInitialParamInConfigFile_ex(){
