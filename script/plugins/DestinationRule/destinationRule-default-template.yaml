@@ -1,7 +1,7 @@
 {{- with \$.Values.${t_moduleName} }}
 ---
 apiVersion: {{ .istioRoute.destinationRule.version }}
-kind: VirtualService
+kind: DestinationRule
 metadata:
   namespace: {{ \$.Release.Namespace }}
   name: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
@@ -12,17 +12,13 @@ metadata:
     app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
     app.kubernetes.io/instance: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
 spec:
-  hosts:
-    {{- toYaml .istioRoute.virtualService.hosts | nindent 4 }}
-  gateways:
-    {{- toYaml .istioRoute.virtualService.gateways | nindent 4 }}
-  http:
-    - match:
-        {{- toYaml .istioRoute.virtualService.match | nindent 8 }}
-      {{- if .istioRoute.virtualService.rewrite.uri }}
-      rewrite:
-        {{- toYaml .istioRoute.virtualService.rewrite | nindent 8 }}
-      {{- end }}
-      route:
-        {{- toYaml .istioRoute.virtualService.route | nindent 8 }}
+  host: {{ .istioRoute.destinationRule.host }}
+  {{- if .istioRoute.destinationRule.trafficPolicy }}
+  trafficPolicy:
+    {{- toYaml .istioRoute.destinationRule.trafficPolicy | nindent 4 }}
+  {{- end }}
+  {{- if .istioRoute.destinationRule.subsets }}
+  subsets:
+    {{- toYaml .istioRoute.destinationRule.subsets | nindent 4 }}
+  {{- end }}
 {{- end }}

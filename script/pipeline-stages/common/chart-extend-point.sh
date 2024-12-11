@@ -1183,6 +1183,9 @@ function _updateServiceNameOfBackendInGatewayRoute() {
     ((l_loopIndex1 = l_loopIndex1 + 1))
   done
 
+  info "直接将istioRoute.destinationRule.host名称赋值为:${l_name}"
+  updateParam "${l_cicdYaml}" "${l_paramPath}.istioRoute.destinationRule.host" "${l_name}"
+
 }
 
 function _initialPackageYamlFile() {

@@ -115,7 +115,7 @@ function executePackageStage() {
     invokeExtendPointFunc "deployServicePackage" "服务安装包部署扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
       "${l_deployType}" "${l_uninstallMode}" "${l_images}" "${l_remoteDir}" "${l_localBaseDir}" "${l_shellOrYamlFile}" "${l_remoteInstallProxyShell}"
     #服务安装包部署后扩展
-    invokeExtendPointFunc "onAfterCreatingOfflinePackage" "服务安装包部署后扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
+    invokeExtendPointFunc "onAfterDeployingServicePackage" "服务安装包部署后扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
       "${l_images}" "${l_remoteDir}" "${l_localBaseDir}"
     #向外部管理平台发送通知
     invokeExtendPointFunc "sendNotify" "向外部接口发送${gServiceName}服务安装包部署结果通知" "${gCurrentStageResult}"

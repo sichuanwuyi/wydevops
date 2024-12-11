@@ -64,6 +64,8 @@ globalParams:
   istioGatewayHost: *
   #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
   istioVirtualServiceHost: *
+  #启用指定的DestinationRule资源名称。
+  istioSubset: ${serviceName}-subset
   #使用apisixRoute时，是否为当前服务启用网关的websocket功能
   websocket: false
   #使用ingress-nginx时，启用HTTPS协议的域名列表：
@@ -398,6 +400,10 @@ chart:
             generatorName: default
             enable: true
             configPath: istioRoute
+          - name: DestinationRule
+            generatorName: default
+            enable: false
+            configPath: istioRoute
           - name: ServiceAccount
             generatorName: default
             enable: true
@@ -511,6 +517,15 @@ chart:
                   port:
                     number: ${mainPort}
                   host: ${serviceName}-clusterip
+              #以下为启用DestinationRule资源时的配置。
+              #- destination:
+              #    host: ${serviceName}-clusterip
+              #    #istioSubset的值需要指向目标DestinationRule资源中的subsets的某一项的名称。
+              #    subset: ${istioSubset}
+          destinationRule:
+            host: ${serviceName}-clusterip
+            trafficPolicy:
+            subsets:
 
     #需要写入values.yaml文件的自定义配置信息。
     params:
