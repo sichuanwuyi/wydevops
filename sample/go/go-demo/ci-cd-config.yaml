@@ -44,30 +44,9 @@ deploy:
         #目标集群使用的docker仓库信息。
         #格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},
         #{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)}
-        dockerRepo:
+        dockerRepo: nexus,wydevops,192.168.31.218:8001,admin,Wpl118124,8081
         #部署时指定的网关路由hosts/host参数的值(可不配置),目前只支持设置一个域名
         routeHosts:
-      #测试集群环境
-      #test:
-      #  ...
-    docker:
-      #发布模式：docker或docker-compose
-      mode: docker
-      #指定用于生成docker-run.sh文件的生成器脚本，或者直接是docker run命令字符串。
-      dockerRunShellGenerator:
-      #指定用于生成docker-compose.yaml的生成器脚本，或者直接是docker-compose.yaml文件。
-      dockerComposeYamlGenerator:
-      #开发集群环境
-      dev:
-        #设置是否启用代理模式。
-        #如果设置enableProxy=ture,则仅向同架构的第一个节点部署服务，由该节点完成向其他节点的部署服务的任务。
-        #如果设置enableProxy=false,则会循环向给定的服务器部署服务。
-        enableProxy: false
-        #docker部署方式时，需要部署的节点信息列表。
-        nodeIPs:
-          #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
-          #第一个节点必须是能免密直连其他节点。
-          - 172.20.171.73|22|wuyi|Wpl118124
       #测试集群环境
       #test:
       #  ...
