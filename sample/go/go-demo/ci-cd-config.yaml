@@ -8,10 +8,10 @@ globalParams:
   name: gin微服务示例
 
   #是否使能离线构建，为true则会使用offline子目录下的Dockerfile文件。
-  enableOfflineBuild: true
+  enableOfflineBuild: false
 
   #默认范围：30000-32767
-  nodePorts: 31011
+  nodePorts:
 
   businessImage: ${serviceName}-business
   #CICD Java流程会自动从Pom.yml文件中读取版本信息覆盖businessVersion参数。

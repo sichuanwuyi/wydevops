@@ -1,7 +1,7 @@
 {{- range \$.Values.${t_moduleName}.apisixRoute.routes }}
 
 ---
-apiVersion: apisix.apache.org/${t_gatewayVersion}
+apiVersion: ${t_gatewayVersion}
 kind: ApisixRoute
 metadata:
   namespace: {{ \$.Release.Namespace }}

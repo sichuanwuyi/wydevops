@@ -10,6 +10,8 @@ globalParams:
   nameEn: ${serviceName}
   #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
   serviceCode: ${serviceName}
+  #运行时Runtime的版本(nextjs的版本)
+  runtimeVersion:
 
   #是否使能离线构建，为true则会使用offline子目录下的Dockerfile文件。
   enableOfflineBuild: false
@@ -60,6 +62,9 @@ globalParams:
 
   #应用设置的路由前缀参数。
   gatewayPath: /${serviceName}
+  #路由重写Uri参数, 设置为空串表示不启用路由重写功能。
+  #默认设置为仅包含一个空格的字符串，表示删除路由路径中前导的gatewayPath参数串。
+  rewriteUri: " "
   #使用istio时Gateway资源绑定的Host名称，*表示任意Host。
   istioGatewayHost: *
   #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
@@ -72,6 +77,10 @@ globalParams:
   ingressTlsHosts:
   #使用ingress-nginx时，启用HTTPS时需要的secret名称。
   ingressSecretName:
+
+  ingressApiVersion: networking.k8s.io/v1
+  apisixApiVersion: apisix.apache.org/v2
+  istioApiVersion: networking.istio.io/v1beta1
 
   #是否启用K8S服务存活探针
   livenessProbeEnable: true
@@ -424,7 +433,7 @@ chart:
         #Ingress-nginx网关路由配置
         ingressRoute:
           type: Ingress
-          version: networking.k8s.io/v1
+          apiVersion: ${ingressApiVersion}
           className: nginx
           #annotations下属参数用于路由重写配置
           #其中app-root与use-regex、rewrite-target不能同时配置。
@@ -450,7 +459,7 @@ chart:
 #        ingressRoute:
 #          name: ${serviceName}
 #          type: Ingress
-#          version: networking.k8s.io/v1
+#          apiVersion: ${ingressApiVersion}
 #          className: apisix
 #          #annotations下属参数用于路由重写配置
 #          #其中app-root与use-regex、rewrite-target不能同时配置。
@@ -477,7 +486,7 @@ chart:
         #Apisix网关路由配置
         apisixRoute:
           type: ApisixRoute
-          version: v2
+          apiVersion: ${apisixApiVersion}
           routes:
             - name: ${serviceName}
               #是否使能Websocket功能
@@ -494,7 +503,7 @@ chart:
                   servicePort: ${mainPort}
 
         istioRoute:
-          apiVersion: networking.istio.io/v1beta1
+          apiVersion: ${istioApiVersion}
           gateway:
             #这个端口号是由istio-ingressgateway服务决定。
             portNumber: 80
@@ -511,7 +520,7 @@ chart:
             #如果需要重写路由，则打开下面的rewrite配置项
             rewrite:
               #以下配置将删除路由路径中的${gatewayPath}部分。
-              uri: " "
+              uri: ${rewriteUri}
             route:
               - destination:
                   port:

@@ -78,6 +78,10 @@ globalParams:
   #使用ingress-nginx时，启用HTTPS时需要的secret名称。
   ingressSecretName:
 
+  ingressApiVersion: networking.k8s.io/v1
+  apisixApiVersion: apisix.apache.org/v2
+  istioApiVersion: networking.istio.io/v1beta1
+
   #是否启用K8S服务存活探针
   livenessProbeEnable: false
   #是否启用K8S服务就绪探针
@@ -430,7 +434,7 @@ chart:
         #Ingress-nginx网关路由配置
         ingressRoute:
           type: Ingress
-          version: networking.k8s.io/v1
+          apiVersion: ${ingressApiVersion}
           className: nginx
           #annotations下属参数用于路由重写配置
           #其中app-root与use-regex、rewrite-target不能同时配置。
@@ -456,7 +460,7 @@ chart:
 #        ingressRoute:
 #          name: ${serviceName}
 #          type: Ingress
-#          version: networking.k8s.io/v1
+#          apiVersion: ${ingressApiVersion}
 #          className: apisix
 #          #annotations下属参数用于路由重写配置
 #          #其中app-root与use-regex、rewrite-target不能同时配置。
@@ -483,7 +487,7 @@ chart:
         #Apisix网关路由配置
         apisixRoute:
           type: ApisixRoute
-          version: v2
+          version: ${apisixApiVersion}
           routes:
             - name: ${serviceName}
               #是否使能Websocket功能
@@ -500,7 +504,7 @@ chart:
                   servicePort: ${mainPort}
 
         istioRoute:
-          apiVersion: networking.istio.io/v1beta1
+          apiVersion: ${istioApiVersion}
           gateway:
             #这个端口号是由istio-ingressgateway服务决定。
             portNumber: 80

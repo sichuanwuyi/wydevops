@@ -37,7 +37,7 @@ function ingressGenerator_default() {
     return
   fi
 
-  readParam "${l_valuesYaml}" "${t_moduleName}.${l_configPath}.version"
+  readParam "${l_valuesYaml}" "${t_moduleName}.${l_configPath}.apiVersion"
   #todo: t_gatewayVersion变量是模板需要的参数
   t_gatewayVersion="${gDefaultRetVal}"
 
