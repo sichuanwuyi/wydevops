@@ -240,7 +240,8 @@ chart:
     customizedHelmDir:
     #Chart.yaml文件中的description内容。
     description: ${description}
-    #设置引用的外部服务的chart镜像。可以设置多个，相互间使用英文逗号分隔。
+    #设置引用的外部服务的chart镜像(*.tgz)。可以设置多个，相互间使用英文逗号分隔。
+    #如果配置值带有路径则直接使用，否则会从本地系统或配置的chart镜像仓库获取目标镜像。
     #这个参数实现了一个Chart镜像包含多个服务的发布方式。
     #默认情况下应设置为空。
     refExternalCharts:
