@@ -193,20 +193,21 @@ function copyDockerImage_ex() {
 
       l_tmpImage="${l_image//\//_}"
       l_savedFile="${gHelmBuildOutDir}/${l_archType//\//-}/${l_tmpImage//:/-}-${l_archType//\//-}.tar"
-      l_exportedFile="${l_savedFile}"
-      if [ ! -f "${l_exportedFile}" ];then
+      if [ ! -f "${l_savedFile}" ];then
         l_exportedFile="${gImageCacheDir}/${l_tmpImage//:/-}-${l_archType//\//-}.tar"
         if [ ! -f  "${l_exportedFile}" ];then
-          #拉取镜像，并导出到本地镜像缓存目录gImageCacheDir中。
-          pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}" "${l_savedFile}"
-          #删除拉取得镜像。
+          info "拉取${l_image}镜像，并导出到目录${l_savedFile%/*}中"
+          pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}" "${l_savedFile%/*}"
+          info "删除拉取得镜像"
           docker rmi -f "${l_image}"
+        else
+          l_savedFile="${l_exportedFile}"
         fi
       fi
 
-      if [ -f "${l_exportedFile}" ];then
+      if [ -f "${l_savedFile}" ];then
         info "成功获取离线安装包中Docker镜像导出文件：${l_tmpImage//:/-}-${l_archType//\//-}.tar"
-        cp -f "${l_exportedFile}" "${l_targetDir}/"
+        cp -f "${l_savedFile}" "${l_targetDir}/"
       else
         error "获取离线安装包中Docker镜像导出文件失败：${l_tmpImage//:/-}-${l_archType//\//-}.tar"
       fi
@@ -291,6 +292,7 @@ function handleBuildingSingleImageForPackage_ex() {
           continue
         fi
       fi
+
       #去重后追加到l_paramValue参数后面，英文逗号隔开。
       l_flag=$(echo "${l_paramValue}" | grep -ioP "^(.*)${l_images[${l_j}]//-/\-}(.*)$" )
       if [ ! "${l_flag}" ];then
@@ -304,7 +306,8 @@ function handleBuildingSingleImageForPackage_ex() {
 
     debug "添加单镜像名:${l_serviceName}:${l_businessVersion}"
     if [ "${l_paramValue}" ];then
-      l_paramValue="${l_serviceName}:${l_businessVersion},${l_paramValue:1}"
+      l_flag=$(echo "${l_paramValue}" | grep -oP "^(.*)${l_serviceName}:${l_businessVersion}")
+      [[ ! "${l_flag}" ]] && l_paramValue="${l_serviceName}:${l_businessVersion},${l_paramValue:1}"
     else
       l_paramValue="${l_serviceName}:${l_businessVersion}"
     fi

@@ -24,6 +24,17 @@ globalParams:
   #使用istio时Gateway资源绑定的Host名称，*表示任意Host。
   istioGatewayHost: www.axure.com
 
+#chart过程需要完成helm打包的chart镜像配置项列表。
+#每一项对应一个chart镜像打包配置；即同时可支持多个chart镜像的打包。
+#绝大多数项目只会存在一个chart镜像打包配置项。
+chart:
+  #列表项的唯一名称
+  - name: ${chartName}
+    #设置引用的外部服务的chart镜像。可以设置多个，相互间使用英文逗号分隔。
+    #这个参数实现了一个Chart镜像包含多个服务的发布方式。
+    #默认情况下应设置为空。
+    refExternalCharts: nextjs-dashboard-1.0.0.tgz
+
 deploy:
   #列表项的唯一名称
   - name: ${chartName}
@@ -38,7 +49,7 @@ deploy:
         #K8S集群的ApiServer服务器的地址信息（必须配置）
         #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
         #多个集群的ApiServer服务器地址间使用英文逗号隔开。
-        apiServer: 172.20.171.73|22|wuyi|Wpl118124
+        apiServer: 172.22.118.131|22|wuyi|Wpl118124
         #发布服务的命名空间（必须配置）
         namespace: default
         #目标集群使用的docker仓库信息。

@@ -43,7 +43,7 @@ function pullImage(){
   local l_repoName1="${l_repoName}"
 
   #从本地、本地镜像缓存目录或私库(如果设置了私库)中获取目标镜像。
-  _pullImageFromPrivateRepository "${l_image}" "${l_archType}" "${l_repoName}" "${l_imageCachedDir}"
+  _pullImageFromPrivateRepository "${l_image}" "${l_archType}" "${l_repoName}" "${l_imageCachedDir}" "${l_savedFile}"
   if [ "${gDefaultRetVal}" == "true" ];then
     gDefaultRetVal="${l_image}"
   else
@@ -338,8 +338,10 @@ function _cacheImageToDir() {
   l_fileName="${l_image//\//_}-${l_archType//\//-}.tar"
   l_fileName="${l_fileName//:/-}"
 
-  #先删除已经存在的同名文件。
-  rm -f "${l_cacheDir}/${l_fileName}" || true
+  if [ -f "${l_cacheDir}/${l_fileName}" ];then
+    info "先删除已经存在的同名文件:${l_cacheDir}/${l_fileName}"
+    rm -f "${l_cacheDir}/${l_fileName}" || true
+  fi
 
   l_curDir=$(pwd)
   # shellcheck disable=SC2164

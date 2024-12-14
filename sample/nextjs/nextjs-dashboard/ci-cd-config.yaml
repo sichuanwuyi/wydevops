@@ -30,14 +30,14 @@ deploy:
   - name: ${chartName}
     params:
     #是否处于k8s服务删除模式，本参数仅当deployType为k8s时有效。
-    uninstall: false
+    uninstall: true
     k8s:
       #开发集群环境
       dev:
         #K8S集群的ApiServer服务器的地址信息（必须配置）
         #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
         #多个集群的ApiServer服务器地址间使用英文逗号隔开。
-        apiServer: 172.29.214.110|22|wuyi|Wpl118124
+        apiServer: 172.22.118.131|22|wuyi|Wpl118124
         #发布服务的命名空间（必须配置）
         namespace: default
         #目标集群使用的docker仓库信息。

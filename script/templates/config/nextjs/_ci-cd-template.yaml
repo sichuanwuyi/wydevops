@@ -80,7 +80,7 @@ globalParams:
 
   ingressApiVersion: networking.k8s.io/v1
   apisixApiVersion: apisix.apache.org/v2
-  istioApiVersion: networking.istio.io/v1
+  istioApiVersion: networking.istio.io/v1beta1
 
   #是否启用K8S服务存活探针
   livenessProbeEnable: false
@@ -101,7 +101,7 @@ globalParams:
   packageImages: ${baseImage}:${baseVersion},${businessImage}:${businessVersion}
 
   #对本服务的一个描述说明文本，会写入Chart镜像。
-  description: "Java服务: ${serviceName}"
+  description: "nextjs服务: ${serviceName}"
 
   #chart镜像的名称, 默认与服务的名称相同
   chartName: ${serviceName}
