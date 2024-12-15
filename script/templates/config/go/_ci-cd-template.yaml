@@ -392,7 +392,7 @@ chart:
             configPath:
           - name: Secret
             generatorName: default
-            enable: true
+            enable: false
             configPath:
           - name: Deployment
             generatorName: default

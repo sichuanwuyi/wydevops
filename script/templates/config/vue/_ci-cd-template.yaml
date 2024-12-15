@@ -391,6 +391,10 @@ chart:
             #nextjs项目不需要configmap
             enable: false
             configPath:
+          - name: Secret
+            generatorName: default
+            enable: false
+            configPath:
           - name: Deployment
             generatorName: default
             enable: true
