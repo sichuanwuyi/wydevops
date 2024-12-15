@@ -35,7 +35,11 @@ spec:
       {{- end }}
       {{- if .imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml .imagePullSecrets | nindent 8 }}
+        {{- range .imagePullSecrets }}
+        {{- if .name }}
+        - name: {{ .name }}
+        {{- end }}
+        {{- end }}
       {{- end }}
       {{- if \$.Values.${t_moduleName}.serviceAccount.create }}
       serviceAccountName: {{ default \"${t_deploymentName}\" \$.Values.${t_moduleName}.serviceAccount.name }}

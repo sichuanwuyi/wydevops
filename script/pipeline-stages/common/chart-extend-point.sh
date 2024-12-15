@@ -294,7 +294,7 @@ function onModifyingValuesYaml_ex(){
     #先处理引用的外部容器，这会改变l_valuesYaml文件中deployment${l_index}项中的内容。
     #直接调用资源生成器。
     invokeResourceGenerator "ExternalContainer" "default" "${l_valuesYaml}" "${l_index}" \
-      "${l_moduleName}.refExternalContainers"
+      "${l_moduleName}.refExternalContainers" "${l_packageYaml}"
 
     invokeExtendPointFunc "onAfterGeneratingExternalContainer" "处理引入外部Chart镜像中容器后扩展" "ExternalContainer" "default" \
       "${l_valuesYaml}" "${l_index}" "${l_moduleName}.refExternalContainers"
@@ -329,7 +329,7 @@ function onModifyingValuesYaml_ex(){
 
       #调用扩展点方法，为三级管理层人员提供干预机会。
       invokeExtendPointFunc "generateResourceByPlugin" "通过插件生成${l_kind}类型的资源配置文件" "${l_kind}" \
-        "${l_generatorName}" "${l_valuesYaml}" "${l_index}" "${l_configPath}"
+        "${l_generatorName}" "${l_valuesYaml}" "${l_index}" "${l_configPath}" "${l_packageYaml}"
 
       ((l_pluginIndex = l_pluginIndex + 1))
     done
@@ -349,7 +349,7 @@ function onModifyingValuesYaml_ex(){
 
   #最后处理引用的外部服务，这会为l_valuesYaml文件中增加deployment${l_index}配置项。
   #直接调用资源生成器。
-  invokeResourceGenerator "ExternalChart" "default" "${l_valuesYaml}" "${l_index}" "refExternalCharts"
+  invokeResourceGenerator "ExternalChart" "default" "${l_valuesYaml}" "${l_index}" "refExternalCharts" "${l_packageYaml}"
 
   invokeExtendPointFunc "onAfterGeneratingExternalChart" "处理引入的外部Chart镜像后扩展" "ExternalChart" "default" \
     "${l_valuesYaml}" "${l_index}" "refExternalCharts"

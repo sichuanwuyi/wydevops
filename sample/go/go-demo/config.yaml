@@ -1,6 +1,10 @@
 app:
   env: local
+  #wydevops会读取port参数。
   port: 8888
   appName: gin-app123
   appUrl: http://localhost
+  #wydevops会读取api_url_prefix参数。
   api_url_prefix: /test
+  #wydevops会读取version参数。
+  version: 1.0.0

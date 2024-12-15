@@ -10,6 +10,7 @@ function invokeResourceGenerator() {
   local l_valuesYaml=$3
   local l_index=$4
   local l_configPath=$5
+  local l_packageYaml=$6
 
   local l_registerContent
   local l_registerItems
@@ -129,6 +130,7 @@ function commonGenerator_default() {
   local l_valuesYaml=$5
   local l_deploymentIndex=$6
   local l_configPath=$7
+  local l_packageYaml=$8
 
   local l_templateFile
   local l_targetFile

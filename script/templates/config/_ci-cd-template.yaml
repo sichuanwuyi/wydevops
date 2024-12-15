@@ -82,6 +82,9 @@ globalParams:
   apisixApiVersion: apisix.apache.org/v2
   istioApiVersion: networking.istio.io/v1beta1
 
+  #定义K8S集群内部拉取docker镜像时使用的secret资源的名称，默认设置为空
+  imagePullSecret:
+
   #是否启用K8S服务存活探针
   livenessProbeEnable: _LIVENESS-PROBE_
   #是否启用K8S服务就绪探针
@@ -258,7 +261,8 @@ chart:
         kind: Deployment
         replicaCount: 1
         priorityClassName: ${priorityClassName}
-        imagePullSecrets: []
+        imagePullSecrets:
+          - name: ${imagePullSecret}
         serviceAccount:
           create: true
           annotations: {}

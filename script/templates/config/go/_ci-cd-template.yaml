@@ -18,9 +18,9 @@ globalParams:
 
   businessImage: ${serviceName}-business
   #CICD Java流程会自动从Pom.yml文件中读取版本信息覆盖businessVersion参数。
-  businessVersion: _BUSINESS-VERSION_
+  businessVersion: 1.0.0
   baseImage: ${serviceName}-base
-  baseVersion: _BASE-VERSION_
+  baseVersion: ${businessVersion}
 
   #Dockerfile文件中From语言中定义的基础镜像。
   #支持多个基础镜像，相互之间使用英文逗号隔开。
@@ -81,6 +81,9 @@ globalParams:
   ingressApiVersion: networking.k8s.io/v1
   apisixApiVersion: apisix.apache.org/v2
   istioApiVersion: networking.istio.io/v1beta1
+
+  #定义K8S集群内部拉取docker镜像时使用的secret资源的名称，默认设置为空
+  imagePullSecret:
 
   #是否启用K8S服务存活探针
   livenessProbeEnable: true
@@ -261,7 +264,8 @@ chart:
         kind: Deployment
         replicaCount: 1
         priorityClassName: ${priorityClassName}
-        imagePullSecrets: []
+        imagePullSecrets:
+          - name: ${imagePullSecret}
         serviceAccount:
           create: true
           annotations: {}
@@ -383,6 +387,10 @@ chart:
 
         resourcePlugins:
           - name: ConfigMap
+            generatorName: default
+            enable: true
+            configPath:
+          - name: Secret
             generatorName: default
             enable: true
             configPath:
