@@ -2,7 +2,8 @@
 #不同语言项目使用这个统一的全功能配置文件。
 #不同语言项目可能存在不同的参数默认值，请在对应的语言子目录下的_ci-cd-config.yaml文件中配置。
 globalParams:
-  #CICD Java流程会自动从Pom.yml文件中读取服务名称信息覆盖serviceName参数。
+  #对于后端项目，wydevops会自动从yaml类型的配置文件中读取版本信息覆盖serviceName参数。
+  #对于Web前端项目，需要手动配置serviceName参数的值。
   serviceName: _SERVICE-NAME_
   #服务中文名称
   name: _NAME_
@@ -17,7 +18,8 @@ globalParams:
   enableOfflineBuild: false
 
   businessImage: ${serviceName}-business
-  #CICD Java流程会自动从Pom.yml文件中读取版本信息覆盖businessVersion参数。
+  #对于后端项目，wydevops会自动从yaml类型的配置文件中读取版本信息覆盖serviceName参数。
+  #对于Web前端项目，需要手动配置serviceName参数的值。
   businessVersion: _BUSINESS-VERSION_
   baseImage: ${serviceName}-base
   baseVersion: _BASE-VERSION_
@@ -131,7 +133,7 @@ globalParams:
 #------以下配置为高级配置，在未充分理解的情况下不要轻易改动------#
 
 #项目编译阶段的配置参数
-#（Java项目可本地构建异构项目，直接忽略这个配置节）
+#（项目如可本地构建异构项目（如Java、Go等），直接忽略这个配置节）
 build:
   #是否使能离线构建，为true则会使用offline子目录下的Dockerfile文件。
   enableOfflineBuild: ${enableOfflineBuild}

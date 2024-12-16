@@ -2,10 +2,8 @@
 #不同语言项目使用这个统一的全功能配置文件。
 #不同语言项目可能存在不同的参数默认值，请在对应的语言子目录下的_ci-cd-config.yaml文件中配置。
 globalParams:
-  #CICD Java流程会自动从Pom.yml文件中读取服务名称信息覆盖serviceName参数。
+  #CICD Go流程会自动从Pom.yml文件中读取服务名称信息覆盖serviceName参数。
   serviceName: go-demo
-  #服务中文名称
-  name: gin微服务示例
 
   #是否使能离线构建，为true则会使用offline子目录下的Dockerfile文件。
   enableOfflineBuild: false

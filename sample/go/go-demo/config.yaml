@@ -8,3 +8,7 @@ app:
   api_url_prefix: /test
   #wydevops会读取version参数。
   version: 1.0.0
+  mysql:
+    host: {{ .Values.param.mysql.host | default "mysql:3306" }}
+    username: {{ .Values.param.mysql.username | default "root" }}
+    password: {{ .Values.param.mysql.password | default "root123456" }}
