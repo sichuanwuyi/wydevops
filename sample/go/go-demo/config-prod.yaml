@@ -9,6 +9,6 @@ app:
   #wydevops会读取version参数。
   version: 1.0.0
   mysql:
-    host: mysql:3306
-    username: root
-    password: root123456
+    host: {{ .Values.params.mysql.host | default "mysql:3306" }}
+    username: {{ .Values.params.mysql.username | default "root" }}
+    password: {{ .Values.params.mysql.password | default "root123456" }}

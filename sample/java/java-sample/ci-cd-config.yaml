@@ -3,7 +3,7 @@
 #不同语言项目可能存在不同的参数默认值，请在对应的语言子目录下的_ci-cd-config.yaml文件中配置。
 globalParams:
   #使用istio时Gateway资源绑定的Host名称，*表示任意Host。
-  istioGatewayHost: www.axure.com
+  gatewayHost: www.axure.com
 
 deploy:
   - name: ${chartName}

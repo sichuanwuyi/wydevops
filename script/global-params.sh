@@ -49,6 +49,10 @@ export gGlobalParamNames=(
 "gArchTypes" \
 #导出的离线包构建类型数组
 "gOfflineArchTypes" \
+#k8s部署的命名空间
+"gTargetNamespace" \
+#K8s部署的网关Host参数
+"gTargetGatewayHosts" \
 #本地缓存DockerFile文件中From语句指定的镜像的目录。
 "gImageCacheDir" \
 "gProjectShellDir" \
@@ -182,6 +186,7 @@ function defineGlobalParams(){
 
 #功能扩展点标准调用方法
 function invokeExtendPointFunc() {
+  export gDefaultRetVal
   export gShellExecuteResult
 
   local l_funcName=$1
@@ -201,6 +206,7 @@ function invokeExtendPointFunc() {
   #调用公共功能扩展
   extendLog "\n--->> ${l_extentPointName}(${l_funcName}) <<---"
 
+  gDefaultRetVal="null"
   gShellExecuteResult="false"
 
   if type -t "${l_funcName}_ex" > /dev/null; then

@@ -674,7 +674,6 @@ function _deployServiceInK8S() {
       fi
       #多个同名参数的设置，以最后一个为准。因此可以直接追加参数的最新值。
       l_settingParams="${l_settingParams},image.registry=${l_array[2]}"
-
     fi
 
     #如果routeHosts参数配置有值，则需要更新gatewayRoute.host参数的值。
@@ -684,7 +683,9 @@ function _deployServiceInK8S() {
       l_array=(${gDefaultRetVal//,/ })
       warn "更新网关配置中的绑定域名为: ${l_array[0]}"
       #多个同名参数的设置，以最后一个为准。因此可以直接追加参数的最新值。这里只取第一个。
-      l_settingParams="${l_settingParams},gatewayRoute.host=${l_array[0]}"
+      if [[ ! "${l_settingParams}" =~ ^(.*)gatewayRoute.host=${l_array[0]} ]];then
+        l_settingParams="${l_settingParams},gatewayRoute.host=${l_array[0]}"
+      fi
     fi
 
     #自定义Helm命令行中set参数扩展
@@ -861,8 +862,8 @@ function _createDeployItem(){
     info "向${l_cicdConfigFile##*/}文件中插入deploy[${l_deployIndex}]配置项"
     getListSize "${l_cicdConfigFile}" "deploy"
     l_targetIndex="${gDefaultRetVal}"
-    readParam "${l_cicdYamlFile}" "deploy[${l_deployIndex}]"
-    insertParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}]" "${gDefaultRetVal}"
+    insertParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].name" ""
+    insertParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params" ""
 
     #从模板文件中读取deploy[${l_targetIndex}].name未替换成实际参数前的标识。
     #因为wydevops开始进行全局参数合并的时机是在实际参数值替换动作之前。
@@ -874,12 +875,6 @@ function _createDeployItem(){
     info "更新deploy[${l_targetIndex}]配置项的name属性为：${gDefaultRetVal}"
     updateParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].name" "${gDefaultRetVal}"
 
-    info "清除可忽略的其他参数..."
-    deleteParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].packageName"
-    deleteParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].deployTempDir"
-    deleteParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].deleteTempDirAfterDeployed"
-    deleteParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].docker.dockerRunShellGenerator"
-    deleteParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].docker.dockerComposeYamlGenerator"
   fi
 
   gDefaultRetVal="${l_deployIndex} ${l_targetIndex}"

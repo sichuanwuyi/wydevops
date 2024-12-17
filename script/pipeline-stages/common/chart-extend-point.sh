@@ -238,6 +238,7 @@ function onModifyingValuesYaml_ex(){
   export gDockerRepoName
   export gFileContentMap
   export gBuildPath
+  export gTargetGatewayHosts
 
   local l_chartPath=$1
 
@@ -262,7 +263,7 @@ function onModifyingValuesYaml_ex(){
   #在values.yaml文件中定义image.registry参数
   insertParam "${l_valuesYaml}" "image.registry" "${gDockerRepoName}"
   #在values.yaml文件中定义gatewayRoute.host参数
-  insertParam "${l_valuesYaml}" "gatewayRoute.host" ""
+  insertParam "${l_valuesYaml}" "gatewayRoute.host" "${gTargetGatewayHosts}"
 
   #将l_packageYaml文件中的params参数配置节添加到values.yaml文件中。
   #并将l_packageYaml文件中configMaps[?].files参数中所有文件中配置的变量(”{{ .Values.* }}“)写入values.yaml的params配置节中。

@@ -21,5 +21,11 @@ spec:
         name: http
         protocol: HTTP
       hosts:
-        {{- toYaml .istioRoute.gateway.hosts | nindent 8 }}
+        {{- if \$.Values.gatewayRoute.host }}
+        - {{ \$.Values.gatewayRoute.host | quote }}
+        {{- else }}
+        {{- range .istioRoute.gateway.hosts }}
+        - {{ . | quote }}
+        {{- end }}
+        {{- end }}
 {{- end }}

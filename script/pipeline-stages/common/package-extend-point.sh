@@ -114,11 +114,13 @@ function copyChartImage_ex() {
 function createConfigFile_ex() {
   export gDefaultRetVal
   export gDockerRepoName
+  export gCiCdYamlFile
 
   local l_chartName=$1
   local l_chartVersion=$2
   local l_targetDir=$3
 
+  local l_gatewayHost
   local l_valuesYaml
   local l_settingFile
   local l_curDir
@@ -129,12 +131,15 @@ function createConfigFile_ex() {
   #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成setting.conf文件。
   if [ -f "${l_targetDir}/chart/${l_chartName}-${l_chartVersion}.tgz" ];then
 
+    readParam "${gCiCdYamlFile}" "globalParams.gatewayHost"
+    [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && l_gatewayHost="${gDefaultRetVal}"
+
     l_valuesYaml="${l_chartName}/values.yaml"
 
     #创建setting.conf文件。
     l_settingFile="${l_targetDir}/setting.conf"
     echo "image.registry=${gDockerRepoName}," > "${l_settingFile}"
-    echo "gatewayRoute.host=," >> "${l_settingFile}"
+    echo "gatewayRoute.host=${l_gatewayHost}," >> "${l_settingFile}"
 
     l_curDir=$(pwd)
 

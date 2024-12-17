@@ -874,8 +874,8 @@ function _loadGlobalParamsFromCiCdYaml() {
   export gValidBuildStages
 
   #以下4个配置参数以ci-cid.yaml文件中的内容为最高优先级的配置值。
-  export gDevNamespace
-  export gDevGatewayHosts
+  export gTargetNamespace
+  export gTargetGatewayHosts
   export gServiceName
 
   if [ ! "${gRuntimeVersion}" ];then
@@ -935,23 +935,23 @@ function _loadGlobalParamsFromCiCdYaml() {
   fi
   info "gValidBuildStages参数高优先配置值为：${gValidBuildStages}"
 
-  #初始化gDevNamespace参数。
-  readParam "${l_cicdYaml}" "globalParams.devNamespace"
+  #初始化gTargetNamespace参数。
+  readParam "${l_cicdYaml}" "globalParams.targetNamespace"
   if [ "${gDefaultRetVal}" != "null" ];then
-    gDevNamespace="${gDefaultRetVal}"
+    gTargetNamespace="${gDefaultRetVal}"
   else
-    gDevNamespace=""
+    gTargetNamespace=""
   fi
-  info "gDevNamespace:从配置文件中读取配置值(${gDevNamespace})"
+  info "gTargetNamespace:从配置文件中读取配置值(${gTargetNamespace})"
 
-  #初始化gDevGatewayHosts参数。
-  readParam "${l_cicdYaml}" "globalParams.devRouteHosts"
+  #初始化gTargetGatewayHosts参数。
+  readParam "${l_cicdYaml}" "globalParams.gatewayHost"
   if [ "${gDefaultRetVal}" != "null" ];then
-    gDevGatewayHosts="${gDefaultRetVal}"
+    gTargetGatewayHosts="${gDefaultRetVal}"
   else
-    gDevGatewayHosts=""
+    gTargetGatewayHosts=""
   fi
-  info "gDevGatewayHosts:从配置文件中读取配置值(${gDevGatewayHosts})"
+  info "gTargetGatewayHosts:从配置文件中读取配置值(${gTargetGatewayHosts})"
 
   #初始化gServiceName参数。
   readParam "${l_cicdYaml}" "globalParams.serviceName"

@@ -23,7 +23,7 @@ globalParams:
   #todo: 特别说明，nextjs项目不要启用路由重写，如果启用则会导致部分静态资源访问失败。
   rewriteUri: ""
   #使用istio时Gateway资源绑定的Host名称，*表示任意Host。
-  istioGatewayHost: www.axure.com
+  gatewayHost: www.axure.com
 
 deploy:
   #列表项的唯一名称
