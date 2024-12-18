@@ -627,7 +627,7 @@ deploy:
         nodeIPs:
           #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
           #第一个节点必须是能免密直连其他节点。
-          - 172.29.181.139|22|wuyi|Wpl118124
+          - ${targetApiServer}
       #测试集群环境
       #test:
       #  ...
