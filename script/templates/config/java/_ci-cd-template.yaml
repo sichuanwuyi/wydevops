@@ -82,6 +82,7 @@ globalParams:
 
   ingressApiVersion: networking.k8s.io/v1
   apisixApiVersion: apisix.apache.org/v2
+  #istio各类资源的ApiVersion参数值
   istioApiVersion: networking.istio.io/v1beta1
 
   #定义K8S集群内部拉取docker镜像时使用的secret资源的名称，默认设置为空
@@ -89,12 +90,14 @@ globalParams:
 
   #是否启用K8S服务存活探针
   livenessProbeEnable: true
+  livenessUri: /health/liveness
   #是否启用K8S服务就绪探针
   readinessProbeEnable: true
+  readinessUri: /health/readiness
   #探活和就绪使用的HTTP还是HTTPS
   httpGetScheme: HTTP
 
-  #K8S服务资源配置相关参数
+  #K8S服务CPU和内存资源配置相关参数
   cpuLimits: 500m
   memoryLimits: 500Mi
   cpuRequests: 500m
@@ -120,7 +123,7 @@ globalParams:
   #当前部署环境名称：dev、test，可以自定义。
   activeProfile: dev
   #K8S集群的ApiServer服务器的地址信息（必须配置）
-  #格式：{服务器IP地址}|{SSH连接账号}|{SSH连接密码}
+  #格式：{服务器IP地址}|{SSH端口号}|{SSH连接账号}|{SSH连接密码}
   targetApiServer: 172.20.16.227|22|wuyi|Wpl118124
   #部署的命名空间
   targetNamespace: default
@@ -368,7 +371,7 @@ chart:
               httpGet:
                 scheme: ${httpGetScheme}
                 port: ${mainPort}
-                path: /health/liveness
+                path: ${livenessUri}
             readinessProbeEnable: ${readinessProbeEnable}
             readinessProbe:
               initialDelaySeconds: 15
@@ -379,7 +382,7 @@ chart:
               httpGet:
                 scheme: ${httpGetScheme}
                 port: ${mainPort}
-                path: /health/readiness
+                path: ${readinessUri}
         #定义configmap名称（格式：{服务名称}-configmap）及其包含的文件列表
         configMaps:
             #名称必须与volumes中的某个ConfigMap名相同
