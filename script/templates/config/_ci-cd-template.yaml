@@ -127,6 +127,8 @@ globalParams:
   targetApiServer:
   #部署的命名空间
   targetNamespace: default
+  #K8s集群内部拉取镜像的仓库信息
+  targetDockerRepo:
   #参数不为空时即表示需要挂载PVC，参数值即为PVC资源名称。
   #挂载路径默认为${serviceName}-workdir
   persistentVolumeClaimName:

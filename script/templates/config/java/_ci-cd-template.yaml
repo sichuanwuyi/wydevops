@@ -127,8 +127,8 @@ globalParams:
   targetApiServer: 172.20.16.227|22|wuyi|Wpl118124
   #部署的命名空间
   targetNamespace: default
-  #开发环境使用的路由的hosts参数。这个配置仅用于开发环境。
-  devRouteHosts:
+  #K8s集群内部拉取镜像的仓库信息
+  targetDockerRepo:
   #参数不为空时即表示需要挂载PVC，参数值即为PVC资源名称。
   #挂载路径默认为${serviceName}-workdir
   persistentVolumeClaimName:
@@ -603,7 +603,7 @@ deploy:
         #目标集群使用的docker仓库信息。
         #格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},
         #{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)}
-        dockerRepo:
+        dockerRepo: ${targetDockerRepo}
         #部署时指定的网关路由hosts/host参数的值(可不配置),目前只支持设置一个域名
         routeHosts: ${gatewayHost}
       #测试集群环境
