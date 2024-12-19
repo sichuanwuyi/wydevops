@@ -11,33 +11,6 @@ function _initialGlobalParamsForDockerStage_ex(){
   fi
 }
 
-function _onAfterInitialingGlobalParamsForDockerStage_ex() {
-  export gBuildPath
-  export gProjectBuildOutDir
-  export gDockerBuildDir
-  export gDefaultRetVal
-
-  local l_ciCdYamlFile=$1
-
-  local l_targetFiles
-  local l_targetFile
-  local l_applicationYamls
-
-  if [ "${gBuildType}" != "thirdParty" ];then
-    mkdir -p "${gDockerBuildDir}/config"
-    #读取globalParams.configMapFiles参数的值。
-    readParam "${l_ciCdYamlFile}" "globalParams.configMapFiles"
-    l_targetFiles="${gDefaultRetVal}"
-    # shellcheck disable=SC2206
-    l_applicationYamls=(${l_targetFiles//,/ })
-    # shellcheck disable=SC2068
-    for l_targetFile in ${l_applicationYamls[@]};do
-      [[ "${l_targetFile}" =~ ^(\./) ]] && l_targetFile="${gBuildPath}/${l_targetFile:2}"
-      cp -f "${l_targetFile}" "${gDockerBuildDir}/config" || true
-    done
-  fi
-}
-
 function _onBeforeCreatingDockerImage_ex() {
   export gDockerBuildDir
   export gProjectBuildOutDir

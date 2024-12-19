@@ -6,11 +6,11 @@ WORKDIR _WORK-DIR-IN-CONTAINER_
 RUN mkdir -p _WORK-DIR-IN-CONTAINER_/config
 WORKDIR _WORK-DIR-IN-CONTAINER_
 
-ENV VIPER_CONFIG=_WORK-DIR-IN-CONTAINER_/config/config-prod.yaml
+ENV VIPER_CONFIG=_WORK-DIR-IN-CONTAINER_/wydevops-config
 
 # 复制编译好的二进制文件到镜像中
 COPY ./_SERVICE-NAME_-_OS-TYPE_-_ARCH-TYPE_.out ./
-COPY ./config-prod.yaml ./config/
+COPY ./wydevops-config/ ./wydevops-config/
 
 EXPOSE _EXPOSE_
 

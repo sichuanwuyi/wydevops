@@ -347,10 +347,10 @@ chart:
                 mountPath: ${workDirInContainer}
                 #- name: ${serviceName}-config
                 #mountPath参数的前缀必须与docker.workDir参数一致。
-              #  mountPath: ${workDirInContainer}/config
+              #  mountPath: ${workDirInContainer}/wydevops-config
               #挂载公共配置信息
               #- name: public-params
-              #  mountPath: /var/config
+              #  mountPath: /var/params
               #挂载pvc的例子
               #- name: public-storage
               #  mountPath: ${workDirInContainer}/data

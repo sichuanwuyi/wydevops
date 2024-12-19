@@ -156,13 +156,13 @@ function usage() {
     -C, --chartRepo     string    Chart镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)}
     -D, --dockerRepo    string    Docker镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)}
     -I, --imageCacheDir String    当workMode=local时，用于缓存Dockerfile文件中From行指定的Image镜像的本地目录。
-    -L, --language      string    项目语言类型; 例如：java、go、c++、python、vue、nodejs等，依据具体实现而定。
+    -L, --language      string    项目语言类型或架构类型; 目前支持的有效值有：java、go、vue、nextjs等，依据具体实现而定。
     -M, --workMode      string    工作模式：jenkins、local
     -N, --notify        string    外部通知接口的地址
     -O, --outArchTypes  string    要导出的离线安装包的架构类型，默认值=\"linux/amd64,linux/arm64\"
     -P, --buildPath     string    构建目录，一般为目标工程的根目录或主模块目录（例如：Java多模块项目）
     -S, --buildStages   string    执行的构建阶段，有效值包括：build、docker、chart、package、deploy、all，
-                                  有效值为前四个阶段的有序组合,阶段间用英文逗号隔开；或直接设置为all；为空时等同于all。
+                                  有效值为前五个阶段的有序组合,阶段间用英文逗号隔开；或直接设置为all；为空时等同于all。
                                   例如：build,docker,chart——表示依次执行指定的构建阶段。
     -T, --template      string    是否忽略项目根目录下的Dockerfile系列文件,与开关量-t作用相同。有效取值：false或true
     -W, --workDir       string    仅当workMode=local时，用于指定本脚本所在的目录；

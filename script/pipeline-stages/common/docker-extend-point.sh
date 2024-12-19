@@ -331,6 +331,9 @@ function onAfterInitialingGlobalParamsForDockerStage_ex() {
   info "处理docker.copyFiles参数"
   _copyFilesIntoDockerBuildDir "${l_ciCdYamlFile}"
 
+  info "复制需要放置到ConfigMap中的配置文件"
+  _copyConfigMapFiles "${l_ciCdYamlFile}"
+
   if [[ "${gDockerRepoName}" && "${gDockerRepoAccount}" && "${gDockerRepoPassword}" ]];then
     #完成docker仓库登录
     dockerLogin "${gDockerRepoName}" "${gDockerRepoAccount}" "${gDockerRepoPassword}"
@@ -696,6 +699,35 @@ function _onAfterCreatingDockerImage(){
   saveImage "${l_image}" "${l_archType}" "${gHelmBuildOutDir}/${l_archType//\//-}"
 
 }
+
+function _copyConfigMapFiles() {
+  export gBuildType
+  export gBuildPath
+  export gDockerBuildDir
+  export gDefaultRetVal
+
+  local l_ciCdYamlFile=$1
+
+  local l_targetFiles
+  local l_targetFile
+  local l_applicationYamls
+
+  if [ "${gBuildType}" != "thirdParty" ];then
+    mkdir -p "${gDockerBuildDir}/wydevops-config"
+    #读取globalParams.configMapFiles参数的值。
+    readParam "${l_ciCdYamlFile}" "globalParams.configMapFiles"
+    [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && return
+    l_targetFiles="${gDefaultRetVal}"
+    # shellcheck disable=SC2206
+    l_applicationYamls=(${l_targetFiles//,/ })
+    # shellcheck disable=SC2068
+    for l_targetFile in ${l_applicationYamls[@]};do
+      [[ "${l_targetFile}" =~ ^(\./) ]] && l_targetFile="${gBuildPath}/${l_targetFile:2}"
+      cp -f "${l_targetFile}" "${gDockerBuildDir}/wydevops-config" || true
+    done
+  fi
+}
+
 #**********************私有方法-结束***************************#
 
 #加载build阶段脚本库文件

@@ -16,7 +16,7 @@ func InitializeConfig() *viper.Viper {
 	config := "config.yaml"
 	//生产环境可以从环境变量中获取配置文件路径
 	if configEnv := os.Getenv("VIPER_CONFIG"); configEnv != "" {
-		config = configEnv
+		config = configEnv + "/config-prod.yaml"
 	}
 
 	v := viper.New()

@@ -121,7 +121,7 @@ function executePackageStage() {
     invokeExtendPointFunc "sendNotify" "向外部接口发送${gServiceName}服务安装包部署结果通知" "${gCurrentStageResult}"
 
     if [ "${l_deleteTempDirAfterDeployed}" == "true" ];then
-      #删除创建的临时目录
+      info "删除部署时使用的临时目录：${l_localBaseDir}"
       rm -rf "${l_localBaseDir:?}"
     fi
 
