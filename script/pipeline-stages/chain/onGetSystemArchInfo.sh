@@ -15,9 +15,9 @@ function onGetSystemArchInfo_ubuntu() {
 
   #先判断是否是linux系统
   if [ "${l_ip}" ];then
-    info "执行命令: ssh -p ${l_port} ${l_account}@${l_ip} uname -sm"
+    info "执行命令: ssh -o \"StrictHostKeyChecking no\" -p ${l_port} ${l_account}@${l_ip} uname -sm"
     #3秒超时
-    l_result=$(ssh -p "${l_port}" "${l_account}@${l_ip}" "uname -sm")
+    l_result=$(ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "uname -sm")
   else
     info "执行命令: uname -sm"
     #本地执行uname命令

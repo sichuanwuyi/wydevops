@@ -515,7 +515,7 @@ function _deployServiceByDocker(){
       fi
 
       info "检测服务器${l_ip}是否已安装docker ..." "-n"
-      l_content=$(timeout 3s ssh -p "${l_port}" "${l_account}@${l_ip}" "docker -v")
+      l_content=$(timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "docker -v")
       #连接被拒绝或超时
       l_errorLog=$(echo -e "${l_content}" | grep -ioP "(refused|timed[ ]*out)")
       [[ "${l_errorLog}" ]] && error "SSH连接${l_ip}服务失败：\n${l_content}"
@@ -526,7 +526,7 @@ function _deployServiceByDocker(){
 
       if [ "${l_mode}" == "docker-compose" ];then
         info "检测服务器${l_ip}是否已安装docker compose ..." "-n"
-        l_content=$(timeout 3s ssh -p "${l_port}" "${l_account}@${l_ip}" "docker compose version")
+        l_content=$(timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "docker compose version")
         #连接被拒绝或超时
         l_errorLog=$(echo -e "${l_content}" | grep -ioP "(refused|timed[ ]*out)")
         [[ "${l_errorLog}" ]] && error "SSH连接${l_ip}服务失败：\n${l_content}"
@@ -547,14 +547,14 @@ function _deployServiceByDocker(){
       echo -e "#!/usr/bin/env bash\n source ${l_remoteDir}/${l_remoteInstallProxyShell##*/} \"${l_chartName}\" \"${l_chartVersion}\" \"${l_offlinePackage}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \"${gDockerRepoPassword}\" \"${l_nodeIps}\"" > "${l_localDir}/install.sh"
 
       info "在服务器(${l_ip})上创建${l_remoteDir}目录"
-      timeout 3s ssh -p "${l_port}" "${l_account}@${l_ip}" "rm -rf ${l_remoteDir} && mkdir -p ${l_remoteDir}"
+      timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "rm -rf ${l_remoteDir} && mkdir -p ${l_remoteDir}"
 
       info "将本地${l_localBaseDir##*/}目录中的文件和子目录复制到服务器${l_ip}上的${l_remoteDir}目录中"
-      timeout 60s scp -P "${l_port}" -r "${l_localDir}/" "${l_account}@${l_ip}:${l_remoteDir%/*}/"
+      timeout 60s scp -o \"StrictHostKeyChecking no\" -P "${l_port}" -r "${l_localDir}/" "${l_account}@${l_ip}:${l_remoteDir%/*}/"
 
       info "远程执行服务器${l_ip}上的脚本：${l_remoteDir}/install.sh"
       # shellcheck disable=SC2088
-      timeout 30s ssh -p "${l_port}" "${l_account}@${l_ip}" "bash ${l_remoteDir}/install.sh"
+      timeout 30s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "bash ${l_remoteDir}/install.sh"
 
       [[ "${l_enableProxy}" == "true" ]] && break
 
@@ -701,7 +701,7 @@ function _deployServiceInK8S() {
 
     info "获取服务器上~/.kube/config文件的内容"
     #todo: 这里不要在前面添加timeout指令
-    ssh -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
+    ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
 
     info "卸载${l_namespace}命名空间中正在运行的${l_chartName}服务..." "-n"
     l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
@@ -987,12 +987,16 @@ function _pushDockerImageForDeployStage() {
 function _getDockerImageInChart() {
   export gDefaultRetVal
   export gCiCdYamlFile
+  export gServiceName
 
   local l_packageName=$1
   local l_chartFile=$2
 
   local l_packageIndex
   local l_images
+
+  local l_baseVersion
+  local l_businessVersion
 
   local l_registryKey
   local l_result
@@ -1014,13 +1018,46 @@ function _getDockerImageInChart() {
     fi
   fi
 
+  readParam "${gCiCdYamlFile}" "globalParams.buildType"
+  if [ "${gDefaultRetVal}" == "single" ];then
+    #删除基础镜像
+    readParam "${gCiCdYamlFile}" "globalParams.baseVersion"
+    l_baseVersion="${gDefaultRetVal}"
+    l_result="${gServiceName}-base:${l_baseVersion}"
+    l_images="${l_images//${l_result}/}"
+    l_images="${l_images//,,/,}"
+    #删除业务镜像
+    readParam "${gCiCdYamlFile}" "globalParams.businessVersion"
+    l_businessVersion="${gDefaultRetVal}"
+    l_result="${gServiceName}-business:${l_businessVersion}"
+    l_images="${l_images//${l_result}/}"
+    l_images="${l_images//,,/,}"
+    #添加单一镜像
+    l_images="${l_images},${gServiceName}:${l_businessVersion}"
+    l_images="${l_images//,,/,}"
+  elif [ "${gDefaultRetVal}" == "base" ];then
+    #删除业务镜像
+    readParam "${gCiCdYamlFile}" "globalParams.businessVersion"
+    l_businessVersion="${gDefaultRetVal}"
+    l_result="${gServiceName}-business:${l_businessVersion}"
+    l_images="${l_images//${l_result}/}"
+    l_images="${l_images//,,/,}"
+  elif [ "${gDefaultRetVal}" == "business" ];then
+    #删除基础镜像
+    readParam "${gCiCdYamlFile}" "globalParams.baseVersion"
+    l_baseVersion="${gDefaultRetVal}"
+    l_result="${gServiceName}-base:${l_baseVersion}"
+    l_images="${l_images//${l_result}/}"
+    l_images="${l_images//,,/,}"
+  fi
+
   if [ "${l_images}" ];then
     gDefaultRetVal="${l_images}"
     return
   fi
 
   #如果没有从配置文件中读取到，则尝试从chart镜像中获取。
-  #todo: 这里说明一下，为什么不直接从chart镜像中获取而先要从配置文件中读取？ 这是为了留一个上其他镜像到仓库的接口。某些情况下需要上传chart镜像中没有使用的镜像。
+  #todo: 这里说明一下，为什么不直接从chart镜像中获取而先要从配置文件中读取？ 这是为了留一个上传其他镜像到仓库的接口。某些情况下需要上传chart镜像中没有使用的镜像。
   gDefaultRetVal=""
 
   l_registryKey="wydevops${RANDOM}"

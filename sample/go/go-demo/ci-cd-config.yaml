@@ -31,7 +31,7 @@ globalParams:
 
   #目标K8S集群的ApiServer服务器的地址信息（必须配置）
   #格式：{服务器IP地址}|{SSH端口号}|{SSH连接账号}|{SSH连接密码}
-  targetApiServer: 172.19.126.156|22|wuyi|Wpl118124
+  targetApiServer: 172.27.206.206|22|wuyi|Wpl118124
   #部署的命名空间
   targetNamespace: default
   #K8s集群内部拉取镜像的仓库信息：
