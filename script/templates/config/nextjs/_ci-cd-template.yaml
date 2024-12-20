@@ -2,7 +2,7 @@
 #不同语言项目使用这个统一的全功能配置文件。
 #不同语言项目可能存在不同的参数默认值，请在对应的语言子目录下的_ci-cd-config.yaml文件中配置。
 globalParams:
-  #Web前端项目需要手动配置serviceName参数的值。
+  #nextjs项目需要手动配置serviceName参数的值。
   #无法像后端服务可通过参数映射文件进行配置
   serviceName: _SERVICE-NAME_
   #服务中文名称
@@ -18,7 +18,7 @@ globalParams:
   enableOfflineBuild: false
 
   businessImage: ${serviceName}-business
-  #Web前端项目需要手动配置businessVersion参数的值。
+  #nextjs项目需要手动配置businessVersion参数的值。
   #无法像后端服务可通过参数映射文件进行配置
   businessVersion: 1.0.0
   baseImage: ${serviceName}-base
