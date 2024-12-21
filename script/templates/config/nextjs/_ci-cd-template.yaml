@@ -514,7 +514,7 @@ chart:
                 #是否开启跨域
                 - name: cors
                   enable: true
-                #nextjs项目不需要开启路由重写功能
+                #todo: nextjs项目不需要开启路由重写功能
                 #- name: proxy-rewrite
                 #  regex_uri: [ "^${gatewayPath}(. *)", "/$1" ]
               backends:
