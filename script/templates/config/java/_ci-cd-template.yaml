@@ -539,7 +539,7 @@ chart:
                   port:
                     number: ${mainPort}
                   host: ${serviceName}-clusterip
-              #以下为启用DestinationRule资源时的配置。
+              #以下配置为启用DestinationRule资源生成器时需要配置subset时才需要打开。
               #- destination:
               #    host: ${serviceName}-clusterip
               #    #istioSubset的值需要指向目标DestinationRule资源中的subsets的某一项的名称。

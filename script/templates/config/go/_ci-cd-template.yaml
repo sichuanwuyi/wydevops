@@ -468,7 +468,7 @@ chart:
                   serviceName: ${serviceName}-clusterip
                   servicePort: ${mainPort}
 
-        #ingress-apisix网关路由配置
+        #ingress-apisix网关路由配置(支持路由重写)
 #        ingressRoute:
 #          name: ${serviceName}
 #          type: Ingress
@@ -496,7 +496,7 @@ chart:
 #                  serviceName: ${serviceName}-clusterip
 #                  servicePort: ${mainPort}
 
-        #Apisix网关路由配置
+        #Apisix网关路由配置(以下配置不支持路由重写，需要添加路由重写插件配置)
         apisixRoute:
           type: ApisixRoute
           apiVersion: ${apisixApiVersion}
@@ -539,7 +539,7 @@ chart:
                   port:
                     number: ${mainPort}
                   host: ${serviceName}-clusterip
-              #以下为启用DestinationRule资源时的配置。
+              #以下配置为启用DestinationRule资源生成器时需要配置subset时才需要打开。
               #- destination:
               #    host: ${serviceName}-clusterip
               #    #istioSubset的值需要指向目标DestinationRule资源中的subsets的某一项的名称。

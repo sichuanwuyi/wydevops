@@ -66,9 +66,9 @@ globalParams:
   gatewayPath: /${serviceName}
   #应用设置的路由Host名称，*表示任意Host。
   gatewayHost: *
-  #路由重写Uri参数, 设置为空串表示不启用路由重写功能。
+  #路由重写Uri参数, 设置为空串表示不启用路由重写功能。nextjs项目默认值为空串
   #默认设置为仅包含一个空格的字符串，表示删除路由路径中前导的gatewayPath参数串。
-  rewriteUri: " "
+  rewriteUri: ""
   #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
   istioVirtualServiceHost: *
   #启用指定的DestinationRule资源名称。
@@ -455,9 +455,11 @@ chart:
             #下面app-root参数可以给所有请求的URI添加一个路径前缀。
             #nginx.ingress.kubernetes.io/app-root: /app1
             #下面的use-regex和rewrite-target配合可以删除请求的URI中的某个子路径。
-            nginx.ingress.kubernetes.io/use-regex: "true"
+            #todo: nextjs项目不需要支持路由重写
+            #nginx.ingress.kubernetes.io/use-regex: "true"
             #$2表示rules[0].paths[0].path的值中第二个圆括号中的子路径。
-            nginx.ingress.kubernetes.io/rewrite-target: /$2
+            #todo: nextjs项目不需要支持路由重写
+            #nginx.ingress.kubernetes.io/rewrite-target: /$2
 #         tls:
 #           - hosts: [ ${ingressTlsHosts} ]
 #             secretName: ${ingressSecretName}
@@ -540,7 +542,7 @@ chart:
                   port:
                     number: ${mainPort}
                   host: ${serviceName}-clusterip
-              #以下为启用DestinationRule资源时的配置。
+              #以下配置为启用DestinationRule资源生成器时需要配置subset时才需要打开。
               #- destination:
               #    host: ${serviceName}-clusterip
               #    #istioSubset的值需要指向目标DestinationRule资源中的subsets的某一项的名称。
