@@ -514,6 +514,9 @@ chart:
                 #是否开启跨域
                 - name: cors
                   enable: true
+                #vue项目不需要开启路由重写功能
+                #- name: proxy-rewrite
+                #  regex_uri: [ "^${gatewayPath}(. *)", "/$1" ]
               backends:
                 - serviceName: ${serviceName}-clusterip
                   servicePort: ${mainPort}

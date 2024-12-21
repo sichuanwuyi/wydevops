@@ -468,7 +468,7 @@ chart:
                   serviceName: ${serviceName}-clusterip
                   servicePort: ${mainPort}
 
-        #ingress-apisix网关路由配置(支持路由重写)
+        #ingress-apisix网关路由配置
 #        ingressRoute:
 #          name: ${serviceName}
 #          type: Ingress
@@ -496,7 +496,7 @@ chart:
 #                  serviceName: ${serviceName}-clusterip
 #                  servicePort: ${mainPort}
 
-        #Apisix网关路由配置(以下配置不支持路由重写，需要添加路由重写插件配置)
+        #Apisix网关路由配置
         apisixRoute:
           type: ApisixRoute
           apiVersion: ${apisixApiVersion}
@@ -511,6 +511,9 @@ chart:
                 #是否开启跨域
                 - name: cors
                   enable: true
+                #开启路由重写功能
+                - name: proxy-rewrite
+                  regex_uri: [ "^${gatewayPath}(. *)", "/$1" ]
               backends:
                 - serviceName: ${serviceName}-clusterip
                   servicePort: ${mainPort}
