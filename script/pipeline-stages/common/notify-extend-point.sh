@@ -63,6 +63,7 @@ function useNotifyTemplate_ex() {
   export gPipelineScriptsDir
   export gLanguage
   export gServiceName
+  export gProjectTemplateDirName
 
   local l_info=$1
 
@@ -78,12 +79,12 @@ function useNotifyTemplate_ex() {
   l_message="${l_info#*|}"
   l_message="${l_message//\"/\\\"}"
 
-  if [ -f "${gPipelineScriptsDir}/templates/config/${gLanguage}/_notify-templates.json" ];then
-    l_template=$(cat "${gPipelineScriptsDir}/templates/config/${gLanguage}/_notify-templates.json")
+  if [ -f "${gPipelineScriptsDir}/${gProjectTemplateDirName}/config/${gLanguage}/_notify-templates.json" ];then
+    l_template=$(cat "${gPipelineScriptsDir}/${gProjectTemplateDirName}/config/${gLanguage}/_notify-templates.json")
   fi
 
-  if [[ ! "${l_template}" && -f "${gPipelineScriptsDir}/templates/config/common/_notify-templates.json" ]];then
-    l_template=$(cat "${gPipelineScriptsDir}/templates/config/common/_notify-templates.json")
+  if [[ ! "${l_template}" && -f "${gPipelineScriptsDir}/${gProjectTemplateDirName}/config/common/_notify-templates.json" ]];then
+    l_template=$(cat "${gPipelineScriptsDir}/${gProjectTemplateDirName}/config/common/_notify-templates.json")
   fi
 
 
