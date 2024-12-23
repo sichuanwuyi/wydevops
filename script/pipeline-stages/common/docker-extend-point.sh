@@ -424,6 +424,9 @@ function onBeforeCreatingDockerImage_ex() {
   l_images=(${l_content//,/ })
   # shellcheck disable=SC2068
   for l_image in ${l_images[@]};do
+    #删除空格符
+    l_image="${l_image// /}"
+    [[ "${l_image}" =~ ^scratch(:|$).* ]] && continue
     info "提前拉取镜像:${l_image}"
     pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}"
   done

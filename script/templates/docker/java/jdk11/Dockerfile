@@ -8,7 +8,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 ENV JAVA_OPTS="-Dspring.config.location=_WORK-DIR-IN-CONTAINER_/wydevops-config/"
 ENV LANG C.UTF-8
 
-RUN mkdir -p _WORK-DIR-IN-CONTAINER_/config
+RUN mkdir -p _WORK-DIR-IN-CONTAINER_/wydevops-config
 
 COPY ./dependencies/ ./snapshot-dependencies/ ./application/ ./spring-boot-loader/ _WORK-DIR-IN-CONTAINER_/
 COPY ./wydevops-config/ _WORK-DIR-IN-CONTAINER_/wydevops-config/

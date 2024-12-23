@@ -13,7 +13,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=_OS-TYPE_ GOARCH=_ARCH-TYPE_ go build -o _SERVICE-NAME_-_OS-TYPE_-_ARCH-TYPE_.out .
 
 # 使用scratch创建最小镜像
-FROM --platform=_PLATFORM_ scratch
+FROM --platform=_PLATFORM_ _FROM-IMAGE1_
 
 WORKDIR _WORK-DIR-IN-CONTAINER_
 
