@@ -1,3 +1,6 @@
+#安装前请使用minio-pvc目录下的install.sh脚本安装好minio。
+#直接使用kubectl apply -f docker-registry-minio.yaml命令进行registry安装。
+
 apiVersion: v1
 kind: Secret
 metadata:
