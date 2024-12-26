@@ -14,7 +14,7 @@ function initialGlobalParamsForPackageStage_ex() {
 
   local l_suffix
 
-  if [ "${gBuildType}" == "single" ];then
+  if [[ "${gBuildType}" == "single" || "${gBuildType}" == "thirdParty" ]];then
     #制作单镜像时，对ci-cd.yaml文件进行特殊处理。
     invokeExtendPointFunc "handleBuildingSingleImageForPackage" "package阶段single构建模式下对ci-cd.yaml文件中参数的特殊调整" "${gCiCdYamlFile}"
   fi

@@ -55,9 +55,9 @@ globalParams:
   #服务主端口，也是k8s服务探活和就绪的检测端口，默认是containerPorts参数中第一个端口。
   mainPort: _MAIN-PORT_
   #申明docker容器需要开放的端口列表，端口间使用逗号隔开。
-  containerPorts: _CONTAINER-PORT_
+  containerPorts: ${mainPort}
   #ClusterIP类型的Service资源开放的服务端口列表，端口间使用逗号隔开。
-  servicePorts: _SERVICE-PORTS_
+  servicePorts: ${mainPort}
   #NodePort类型的Service资源绑定的容器端口列表，端口间使用逗号隔开。
   #默认范围：30000-32767
   nodePorts:
@@ -211,9 +211,10 @@ docker:
     fromImage: ${baseFromImage}
   #要打包的第三方镜像列表
   thirdParties:
-    #第三方镜像的名称和版本，不能为空。
-    #目标镜像的架构由docker.archTypes参数决定。
-    - name: test:1.0.0
+    - name: third-party
+      #第三方镜像的名称和版本，不能为空。
+      #目标镜像的架构由docker.archTypes参数决定。
+      images:
       #第三方镜像导出文件所在的目录，如果为空，则直接从私库或公网拉取目标镜像。
       #目录中的导出文件格式为：{镜像名称}-{架构类型,例如：linux/amd64}.tar；其中\”:\“和\”/\“都转换为\”-\“。
       #举例：bitnami/prometheus:2.51.2镜像的导出文件名称为bitnami-prometheus-1.0.0-linux-amd64.tar

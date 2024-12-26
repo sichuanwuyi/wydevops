@@ -56,10 +56,10 @@ function _processThirdPartyImage(){
   # shellcheck disable=SC2068
   for l_archType in ${l_allArchTypes[@]};do
     for ((l_i=0; l_i < l_itemCount; l_i++));do
-      readParam "${gCiCdYamlFile}" "docker.thirdParties[${l_i}].name"
+      readParam "${gCiCdYamlFile}" "docker.thirdParties[${l_i}].images"
       l_image="${gDefaultRetVal}"
       if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
-        error "docker.thirdParties[${l_i}].name参数为空"
+        error "docker.thirdParties[${l_i}].images参数为空"
       fi
       readParam "${gCiCdYamlFile}" "docker.thirdParties[${l_i}].location"
       l_location="${gDefaultRetVal}"

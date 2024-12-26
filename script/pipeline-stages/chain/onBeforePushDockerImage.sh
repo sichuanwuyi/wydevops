@@ -9,7 +9,7 @@ function onBeforePushDockerImage_harbor() {
     return
   fi
 
-  if ! type -t "queryNexusComponentId" > /dev/null; then
+  if ! type -t "existRepositoryInHarborProject" > /dev/null; then
     source "${gBuildScriptRootDir}/helper/harbor-api-helper.sh"
   fi
 
@@ -86,6 +86,56 @@ function onBeforePushDockerImage_nexus() {
     if [ "${gDefaultRetVal}" ];then
       info "找到了目标镜像，开始清除..."
       deleteNexusComponentById "${l_dockerRepoName%%:*}" "${l_dockerRepoWebPort}" "${gDefaultRetVal}"
+      info "目标镜像清除成功"
+    else
+      warn "目标镜像不存在"
+    fi
+
+  done
+
+  gDefaultRetVal="true|true"
+}
+
+function onBeforePushDockerImage_registry() {
+  export gDefaultRetVal
+  export gBuildScriptRootDir
+
+  local l_dockerRepoType=$1
+  if [ "${l_dockerRepoType}" != "registry" ];then
+    gDefaultRetVal="false|"
+    return
+  fi
+
+  if ! type -t "queryDigestCodeOfImage" > /dev/null; then
+    source "${gBuildScriptRootDir}/helper/registry-api-helper.sh"
+  fi
+
+  local l_image=$2
+  local l_dockerRepoHostAndPort=$3
+  local l_dockerPath=$4
+  local l_dockerRepoWebPort=$5
+  local l_dockerRepoAccount=$6
+  local l_dockerRepoPassword=$7
+
+  local l_imageName
+  local l_imageVersion
+  local l_versionList
+  local l_versionItem
+
+  l_imageName="${l_image%:*}"
+  l_imageVersion="${l_image##*:}"
+
+  l_versionList=("${l_imageVersion}" "${l_imageVersion}-linux-amd64" "${l_imageVersion}-linux-arm64")
+
+  # shellcheck disable=SC2068
+  for l_versionItem in ${l_versionList[@]};do
+
+    info "在${l_dockerRepoType}类型的docker仓库中查找现存的${l_imageName}:${l_versionItem}镜像..."
+    queryDigestCodeOfImage "${l_dockerRepoHostAndPort}" "${l_dockerPath}" "${l_imageName}" "${l_versionItem}"
+    if [ "${gDefaultRetVal}" ];then
+      info "找到了目标镜像，开始清除..."
+      deleteImageByDigestCode "${l_dockerRepoHostAndPort}" "${l_dockerPath}" "${l_imageName}" "${l_versionItem}" \
+        "${l_dockerRepoAccount}" "${l_dockerRepoPassword}" "${gDefaultRetVal}"
       info "目标镜像清除成功"
     else
       warn "目标镜像不存在"

@@ -1,0 +1,152 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-registry-cm
+  namespace: docker-registry
+type: Opaque
+stringData:
+  config.yml: |-
+    version: 0.1
+    log:
+      level: info
+      fields:
+        service: registry
+    storage:
+      delete:
+        enabled: true
+      #cache:
+      #  blobdescriptor: inmemory
+      s3: 
+        accesskey: UWlrxeSuhpQ3rbTX79KH
+        secretkey: Jad7JNmdTHOIYx8rJ4bGPwvxfHvZJmp8P3FX6Wi5
+        region: default
+        regionendpoint: "http://192.168.31.218:9000"
+        forcepathstyle: true
+        accelerate: false
+        bucket: docker-registry
+        encrypt: false
+        secure: false
+        v4auth: true
+        chunksize: 5242880
+        multipartcopymaxconcurrency: 10
+    http:
+      addr: :5000
+      debug:
+        addr: :5001
+        prometheus:
+            enabled: true
+            path: /metrics
+      headers:
+        X-Content-Type-Options: [nosniff]
+    health:
+      storagedriver:
+        enabled: true
+        interval: 10s
+        threshold: 3
+#    auth:
+#      htpasswd:
+#        realm: basic-realm
+#        path: /auth/htpasswd_file
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: docker-registry
+  name: docker-registry-svc
+  namespace: docker-registry
+spec:
+  ports:
+    - name: http
+      port: 5000
+      targetPort: http
+      nodePort: 30783
+    - name: http-metrics
+      port: 5001
+      targetPort: http-metrics
+      nodePort: 30784
+  selector:
+    app.kubernetes.io/name: docker-registry
+  type: NodePort
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/name: docker-registry
+  name: docker-registry
+  namespace: docker-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: docker-registry
+  serviceName: docker-registry-svc
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: docker-registry
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: docker-registry
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+      containers:
+        - image: registry:3.0.0-rc.2
+          name: docker-registry
+          ports:
+            - containerPort: 5000
+              name: http
+            - containerPort: 5001
+              name: http-metrics
+          livenessProbe:
+            failureThreshold: 60
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: http
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 60
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: http
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          startupProbe:
+            failureThreshold: 60
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: http
+            timeoutSeconds: 1
+          volumeMounts:
+            - mountPath: /etc/distribution/
+              name: docker-registry-config
+#            - mountPath: /auth
+#              name: auth
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: docker-registry-config
+          secret:
+            secretName: docker-registry-cm
+#        - name: auth
+#          secret:
+#            secretName: docker-registry-auth

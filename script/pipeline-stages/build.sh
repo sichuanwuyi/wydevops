@@ -7,6 +7,11 @@ function executeBuildStage() {
   export gCurrentStage
   export gServiceName
   export gCurrentStageResult
+  export gLanguage
+
+  if [ "${gLanguage}" == "other" ];then
+    return
+  fi
 
   info "加载公共${gCurrentStage}阶段功能扩展文件：${gCurrentStage}-extend-point.sh"
   # shellcheck disable=SC1090

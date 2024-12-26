@@ -86,6 +86,10 @@ export gGlobalParamNames=(
 "gDockerRepoWebPort" \
 #对于nexus类型的仓库，上传镜像名称是否带仓库实例名称前缀。
 "gDockerImageNameWithInstance" \
+#对于registry类型的仓库，指定其registry服务名称
+"gRegistryName" \
+#对于registry类型的仓库，指定其配置文件全路径名称
+"gRegistryConfigFile" \
 
 #Chart仓库相关参数
 "gChartRepoType" \
@@ -153,10 +157,13 @@ function usage() {
                                   thirdParty: 打包第三方镜像：拉取第三方镜像，缓存到本地镜像缓存目录中，
                                               然后推送到私库中，最后导出到gDockerBuildOutDir目录中。
                                   customize: 自定义模式：指定docker构建目录，脚本框架自动完成docker镜像构建和推送。
-    -C, --chartRepo     string    Chart镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)}
-    -D, --dockerRepo    string    Docker镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)}
+    -C, --chartRepo     string    Chart镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},
+                                  {仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)}
+    -D, --dockerRepo    string    Docker镜像仓库信息, 格式：{仓库类型(nexus、harbor或registry)},{仓库实例名称(nexus)、项目名称(harbor)或组织代码(registry)},
+                                  {仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)},
+                                  {服务名称(仅对Registry类型仓库有效)},{配置文件全路径名称(仅对nexus类型仓库有效)}
     -I, --imageCacheDir String    当workMode=local时，用于缓存Dockerfile文件中From行指定的Image镜像的本地目录。
-    -L, --language      string    项目语言类型或架构类型; 目前支持的有效值有：java、go、vue、nextjs等，依据具体实现而定。
+    -L, --language      string    项目语言类型或架构类型; 目前支持的有效值有：java、go、vue、nextjs、other等，依据具体实现而定。
     -M, --workMode      string    工作模式：jenkins、local
     -N, --notify        string    外部通知接口的地址
     -O, --outArchTypes  string    要导出的离线安装包的架构类型，默认值=\"linux/amd64,linux/arm64\"
@@ -280,6 +287,10 @@ function parseDockerRepoInfo() {
   export gDockerRepoPassword
   export gDockerRepoWebPort
   export gDockerImageNameWithInstance
+  #对于registry类型的仓库，指定其registry服务名称
+  export gRegistryName
+  #对于registry类型的仓库，指定其配置文件全路径名称
+  export gRegistryConfigFile
 
   # shellcheck disable=SC2206
   l_array=(${l_repoInfo//,/ })
@@ -295,6 +306,11 @@ function parseDockerRepoInfo() {
 
   gDockerImageNameWithInstance="true"
   [[ "${gDockerRepoType}" == "nexus" && "${l_size}" -gt 6 ]] && gDockerImageNameWithInstance="${l_array[6]}"
+
+  gRegistryName=""
+  [[ "${gDockerRepoType}" == "registry" && "${l_size}" -gt 7 ]] && gRegistryName="${l_array[7]}"
+  gRegistryConfigFile=""
+  [[ "${gDockerRepoType}" == "registry" && "${l_size}" -gt 8 ]] && gRegistryConfigFile="${l_array[8]}"
 }
 
 function parseChartRepoInfo() {

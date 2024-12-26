@@ -12,7 +12,7 @@ globalParams:
   #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
   serviceCode: ${serviceName}
   #运行时Runtime的版本(nextjs的版本)
-  runtimeVersion:
+  runtimeVersion: registry
 
   #是否使能离线构建，为true则会使用offline子目录下的Dockerfile文件。
   enableOfflineBuild: false
@@ -27,7 +27,7 @@ globalParams:
   #Dockerfile文件中From语言中定义的基础镜像。
   #支持多个基础镜像，相互之间使用英文逗号隔开。
   #注意：注意多个基础镜像间的顺序应与在Dockerfile文件中出现的顺序保持一致。
-  baseFromImage: _BASE-FROM-IMAGE_
+  baseFromImage: golang:1.23.4-alpine3.20,scratch
   #需要拷贝到docker构建目录中的目录，多个目录间使用英文逗号隔开。
   copyDirsIntoDocker:
   #需要拷贝到docker构建目录中的文件，多个文件间使用英文逗号隔开。
@@ -65,7 +65,7 @@ globalParams:
   #应用设置的路由前缀参数。
   gatewayPath: /${serviceName}
   #应用设置的路由Host名称，*表示任意Host。
-  gatewayHost: *
+  gatewayHost:
   #路由重写Uri参数, 设置为空串表示不启用路由重写功能。
   #默认设置为仅包含一个空格的字符串，表示删除路由路径中前导的gatewayPath参数串。
   rewriteUri: " "
@@ -89,10 +89,10 @@ globalParams:
   imagePullSecret:
 
   #是否启用K8S服务存活探针
-  livenessProbeEnable: true
+  livenessProbeEnable: false
   livenessUri: /health/liveness
   #是否启用K8S服务就绪探针
-  readinessProbeEnable: true
+  readinessProbeEnable: false
   readinessUri: /health/readiness
   #探活和就绪使用的HTTP还是HTTPS
   httpGetScheme: HTTP
@@ -109,7 +109,7 @@ globalParams:
   packageImages: ${baseImage}:${baseVersion},${businessImage}:${businessVersion}
 
   #对本服务的一个描述说明文本，会写入Chart镜像。
-  description: "Java服务: ${serviceName}"
+  description: "other服务: ${serviceName}"
 
   #chart镜像的名称, 默认与服务的名称相同
   chartName: ${serviceName}
@@ -149,7 +149,7 @@ build:
     #项目编译节点SSH连接密码
     sshPassword: 123456
     #项目编译使用的镜像名称和版本
-    buildImage: java-build-image-linux-arm64:1.0.0
+    buildImage: go-build-image-linux-arm64:1.0.0
   #目标架构linux/amd64
   linux-amd64:
     #项目编译节点的IP地址
@@ -159,7 +159,7 @@ build:
     #项目编译节点SSH连接密码
     sshPassword: 123456
     #项目编译使用的镜像名称和版本
-    buildImage: java-build-image-linux-amd64:1.0.0
+    buildImage: go-build-image-linux-amd64:1.0.0
 
 #docker构建阶段的配置参数
 docker:
@@ -177,7 +177,7 @@ docker:
   useTemplate: ${useTemplate}
   #projectType参数决定了生成时使用的默认Dockerfile模板。
   #有效值(全部为小写)：java、python、c、c++、vue、nextjs等
-  projectType: java
+  projectType: go
   #容器中应用工作路径，
   workDir: ${workDirInContainer}
   #docker容器中应用存储路径，注意要与挂载路径保持一致。
@@ -348,7 +348,7 @@ chart:
                 mountPath: ${workDirInContainer}
               - name: ${serviceName}-config
                 #mountPath参数的前缀必须与docker.workDir参数一致。
-                mountPath: ${workDirInContainer}/wydevops-config
+                mountPath: /var/lib/registry
               #挂载公共配置信息
               #- name: public-params
               #  mountPath: /var/params
@@ -533,8 +533,8 @@ chart:
               - ${serviceName}-gateway
             match:
               - uri:
-                  prefix: \"${gatewayPath}\"
-            #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。
+                  prefix: ${gatewayPath}
+            #如果需要重写路由，则打开下面的rewrite配置项
             rewrite:
               #以下配置将删除路由路径中的${gatewayPath}部分。
               uri: ${rewriteUri}

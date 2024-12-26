@@ -14,8 +14,8 @@ function queryNexusComponentId() {
 
   gDefaultRetVal=""
 
-  echo "curl -X 'GET' -H 'accept: application/json' http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/search?repository=${l_repository}&name=${l_componentName}&version=${l_componentVersion}"
-  l_result=$(curl -X 'GET' -H 'accept: application/json' \
+  echo "curl -s -X 'GET' -H 'accept: application/json' http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/search?repository=${l_repository}&name=${l_componentName}&version=${l_componentVersion}"
+  l_result=$(curl -s -X 'GET' -H 'accept: application/json' \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/search?repository=${l_repository}&name=${l_componentName}&version=${l_componentVersion}" 2>&1)
   l_result=$(echo -e "${l_result}" | grep -m 1 -oP "^([ ]*)\"id\" : (.*)$")
   if [ "${l_result}" ];then
@@ -42,8 +42,8 @@ function deleteNexusComponentById() {
 
   gDefaultRetVal="false"
 
-  echo "curl -X 'DELETE' -H 'accept: application/json' -u ${gDockerRepoAccount}:${gDockerRepoPassword} http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}"
-  l_result=$(curl -X 'DELETE' -H 'accept: application/json' -u "${gDockerRepoAccount}:${gDockerRepoPassword}" \
+  echo "curl -s -X 'DELETE' -H 'accept: application/json' -u ${gDockerRepoAccount}:${gDockerRepoPassword} http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}"
+  l_result=$(curl -s -X 'DELETE' -H 'accept: application/json' -u "${gDockerRepoAccount}:${gDockerRepoPassword}" \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}" 2>&1)
   l_errorLog=$(echo -e "${l_result}" |  grep -ioP "^(.*)(Error|Failed)(.*)$")
   [[ "${l_errorLog}" ]] && error "删除仓库中现有的同名同版本的镜像失败: ${l_result}"
@@ -68,7 +68,7 @@ function pushNexusChartComponent(){
   registerTempFile "${l_tmpFile}"
 
   info "开始推送${l_chartFile##*/}镜像到chart仓库中..." "-n"
-  curl -v -F file=@"${l_chartFile}" -u "${l_account}":"${l_password}" \
+  curl -s -v -F file=@"${l_chartFile}" -u "${l_account}":"${l_password}" \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components?repository=${l_repository}" 2>&1 | tee "${l_tmpFile}"
   l_result=$(cat "${l_tmpFile}")
   l_errorLog=$(echo -e "${l_result}" | grep -ioP "^(.*)(Error|Failed)(.*)$")
