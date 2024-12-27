@@ -15,8 +15,8 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
   local l_archType
   local l_info
 
-
-  gProjectChartTemplatesDir="${gHelmBuildDir}/${gProjectTemplateDirName}/chart/templates"
+  #初始化项目自定义k8s资源文件存放目录
+  gProjectChartTemplatesDir="${gHelmBuildDir}/${gProjectTemplateDirName}/chart"
 
   #检查是否安装有helm工具。
   if ! command -v helm &> /dev/null; then
@@ -419,7 +419,7 @@ function onBeforeHelmPackage_ex() {
   local l_ymalFile
 
   if [[ "${gCustomizedHelm}" == "false" && -d "${gProjectChartTemplatesDir}" ]];then
-    info "尝试将主模块目录下chart-templates子目录中的*.yaml文件复制到./templates目录中 ..."
+    info "尝试将主模块目录下wydevops/templates/chart/templates子目录中的*.yaml文件复制到./templates目录中 ..."
     #为项目自定义部分特殊配置提供了扩展。
     l_yamlList=$(find "${gProjectChartTemplatesDir}" -type f -name "*.yaml")
     if [ "${l_yamlList}" ];then
