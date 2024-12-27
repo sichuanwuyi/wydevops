@@ -161,7 +161,7 @@ function usage() {
                                   {仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)}
     -D, --dockerRepo    string    Docker镜像仓库信息, 格式：{仓库类型(nexus、harbor或registry)},{仓库实例名称(nexus)、项目名称(harbor)或组织代码(registry)},
                                   {仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)},
-                                  {服务名称(仅对Registry类型仓库有效)},{配置文件全路径名称(仅对nexus类型仓库有效)}
+                                  {服务名称(仅对registry类型仓库有效)},{配置文件全路径名称(仅对registry类型仓库有效)}
     -I, --imageCacheDir String    当workMode=local时，用于缓存Dockerfile文件中From行指定的Image镜像的本地目录。
     -L, --language      string    项目语言类型或架构类型; 目前支持的有效值有：java、go、vue、nextjs、other等，依据具体实现而定。
     -M, --workMode      string    工作模式：jenkins、local
