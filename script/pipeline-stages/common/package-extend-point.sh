@@ -40,6 +40,8 @@ function createOfflinePackage_ex() {
 
   local l_index=$1
   local l_chartName=$2
+  #最后一项的索引值。
+  local l_maxIndex=$3
 
   local l_chartVersion
   local l_targetDir
@@ -58,6 +60,8 @@ function createOfflinePackage_ex() {
 
   invokeExtendPointFunc "copyChartImage" "获取${l_chartName}离线安装包中Chart镜像扩展" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}/chart"
   invokeExtendPointFunc "createConfigFile" "创建${l_chartName}离线安装包中的配置文件扩展" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}"
+  #invokeExtendPointFunc "createUIJsonFile" "创建${l_chartName}离线安装包中的UI配置文件扩展" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}" "${l_maxIndex}"
+  invokeExtendPointFunc "createUIYamlFile" "创建${l_chartName}离线安装包中的UI配置文件扩展" "${l_index}" "${l_chartName}" "${l_targetDir}"
 
   #读取离线打包的架构类型。
   readParam "${gCiCdYamlFile}" "package[${l_index}].archTypes"
@@ -164,6 +168,107 @@ function createConfigFile_ex() {
     # shellcheck disable=SC2164
     cd "${l_curDir}"
 
+  fi
+
+}
+
+function createUIJsonFile_ex() {
+  export gDefaultRetVal
+  export gCiCdYamlFile
+
+  local l_index=$1
+  local l_chartName=$2
+  local l_chartVersion=$3
+  local l_targetDir=$4
+  local l_maxIndex=$5
+
+  local l_valuesYaml
+  local l_uiJsonFile
+  local l_uiJsonFileContent
+  local l_itemCount
+
+  local l_i
+  local l_newContent
+  local l_endLine
+  local l_spaceNum
+  local l_spaceStr
+
+  local l_endChar
+  local l_endFlag
+
+  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成setting.conf文件。
+  if [ ! -f "${l_targetDir}/chart/${l_chartName}-${l_chartVersion}.tgz" ];then
+    return;
+  fi
+
+  l_valuesYaml="${l_chartName}/values.yaml"
+  #创建ui-config.json文件。
+  l_uiJsonFile="${l_targetDir}/ui-config.json"
+  #初始化l_uiJsonFile文件。
+  # shellcheck disable=SC2091
+  echo -e "{\n}" > "${l_uiJsonFile}"
+
+  #从文件中读取现有内容。
+  l_uiJsonFileContent=$(cat "${l_uiJsonFile}")
+  #获取最后一个“}”符号所在的行数据。
+  l_endLine=$(echo -e "${l_uiJsonFileContent}" | grep -noP "^[ ]*\\}" | tail -n 1)
+  #获取最后一个“}”符号所在的行的前导空格数量。
+  l_spaceNum=$(echo -e "${l_endLine}" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
+  ((l_spaceNum = l_spaceNum + 2))
+  l_spaceStr=$(printf "%${l_spaceNum}s")
+   #获取最后一个“}”符号所在的行的行号。
+  l_endLine="${l_endLine%%:*}"
+
+  #获取可配置参数的数量。
+  getListSize "${gCiCdYamlFile}" "chart[${l_index}].params.configurable"
+  if [ "${gDefaultRetVal}" -le 0 ];then
+    return;
+  fi
+  # shellcheck disable=SC2004
+  ((l_itemCount=${gDefaultRetVal} - 1))
+
+  l_endChar=","
+  [[ "${l_index}" -eq "${l_maxIndex}" ]] && l_endChar=""
+
+  l_endFlag=","
+  #循环处理所有的变量，将其转换为json格式。
+  l_newContent="${l_spaceStr}["
+  for (( l_i = 0; l_i <= l_itemCount; l_i++ )); do
+    [[ "${l_i}" -eq "${l_itemCount}" ]] && l_endFlag=""
+    _convertToJson "${gCiCdYamlFile}" "chart[${l_index}].params.configurable[${l_i}]" "${l_endFlag}" "  ${l_spaceStr}"
+    l_newContent="${l_newContent}\n${gDefaultRetVal}"
+  done
+  l_newContent="${l_newContent}\n${l_spaceStr}]${l_endChar}"
+  l_newContent="  ${l_spaceStr}\"${l_chartName}\": ${l_newContent}"
+  #将引号作转义处理
+  l_newContent="${l_newContent//\"/\\\"}"
+  #在l_endLine行前面插入新的内容。
+  l_uiJsonFileContent=$(echo -e "${l_uiJsonFileContent}" | sed "${l_endLine}i\\${l_newContent}")
+  #将新的文件内容写入文件中。
+  echo -e "${l_uiJsonFileContent}" > "${l_uiJsonFile}"
+}
+
+function createUIYamlFile_ex() {
+  export gDefaultRetVal
+  export gCiCdYamlFile
+
+  local l_index=$1
+  local l_chartName=$2
+  local l_targetDir=$3
+
+  local l_uiYamlFile
+
+  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成setting.conf文件。
+  if [ ! -f "${l_targetDir}/chart/${l_chartName}-${l_chartVersion}.tgz" ];then
+    return;
+  fi
+
+  #创建ui-config.yaml文件。
+  l_uiYamlFile="${l_targetDir}/ui-config.yaml"
+
+  readParam "${gCiCdYamlFile}" "chart[${l_index}].params.configurable"
+  if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" != "null" ]];then
+    insertParam "${l_uiYamlFile}" "${l_chartName}" "${gDefaultRetVal}"
   fi
 
 }
@@ -647,6 +752,75 @@ function _filterValidDockerImages() {
 
   l_imageArray="${l_imageArray%,*}"
   gDefaultRetVal="${l_imageArray:1}"
+}
+
+function _convertToJson() {
+  export gDefaultRetVal
+
+  local l_ciCdYamlFile=$1
+  local l_paramPath=$2
+  #Json对象数据的"}"后面的结束符：逗号或为空
+  local l_endFlag=$3
+  #上层数据的前导空格串。
+  local l_spaceStr=$4
+
+  local l_content
+  local l_items
+  local l_itemCount
+  local l_i
+
+  local l_key
+  local l_value
+  local l_endChar
+  local l_endChar1
+
+  local l_jsonContent
+  local l_subItemCount
+  local l_subContent
+  local l_j
+
+  readParam "${l_ciCdYamlFile}" "${l_paramPath}"
+  l_content=$(echo -e "${gDefaultRetVal}" | grep -oP "^[a-zA-Z0-9]+.*")
+  stringToArray "${l_content}" "l_items"
+
+  l_jsonContent="    {"
+  # shellcheck disable=SC2068
+  l_itemCount=${#l_items[@]}
+  ((l_itemCount = l_itemCount - 1))
+  l_endChar=","
+  for ((l_i = 0; l_i <= l_itemCount; l_i++));do
+    l_content="${l_items[${l_i}]}"
+    l_key="${l_content%%:*}"
+    #删除左右空格
+    l_key=$(echo -e "${l_key}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    l_value="${l_content#*:}"
+    #删除左右空格
+    l_value=$(echo -e "${l_value}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    [[ "${l_i}" -eq "${l_itemCount}" ]] && l_endChar=""
+    if [ "${l_value}" ];then
+      l_jsonContent="${l_jsonContent}\n  ${l_spaceStr}\"${l_key}\": ${l_value}${l_endChar}"
+    else
+      getListSize "${l_ciCdYamlFile}" "${l_paramPath}.${l_key}"
+      l_subItemCount="${gDefaultRetVal}"
+      if [ "${l_subItemCount}" -gt 0 ];then
+        ((l_subItemCount = l_subItemCount - 1))
+        l_subContent="["
+        l_endChar1=","
+        for ((l_j = 0; l_j <= l_subItemCount; l_j++));do
+          [[ "${l_j}" == "${l_subItemCount}" ]] && l_endChar1=""
+          _convertToJson "${l_ciCdYamlFile}" "${l_paramPath}.${l_key}[${l_j}]" "${l_endChar1}" "    ${l_spaceStr}"
+          l_subContent="${l_subContent}\n${l_spaceStr}${gDefaultRetVal}"
+        done
+        l_subContent="${l_subContent}\n  ${l_spaceStr}]${l_endChar}"
+        l_jsonContent="${l_jsonContent}\n  ${l_spaceStr}\"${l_key}\": ${l_subContent}"
+      else
+        _convertToJson "${l_ciCdYamlFile}" "${l_paramPath}.${l_key}" "${l_endChar}" "  ${l_spaceStr}"
+        l_subContent="${gDefaultRetVal}"
+        l_jsonContent="${l_jsonContent}\n  ${l_spaceStr}\"${l_key}\": ${l_subContent}"
+      fi
+    fi
+  done
+  gDefaultRetVal="${l_jsonContent}\n${l_spaceStr}}${l_endFlag}"
 }
 #**********************私有方法-结束***************************#
 

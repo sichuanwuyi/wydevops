@@ -5,6 +5,24 @@ globalParams:
   #使用istio时Gateway资源绑定的Host名称，*表示任意Host。
   gatewayHost: www.axure.com
 
+chart:
+  - name: ${chartName}
+    #测试自定义可配置参数。
+    params:
+      testParam: test
+      configurable:
+        - name: "后台管理页面"
+          catalog: "高级选项"
+          items:
+            - name: "管理端口号"
+              key: "nodePort"
+              required: true
+              type: "input"
+              len: 120
+              value: 30088
+              range: "[30000,32767]"
+              description: "管理页面(http://{ip}:{port}${apisixPath}/index)使用的port端口号"
+
 deploy:
   - name: ${chartName}
     #要部署的离线包名称。
@@ -34,7 +52,7 @@ deploy:
         #K8S集群的ApiServer服务器的地址信息（必须配置）
         #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
         #多个集群的ApiServer服务器地址间使用英文逗号隔开。
-        apiServer: 172.29.214.110|22|wuyi|Wpl118124
+        apiServer: 172.19.157.235|22|wuyi|Wpl118124
         #发布服务的命名空间（必须配置）
         namespace: default
         #目标集群使用的docker仓库信息。
@@ -61,4 +79,4 @@ deploy:
         nodeIPs:
           #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
           #第一个节点必须是能免密直连其他节点。
-          - 172.29.214.110|22|wuyi|Wpl118124
+          - 172.19.157.235|22|wuyi|Wpl118124
