@@ -15,10 +15,14 @@ globalParams:
   systemName: ${serviceName}
   #服务所属应用的英文名称。
   systemNameEn: ${serviceName}
+  #子应用版本。
+  systemVersion: 1.0.0
   #服务所属的业务板块名称。逻辑上，一个应用下可以包含多个业务板块，一个业务板块下可以包含多个服务。
   subSystemName: ${serviceName}
   #服务所属的业务板块的英文名称。
   subSystemNameEn: ${serviceName}
+  #子应用版本。
+  subSystemVersion: 1.0.0
   #运行时Runtime的版本(vue的版本)
   runtimeVersion:
 
