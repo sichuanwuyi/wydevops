@@ -11,6 +11,14 @@ globalParams:
   nameEn: ${serviceName}
   #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
   serviceCode: ${serviceName}
+  #服务所属应用的中文名称。逻辑上，一个应用下可以包含多个业务板块，一个业务板块下可以包含多个服务。
+  systemName: ${serviceName}
+  #服务所属应用的英文名称。
+  systemNameEn: ${serviceName}
+  #服务所属的业务板块名称。逻辑上，一个应用下可以包含多个业务板块，一个业务板块下可以包含多个服务。
+  subSystemName: ${serviceName}
+  #服务所属的业务板块的英文名称。
+  subSystemNameEn: ${serviceName}
   #运行时Runtime的版本(vue的版本)
   runtimeVersion:
 
@@ -287,8 +295,14 @@ chart:
         affinity: { }
         podLabels: { }
         podAnnotations:
-          app.kubernetes.io/service-name: \"${name}\"
-          app.kubernetes.io/service-en-name: \"${nameEn}\"
+          wydevops/service-name: \"${name}\"
+          wydevops/service-en-name: \"${nameEn}\"
+          wydevops/system-name: \"${systemName}\"
+          wydevops/system-name-en: \"${systemNameEn}\"
+          wydevops/system-version: \"${systemVersion}\"
+          wydevops/sub-system-name: \"${subSystemName}\"
+          wydevops/sub-system-name-en: \"${subSystemNameEn}\"
+          wydevops/sub-system-version: \"${subSystemVersion}\"
         #参数不为空时即表示需要挂载PVC，参数值即为PVC资源名称。
         #挂载路径默认为${serviceName}-workdir
         persistentVolumeClaimName: ${persistentVolumeClaimName}

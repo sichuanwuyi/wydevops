@@ -132,7 +132,7 @@ function createConfigFile_ex() {
   local l_key
 
 
-  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成setting.conf文件。
+  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成settings.conf文件。
   if [ -f "${l_targetDir}/chart/${l_chartName}-${l_chartVersion}.tgz" ];then
 
     readParam "${gCiCdYamlFile}" "globalParams.gatewayHost"
@@ -140,8 +140,8 @@ function createConfigFile_ex() {
 
     l_valuesYaml="${l_chartName}/values.yaml"
 
-    #创建setting.conf文件。
-    l_settingFile="${l_targetDir}/setting.conf"
+    #创建settings.conf文件。
+    l_settingFile="${l_targetDir}/settings.conf"
     echo "image.registry=${gDockerRepoName}," > "${l_settingFile}"
     echo "gatewayRoute.host=${l_gatewayHost}," >> "${l_settingFile}"
 
@@ -196,7 +196,7 @@ function createUIJsonFile_ex() {
   local l_endChar
   local l_endFlag
 
-  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成setting.conf文件。
+  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成settings.conf文件。
   if [ ! -f "${l_targetDir}/chart/${l_chartName}-${l_chartVersion}.tgz" ];then
     return;
   fi
@@ -258,7 +258,7 @@ function createUIYamlFile_ex() {
 
   local l_uiYamlFile
 
-  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成setting.conf文件。
+  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成settings.conf文件。
   if [ ! -f "${l_targetDir}/chart/${l_chartName}-${l_chartVersion}.tgz" ];then
     return;
   fi

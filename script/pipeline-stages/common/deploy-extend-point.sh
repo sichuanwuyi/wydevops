@@ -639,7 +639,7 @@ function _deployServiceInK8S() {
     l_account="${l_array[2]}"
     l_password="${l_array[3]}"
 
-    info "查找Chart镜像文件和其对应的setting.conf文件..."
+    info "查找Chart镜像文件和其对应的settings.conf文件..."
     _findChartImage "${l_chartName}" "${l_chartVersion}"
     [[ ! "${gDefaultRetVal}" ]] && error "失败"
     # shellcheck disable=SC2206
@@ -790,9 +790,9 @@ function _findChartImage() {
   fi
 
   if [ -f "${l_chartFile}" ];then
-    l_settingFile="${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/setting.conf"
+    l_settingFile="${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/settings.conf"
     if [ ! -f "${l_settingFile}" ];then
-      warn "未找到Chart镜像的setting.conf文件"
+      warn "未找到Chart镜像的settings.conf文件"
       gDefaultRetVal="${l_chartFile}"
       return
     fi
