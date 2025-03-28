@@ -304,7 +304,9 @@ chart:
         podLabels: {}
         podAnnotations:
           wydevops/service-name: \"${name}\"
-          wydevops/service-en-name: \"${nameEn}\"
+          wydevops/service-name-en: \"${nameEn}\"
+          wydevops/service-descr: \"${description}\"
+          wydevops/service-descr-en: \"${descriptionEn}\"
           wydevops/system-name: \"${systemName}\"
           wydevops/system-name-en: \"${systemNameEn}\"
           wydevops/system-version: \"${systemVersion}\"
