@@ -54,6 +54,7 @@ function onBeforeCreatingChartImage_ex() {
   export gCurrentChartVersion
   export gCurrentAppVersion
   export gCurrentAppDescription
+  export gCurrentAppDescriptionEn
 
   local l_chartPath=$1
 
@@ -81,6 +82,10 @@ function onBeforeCreatingChartImage_ex() {
   gCurrentAppDescription=""
   readParam "${l_packageFile}" "description"
   [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && gCurrentAppDescription="${gDefaultRetVal}"
+
+  gCurrentAppDescriptionEn=""
+  readParam "${l_packageFile}" "descriptionEn"
+  [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && gCurrentAppDescriptionEn="${gDefaultRetVal}"
 
   readParam "${l_packageFile}" "customizedHelmDir"
   if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
@@ -226,6 +231,9 @@ function onModifyingChartYaml_ex(){
   updateParam "${l_chartYaml}" "appVersion" "${gCurrentAppVersion}"
   if [ "${gCurrentAppDescription}" ];then
     updateParam "${l_chartYaml}" "description" "${gCurrentAppDescription}"
+  fi
+  if [ "${gCurrentAppDescriptionEn}" ];then
+    insertParam "${l_chartYaml}" "descriptionEn" "${gCurrentAppDescriptionEn}"
   fi
 
   #恢复gSaveBackImmediately的值。

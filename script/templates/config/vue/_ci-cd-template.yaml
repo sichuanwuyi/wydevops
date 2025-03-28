@@ -11,6 +11,11 @@ globalParams:
   nameEn: ${serviceName}
   #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
   serviceCode: ${serviceName}
+  #对本服务的一个中文描述说明文本，会写入Chart镜像。
+  description: "vue服务: ${serviceName}"
+  #对本服务的一个英文描述说明文本，会写入Chart镜像。
+  descriptionEn: "vue service: ${serviceName}"
+
   #服务所属应用的中文名称。逻辑上，一个应用下可以包含多个业务板块，一个业务板块下可以包含多个服务。
   systemName: ${serviceName}
   #服务所属应用的英文名称。
@@ -119,9 +124,6 @@ globalParams:
   configMapFiles:
   #需要打包到离线安装包中镜像名称，格式：{镜像名称}:{镜像版本},...
   packageImages: ${baseImage}:${baseVersion},${businessImage}:${businessVersion}
-
-  #对本服务的一个描述说明文本，会写入Chart镜像。
-  description: "Vue服务: ${serviceName}"
 
   #chart镜像的名称, 默认与服务的名称相同
   chartName: ${serviceName}
@@ -259,6 +261,7 @@ chart:
     customizedHelmDir:
     #Chart.yaml文件中的description内容。
     description: ${description}
+    descriptionEn: ${descriptionEn}
     #设置引用的外部服务的chart镜像(*.tgz)。可以设置多个，相互间使用英文逗号分隔。
     #如果配置值带有路径则直接使用，否则会从本地系统或配置的chart镜像仓库获取目标镜像。
     #这个参数实现了一个Chart镜像包含多个服务的发布方式。
