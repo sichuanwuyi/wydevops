@@ -60,8 +60,8 @@ function createOfflinePackage_ex() {
 
   invokeExtendPointFunc "copyChartImage" "获取${l_chartName}离线安装包中Chart镜像扩展" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}/chart"
   invokeExtendPointFunc "createConfigFile" "创建${l_chartName}离线安装包中的配置文件扩展" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}"
-  #invokeExtendPointFunc "createUIJsonFile" "创建${l_chartName}离线安装包中的UI配置文件扩展" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}" "${l_maxIndex}"
-  invokeExtendPointFunc "createUIYamlFile" "创建${l_chartName}离线安装包中的UI配置文件扩展" "${l_index}" "${l_chartName}" "${l_targetDir}"
+  invokeExtendPointFunc "createUIJsonFile" "创建${l_chartName}离线安装包中的UI配置文件扩展" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}" "${l_maxIndex}"
+  #invokeExtendPointFunc "createUIYamlFile" "创建${l_chartName}离线安装包中的UI配置文件扩展" "${l_index}" "${l_chartName}" "${l_targetDir}"
 
   #读取离线打包的架构类型。
   readParam "${gCiCdYamlFile}" "package[${l_index}].archTypes"

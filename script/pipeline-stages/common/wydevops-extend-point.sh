@@ -794,6 +794,7 @@ function _replaceParamPlaceholder() {
   local l_i
   local l_paramName
   local l_paramValue
+  local l_paramValue1
 
   local l_paramRef
   local l_refItems
@@ -820,7 +821,8 @@ function _replaceParamPlaceholder() {
     fi
     l_paramName="${l_line%%:*}"
     l_paramValue="${l_line#*:}"
-    l_paramValue="${l_paramValue:1}"
+    #删除头尾空格
+    l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
     #保留参数值中的引号
     l_paramValue="${l_paramValue//\\\"/\\\\\"}"
     #保留参数值中的“/”符号
@@ -833,10 +835,14 @@ function _replaceParamPlaceholder() {
       stringToArray "${l_paramRef}" "l_refItems"
       l_itemCount="${#l_refItems[@]}"
       for (( l_j = 0; l_j < l_itemCount; l_j++ )); do
+        #获取参数${param},并删除前后的大括号。
         l_refItem="${l_refItems[${l_j}]}"
         l_refItem="${l_refItem#*{}"
         l_refItem="${l_refItem%\}*}"
+        #得到引用的参数值。
         l_paramRef="${l_rowDataMap[${l_refItem}]}"
+        #删除参数值的头尾空格
+        l_paramRef=$(echo -e "${l_paramRef}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
         l_paramValue="${l_paramValue//\$\{${l_refItem}\}/${l_paramRef}}"
       done
     fi
@@ -845,6 +851,9 @@ function _replaceParamPlaceholder() {
     #替换文件中的占位符。
     l_content=$(echo -e "${l_content}" | sed "s/\\\${${l_paramName}}/${l_paramValue}/g")
   done
+
+  #替换文件中的\“"为\",”\“替换为\“
+  l_content=$(echo -e "${l_content}" | sed 's/\\\"\"/\\\"/g' | sed 's/\"\\\"/\\\"/g')
 
   #更新缓存内容。
   gFileContentMap["${l_cicdYaml}"]="${l_content}"
@@ -856,6 +865,7 @@ function _replaceParamPlaceholder() {
   if [ "${lines}" ];then
     error "ci-cd.yaml文件中存在未明确配置的参数:\n${lines}"
   fi
+
 }
 
 #从ci-cd.yaml文件初始化全局变量的值。
