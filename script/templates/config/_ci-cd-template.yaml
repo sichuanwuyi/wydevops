@@ -580,38 +580,42 @@ chart:
         - name: "资源配置"
           catalog: "通用参数"
           items:
-            - name: "CPU最大可用核数"
-              key: "resources.limits.cpu"
-              required: true
-              type: "input"
-              len: 120
-              value: "${cpuLimits}"
-              express: "^[1-9]{1}[0-9]{2,4}m$"
-              description: "服务最大可用CPU核数，取值范围：100m-99999m，单位：m(毫核）"
-            - name: "内存最大可用额度"
-              key: "resources.limits.memory"
-              required: true
-              type: "input"
-              len: 120
-              value: "${memoryLimits}"
-              express: "^[1-9]{1}[0-9]{0,2}(Mi|Gi)$"
-              description: "服务最大可用内存额度，取值范围：1Mi-999Gi，单位：Mi或Gi"
             - name: "CPU预订核数"
               key: "resources.requests.cpu"
               required: true
               type: "input"
               len: 120
               value: "${cpuRequests}"
+              unit: "毫核(m)"
               express: "^[1-9]{1}[0-9]{2,4}m$"
               description: "服务预订的CPU核数，取值范围：100m-99999m，单位：m(毫核）"
+            - name: "CPU最大可用核数"
+              key: "resources.limits.cpu"
+              required: true
+              type: "input"
+              len: 120
+              value: "${cpuLimits}"
+              unit: "毫核(m)"
+              express: "^[1-9]{1}[0-9]{2,4}m$"
+              description: "服务最大可用CPU核数，取值范围：100m-99999m，单位：m(毫核）"
             - name: "内存预订额度"
               key: "resources.requests.memory"
               required: true
               type: "input"
               len: 120
               value: "${memoryRequests}"
+              unit: "兆字节(Mi)、吉字节(Gi)"
               express: "^[1-9]{1}[0-9]{0,2}(Mi|Gi)$"
               description: "服务预订的内存额度，取值范围：1Mi-999Gi，单位：Mi或Gi"
+            - name: "内存最大可用额度"
+              key: "resources.limits.memory"
+              required: true
+              type: "input"
+              len: 120
+              value: "${memoryLimits}"
+              unit: "兆字节(Mi)、吉字节(Gi)"
+              express: "^[1-9]{1}[0-9]{0,2}(Mi|Gi)$"
+              description: "服务最大可用内存额度，取值范围：1Mi-999Gi，单位：Mi或Gi"
 
 package:
     #离线包的名称
