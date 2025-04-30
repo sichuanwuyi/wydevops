@@ -10,6 +10,7 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
   export gChartRepoInstanceName
   export gProjectChartTemplatesDir
   export gProjectTemplateDirName
+  export gTargetNamespace
 
   local l_systemType
   local l_archType
@@ -38,6 +39,11 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
     #制作单镜像时，对ci-cd.yaml文件进行特殊处理。
     invokeExtendPointFunc "handleBuildingSingleImageForChart" "chart阶段单镜像构建模式下对ci-cd.yaml文件中参数的特殊调整" "${gCiCdYamlFile}"
   fi
+
+  #初始化安装的目标命名空间
+  gTargetNamespace="default"
+  readParam "${gCiCdYamlFile}" "targetNamespace"
+  [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && gTargetNamespace="${gDefaultRetVal}"
 
   #处理ci-cd.yaml文件中的container[].ports，生成service配置，并展开containerPort配置项。
   _processContainerPorts "${gCiCdYamlFile}"
@@ -247,6 +253,7 @@ function onModifyingValuesYaml_ex(){
   export gFileContentMap
   export gBuildPath
   export gTargetGatewayHosts
+  export gTargetNamespace
 
   local l_chartPath=$1
 
@@ -272,6 +279,8 @@ function onModifyingValuesYaml_ex(){
   insertParam "${l_valuesYaml}" "image.registry" "${gDockerRepoName}"
   #在values.yaml文件中定义gatewayRoute.host参数
   insertParam "${l_valuesYaml}" "gatewayRoute.host" "${gTargetGatewayHosts}"
+  #在values.yaml文件中定义targetNamespace参数
+  insertParam "${l_valuesYaml}" "targetNamespace" "${gTargetNamespace}"
 
   #将l_packageYaml文件中的params参数配置节添加到values.yaml文件中。
   #并将l_packageYaml文件中configMaps[?].files参数中所有文件中配置的变量(”{{ .Values.* }}“)写入values.yaml的params配置节中。
@@ -466,6 +475,8 @@ function addParamsToValuesYaml_ex(){
   local l_k
   local l_type
   local l_key
+  local l_arrayIndex
+  local l_subKey
   local l_value
 
   readParam "${l_packageYaml}" "${l_paramPath}"
@@ -495,25 +506,33 @@ function addParamsToValuesYaml_ex(){
           error "${l_valuesYaml##*/}文件中${l_paramPath}.configurable[${l_i}].items[${l_j}].key参数异常：缺失或值为空"
 
         l_key="${gDefaultRetVal}"
-
-        if [ "${l_type}" == "group" ];then
+        if [ "${l_type}" == "\"group\"" ];then
           ((l_k = 0))
           while true; do
             readParam "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items[${l_j}].items[${l_k}].key"
-            [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && \
+            [[ "${gDefaultRetVal}" == "null" ]] && break
+            [[ ! "${gDefaultRetVal}" ]] && \
               error "${l_valuesYaml##*/}文件中${l_paramPath}.configurable[${l_i}].items[${l_j}].items[${l_k}].key参数异常：缺失或值为空"
+            l_subKey="${gDefaultRetVal}"
 
-            l_key="${l_key}[${l_k}].${gDefaultRetVal}"
+            readParam "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items[${l_j}].groupIndex"
+
+            if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
+              l_arrayIndex="${gDefaultRetVal}"
+            else
+              l_arrayIndex="0"
+            fi
+            l_subKey="${l_key}[${l_arrayIndex}].${l_subKey}"
 
             readParam "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items[${l_j}].items[${l_k}].value"
             [[ "${gDefaultRetVal}" == "null" ]] && \
               error "${l_valuesYaml##*/}文件中缺失了${l_paramPath}.configurable[${l_i}].items[${l_j}].items[${l_k}].value参数"
 
             l_value="${gDefaultRetVal}"
-            insertParam "${l_valuesYaml}" "params.${l_key//\"/}" "${l_value}"
+            insertParam "${l_valuesYaml}" "params.${l_subKey//\"/}" "${l_value}"
             [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && \
-              error "向${l_valuesYaml##*/}文件中插入params.${l_key//\"/}参数失败"
-            info "向${l_valuesYaml##*/}文件中插入params.${l_key//\"/}参数成功，值为：${l_value}"
+              error "向${l_valuesYaml##*/}文件中插入params.${l_subKey//\"/}参数失败"
+            info "向${l_valuesYaml##*/}文件中插入params.${l_subKey//\"/}参数成功，值为：${l_value}"
 
             ((l_k = l_k + 1))
           done

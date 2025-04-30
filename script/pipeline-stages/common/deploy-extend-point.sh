@@ -570,6 +570,7 @@ function _deployServiceInK8S() {
   export gHelmBuildOutDir
   export gDockerRepoName
   export gDockerRepoInstanceName
+  export gServiceName
 
   local l_index=$1
   local l_chartName=$2
@@ -639,7 +640,7 @@ function _deployServiceInK8S() {
     l_account="${l_array[2]}"
     l_password="${l_array[3]}"
 
-    info "查找Chart镜像文件和其对应的settings.conf文件..."
+    info "查找Chart镜像文件和其对应的settings.yaml文件..."
     _findChartImage "${l_chartName}" "${l_chartVersion}"
     [[ ! "${gDefaultRetVal}" ]] && error "失败"
     # shellcheck disable=SC2206
@@ -648,9 +649,8 @@ function _deployServiceInK8S() {
     if [ "${#l_array[@]}" -gt 1 ];then
       l_settingFile="${l_array[1]}"
       #从文件中读取参数设置值对。
-      # shellcheck disable=SC2002
-      l_settingParams=$(cat "${l_settingFile}")
-      l_settingParams="${l_settingParams%,*}"
+      readParam "${l_settingFile}" "${gServiceName}"
+      l_settingParams="${gDefaultRetVal%,*}"
     fi
 
     #如果dockerRepo参数配置有值且与当前使用的docker镜像仓库不是同一个，则需要推送docker镜像到新的仓库中。
@@ -790,9 +790,9 @@ function _findChartImage() {
   fi
 
   if [ -f "${l_chartFile}" ];then
-    l_settingFile="${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/settings.conf"
+    l_settingFile="${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/settings.yaml"
     if [ ! -f "${l_settingFile}" ];then
-      warn "未找到Chart镜像的settings.conf文件"
+      warn "未找到Chart镜像的settings.yaml文件"
       gDefaultRetVal="${l_chartFile}"
       return
     fi

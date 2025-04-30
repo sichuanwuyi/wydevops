@@ -141,15 +141,18 @@ function getAllParamPathAndValue() {
   export gDefaultRetVal
   local l_yamlFile=$1
   local l_paramPath=$2
+  # 关联数组引用
   local l_resultMapName=$3
-  local l_paramPathPrefix=$4
+  # 顺序数组引用
+  local l_paramKeys=$4
+  local l_paramPathPrefix=$5
 
 
   readParam "${l_yamlFile}" "${l_paramPath}"
   [ "${gDefaultRetVal}" == "null" ] && error "${l_yamlFile##*/}文件中不存在${l_paramPath}参数"
 
   _getAllParamPathAndValueByParentPath "${l_yamlFile}" "${l_paramPath}" "${l_resultMapName}" \
-    "${gDefaultRetVal}" "${l_paramPathPrefix}"
+    "${l_paramKeys}" "${gDefaultRetVal}" "${l_paramPathPrefix}"
 
 }
 
@@ -2884,9 +2887,12 @@ function _getAllParamPathAndValueByParentPath() {
 
   local l_yamlFile=$1
   local l_paramPath=$2
+  # 关联数组引用
   local l_resultMapName=$3
-  local l_paramDataBlock=$4
-  local l_paramPathPrefix=$5
+  # 顺序数组引用
+  local l_paramKeys=$4
+  local l_paramDataBlock=$5
+  local l_paramPathPrefix=$6
 
   local l_firstLine
   local l_content
@@ -2899,13 +2905,15 @@ function _getAllParamPathAndValueByParentPath() {
   local l_paramValue
   local l_tmpParamPath
   local l_lineCount
+  local l_currentIndex
+
+  #排除注释行
+  l_firstLine=$(echo -e  "${l_paramDataBlock}" | grep -m 1 -oP "^[a-zA-Z_\-]+" )
+  [[ ! "${l_firstLine}" ]] && return
 
   if [[ "${l_paramPathPrefix}" && ! "${l_paramPathPrefix}" =~ ^(.*)(\.)$ ]];then
     l_paramPathPrefix="${l_paramPathPrefix}."
   fi
-
-  l_firstLine=$(echo -e  "${l_paramDataBlock}" | grep -m 1 -oP "^[a-zA-Z_\-]+" )
-  [[ ! "${l_firstLine}" ]] && return
 
   if [[ "${l_firstLine}" =~ ^(\-) ]];then
     l_content=$(echo -e  "${l_paramDataBlock}" | grep -oP "^(\-)" )
@@ -2917,12 +2925,18 @@ function _getAllParamPathAndValueByParentPath() {
         readParam "${l_yamlFile}" "${l_paramPath[${l_i}]}"
         info "将${l_paramPath}[${l_i}]参数及其值${gDefaultRetVal}放入${l_resultMapName}中"
         eval "${l_resultMapName}[${l_paramPathPrefix}${l_paramPath}[${l_i}]]=\"${gDefaultRetVal}\""
+        # 获取数组当前长度作为新元素的索引
+        eval "l_currentIndex=\"\${#${l_paramKeys}[@]}\""
+        eval "${l_paramKeys}[${l_currentIndex}]=\"${l_paramPathPrefix}${l_paramPath}[${l_i}]\""
       done
     else
       for (( l_i=0; l_i < l_listItemCount; l_i++ ));do
+        #读取列表项的数据块
+        readParam "${l_yamlFile}" "${l_paramPath}[${l_i}]"
+        l_paramDataBlock="${gDefaultRetVal}"
         #递归处理列表项
         _getAllParamPathAndValueByParentPath "${l_yamlFile}" "${l_paramPath}[${l_i}]" \
-          "${l_resultMapName}" "${l_paramDataBlock}" "${l_paramPathPrefix}"
+          "${l_resultMapName}" "${l_paramKeys}" "${l_paramDataBlock}" "${l_paramPathPrefix}"
       done
     fi
     return
@@ -2941,6 +2955,13 @@ function _getAllParamPathAndValueByParentPath() {
 
     l_tmpParamPath="${l_paramPath}.${l_paramName}"
     readParam "${l_yamlFile}" "${l_tmpParamPath}"
+
+    if [[ "${l_paramValue}" =~ ^([ ]*\|[ ]*$) || "${l_paramValue}" || ! "${gDefaultRetVal}" ]];then
+      # 获取数组当前长度作为新元素的索引
+      eval "l_currentIndex=\"\${#${l_paramKeys}[@]}\""
+      eval "${l_paramKeys}[${l_currentIndex}]=\"${l_paramPathPrefix}${l_tmpParamPath}\""
+    fi
+
     if [[ "${l_paramValue}" =~ ^([ ]*\|[ ]*$) ]];then
       info "将${l_paramPathPrefix}${l_tmpParamPath}参数及其值(多行数据)放入${l_resultMapName}中"
       eval "${l_resultMapName}[${l_paramPathPrefix}${l_tmpParamPath}]=\"${gDefaultRetVal}\""
@@ -2953,7 +2974,7 @@ function _getAllParamPathAndValueByParentPath() {
     else
       #递归处理列表项
       _getAllParamPathAndValueByParentPath "${l_yamlFile}" "${l_tmpParamPath}" \
-        "${l_resultMapName}" "${gDefaultRetVal}" "${l_paramPathPrefix}"
+        "${l_resultMapName}" "${l_paramKeys}" "${gDefaultRetVal}" "${l_paramPathPrefix}"
     fi
   done
 

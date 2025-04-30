@@ -48,6 +48,7 @@ export gCustomizedHelm
 #需要构建的Chart镜像名称, 多个名称间使用空格隔离
 export gChartNames
 
+export gTargetNamespace
 export gCurrentChartName
 export gCurrentChartVersion
 #应用的当前版本号

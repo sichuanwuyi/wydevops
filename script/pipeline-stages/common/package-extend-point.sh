@@ -60,8 +60,8 @@ function createOfflinePackage_ex() {
 
   invokeExtendPointFunc "copyChartImage" "获取${l_chartName}离线安装包中Chart镜像扩展" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}/chart"
   invokeExtendPointFunc "createConfigFile" "创建${l_chartName}离线安装包中的配置文件扩展" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}"
-  invokeExtendPointFunc "createUIJsonFile" "创建${l_chartName}离线安装包中的UI配置文件扩展" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}" "${l_maxIndex}"
-  #invokeExtendPointFunc "createUIYamlFile" "创建${l_chartName}离线安装包中的UI配置文件扩展" "${l_index}" "${l_chartName}" "${l_targetDir}"
+  #invokeExtendPointFunc "createUIJsonFile" "创建${l_chartName}离线安装包中的UI配置文件扩展" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}" "${l_maxIndex}"
+  invokeExtendPointFunc "createUIYamlFile" "创建${l_chartName}离线安装包中的UI配置文件扩展" "${l_index}" "${l_chartName}" "${l_targetDir}"
 
   #读取离线打包的架构类型。
   readParam "${gCiCdYamlFile}" "package[${l_index}].archTypes"
@@ -119,31 +119,37 @@ function createConfigFile_ex() {
   export gDefaultRetVal
   export gDockerRepoName
   export gCiCdYamlFile
+  export gServiceName
 
   local l_chartName=$1
   local l_chartVersion=$2
   local l_targetDir=$3
 
   local l_gatewayHost
+  local l_targetNamespace
   local l_valuesYaml
   local l_settingFile
   local l_curDir
   local l_keys
   local l_key
 
-
-  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成settings.conf文件。
+  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成settings.yaml。
   if [ -f "${l_targetDir}/chart/${l_chartName}-${l_chartVersion}.tgz" ];then
 
     readParam "${gCiCdYamlFile}" "globalParams.gatewayHost"
     [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && l_gatewayHost="${gDefaultRetVal}"
 
+    readParam "${gCiCdYamlFile}" "globalParams.targetNamespace"
+    [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && l_targetNamespace="${gDefaultRetVal}"
+
     l_valuesYaml="${l_chartName}/values.yaml"
 
-    #创建settings.conf文件。
-    l_settingFile="${l_targetDir}/settings.conf"
-    echo "image.registry=${gDockerRepoName}," > "${l_settingFile}"
-    echo "gatewayRoute.host=${l_gatewayHost}," >> "${l_settingFile}"
+    #创建settings.yaml。
+    l_settingFile="${l_targetDir}/settings.yaml"
+    echo "${gServiceName}: |" > "${l_settingFile}"
+    echo "  image.registry=${gDockerRepoName}," >> "${l_settingFile}"
+    echo "  gatewayRoute.host=${l_gatewayHost}," >> "${l_settingFile}"
+    echo "  targetNamespace=${l_targetNamespace}," >> "${l_settingFile}"
 
     l_curDir=$(pwd)
 
@@ -153,13 +159,12 @@ function createConfigFile_ex() {
     tar -zxf "${l_chartName}-${l_chartVersion}.tgz"
 
     declare -A paramMaps
-    getAllParamPathAndValue "${l_valuesYaml}" "params" "paramMaps"
-
-    # shellcheck disable=SC2124
-    l_keys=${!paramMaps[@]}
-    # shellcheck disable=SC2068
-    for l_key in ${l_keys[@]};do
-      echo "${l_key}=${paramMaps[${l_key}]}," >> "${l_settingFile}"
+    # 新增顺序索引数组
+    declare -a paramKeys
+    getAllParamPathAndValue "${l_valuesYaml}" "params" "paramMaps" "paramKeys"
+    # 遍历数组
+    for l_key in "${paramKeys[@]}"; do
+      echo "  ${l_key}=${paramMaps[${l_key}]}," >> "${l_settingFile}"
     done
 
     #删除解压出的目录
@@ -196,7 +201,7 @@ function createUIJsonFile_ex() {
   local l_endChar
   local l_endFlag
 
-  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成settings.conf文件。
+  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成settings.yaml文件。
   if [ ! -f "${l_targetDir}/chart/${l_chartName}-${l_chartVersion}.tgz" ];then
     return;
   fi
@@ -258,7 +263,7 @@ function createUIYamlFile_ex() {
 
   local l_uiYamlFile
 
-  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成settings.conf文件。
+  #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成settings.yaml文件。
   if [ ! -f "${l_targetDir}/chart/${l_chartName}-${l_chartVersion}.tgz" ];then
     return;
   fi

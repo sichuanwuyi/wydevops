@@ -16,6 +16,15 @@ globalParams:
   #对本服务的一个英文描述说明文本，会写入Chart镜像。
   descriptionEn: "other service: ${serviceName}"
 
+  businessImage: ${serviceName}-business
+  #nextjs项目需要手动配置businessVersion参数的值。
+  #无法像后端服务可通过参数映射文件进行配置
+  businessVersion: 1.0.0
+  baseImage: ${serviceName}-base
+  baseVersion: ${businessVersion}
+  #是否能回滚到上一个版本：如果修改了数据库表结构或字段属性，需要设置为true。
+  rollback: true
+
   #服务所属应用的中文名称。逻辑上，一个应用下可以包含多个业务板块，一个业务板块下可以包含多个服务。
   systemName: ${serviceName}
   #服务所属应用的英文名称。
@@ -33,13 +42,6 @@ globalParams:
 
   #是否使能离线构建，为true则会使用offline子目录下的Dockerfile文件。
   enableOfflineBuild: false
-
-  businessImage: ${serviceName}-business
-  #wydevops会自动从yaml类型的配置文件中读取版本信息覆盖businessVersion参数。
-  #详细配置见配置文件：./param-mapping/params-mapping-in-yaml-file.config
-  businessVersion: 1.0.0
-  baseImage: ${serviceName}-base
-  baseVersion: ${businessVersion}
 
   #Dockerfile文件中From语言中定义的基础镜像。
   #支持多个基础镜像，相互之间使用英文逗号隔开。
@@ -580,45 +582,41 @@ chart:
     params:
       #CPU和内存资源的配置参数
       configurable:
-        - name: "资源配置"
-          catalog: "通用参数"
+        - name: "资源配置|Resource Configuration"
+          catalog: "部署参数|General Parameters"
           items:
-            - name: "CPU预订核数"
+            - name: "CPU预订核数|CPU Request Cores"
               key: "resources.requests.cpu"
               required: true
-              type: "input"
-              len: 120
+              type: "inputNumber"
               value: "${cpuRequests}"
-              unit: "毫核(m)"
-              express: "^[1-9]{1}[0-9]{2,4}m$"
-              description: "服务预订的CPU核数，取值范围：100m-99999m，单位：m(毫核）"
-            - name: "CPU最大可用核数"
+              ranges: "[1,1000,100]"
+              units: "毫核:m,核:core|mCore:m,Core:core"
+              description: "服务预订的CPU核数，取值范围：1-1000，单位：毫核或核|CPU Request Cores, Range: [1,1000], Unit: mCore or Core"
+            - name: "CPU最大可用核数|CPU Maximum Available Cores"
               key: "resources.limits.cpu"
               required: true
-              type: "input"
-              len: 120
+              type: "inputNumber"
               value: "${cpuLimits}"
-              unit: "毫核(m)"
-              express: "^[1-9]{1}[0-9]{2,4}m$"
-              description: "服务最大可用CPU核数，取值范围：100m-99999m，单位：m(毫核）"
-            - name: "内存预订额度"
+              ranges: "[1,1000,100]"
+              units: "毫核:m,核:core|mCore:m,Core:core"
+              description: "服务最大可用CPU核数，取值范围：1-1000，单位：毫核或核|CPU Maximum Available Cores, Range: [1,1000], Unit: mCore or Core"
+            - name: "内存预订额度|Memory Requested Quota"
               key: "resources.requests.memory"
               required: true
-              type: "input"
-              len: 120
+              type: "inputNumber"
               value: "${memoryRequests}"
-              unit: "兆字节(Mi)、吉字节(Gi)"
-              express: "^[1-9]{1}[0-9]{0,2}(Mi|Gi)$"
-              description: "服务预订的内存额度，取值范围：1Mi-999Gi，单位：Mi或Gi"
-            - name: "内存最大可用额度"
+              ranges: "[1,1000,100]"
+              units: "兆字节:Mi,吉字节:Gi|MB:Mi,GB:Gi"
+              description: "服务预订的内存额度，取值范围：1-1000，单位：兆字节或吉字节|Memory Requested Quota, Range: [1,1000], Unit: MB or GB"
+            - name: "内存最大可用额度|Memory Maximum Available Quota"
               key: "resources.limits.memory"
               required: true
-              type: "input"
-              len: 120
+              type: "inputNumber"
               value: "${memoryLimits}"
-              unit: "兆字节(Mi)、吉字节(Gi)"
-              express: "^[1-9]{1}[0-9]{0,2}(Mi|Gi)$"
-              description: "服务最大可用内存额度，取值范围：1Mi-999Gi，单位：Mi或Gi"
+              ranges: "[1,1000,100]"
+              units: "兆字节:Mi,吉字节:Gi|MB:Mi,GB:Gi"
+              description: "服务最大可用内存额度，取值范围：1-1000，单位：兆字节或吉字节|Memory Maximum Available Quota, Range: [1,1000], Unit: MB or GB"
 
 package:
   - name: ${chartName}
