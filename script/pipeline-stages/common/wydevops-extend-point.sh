@@ -948,8 +948,8 @@ function _loadGlobalParamsFromCiCdYaml() {
 
   #初始化gRollback参数。
   readParam "${l_cicdYaml}" "globalParams.rollback"
-  if [ "${gDefaultRetVal}" != "null" ];then
-    gRollback="${gDefaultRetVal}"
+  if [ "${gDefaultRetVal}" == "false" ];then
+    gRollback="false"
   else
     gRollback="true"
   fi
