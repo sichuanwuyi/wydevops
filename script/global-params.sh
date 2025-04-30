@@ -49,6 +49,8 @@ export gGlobalParamNames=(
 "gArchTypes" \
 #导出的离线包构建类型数组
 "gOfflineArchTypes" \
+#当前版本是否支持回滚操作
+"gRollback" \
 #k8s部署的命名空间
 "gTargetNamespace" \
 #K8s部署的网关Host参数

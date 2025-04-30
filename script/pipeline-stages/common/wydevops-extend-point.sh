@@ -884,6 +884,7 @@ function _loadGlobalParamsFromCiCdYaml() {
   export gValidBuildStages
 
   #以下4个配置参数以ci-cid.yaml文件中的内容为最高优先级的配置值。
+  export gRollback
   export gTargetNamespace
   export gTargetGatewayHosts
   export gServiceName
@@ -945,12 +946,21 @@ function _loadGlobalParamsFromCiCdYaml() {
   fi
   info "gValidBuildStages参数高优先配置值为：${gValidBuildStages}"
 
+  #初始化gRollback参数。
+  readParam "${l_cicdYaml}" "globalParams.rollback"
+  if [ "${gDefaultRetVal}" != "null" ];then
+    gRollback="${gDefaultRetVal}"
+  else
+    gRollback="true"
+  fi
+  info "gRollback:从配置文件中读取配置值(${gRollback})"
+
   #初始化gTargetNamespace参数。
   readParam "${l_cicdYaml}" "globalParams.targetNamespace"
   if [ "${gDefaultRetVal}" != "null" ];then
     gTargetNamespace="${gDefaultRetVal}"
   else
-    gTargetNamespace=""
+    gTargetNamespace="default"
   fi
   info "gTargetNamespace:从配置文件中读取配置值(${gTargetNamespace})"
 

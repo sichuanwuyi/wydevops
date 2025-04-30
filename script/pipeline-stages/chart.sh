@@ -48,6 +48,8 @@ export gCustomizedHelm
 #需要构建的Chart镜像名称, 多个名称间使用空格隔离
 export gChartNames
 
+#当前版本是否支持回滚
+export gRollback
 export gTargetNamespace
 export gCurrentChartName
 export gCurrentChartVersion

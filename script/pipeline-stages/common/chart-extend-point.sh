@@ -11,6 +11,7 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
   export gProjectChartTemplatesDir
   export gProjectTemplateDirName
   export gTargetNamespace
+  export gRollback
 
   local l_systemType
   local l_archType
@@ -39,11 +40,6 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
     #制作单镜像时，对ci-cd.yaml文件进行特殊处理。
     invokeExtendPointFunc "handleBuildingSingleImageForChart" "chart阶段单镜像构建模式下对ci-cd.yaml文件中参数的特殊调整" "${gCiCdYamlFile}"
   fi
-
-  #初始化安装的目标命名空间
-  gTargetNamespace="default"
-  readParam "${gCiCdYamlFile}" "targetNamespace"
-  [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && gTargetNamespace="${gDefaultRetVal}"
 
   #处理ci-cd.yaml文件中的container[].ports，生成service配置，并展开containerPort配置项。
   _processContainerPorts "${gCiCdYamlFile}"
@@ -254,6 +250,7 @@ function onModifyingValuesYaml_ex(){
   export gBuildPath
   export gTargetGatewayHosts
   export gTargetNamespace
+  export gRollback
 
   local l_chartPath=$1
 
@@ -281,6 +278,8 @@ function onModifyingValuesYaml_ex(){
   insertParam "${l_valuesYaml}" "gatewayRoute.host" "${gTargetGatewayHosts}"
   #在values.yaml文件中定义targetNamespace参数
   insertParam "${l_valuesYaml}" "targetNamespace" "${gTargetNamespace}"
+  #在values.yaml文件中定义rollback参数
+  insertParam "${l_valuesYaml}" "rollback" "${gRollback}"
 
   #将l_packageYaml文件中的params参数配置节添加到values.yaml文件中。
   #并将l_packageYaml文件中configMaps[?].files参数中所有文件中配置的变量(”{{ .Values.* }}“)写入values.yaml的params配置节中。
