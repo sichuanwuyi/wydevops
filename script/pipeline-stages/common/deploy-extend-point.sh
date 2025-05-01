@@ -609,6 +609,9 @@ function _deployServiceInK8S() {
   local l_customizedSetParams
 
   local l_repoInfos
+  local l_tmpIndex
+  local l_paramName
+  local l_paramValue
 
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].activeProfile"
   l_activeProfile="${gDefaultRetVal}"
@@ -653,6 +656,30 @@ function _deployServiceInK8S() {
       l_settingParams="${gDefaultRetVal%,*}"
     fi
 
+    info "从ci-cd.yaml文件中读取deploy[${l_index}].params下的参数值覆盖l_settingParams变量中的参数值"
+    l_tmpIndex=0
+    while true;do
+      readParam "${gCiCdYamlFile}" "deploy[${l_index}].params[${l_tmpIndex}].name"
+      [[ "${gDefaultRetVal}" == "null" ]] && break
+      #得到参数名称
+      # shellcheck disable=SC2001
+      l_paramName=$(echo "${gDefaultRetVal}" | sed 's/\.Values\.//g')
+      #去掉头部和尾部的空格。
+      l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+      readParam "${gCiCdYamlFile}" "deploy[${l_index}].params[${l_tmpIndex}].value"
+      if [ "${gDefaultRetVal}" != "null" ];then
+        #得到参数值
+        l_paramValue=$(echo -e "${gDefaultRetVal}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+        # 使用正则表达式替换已存在的参数
+        # shellcheck disable=SC2001
+        l_settingParams=$(echo "$l_settingParams" | sed "s/\(${l_paramName}\)=[^,]*\(,\|\\\\n\|$\)/\1=${l_paramValue}\2/g")
+        # 如果替换后没有变化则追加参数
+        [[ "$l_settingParams" == *"${l_paramName}="* ]] || l_settingParams="${l_settingParams},\n${l_paramName}=${l_paramValue}"
+      fi
+      ((l_tmpIndex = l_tmpIndex + 1))
+    done
+
     #如果dockerRepo参数配置有值且与当前使用的docker镜像仓库不是同一个，则需要推送docker镜像到新的仓库中。
     readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.dockerRepo"
     if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
@@ -672,8 +699,10 @@ function _deployServiceInK8S() {
           l_array[2]="${l_array[2]}/${l_array[1]}"
         fi
       fi
-      #多个同名参数的设置，以最后一个为准。因此可以直接追加参数的最新值。
-      l_settingParams="${l_settingParams},image.registry=${l_array[2]}"
+      # 使用正则表达式替换已存在的参数
+      # shellcheck disable=SC2001
+      l_settingParams=$(echo "$l_settingParams" | sed "s/\(image\.registry)=[^,]*\(,\|\\\\n\|$\)/\1=${l_array[2]}\2/g")
+      [[ "$l_settingParams" == *"image.registry="* ]] || l_settingParams="${l_settingParams},\nimage.registry=${l_array[2]}"
     fi
 
     #如果routeHosts参数配置有值，则需要更新gatewayRoute.host参数的值。
@@ -684,7 +713,8 @@ function _deployServiceInK8S() {
       warn "更新网关配置中的绑定域名为: ${l_array[0]}"
       #多个同名参数的设置，以最后一个为准。因此可以直接追加参数的最新值。这里只取第一个。
       if [[ ! "${l_settingParams}" =~ ^(.*)gatewayRoute.host=${l_array[0]} ]];then
-        l_settingParams="${l_settingParams},gatewayRoute.host=${l_array[0]}"
+        l_settingParams=$(echo "$l_settingParams" | sed "s/\(gatewayRoute\.host)=[^,]*\(,\|\\\\n\|$\)/\1=${l_array[0]}\2/g")
+        [[ "$l_settingParams" == *"gatewayRoute.host="* ]] || l_settingParams="${l_settingParams},\ngatewayRoute.host=${l_array[0]}"
       fi
     fi
 
@@ -723,9 +753,9 @@ function _deployServiceInK8S() {
 
     if [ "${l_settingParams}" ];then
       [[ "${l_settingParams}" =~ ^(,) ]] && l_settingParams="${l_settingParams:1}"
+      #将多行字符串转换为单行字符串
+      l_settingParams=$(echo "${l_settingParams}" | tr -d '\n' | sed 's/,[[:space:]]*/,/g')
       info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
-      _convertToSingleRow "${l_settingParams}"
-      l_settingParams="${gDefaultRetVal}"
       l_content=$(helm install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" 2>&1)
     else
       info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config"
