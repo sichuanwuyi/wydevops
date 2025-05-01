@@ -587,7 +587,7 @@ chart:
       configurable:
         - name: "资源配置|Resource Configuration"
           catalog: "部署参数|General Parameters"
-          groupIndex: 999
+          catalogIndex: 999
           items:
             - name: "CPU预订核数|CPU Request Cores"
               key: "resources.requests.cpu"
