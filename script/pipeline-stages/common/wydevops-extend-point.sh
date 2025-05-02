@@ -23,6 +23,19 @@ function onBeforeReplaceParamPlaceholder_ex() {
   local l_placeholders
   local l_placeholder
 
+  readParam "${l_cicdYaml}" "globalParams.gatewayPath"
+  if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "/" ]];then
+    updateParam "${l_cicdYaml}" "globalParams.enableRewrite" "false"
+    updateParam "${l_cicdYaml}" "globalParams.apisixRouteRegexUri" ""
+    updateParam "${l_cicdYaml}" "globalParams.apisixIngressTargetRegex" ""
+    info "判定是否启用网关路径重写功能: 禁用"
+  else
+    updateParam "${l_cicdYaml}" "globalParams.enableRewrite" "true"
+    updateParam "${l_cicdYaml}" "globalParams.apisixRouteRegexUri" "[ \"^\${gatewayPath}(.*)\", \"\/\$1\" ]"
+    updateParam "${l_cicdYaml}" "globalParams.apisixIngressTargetRegex" "\${gatewayPath}/(.*)"
+    info "判定是否启用网关路径重写功能: 启用"
+  fi
+
   #为业务镜像和基础镜像添加项目名称前缀。
   if [[ "${gDockerRepoType}" == "harbor" || ("${gDockerRepoInstanceName}" && "${gDockerImageNameWithInstance}" == "true") ]];then
     info "为业务镜像和基础镜像添加仓库名称（nexus）或项目名称(harbor)前缀..."

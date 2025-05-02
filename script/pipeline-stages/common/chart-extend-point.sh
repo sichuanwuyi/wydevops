@@ -276,6 +276,15 @@ function onModifyingValuesYaml_ex(){
   insertParam "${l_valuesYaml}" "image.registry" "${gDockerRepoName}"
   #在values.yaml文件中定义gatewayRoute.host参数
   insertParam "${l_valuesYaml}" "gatewayRoute.host" "${gTargetGatewayHosts}"
+
+  if [[ ! "${gGatewayPath}" || "${gGatewayPath}" == "/" ]];then
+    #标识禁用网关路径重写功能。
+    insertParam "${l_valuesYaml}" "gatewayRoute.enableRewrite" "false"
+  else
+    #标识启用网关路径重写功能。
+    insertParam "${l_valuesYaml}" "gatewayRoute.enableRewrite" "true"
+  fi
+
   #在values.yaml文件中定义targetNamespace参数
   insertParam "${l_valuesYaml}" "targetNamespace" "${gTargetNamespace}"
   #在values.yaml文件中定义rollback参数

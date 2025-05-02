@@ -82,9 +82,19 @@ globalParams:
   nodePorts:
 
   #应用设置的路由前缀参数。
+  #当gatewayPath="/"或空时，表示不启用重写机制。
   gatewayPath: /${serviceName}
   #应用设置的路由Host名称，*表示任意Host。
   gatewayHost: *
+  #todo enableRewrite参数的值会自动根据gatewayPath的值更新。
+  #是否启用网关路由重写机制，默认为true, 会根据gatewayPath的值自动更新设置：
+  #当gatewayPath值为空或"/"时，会自动设置为false。
+  enableRewrite: "true"
+  #todo apisixRouteRegexUri参数的值会自动根据gatewayPath的值更新。
+  apisixRouteRegexUri: "[ \"^${gatewayPath}(.*)\", \"/$1\" ]"
+  #todo apisixIngressTargetRegex参数的值会自动根据gatewayPath的值更新。
+  apisixIngressTargetRegex: ${gatewayPath}/(.*)
+
   #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
   istioVirtualServiceHost: *
   #启用指定的DestinationRule资源名称。
@@ -478,11 +488,9 @@ chart:
             #下面app-root参数可以给所有请求的URI添加一个路径前缀。
             #nginx.ingress.kubernetes.io/app-root: /app1
             #下面的use-regex和rewrite-target配合可以删除请求的URI中的某个子路径。
-            #todo: nextjs项目不需要支持路由重写
-            #nginx.ingress.kubernetes.io/use-regex: "true"
+            nginx.ingress.kubernetes.io/use-regex: "${enableRewrite}"
             #$2表示rules[0].paths[0].path的值中第二个圆括号中的子路径。
-            #todo: nextjs项目不需要支持路由重写
-            #nginx.ingress.kubernetes.io/rewrite-target: /$2
+            nginx.ingress.kubernetes.io/rewrite-target: /$2
 #         tls:
 #           - hosts: [ ${ingressTlsHosts} ]
 #             secretName: ${ingressSecretName}
@@ -508,7 +516,7 @@ chart:
 #            #使能websocket功能
 #            k8s.apisix.apache.org/enable-websocket: "${websocket}"
 #            #下面的rewrite-target-regex和rewrite-target-regex-template配合可以删除请求的URI中的某个子路径。
-#            k8s.apisix.apache.org/rewrite-target-regex: "/${gatewayPath}/(.*)"
+#            k8s.apisix.apache.org/rewrite-target-regex: "${apisixIngressTargetRegex}"
 #            #$1表示rewrite-target-regex的值中第一个圆括号中的子路径。
 #            k8s.apisix.apache.org/rewrite-target-regex-template: "/$1"
 #          #         tls:
@@ -532,14 +540,13 @@ chart:
               websocket: ${websocket}
               match:
                 hosts: [ ]
-                paths: [ "${gatewayPath}*" ]
+                paths: [ "^${gatewayPath}*" ]
               plugins:
                 #是否开启跨域
                 - name: cors
                   enable: true
-                #todo: nextjs项目不需要开启路由重写功能
-                #- name: proxy-rewrite
-                #  regex_uri: [ "^${gatewayPath}(. *)", "/$1" ]
+                - name: proxy-rewrite
+                  regex_uri: ${apisixRouteRegexUri}
               backends:
                 - serviceName: ${serviceName}-clusterip
                   servicePort: ${mainPort}
@@ -559,7 +566,6 @@ chart:
             match:
               - uri:
                   regex: \"^${gatewayPath}(.*)\"
-            #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。
             rewrite:
               #以下配置将删除路由路径中的${gatewayPath}部分。
               uri: "/\1"

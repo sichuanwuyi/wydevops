@@ -477,10 +477,10 @@ chart:
             #下面app-root参数可以给所有请求的URI添加一个路径前缀。
             #nginx.ingress.kubernetes.io/app-root: /app1
             #下面的use-regex和rewrite-target配合可以删除请求的URI中的某个子路径。
-            #todo: nextjs项目不需要支持路由重写
+            #todo: vue项目不需要支持路由重写
             #nginx.ingress.kubernetes.io/use-regex: "true"
             #$2表示rules[0].paths[0].path的值中第二个圆括号中的子路径。
-            #todo: nextjs项目不需要支持路由重写
+            #todo: vue项目不需要支持路由重写
             #nginx.ingress.kubernetes.io/rewrite-target: /$2
 #         tls:
 #           - hosts: [ ${ingressTlsHosts} ]
@@ -531,7 +531,7 @@ chart:
               websocket: ${websocket}
               match:
                 hosts: [ ]
-                paths: [ "${gatewayPath}*" ]
+                paths: [ "^${gatewayPath}*" ]
               plugins:
                 #是否开启跨域
                 - name: cors
