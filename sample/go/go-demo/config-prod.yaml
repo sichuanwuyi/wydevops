@@ -4,8 +4,9 @@ app:
   port: 8888
   appName: gin-app123
   appUrl: http://localhost
-  #wydevops会读取apiUrlPrefix参数。
-  apiUrlPrefix: /gin
+  #wydevops会读取app.gateway.url-prefix参数。
+  gateway:
+    url-prefix: /gin
   #wydevops会读取version参数。
   version: 1.0.0
   mysql:
