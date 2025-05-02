@@ -85,9 +85,6 @@ globalParams:
   gatewayPath: /${serviceName}
   #应用设置的路由Host名称，*表示任意Host。
   gatewayHost: *
-  #路由重写Uri参数, 设置为空串表示不启用路由重写功能。nextjs项目默认值为空串
-  #默认设置为仅包含一个空格的字符串，表示删除路由路径中前导的gatewayPath参数串。
-  rewriteUri: ""
   #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
   istioVirtualServiceHost: *
   #启用指定的DestinationRule资源名称。
@@ -561,11 +558,11 @@ chart:
               - ${serviceName}-gateway
             match:
               - uri:
-                  prefix: \"${gatewayPath}\"
-            #如果需要重写路由，则打开下面的rewrite配置项
+                  regex: \"^${gatewayPath}(.*)\"
+            #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。
             rewrite:
               #以下配置将删除路由路径中的${gatewayPath}部分。
-              uri: ${rewriteUri}
+              uri: "/\1"
             route:
               - destination:
                   port:
