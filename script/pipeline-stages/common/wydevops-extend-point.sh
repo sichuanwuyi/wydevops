@@ -32,7 +32,7 @@ function onBeforeReplaceParamPlaceholder_ex() {
   else
     updateParam "${l_cicdYaml}" "globalParams.enableRewrite" "true"
     updateParam "${l_cicdYaml}" "globalParams.apisixRouteRegexUri" "[ \"^\${gatewayPath}(.*)\", \"\/\$1\" ]"
-    updateParam "${l_cicdYaml}" "globalParams.apisixIngressTargetRegex" "\${gatewayPath}/(.*)"
+    updateParam "${l_cicdYaml}" "globalParams.apisixIngressTargetRegex" "^\${gatewayPath}/(.*)"
     info "判定是否启用网关路径重写功能: 启用"
   fi
 
