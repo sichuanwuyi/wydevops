@@ -2,7 +2,8 @@ spring:
   profiles:
     active: prod
 
-api-url-prefix: /wydevops/v1/sample1
+gateway:
+  url-prefix: /wydevops/v1/sample1
 
 #服务就绪探活配置
 management:
