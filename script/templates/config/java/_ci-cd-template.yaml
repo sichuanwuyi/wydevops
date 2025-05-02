@@ -539,7 +539,7 @@ chart:
                   enable: true
                 #开启路由重写功能
                 - name: proxy-rewrite
-                  regex_uri: [ "^${gatewayPath}(. *)", "/$1" ]
+                  regex_uri: [ "^${gatewayPath}(.*)", "/$1" ]
               backends:
                 - serviceName: ${serviceName}-clusterip
                   servicePort: ${mainPort}
