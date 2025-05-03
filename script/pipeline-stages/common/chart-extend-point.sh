@@ -249,6 +249,7 @@ function onModifyingValuesYaml_ex(){
   export gFileContentMap
   export gBuildPath
   export gTargetGatewayHosts
+  export gGatewayPath
   export gTargetNamespace
   export gRollback
 

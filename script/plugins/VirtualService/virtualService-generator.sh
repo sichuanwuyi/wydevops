@@ -14,5 +14,12 @@ function virtualServiceGenerator_default() {
   #todo: t_apiVersion变量是模板需要的参数
   t_apiVersion="${gDefaultRetVal}"
 
+  readParam "${l_valuesYaml}" "gatewayRoute.enableRewrite"
+  if [ "${gDefaultRetVal}" == "false" ];then
+    info "不启用路由重写，则删除virtualService.rewrite参数"
+    deleteParam "${l_valuesYaml}" \
+      "deployment${l_deploymentIndex}.istioRoute.virtualService.rewrite"
+  fi
+
   commonGenerator_default "VirtualService" "${@}"
 }

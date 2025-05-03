@@ -55,6 +55,8 @@ export gGlobalParamNames=(
 "gTargetNamespace" \
 #K8s部署的网关Host参数
 "gTargetGatewayHosts" \
+#K8s部署的网关路由前缀参数
+"gGatewayPath" \
 #本地缓存DockerFile文件中From语句指定的镜像的目录。
 "gImageCacheDir" \
 "gProjectShellDir" \

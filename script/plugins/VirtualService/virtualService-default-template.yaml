@@ -18,8 +18,11 @@ spec:
     {{- toYaml .istioRoute.virtualService.gateways | nindent 4 }}
   http:
     - match:
-        {{- toYaml .istioRoute.virtualService.match | nindent 8 }}
-      {{- if and \$.Values.gatewayRoute.enableRewrite .istioRoute.virtualService.rewrite.uri }}
+        {{- range .istioRoute.virtualService.match }}
+        - uri:
+            regex: {{ .uri.regex | quote }}
+        {{- end }}
+      {{- if and (eq $.Values.gatewayRoute.enableRewrite "true") .istioRoute.virtualService.rewrite.uri }}
       rewrite:
         {{- toYaml .istioRoute.virtualService.rewrite | nindent 8 }}
       {{- end }}

@@ -37,6 +37,13 @@ function ingressGenerator_default() {
     return
   fi
 
+  #读取网关路径重写功能开关参数。
+  readParam "${l_valuesYaml}" "gatewayRoute.enableRewrite"
+  if [ "${gDefaultRetVal}" == "false" ];then
+    #删除不需要的配置行。
+    sed -i "/nginx\.ingress\.kubernetes\.io\/rewrite-target: \/\$1/d" "${l_valuesYaml}"
+  fi
+
   readParam "${l_valuesYaml}" "${t_moduleName}.${l_configPath}.apiVersion"
   #todo: t_gatewayVersion变量是模板需要的参数
   t_gatewayVersion="${gDefaultRetVal}"

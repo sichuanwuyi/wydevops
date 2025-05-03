@@ -31,8 +31,8 @@ function onBeforeReplaceParamPlaceholder_ex() {
     info "判定是否启用网关路径重写功能: 禁用"
   else
     updateParam "${l_cicdYaml}" "globalParams.enableRewrite" "true"
-    updateParam "${l_cicdYaml}" "globalParams.apisixRouteRegexUri" "[ \"^\${gatewayPath}(.*)\", \"\/\$1\" ]"
-    updateParam "${l_cicdYaml}" "globalParams.apisixIngressTargetRegex" "^\${gatewayPath}/(.*)"
+    updateParam "${l_cicdYaml}" "globalParams.apisixRouteRegexUri" "[ \"^\${gatewayPath}(?:/|$)(.*)\", \"/\$1\" ]"
+    updateParam "${l_cicdYaml}" "globalParams.apisixIngressTargetRegex" "^\${gatewayPath}(?:/|$)/(.*)"
     info "判定是否启用网关路径重写功能: 启用"
   fi
 
@@ -900,6 +900,7 @@ function _loadGlobalParamsFromCiCdYaml() {
   export gRollback
   export gTargetNamespace
   export gTargetGatewayHosts
+  export gGatewayPath
   export gServiceName
 
   if [ ! "${gRuntimeVersion}" ];then
@@ -985,6 +986,15 @@ function _loadGlobalParamsFromCiCdYaml() {
     gTargetGatewayHosts=""
   fi
   info "gTargetGatewayHosts:从配置文件中读取配置值(${gTargetGatewayHosts})"
+
+  #初始化gGatewayPath参数。
+  readParam "${l_cicdYaml}" "globalParams.gatewayPath"
+  if [ "${gDefaultRetVal}" != "null" ];then
+    gGatewayPath="${gDefaultRetVal}"
+  else
+    gGatewayPath=""
+  fi
+  info "gGatewayPath:从配置文件中读取配置值(${gGatewayPath})"
 
   #初始化gServiceName参数。
   readParam "${l_cicdYaml}" "globalParams.serviceName"

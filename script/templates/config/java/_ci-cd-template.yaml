@@ -91,9 +91,9 @@ globalParams:
   #当gatewayPath值为空或"/"时，会自动设置为false。
   enableRewrite: "true"
   #todo apisixRouteRegexUri参数的值会自动根据gatewayPath的值更新。
-  apisixRouteRegexUri: "[ \"^${gatewayPath}(.*)\", \"/$1\" ]"
+  apisixRouteRegexUri: "[ \"^${gatewayPath}(?:/|$)(.*)\", \"/$1\" ]"
   #todo apisixIngressTargetRegex参数的值会自动根据gatewayPath的值更新。
-  apisixIngressTargetRegex: ${gatewayPath}/(.*)
+  apisixIngressTargetRegex: ^${gatewayPath}(?:/|$)(.*)
 
   #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
   istioVirtualServiceHost: *
@@ -487,16 +487,16 @@ chart:
             #下面app-root参数可以给所有请求的URI添加一个路径前缀。
             #nginx.ingress.kubernetes.io/app-root: /app1
             #下面的use-regex和rewrite-target配合可以删除请求的URI中的某个子路径。
-            nginx.ingress.kubernetes.io/use-regex: "${enableRewrite}"
+            nginx.ingress.kubernetes.io/use-regex: "true"
             #$2表示rules[0].paths[0].path的值中第二个圆括号中的子路径。
-            nginx.ingress.kubernetes.io/rewrite-target: /$2
+            nginx.ingress.kubernetes.io/rewrite-target: /$1
 #         tls:
 #           - hosts: [ ${ingressTlsHosts} ]
 #             secretName: ${ingressSecretName}
           rules:
             - host:
               paths:
-                - path: ^${gatewayPath}(/|$)(.*)
+                - path: ^${gatewayPath}(?:/|$)(.*)
                   pathType: Prefix
                   serviceName: ${serviceName}-clusterip
                   servicePort: ${mainPort}
@@ -539,7 +539,7 @@ chart:
               websocket: ${websocket}
               match:
                 hosts: []
-                paths: ["^${gatewayPath}*"]
+                paths: ["^${gatewayPath}(?:/|$)(.*)"]
               plugins:
                 #是否开启跨域
                 - name: cors
@@ -565,11 +565,11 @@ chart:
               - ${serviceName}-gateway
             match:
               - uri:
-                  regex: \"^${gatewayPath}(.*)\"
+                  prefix: \"${gatewayPath}\"
             #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。
             rewrite:
-              #以下配置将删除路由路径中的${gatewayPath}部分。
-              uri: "/\1"
+              #设置为” “表示删除上述prefix参数指定的前缀。
+              uri: " "
             route:
               - destination:
                   port:
