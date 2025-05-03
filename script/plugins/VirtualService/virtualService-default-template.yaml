@@ -20,7 +20,7 @@ spec:
     - match:
         {{- range .istioRoute.virtualService.match }}
         - uri:
-            regex: {{ .uri.regex | quote }}
+            prefix: {{ .uri.prefix | quote }}
         {{- end }}
       {{- if and (eq $.Values.gatewayRoute.enableRewrite "true") .istioRoute.virtualService.rewrite.uri }}
       rewrite:
