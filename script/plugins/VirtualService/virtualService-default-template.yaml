@@ -19,8 +19,8 @@ spec:
   http:
     - match:
       {{- range .istioRoute.virtualService.match }}
-      - uri:
-          prefix: {{ .uri.prefix | quote }}
+        - uri:
+            prefix: {{ .uri.prefix | quote }}
       {{- end }}
       {{- if and (eq $.Values.gatewayRoute.enableRewrite "true") .istioRoute.virtualService.rewrite.uri }}
       rewrite:
