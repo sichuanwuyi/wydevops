@@ -386,7 +386,7 @@ function onCheckAndInitialParamInConfigFile_ex(){
           l_paramValue="${gParamDeployedValueMap[${l_paramName}]}"
           #替换配置文件中的变量。
           l_paramItem="{${l_paramItem#*\{}"
-          l_paramItem="${l_paramItem%\}*}}"
+          l_paramItem="${l_paramItem%\}*}"
           info "将临时目录中的${l_configFile##*/}文件中的变量${l_paramItem}替换为${l_paramValue}"
           sed -i "s/${l_paramItem}/${l_paramValue}/g" "${l_configFile}"
 
@@ -606,6 +606,7 @@ function _deployServiceInK8S() {
   local l_lineCount
   local l_i
   local l_settingParams
+  local l_tmpParam
   local l_customizedSetParams
 
   local l_repoInfos
@@ -654,6 +655,8 @@ function _deployServiceInK8S() {
       #从文件中读取参数设置值对。
       readParam "${l_settingFile}" "${gServiceName}"
       l_settingParams="${gDefaultRetVal%,*}"
+      #多行转成单行。
+      l_settingParams=$(echo "${l_settingParams}" | tr -d '\n' | sed 's/,[[:space:]]*/,/g')
     fi
 
     info "从ci-cd.yaml文件中读取deploy[${l_index}].params下的参数值覆盖l_settingParams变量中的参数值"
@@ -673,9 +676,9 @@ function _deployServiceInK8S() {
         l_paramValue=$(echo -e "${gDefaultRetVal}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
         # 使用正则表达式替换已存在的参数
         # shellcheck disable=SC2001
-        l_settingParams=$(echo "$l_settingParams" | sed "s/\(${l_paramName}\)=[^,]*\(,\|\\\\n\|$\)/\1=${l_paramValue}\2/g")
+        l_settingParams=$(echo "$l_settingParams" | sed "s/\(${l_paramName}\)=[^,]*\(,\|\\n\|$\)/\1=${l_paramValue//\//\\\/}\2/g")
         # 如果替换后没有变化则追加参数
-        [[ "$l_settingParams" == *"${l_paramName}="* ]] || l_settingParams="${l_settingParams},\n${l_paramName}=${l_paramValue}"
+        [[ "${l_settingParams}" == *"${l_paramName}="* ]] || l_settingParams="${l_settingParams},${l_paramName}=${l_paramValue}"
       fi
       ((l_tmpIndex = l_tmpIndex + 1))
     done
@@ -701,8 +704,8 @@ function _deployServiceInK8S() {
       fi
       # 使用正则表达式替换已存在的参数
       # shellcheck disable=SC2001
-      l_settingParams=$(echo "$l_settingParams" | sed "s/\(image\.registry)=[^,]*\(,\|\\\\n\|$\)/\1=${l_array[2]}\2/g")
-      [[ "$l_settingParams" == *"image.registry="* ]] || l_settingParams="${l_settingParams},\nimage.registry=${l_array[2]}"
+      l_settingParams=$(echo "${l_settingParams}" | sed "s/\(image\.registry\)=[^,]*\(,\|\\n\|$\)/\1=${l_array[2]//\//\\\/}\2/g")
+      [[ "${l_settingParams}" == *"image.registry="* ]] || l_settingParams="${l_settingParams},image.registry=${l_array[2]}"
     fi
 
     #如果routeHosts参数配置有值，则需要更新gatewayRoute.host参数的值。
@@ -711,11 +714,8 @@ function _deployServiceInK8S() {
       # shellcheck disable=SC2206
       l_array=(${gDefaultRetVal//,/ })
       warn "更新网关配置中的绑定域名为: ${l_array[0]}"
-      #多个同名参数的设置，以最后一个为准。因此可以直接追加参数的最新值。这里只取第一个。
-      if [[ ! "${l_settingParams}" =~ ^(.*)gatewayRoute.host=${l_array[0]} ]];then
-        l_settingParams=$(echo "$l_settingParams" | sed "s/\(gatewayRoute\.host)=[^,]*\(,\|\\\\n\|$\)/\1=${l_array[0]}\2/g")
-        [[ "$l_settingParams" == *"gatewayRoute.host="* ]] || l_settingParams="${l_settingParams},\ngatewayRoute.host=${l_array[0]}"
-      fi
+      l_settingParams=$(echo "$l_settingParams" | sed "s/\(gatewayRoute\.host\)=[^,]*\(,\|\\n\|$\)/\1=${l_array[0]//\//\\\/}\2/g")
+      [[ "$l_settingParams" == *"gatewayRoute.host="* ]] || l_settingParams="${l_settingParams},gatewayRoute.host=${l_array[0]}"
     fi
 
     #自定义Helm命令行中set参数扩展
@@ -753,8 +753,6 @@ function _deployServiceInK8S() {
 
     if [ "${l_settingParams}" ];then
       [[ "${l_settingParams}" =~ ^(,) ]] && l_settingParams="${l_settingParams:1}"
-      #将多行字符串转换为单行字符串
-      l_settingParams=$(echo "${l_settingParams}" | tr -d '\n' | sed 's/,[[:space:]]*/,/g')
       info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
       l_content=$(helm install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" 2>&1)
     else
@@ -998,7 +996,7 @@ function _pushDockerImageForDeployStage() {
     l_newImage="${l_array[1]}/${l_image#*/}"
     #先删除已经存在的镜像。
     invokeExtendChain "onBeforePushDockerImage" "${l_array[0]}" "${l_newImage}" "${l_array[2]}" \
-                "${l_array[1]}" "${l_array[5]}}" "${l_array[3]}" "${l_array[4]}}"
+                "${l_array[1]}" "${l_array[5]}" "${l_array[3]}" "${l_array[4]}"
 
     #更名
     l_result=$(docker tag "${l_image}" "${l_newImage}" 2>&1)

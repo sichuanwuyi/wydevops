@@ -6,7 +6,8 @@ app:
   appUrl: http://localhost
   #wydevops会读取app.gateway.url-prefix参数。
   gateway:
-    url-prefix: /gin
+    domain: localhost
+    route-prefix: /gin
   #wydevops会读取version参数。
   version: 1.0.0
   mysql:

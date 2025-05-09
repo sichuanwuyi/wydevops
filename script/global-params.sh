@@ -68,6 +68,7 @@ export gGlobalParamNames=(
 
 #项目工程名称
 "gServiceName" \
+"gBusinessVersion" \
 
 #构建过程中使用到的目录路径全名
 "gHelmBuildDir" \

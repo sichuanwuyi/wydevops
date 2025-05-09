@@ -11,7 +11,7 @@ type Mysql struct {
 }
 
 type Gateway struct {
-	url-prefix string `mapstructure: "url-prefix" json:"url-prefix" yaml:"url-prefix"`
+	route-prefix string `mapstructure: "route-prefix" json:"route-prefix" yaml:"route-prefix"`
 }
 
 type App struct {

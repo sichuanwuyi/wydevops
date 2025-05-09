@@ -17,9 +17,12 @@ globalParams:
   descriptionEn: "XXX service: ${serviceName}"
 
   businessImage: ${serviceName}-business
-  #nextjs项目需要手动配置businessVersion参数的值。
-  #无法像后端服务可通过参数映射文件进行配置
+  #wydevops会自动从yaml类型的配置文件中读取版本信息覆盖businessVersion参数。
+  #详细配置见配置文件：./param-mapping/params-mapping-in-yaml-file.config
   businessVersion: 1.0.0
+  #业务版本号作为部分名称的后缀时的值, 例如deployment[].name等，用于区分不同版本的资源。
+  #脚本会自动随businessVersion值变更而自动更新，主要是用于适配istio的灰度发布功能。
+  versionSuffix: 1-0-0
   baseImage: ${serviceName}-base
   baseVersion: ${businessVersion}
   #是否能回滚到上一个版本：如果修改了数据库表结构或字段属性，需要设置为true。
@@ -29,14 +32,22 @@ globalParams:
   systemName: ${serviceName}
   #服务所属应用的英文名称。
   systemNameEn: ${serviceName}
-  #子应用版本。
-  systemVersion: 1.0.0
+  #应用版本。
+  systemVersion: ${businessVersion}
+  #应用中文描述。
+  systemDescr: "系统功能描述"
+  #应用英文描述。
+  systemDescrEn: "System functional description"
   #服务所属的业务板块名称。逻辑上，一个应用下可以包含多个业务板块，一个业务板块下可以包含多个服务。
   subSystemName: ${serviceName}
   #服务所属的业务板块的英文名称。
   subSystemNameEn: ${serviceName}
   #子应用版本。
-  subSystemVersion: 1.0.0
+  subSystemVersion: ${businessVersion}
+  #子应用/模块中文描述。
+  subSystemDescr: "子系统或模块功能描述"
+  #子应用/模块英文描述。
+  subSystemDescrEn: "Subsystem functional description"
   #运行时Runtime的版本
   runtimeVersion:
 
@@ -48,18 +59,18 @@ globalParams:
   #注意：注意多个基础镜像间的顺序应与在Dockerfile文件中出现的顺序保持一致。
   baseFromImage: _BASE-FROM-IMAGE_
   #需要拷贝到docker构建目录中的目录，多个目录间使用英文逗号隔开。
-  copyDirsIntoDocker: _COPY-DIRS-INTO-DOCKER_
+  copyDirsIntoDocker:
   #需要拷贝到docker构建目录中的文件，多个文件间使用英文逗号隔开。
-  copyFilesIntoDocker: _COPY-FILES-INTO-DOCKER_
+  copyFilesIntoDocker:
 
   buildType: _BUILD-TYPE_
-  appDirInContainer: _APP-DIR-IN-CONTAINER_
+  appDirInContainer: /usr/local/app/${serviceName}
   #默认值为"/app",可自定义。
   #当构建类型为single时，脚本会自动在baseWorkDir值的后面添加"-single"后缀。
   #其他构建类型时，脚本会自动在baseWorkDir值的后面添加"-double"后缀。
-  baseWorkDir: _BASE-WORK-DIR_
-  workDirInContainer: _WORK-DIR-IN-CONTAINER_
-  archTypes: _ARCH-TYPES_
+  baseWorkDir: /app
+  workDirInContainer: ${baseWorkDir}/${serviceName}
+  archTypes: linux/arm64,linux/amd64
 
   #需要生成的离线安装报的架构类型，多个架构间使用英文逗号隔离。
   offlineArchTypes: _OFFLINE-ARCH-TYPES_
@@ -67,16 +78,16 @@ globalParams:
   #有效的构建阶段列表，逗号分隔。为空则表示所有阶段都有效。
   validBuildStages:
   #服务在K8S集群中指定部署的节点选择器
-  nodeSelector: _NODE-SELECTOR_
+  nodeSelector:
   #服务驱逐优先级
-  priorityClassName: _PRIORITY-CLASS-NAME_
+  priorityClassName:
 
   #服务主端口，也是k8s服务探活和就绪的检测端口，默认是containerPorts参数中第一个端口。
   mainPort: _MAIN-PORT_
   #申明docker容器需要开放的端口列表，端口间使用逗号隔开。
-  containerPorts: _CONTAINER-PORT_
+  containerPorts: ${mainPort}
   #ClusterIP类型的Service资源开放的服务端口列表，端口间使用逗号隔开。
-  servicePorts: _SERVICE-PORTS_
+  servicePorts: ${mainPort}
   #NodePort类型的Service资源绑定的容器端口列表，端口间使用逗号隔开。
   #默认范围：30000-32767
   nodePorts:
@@ -123,23 +134,23 @@ globalParams:
   #探活和就绪使用的HTTP还是HTTPS
   httpGetScheme: HTTP
 
-  #K8S服务资源配置相关参数的默认值
-  cpuLimits: _CPU-LIMITS_
-  memoryLimits: _MEM-LIMITS_
-  cpuRequests: _CPU-REQUESTS_
-  memoryRequests: _MEM-REQUESTS_
+  #K8S服务CPU和内存资源配置相关参数
+  cpuLimits: 500m
+  memoryLimits: 500Mi
+  cpuRequests: 500m
+  memoryRequests: 500Mi
 
   #需要放到项目默认ConfigMap中的文本文件的相对路径列表，文件间使用英文逗号分隔
-  configMapFiles: _CONFIGMAP-FILES_
+  configMapFiles:
   #需要打包到离线安装包中镜像名称，格式：{镜像名称}:{镜像版本},...
-  packageImages: _PACKAGE-IMAGES_
+  packageImages: ${baseImage}:${baseVersion},${businessImage}:${businessVersion}
 
   #chart镜像的名称, 默认与服务的名称相同
-  chartName: _CHART-NAME_
+  chartName: ${serviceName}
   #chart镜像的版本, 默认与服务的版本相同
-  chartVersion: _CHART-VERSION_
+  chartVersion: ${businessVersion}
   #chart镜像中应用的版本，默认与服务的版本相同
-  appVersion: _CHART-APP-VERSION_
+  appVersion: ${businessVersion}
 
   #部署类型：k8s(默认值)、docker(支撑docker-compose方式)
   deployType: k8s
@@ -155,6 +166,7 @@ globalParams:
   #参数不为空时即表示需要挂载PVC，参数值即为PVC资源名称。
   #挂载路径默认为${serviceName}-workdir
   persistentVolumeClaimName:
+
 #------以下配置为高级配置，在未充分理解的情况下不要轻易改动------#
 
 #项目编译阶段的配置参数
@@ -198,7 +210,7 @@ docker:
   #是否强制使用Docker模板文件。
   useTemplate: ${useTemplate}
   #projectType参数决定了生成时使用的默认Dockerfile模板。
-  #有效值(全部为小写)：java、python、c、c++、vue、nodejs
+  #有效值(全部为小写)：java、python、c、c++、vue、nextjs等
   projectType: java
   #容器中应用工作路径，
   workDir: ${workDirInContainer}
@@ -209,6 +221,7 @@ docker:
   copyDirs: ${copyDirsIntoDocker}
   #需要拷贝到Docker镜像中的文件列表，多个文件间使用逗号间隔，
   #如果不是绝对路径，则父目录为主模块目录。
+  #copyFiles中文件名称支持带*匹配符
   copyFiles: ${copyFilesIntoDocker}
   #目标架构类型,多项时表示需要构建多个镜像。
   archTypes: ${archTypes}
@@ -217,7 +230,7 @@ docker:
   #docker容器内的时区配置
   timeZone: Asia/Shanghai
   business:
-    name: ${serviceName}-business
+    name: ${businessImage}
     #业务镜像的版本
     version: ${businessVersion}
     #使用的第三方的基础镜像. 多个镜像间使用英文逗号分隔，
@@ -270,7 +283,8 @@ chart:
     #Chart.yaml文件中的description内容。
     description: ${description}
     descriptionEn: ${descriptionEn}
-    #设置引用的外部服务的chart镜像。可以设置多个，相互间使用英文逗号分隔。
+    #设置引用的外部服务的chart镜像(*.tgz)。可以设置多个，相互间使用英文逗号分隔。
+    #如果配置值带有路径则直接使用，否则会从本地系统或配置的chart镜像仓库获取目标镜像。
     #这个参数实现了一个Chart镜像包含多个服务的发布方式。
     #默认情况下应设置为空。
     refExternalCharts:
@@ -279,7 +293,7 @@ chart:
     #每一个配置项都会对应生成一套deployment.yaml、route.yaml、service.yaml、configMap.yaml
     # serviceAccount.yaml、hpa.yaml等配置文件
     deployments:
-      - name: ${serviceName}
+      - name: ${serviceName}-${versionSuffix}
         #指明引用的外部Chart镜像名称。如果是带路径的名称，则直接使用，否则会尝试从Chart仓库拉取镜像。
         #这个参数主要用来支持单pod多服务的Chart打包方式。wydevops会将外部chart镜像中deployment[0]的
         #initialContainers和containers合并到当前chart中。
@@ -307,7 +321,8 @@ chart:
         nodeSelector: ${nodeSelector}
         tolerations: []
         affinity: {}
-        podLabels: {}
+        podLabels:
+          version: ${businessVersion}
         podAnnotations:
           wydevops/service-name: \"${name}\"
           wydevops/service-name-en: \"${nameEn}\"
@@ -316,9 +331,13 @@ chart:
           wydevops/system-name: \"${systemName}\"
           wydevops/system-name-en: \"${systemNameEn}\"
           wydevops/system-version: \"${systemVersion}\"
+          wydevops/system-descr: \"${systemDescr}\"
+          wydevops/system-descr-en: \"${systemDescrEn}\"
           wydevops/sub-system-name: \"${subSystemName}\"
           wydevops/sub-system-name-en: \"${subSystemNameEn}\"
           wydevops/sub-system-version: \"${subSystemVersion}\"
+          wydevops/sub-system-descr: \"${subSystemDescr}\"
+          wydevops/sub-system-descr-en: \"${subSystemDescrEn}\"
         #参数不为空时即表示需要挂载PVC，参数值即为PVC资源名称。
         #挂载路径默认为${serviceName}-workdir
         persistentVolumeClaimName: ${persistentVolumeClaimName}
@@ -328,7 +347,7 @@ chart:
           - name: ${serviceName}-config
             configMap:
               defaultMode: 493
-              name: ${serviceName}-configmap
+              name: ${serviceName}-${versionSuffix}-configmap
               optional: false
           #挂载公共配置信息
           #- name: public-params
@@ -341,7 +360,7 @@ chart:
           #    claimName: public-storage-pvc
         #initContainers的第一个容器，其名称默认应该等于服务名称。
         initContainers:
-          - name: ${serviceName}-business
+          - name: ${serviceName}-${versionSuffix}-business
             repository: ${businessImage}
             pullPolicy: Always
             tag: ${businessVersion}
@@ -349,14 +368,14 @@ chart:
             command:
               - "sh"
               - "-c"
-              - "cp -rf ${appDirInContainer}/. ${workDirInContainer}/"
+              - "mkdir -p ${workDirInContainer} && cp -arf ${appDirInContainer}/. ${workDirInContainer}"
             volumeMounts:
               - name: ${serviceName}-workdir
-                mountPath: ${baseWorkDir}
+                mountPath: ${workDirInContainer}
         #如果没有initContainers配置（即buildType=single），
         #则containers的第一个容器其名称默认应该等于服务名称。
         containers:
-          - name: ${serviceName}-base
+          - name: ${serviceName}-${versionSuffix}-base
             repository: ${baseImage}
             pullPolicy: Always
             tag: ${baseVersion}
@@ -374,7 +393,7 @@ chart:
             #   value: "80"
             volumeMounts:
               - name: ${serviceName}-workdir
-                mountPath: ${baseWorkDir}
+                mountPath: ${workDirInContainer}
               - name: ${serviceName}-config
                 #mountPath参数的前缀必须与docker.workDir参数一致。
                 mountPath: ${workDirInContainer}/wydevops-config
@@ -401,7 +420,7 @@ chart:
               httpGet:
                 scheme: ${httpGetScheme}
                 port: ${mainPort}
-                path: /health/liveness
+                path: ${livenessUri}
             readinessProbeEnable: ${readinessProbeEnable}
             readinessProbe:
               initialDelaySeconds: 15
@@ -412,11 +431,11 @@ chart:
               httpGet:
                 scheme: ${httpGetScheme}
                 port: ${mainPort}
-                path: /health/readiness
-        #定义configmap名称（格式：{服务名称}-configmap）及其包含的文件列表
+                path: ${readinessUri}
+        #定义configmap名称（格式：{服务名称}-{版本后缀}-configmap）及其包含的文件列表
         configMaps:
             #名称必须与volumes中的某个ConfigMap名相同
-          - name: ${serviceName}-configmap
+          - name: ${serviceName}-${versionSuffix}-configmap
             files: ${configMapFiles}
 
         resourcePlugins:
@@ -454,7 +473,7 @@ chart:
             configPath: istioRoute
           - name: DestinationRule
             generatorName: default
-            enable: false
+            enable: true
             configPath: istioRoute
           - name: ServiceAccount
             generatorName: default
@@ -469,7 +488,7 @@ chart:
             enable: false
             configPath: ingressRoute
           - name: ApisixRoute
-            generatorName: my
+            generatorName: default
             enable: false
             configPath: apisixRoute
 
@@ -481,15 +500,19 @@ chart:
           #annotations下属参数用于路由重写配置
           #其中app-root与use-regex、rewrite-target不能同时配置。
           annotations:
+            #以下两个参数使能Websocket功能。
+            nginx.ingress.kubernetes.io/websocket-services: "${serviceName}-clusterip"
+            #为Websocket适当增加超时时间
+            nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
             #下面app-root参数可以给所有请求的URI添加一个路径前缀。
             #nginx.ingress.kubernetes.io/app-root: /app1
             #下面的use-regex和rewrite-target配合可以删除请求的URI中的某个子路径。
             nginx.ingress.kubernetes.io/use-regex: "true"
             #$2表示rules[0].paths[0].path的值中第二个圆括号中的子路径。
             nginx.ingress.kubernetes.io/rewrite-target: /$1
-#          tls:
-#            - hosts: [ ${ ingressTlsHosts } ]
-#              secretName: ${ingressSecretName}
+#         tls:
+#           - hosts: [ ${ingressTlsHosts} ]
+#             secretName: ${ingressSecretName}
           rules:
             - host:
               paths:
@@ -521,7 +544,7 @@ chart:
 #          rules:
 #            - host:
 #              paths:
-#                - path: ${gatewayPath}(/|$)(.*)
+#                - path: ^${gatewayPath}(?:/|$)(.*)
 #                  pathType: Prefix
 #                  serviceName: ${serviceName}-clusterip
 #                  servicePort: ${mainPort}
@@ -535,8 +558,8 @@ chart:
               #是否使能Websocket功能
               websocket: ${websocket}
               match:
-                hosts: [ ]
-                paths: [ "^${gatewayPath}*" ]
+                hosts: []
+                paths: ["^${gatewayPath}(?:/|$)(.*)"]
               plugins:
                 #是否开启跨域
                 - name: cors
@@ -545,42 +568,62 @@ chart:
                 - name: proxy-rewrite
                   regex_uri: ${apisixRouteRegexUri}
               backends:
-                serviceName: ${serviceName}-clusterip
-                servicePort: ${mainPort}
+                - serviceName: ${serviceName}-clusterip
+                  servicePort: ${mainPort}
 
         istioRoute:
           apiVersion: ${istioApiVersion}
           gateway:
+            name: ${serviceName}-gateway
             #这个端口号是由istio-ingressgateway服务决定。
             portNumber: 80
+            # 显式声明HTTP协议
+            protocol: HTTP
             hosts:
               - \"*\"
           virtualService:
+            name: ${serviceName}-vs
             hosts:
               - \"${istioVirtualServiceHost}\"
             gateways:
               - ${serviceName}-gateway
-            match:
-              - uri:
-                  prefix: \"${gatewayPath}\"
-            #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。
-            rewrite:
-              #设置为” “表示删除上述prefix参数指定的前缀。
-              uri: " "
-            route:
-              - destination:
-                  port:
-                    number: ${mainPort}
-                  host: ${serviceName}-clusterip
-              #以下配置为启用DestinationRule资源生成器时需要配置subset时才需要打开。
-              #- destination:
-              #    host: ${serviceName}-clusterip
-              #    #istioSubset的值需要指向目标DestinationRule资源中的subsets的某一项的名称。
-              #    subset: ${istioSubset}
+            http:
+              - match:
+                  - uri:
+                      prefix: \"${gatewayPath}\"
+                #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。
+                rewrite:
+                  #设置为" "表示删除上述prefix参数指定的前缀。
+                  uri: \" \"
+                route:
+                  - destination:
+                      port:
+                        number: ${mainPort}
+                      host: ${serviceName}-clusterip
+                      #设置默认选中的服务子集。
+                      subset: ${versionSuffix}
+                    #默认所有流量都导流到${serviceName}-clusterip
+                    weight: 100
+                #默认启用websocket升级
+                websocketUpgrade: true
+                #默认增长Websocket超时防止断开
+                timeout: 7200s
           destinationRule:
             host: ${serviceName}-clusterip
             trafficPolicy:
+              loadBalancer:
+                simple: ROUND_ROBIN
+              connectionPool:
+                tcp:
+                  maxConnections: 100  # 最大连接数
+                  connectTimeout: 30s # 连接超时
+                http:
+                  http1MaxPendingRequests: 1024
+                  maxRequestsPerConnection: 0  # 0表示不限制，适用于WebSocket
             subsets:
+              - name: ${versionSuffix}
+                labels:
+                  version: ${businessVersion}
 
     #需要写入values.yaml文件的自定义配置信息。
     params:
@@ -624,7 +667,6 @@ chart:
               description: "服务最大可用内存额度，取值范围：1-1000，单位：兆字节或吉字节|Memory Maximum Available Quota, Range: [1,1000], Unit: MB or GB"
 
 package:
-    #离线包的名称
   - name: ${chartName}
     #绑定离线打包的chart
     chartName: ${chartName}
@@ -633,13 +675,14 @@ package:
     #离线包名称：{chartName}-{archType}-{chartVersion}.tar.gz
     archTypes: ${offlineArchTypes}
     #设置离线安装包中需要包含的镜像列表。
-    #脚本会自动从chart镜像中收集需要的docker镜像，并与下列参数的值进行合并去重。
+    #wydevops会自动从chart镜像中收集需要的docker镜像，并与下列参数的值进行合并去重。
     #可在这个参数中设置好需要额外上传的其他docker镜像。
     images: ${packageImages}
 
 deploy:
+    #列表项的唯一名称
   - name: ${chartName}
-    #要部署的离线包名称
+    #要部署的离线包名称。
     packageName: ${chartName}
     #发布类型：k8s或docker
     deployType: ${deployType}
@@ -647,10 +690,10 @@ deploy:
     uninstall: false
     #部署的目标环境。
     activeProfile: ${activeProfile}
-    #部署时使用的临时目录
+    #部署时使用的临时目录名称，
     deployTempDirName: deploy
     #部署完毕后是否删除使用的临时文件
-    deleteTempDirAfterDeployed: true
+    deleteTempDirAfterDeployed: false
     #为Chart镜像values.yaml配置文件params配置节中的参数提供默认值
     #如果部署时deployType=docker，则wydevops会自动更新docker镜像外挂的配置文件中对应参数的值。
     params:
@@ -663,10 +706,10 @@ deploy:
         apiServer: ${targetApiServer}
         #发布服务的命名空间（必须配置）
         namespace: ${targetNamespace}
-        #集群内部使用的docker仓库信息。
+        #目标集群使用的docker仓库信息。
         #格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码},
         #{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)}
-        dockerRepo:
+        dockerRepo: ${targetDockerRepo}
         #部署时指定的网关路由hosts/host参数的值(可不配置),目前只支持设置一个域名
         routeHosts: ${gatewayHost}
       #测试集群环境
@@ -679,10 +722,6 @@ deploy:
       dockerRunShellGenerator:
       #指定用于生成docker-compose.yaml的生成器脚本，或者直接是docker-compose.yaml文件。
       dockerComposeYamlGenerator:
-      #部署时使用的临时目录
-      deployTempDir: ./deploy
-      #部署完毕后是否删除使用的临时文件
-      deleteTempDirAfterDeployed: true
       #开发集群环境
       dev:
         #设置是否启用代理模式。
@@ -690,7 +729,7 @@ deploy:
         #如果设置enableProxy=false,则会循环向给定的服务器部署服务。
         enableProxy: false
         #docker部署方式时，需要部署的节点信息列表。
-        nodeIPsArray:
+        nodeIPs:
           #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
           #第一个节点必须是能免密直连其他节点。
           - ${targetApiServer}

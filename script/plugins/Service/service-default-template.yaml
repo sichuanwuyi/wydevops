@@ -12,8 +12,8 @@ metadata:
     helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
     app.kubernetes.io/version: ${gCurrentChartVersion}
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix \"-\" }}-clusterip
-    app.kubernetes.io/instance: {{ .name | trunc 53 | trimSuffix \"-\" }}-clusterip
+    app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix \"-\" }}
+    app.kubernetes.io/instance: {{ \$.Release.Name }}
 spec:
   type: ClusterIP
   ports:

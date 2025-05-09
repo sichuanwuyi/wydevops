@@ -4,13 +4,13 @@ apiVersion: ${t_apiVersion}
 kind: DestinationRule
 metadata:
   namespace: {{ \$.Release.Namespace }}
-  name: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
+  name: {{ .name | trunc 53 | trimSuffix \"-\" }}-dr
   labels:
     helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
     app.kubernetes.io/version: ${gCurrentChartVersion}
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
-    app.kubernetes.io/instance: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
+    app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix \"-\" }}
+    app.kubernetes.io/instance: {{ \$.Release.Name }}
 spec:
   host: {{ .istioRoute.destinationRule.host }}
   {{- if .istioRoute.destinationRule.trafficPolicy }}

@@ -690,6 +690,7 @@ function handleBuildingSingleImageForChart_ex() {
   export gCiCdYamlFile
   export gBuildType
   export gServiceName
+  export gBusinessVersion
 
   local l_saveBackStatus
   local l_baseImage
@@ -724,7 +725,7 @@ function handleBuildingSingleImageForChart_ex() {
       while true; do
         readParam "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].name"
         [[ "${gDefaultRetVal}" == "null" ]] && break
-        if [ "${gDefaultRetVal}" == "${gServiceName}" ];then
+        if [ "${gDefaultRetVal}" == "${gServiceName}-${gBusinessVersion//./-}" ];then
 
           #删除volumes中的${gServiceName}-workdir目录挂载配置
           getListIndexByPropertyName "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].volumes" "name" "${gServiceName}-workdir"
@@ -740,7 +741,7 @@ function handleBuildingSingleImageForChart_ex() {
           fi
 
           #删除initContainers中的业务镜像配置。
-          getListIndexByPropertyName "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].initContainers" "name" "${gServiceName}-business"
+          getListIndexByPropertyName "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].initContainers" "name" "${gServiceName}-${gBusinessVersion//./-}-business"
           if [ "${gDefaultRetVal}" -ge 0 ];then
             l_param="chart[${l_i}].deployments[${l_j}].initContainers[${gDefaultRetVal}]"
             deleteParam "${gCiCdYamlFile}" "${l_param}"
@@ -752,7 +753,7 @@ function handleBuildingSingleImageForChart_ex() {
           fi
 
           #对containers中name为${gServiceName}-base的配置项进行修正。
-          getListIndexByPropertyName "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].containers" "name" "${gServiceName}-base"
+          getListIndexByPropertyName "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].containers" "name" "${gServiceName}-${gBusinessVersion//./-}-base"
           if [ "${gDefaultRetVal}" -ge 0 ];then
             l_k="${gDefaultRetVal}"
             l_param="chart[${l_i}].deployments[${l_j}].containers[${l_k}]"
@@ -1144,11 +1145,13 @@ function _processMultiplePorts() {
 
 function _updateServiceNameOfBackendInGatewayRoute() {
   export _portAndServiceNameMap
+  export gCurrentAppVersion
 
   local l_cicdYaml=$1
   local l_paramPath=$2
 
   local l_loopIndex
+  local l_loopIndex0
   local l_loopIndex1
   local l_layerLevel
 
@@ -1199,29 +1202,38 @@ function _updateServiceNameOfBackendInGatewayRoute() {
   done
 
   #单独处理istio相关配置中的服务名称。
-  ((l_loopIndex1=0))
+  ((l_loopIndex0=0))
   while true;do
-    readParam "${l_cicdYaml}" "${l_paramPath}.istioRoute.virtualService.route[${l_loopIndex1}].destination.port.number"
+    ((l_loopIndex1=0))
+    while true; do
+      readParam "${l_cicdYaml}" "${l_paramPath}.istioRoute.virtualService.http[${l_loopIndex0}].route[${l_loopIndex1}].destination.port.number"
+      if [[ "${gDefaultRetVal}" == "null" ]];then
+        break
+      fi
+
+      if [[ "${l_portList}" =~ ^(.*)${gDefaultRetVal}( |$) ]];then
+        l_name="${_portAndServiceNameMap[${gDefaultRetVal}]}"
+        info "更新${l_cicdYaml##*/}文件中istioRoute.virtualService配置中${gDefaultRetVal}端口对应的后端服务的名称为${l_name}..." "-n"
+        updateParam "${l_cicdYaml}" "${l_paramPath}.istioRoute.virtualService.http[${l_loopIndex0}].route[${l_loopIndex1}].destination.host" "${l_name}"
+        if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
+          error "失败"
+        else
+          info "成功" "*"
+        fi
+      fi
+      ((l_loopIndex1 = l_loopIndex1 + 1))
+    done
+    ((l_loopIndex0 = l_loopIndex0 + 1))
+    readParam "${l_cicdYaml}" "${l_paramPath}.istioRoute.virtualService.http[${l_loopIndex0}]"
     if [[ "${gDefaultRetVal}" == "null" ]];then
       break
     fi
-
-    if [[ "${l_portList}" =~ ^(.*)${gDefaultRetVal}( |$) ]];then
-      l_name="${_portAndServiceNameMap[${gDefaultRetVal}]}"
-      info "更新${l_cicdYaml##*/}文件中istioRoute.virtualService配置中${gDefaultRetVal}端口对应的后端服务的名称为${l_name}..." "-n"
-      updateParam "${l_cicdYaml}" "${l_paramPath}.istioRoute.virtualService.route[${l_loopIndex1}].destination.host" "${l_name}"
-      if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-        error "失败"
-      else
-        info "成功" "*"
-      fi
-    fi
-
-    ((l_loopIndex1 = l_loopIndex1 + 1))
   done
 
-  info "直接将istioRoute.destinationRule.host名称赋值为:${l_name}"
-  updateParam "${l_cicdYaml}" "${l_paramPath}.istioRoute.destinationRule.host" "${l_name}"
+  if [ ${l_name} ];then
+    info "直接将istioRoute.destinationRule.host名称赋值为:${l_name}"
+    updateParam "${l_cicdYaml}" "${l_paramPath}.istioRoute.destinationRule.host" "${l_name}"
+  fi
 
 }
 

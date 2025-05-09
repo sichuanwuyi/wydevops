@@ -2,14 +2,36 @@ spring:
   profiles:
     active: prod
 
+#网关配置
 gateway:
-  url-prefix: /wydevops/v1/sample1
+  #网关域名
+  domain: localhost:${server.port}
+  #网关路由前缀
+  url-prefix: /java-sample/v1/api
+
+open-api:
+  title: "JAVA SAMPLE API"
+  version: "1.0.0"
+  description: "Java测试用的Demo项目"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    config-url: ${springdoc.api-docs.path}/swagger-config
+    url: ${springdoc.api-docs.path}
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+    disable-swagger-default-url: true
 
 #服务就绪探活配置
 management:
   endpoints:
-    enabled-by-default: true
     web:
       exposure:
         include: "*"
       base-path: /
+    access:
+      default: read_only

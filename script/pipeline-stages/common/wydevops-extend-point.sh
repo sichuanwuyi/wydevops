@@ -23,6 +23,11 @@ function onBeforeReplaceParamPlaceholder_ex() {
   local l_placeholders
   local l_placeholder
 
+   readParam "${l_cicdYaml}" "globalParams.businessVersion"
+   if [[ "${gDefaultRetVal}" != "null" ]];then
+     updateParam "${l_cicdYaml}" "globalParams.versionSuffix" "${gDefaultRetVal//./-}"
+   fi
+
   readParam "${l_cicdYaml}" "globalParams.gatewayPath"
   if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "/" ]];then
     updateParam "${l_cicdYaml}" "globalParams.enableRewrite" "false"
@@ -1003,6 +1008,14 @@ function _loadGlobalParamsFromCiCdYaml() {
   fi
   gServiceName="${gDefaultRetVal}"
   info "gServiceName:从配置文件中读取配置值(${gServiceName})"
+
+  #初始化gBusinessVersion参数。
+  readParam "${l_cicdYaml}" "globalParams.businessVersion"
+  if [ "${gDefaultRetVal}" == "null" ];then
+    error "${l_cicdYaml}文件中globalParams.businessVersion参数不能为空"
+  fi
+  gBusinessVersion="${gDefaultRetVal}"
+  info "gBusinessVersion:从配置文件中读取配置值(${gBusinessVersion})"
 }
 
 #------------------------私有方法--结束-------------------------#

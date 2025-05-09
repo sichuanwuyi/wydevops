@@ -4,28 +4,32 @@ apiVersion: ${t_apiVersion}
 kind: VirtualService
 metadata:
   namespace: {{ \$.Release.Namespace }}
-  name: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
+  name: {{ .istioRoute.virtualService.name }}
   labels:
     helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
     app.kubernetes.io/version: ${gCurrentChartVersion}
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
-    app.kubernetes.io/instance: {{ .name | trunc 53 | trimSuffix \"-\" }}-vs
+    app.kubernetes.io/name: {{ .name | trunc 53 | trimSuffix \"-\" }}
+    app.kubernetes.io/instance: {{ \$.Release.Name }}
 spec:
   hosts:
     {{- toYaml .istioRoute.virtualService.hosts | nindent 4 }}
   gateways:
     {{- toYaml .istioRoute.virtualService.gateways | nindent 4 }}
   http:
+    {{- range .istioRoute.virtualService.http }}
     - match:
-      {{- range .istioRoute.virtualService.match }}
+      {{- range .match }}
         - uri:
             prefix: {{ .uri.prefix | quote }}
       {{- end }}
-      {{- if and (eq $.Values.gatewayRoute.enableRewrite "true") .istioRoute.virtualService.rewrite.uri }}
+      {{- if and (eq $.Values.gatewayRoute.enableRewrite "true") .rewrite.uri }}
       rewrite:
-        {{- toYaml .istioRoute.virtualService.rewrite | nindent 8 }}
+        uri: {{ .rewrite.uri | quote }}
       {{- end }}
+      {{- if .route }}
       route:
-        {{- toYaml .istioRoute.virtualService.route | nindent 8 }}
+        {{- toYaml .route | nindent 8 }}
+      {{- end }}
+    {{- end }}
 {{- end }}

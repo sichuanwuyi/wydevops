@@ -20,6 +20,9 @@ globalParams:
   #wydevops会自动从yaml类型的配置文件中读取版本信息覆盖businessVersion参数。
   #详细配置见配置文件：./param-mapping/params-mapping-in-yaml-file.config
   businessVersion: 1.0.0
+  #业务版本号作为部分名称的后缀时的值，例如deployment[].name等，用于区分不同版本的资源。
+  #脚本会自动随businessVersion值变更而自动更新，主要是用于适配istio的灰度发布功能。
+  versionSuffix: 1-0-0
   baseImage: ${serviceName}-base
   baseVersion: ${businessVersion}
   #是否能回滚到上一个版本：如果修改了数据库表结构或字段属性，需要设置为true。
@@ -30,13 +33,21 @@ globalParams:
   #服务所属应用的英文名称。
   systemNameEn: ${serviceName}
   #应用版本。
-  systemVersion: 1.0.0
+  systemVersion: ${businessVersion}
+  #应用中文描述。
+  systemDescr: "系统功能描述"
+  #应用英文描述。
+  systemDescrEn: "System functional description"
   #服务所属的业务板块名称。逻辑上，一个应用下可以包含多个业务板块，一个业务板块下可以包含多个服务。
   subSystemName: ${serviceName}
   #服务所属的业务板块的英文名称。
   subSystemNameEn: ${serviceName}
   #子应用版本。
-  subSystemVersion: 1.0.0
+  subSystemVersion: ${businessVersion}
+  #子应用/模块中文描述。
+  subSystemDescr: "子系统或模块功能描述"
+  #子应用/模块英文描述。
+  subSystemDescrEn: "Subsystem functional description"
   #运行时Runtime的版本(nextjs的版本)
   runtimeVersion:
 
@@ -53,7 +64,7 @@ globalParams:
   copyFilesIntoDocker:
 
   buildType: _BUILD-TYPE_
-  appDirInContainer: /usr/local/app
+  appDirInContainer: /usr/local/app/${serviceName}
   #默认值为"/app",可自定义。
   #当构建类型为single时，脚本会自动在baseWorkDir值的后面添加"-single"后缀。
   #其他构建类型时，脚本会自动在baseWorkDir值的后面添加"-double"后缀。
@@ -282,7 +293,7 @@ chart:
     #每一个配置项都会对应生成一套deployment.yaml、route.yaml、service.yaml、configMap.yaml
     # serviceAccount.yaml、hpa.yaml等配置文件
     deployments:
-      - name: ${serviceName}
+      - name: ${serviceName}-${versionSuffix}
         #指明引用的外部Chart镜像名称。如果是带路径的名称，则直接使用，否则会尝试从Chart仓库拉取镜像。
         #这个参数主要用来支持单pod多服务的Chart打包方式。wydevops会将外部chart镜像中deployment[0]的
         #initialContainers和containers合并到当前chart中。
@@ -310,7 +321,8 @@ chart:
         nodeSelector: ${nodeSelector}
         tolerations: []
         affinity: {}
-        podLabels: {}
+        podLabels:
+          version: ${businessVersion}
         podAnnotations:
           wydevops/service-name: \"${name}\"
           wydevops/service-name-en: \"${nameEn}\"
@@ -319,9 +331,13 @@ chart:
           wydevops/system-name: \"${systemName}\"
           wydevops/system-name-en: \"${systemNameEn}\"
           wydevops/system-version: \"${systemVersion}\"
+          wydevops/system-descr: \"${systemDescr}\"
+          wydevops/system-descr-en: \"${systemDescrEn}\"
           wydevops/sub-system-name: \"${subSystemName}\"
           wydevops/sub-system-name-en: \"${subSystemNameEn}\"
           wydevops/sub-system-version: \"${subSystemVersion}\"
+          wydevops/sub-system-descr: \"${subSystemDescr}\"
+          wydevops/sub-system-descr-en: \"${subSystemDescrEn}\"
         #参数不为空时即表示需要挂载PVC，参数值即为PVC资源名称。
         #挂载路径默认为${serviceName}-workdir
         persistentVolumeClaimName: ${persistentVolumeClaimName}
@@ -331,7 +347,7 @@ chart:
           - name: ${serviceName}-config
             configMap:
               defaultMode: 493
-              name: ${serviceName}-configmap
+              name: ${serviceName}-${versionSuffix}-configmap
               optional: false
           #挂载公共配置信息
           #- name: public-params
@@ -344,7 +360,7 @@ chart:
           #    claimName: public-storage-pvc
         #initContainers的第一个容器，其名称默认应该等于服务名称。
         initContainers:
-          - name: ${serviceName}-business
+          - name: ${serviceName}-${versionSuffix}-business
             repository: ${businessImage}
             pullPolicy: Always
             tag: ${businessVersion}
@@ -359,7 +375,7 @@ chart:
         #如果没有initContainers配置（即buildType=single），
         #则containers的第一个容器其名称默认应该等于服务名称。
         containers:
-          - name: ${serviceName}-base
+          - name: ${serviceName}-${versionSuffix}-base
             repository: ${baseImage}
             pullPolicy: Always
             tag: ${baseVersion}
@@ -419,7 +435,7 @@ chart:
         #定义configmap名称（格式：{服务名称}-configmap）及其包含的文件列表
         configMaps:
             #名称必须与volumes中的某个ConfigMap名相同
-          - name: ${serviceName}-configmap
+          - name: ${serviceName}-${versionSuffix}-configmap
             files: ${configMapFiles}
 
         resourcePlugins:
@@ -457,7 +473,7 @@ chart:
             configPath: istioRoute
           - name: DestinationRule
             generatorName: default
-            enable: false
+            enable: true
             configPath: istioRoute
           - name: ServiceAccount
             generatorName: default
@@ -484,6 +500,10 @@ chart:
           #annotations下属参数用于路由重写配置
           #其中app-root与use-regex、rewrite-target不能同时配置。
           annotations:
+            #以下两个参数使能Websocket功能。
+            nginx.ingress.kubernetes.io/websocket-services: "${serviceName}-clusterip"
+            #为Websocket适当增加超时时间
+            nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
             #下面app-root参数可以给所有请求的URI添加一个路径前缀。
             #nginx.ingress.kubernetes.io/app-root: /app1
             #下面的use-regex和rewrite-target配合可以删除请求的URI中的某个子路径。
@@ -539,7 +559,7 @@ chart:
               websocket: ${websocket}
               match:
                 hosts: []
-                paths: ["^${gatewayPath}*"]
+                paths: ["^${gatewayPath}(?:/|$)(.*)"]
               plugins:
                 #是否开启跨域
                 - name: cors
@@ -554,36 +574,56 @@ chart:
         istioRoute:
           apiVersion: ${istioApiVersion}
           gateway:
+            name: ${serviceName}-gateway
             #这个端口号是由istio-ingressgateway服务决定。
             portNumber: 80
+            # 显式声明HTTP协议
+            protocol: HTTP
             hosts:
               - \"*\"
           virtualService:
+            name: ${serviceName}-vs
             hosts:
               - \"${istioVirtualServiceHost}\"
             gateways:
               - ${serviceName}-gateway
-            match:
-              - uri:
-                  prefix: \"${gatewayPath}\"
-            #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。
-            rewrite:
-              #设置为” “表示删除上述prefix参数指定的前缀。
-              uri: " "
-            route:
-              - destination:
-                  port:
-                    number: ${mainPort}
-                  host: ${serviceName}-clusterip
-              #以下配置为启用DestinationRule资源生成器时需要配置subset时才需要打开。
-              #- destination:
-              #    host: ${serviceName}-clusterip
-              #    #istioSubset的值需要指向目标DestinationRule资源中的subsets的某一项的名称。
-              #    subset: ${istioSubset}
+            http:
+              - match:
+                  - uri:
+                      prefix: \"${gatewayPath}\"
+                #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。
+                rewrite:
+                  #设置为" "表示删除上述prefix参数指定的前缀。
+                  uri: \" \"
+                route:
+                  - destination:
+                      port:
+                        number: ${mainPort}
+                      host: ${serviceName}-clusterip
+                      #设置默认选中的服务子集。
+                      subset: ${versionSuffix}
+                    #默认所有流量都导流到${serviceName}-clusterip
+                    weight: 100
+                #默认启用websocket升级
+                websocketUpgrade: true
+                #默认增长Websocket超时防止断开
+                timeout: 7200s
           destinationRule:
             host: ${serviceName}-clusterip
             trafficPolicy:
+              loadBalancer:
+                simple: ROUND_ROBIN
+              connectionPool:
+                tcp:
+                  maxConnections: 100  # 最大连接数
+                  connectTimeout: 30s # 连接超时
+                http:
+                  http1MaxPendingRequests: 1024
+                  maxRequestsPerConnection: 0  # 0表示不限制，适用于WebSocket
             subsets:
+              - name: ${versionSuffix}
+                labels:
+                  version: ${businessVersion}
 
     #需要写入values.yaml文件的自定义配置信息。
     params:
