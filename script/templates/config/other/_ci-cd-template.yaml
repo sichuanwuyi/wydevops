@@ -2,13 +2,11 @@
 #不同语言项目使用这个统一的全功能配置文件。
 #不同语言项目可能存在不同的参数默认值，请在对应的语言子目录下的_ci-cd-config.yaml文件中配置。
 globalParams:
-  #wydevops会自动从yaml类型的配置文件中读取版本信息覆盖serviceName参数。
-  #详细配置见配置文件：./param-mapping/params-mapping-in-yaml-file.config
+  #服务英文名称，
+  #需要手动配置serviceName参数的值。
   serviceName: _SERVICE-NAME_
   #服务中文名称
-  name: ${serviceName}
-  #服务英文名称
-  nameEn: ${serviceName}
+  serviceNameZh: ${serviceName}
   #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
   serviceCode: ${serviceName}
   #对本服务的一个中文描述说明文本，会写入Chart镜像。
@@ -324,8 +322,8 @@ chart:
         podLabels:
           version: ${businessVersion}
         podAnnotations:
-          wydevops/service-name: \"${name}\"
-          wydevops/service-name-en: \"${nameEn}\"
+          wydevops/service-name: \"${serviceNameZh}\"
+          wydevops/service-name-en: \"${serviceName}\"
           wydevops/service-descr: \"${description}\"
           wydevops/service-descr-en: \"${descriptionEn}\"
           wydevops/system-name: \"${systemName}\"
