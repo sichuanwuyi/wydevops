@@ -2,6 +2,27 @@
 
 #------------------------语言级扩展方法------------------------#
 
+function _onBeforeInitGlobalParams_ex() {
+  export gBuildPath
+  export gRuntimeVersion
+
+  local l_pomXmlFile
+  local l_tmpVersion
+
+  l_pomXmlFile="${gBuildPath}/pom.xml"
+  if [ ! -f "${l_pomXmlFile}" ];then
+    error "未找到Java项目的pom.xml文件"
+  fi
+
+  #读取JDK的版本
+  l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.target"]/text()' "${l_pomXmlFile}" 2>&1)
+  if [ ! "${l_tmpVersion}" ];then
+    l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.source"]/text()' "${l_pomXmlFile}" 2>&1)
+  fi
+  gRuntimeVersion="jdk${l_tmpVersion}"
+
+}
+
 function _initGlobalParams_ex() {
   export gLanguage
   debug "针对${gLanguage}语言项目，修改或新增全局参数..."
@@ -50,13 +71,6 @@ function _onBeforeReplaceParamPlaceholder_ex() {
   if [[ ${l_module} && ${l_module} != "XPath set is empty" && ${gBuildPath} == './' ]];then
     error "多模块项目符合性检测失败：实际是多模块的项目，配置的gBuildPath参数不能以\"/\"结尾"
   fi
-
-  #读取JDK的版本
-  gRuntimeVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.target"]/text()' "${l_pomXmlFile}" 2>&1)
-  if [ ! "${gRuntimeVersion}" ];then
-    gRuntimeVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.source"]/text()' "${l_pomXmlFile}" 2>&1)
-  fi
-  gRuntimeVersion="jdk${gRuntimeVersion}"
 
 }
 

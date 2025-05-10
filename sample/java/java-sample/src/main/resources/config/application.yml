@@ -7,7 +7,7 @@ gateway:
   #网关域名
   domain: localhost:${server.port}
   #网关路由前缀
-  url-prefix: /java-sample/v1/api
+  route-prefix: /java-sample/v1/api
 
 open-api:
   title: "JAVA SAMPLE API"
@@ -29,6 +29,8 @@ springdoc:
 #服务就绪探活配置
 management:
   endpoints:
+    #当enabled-by-default=true时，wydevops脚本会自动使能K8S服务的探活和就绪探针。
+    enabled-by-default: true
     web:
       exposure:
         include: "*"

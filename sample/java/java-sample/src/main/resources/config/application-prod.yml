@@ -6,7 +6,7 @@ gateway:
   #网关域名
   domain: www.wydevops.com
   #网关路由前缀
-  url-prefix: /java-sample/v1/api
+  route-prefix: /java-sample/v1/api
 
 mysql-params:
   host: {{ .Values.params.mysql.host | default "192.168.31.218" }}

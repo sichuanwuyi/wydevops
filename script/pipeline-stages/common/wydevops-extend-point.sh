@@ -116,17 +116,22 @@ function createCiCdTemplateFile_ex() {
   export gCiCdTemplateFileName
   export gBuildScriptRootDir
   export gLanguage
+  export gRuntimeVersion
 
   local l_cicdTemplateFile=$1
 
+  local l_runtimeVersion
   local l_templateFile
   local l_info
+
+  l_runtimeVersion=""
+  [[ "${gRuntimeVersion}" ]] && l_runtimeVersion="${gRuntimeVersion}/"
 
   l_templateFile="${gBuildPath}/${gHelmBuildDirName}/templates/config/_${gCiCdTemplateFileName}"
   if [ -f "${l_templateFile}" ];then
     l_info="将项目级_ci-cd-template.yaml模板文件内容复制到${l_cicdTemplateFile##*/}文件中"
   else
-    l_templateFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/_${gCiCdTemplateFileName}"
+    l_templateFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/${l_runtimeVersion}_${gCiCdTemplateFileName}"
     if [ -f "${l_templateFile}" ];then
       l_info="将语言级_ci-cd-template.yaml模板文件内容复制到${l_cicdTemplateFile##*/}文件中"
     else
@@ -149,18 +154,23 @@ function createCiCdTemplateFile_ex() {
 function createCiCdConfigFile_ex() {
   export gBuildScriptRootDir
   export gLanguage
+  export gRuntimeVersion
 
   local l_cicdTemplateFile=$1
   #需要创建的目标文件。
   local l_cicdConfigFile=$2
 
+  local l_runtimeVersion
   #语言级_ci-cd-config.yaml的全路径名称。
   local l_tmpCicdConfigFile
   local l_content
   local l_itemCount
   local l_i
 
-  l_tmpCicdConfigFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/_ci-cd-config.yaml"
+  l_runtimeVersion=""
+  [[ "${gRuntimeVersion}" ]] && l_runtimeVersion="${gRuntimeVersion}/"
+
+  l_tmpCicdConfigFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/${l_runtimeVersion}_ci-cd-config.yaml"
   if [ -f "${l_tmpCicdConfigFile}" ];then
     info "复制${gLanguage}类项目的_ci-cd-config.yaml模板文件，创建一个项目级的_ci-cd-config.yaml"
     cat "${l_tmpCicdConfigFile}" > "${l_cicdConfigFile}"
@@ -174,12 +184,14 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   export gHelmBuildDirName
   export gBuildScriptRootDir
   export gParamMappingDirName
+  export gRuntimeVersion
 
   local l_templateFile=$1
   local l_tmpCiCdConfigFile=$2
 
   local l_cicdTargetFile
 
+  local l_runtimeVersion
   local l_dirList
   local l_mappingFileDir
   local l_paramMappingFiles
@@ -203,8 +215,11 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   l_cicdTargetFile="${l_tmpCiCdConfigFile}"
   [[ ! -f "${l_tmpCiCdConfigFile}" ]] && l_cicdTargetFile="${l_templateFile}"
 
+  l_runtimeVersion=""
+  [[ "${gRuntimeVersion}" ]] && l_runtimeVersion="${gRuntimeVersion}/"
+
   #项目级参数应用文件优先级更高，放置_dirList中最前面的位置。
-  l_dirList=("${gBuildPath}/${gHelmBuildDirName}/templates/config/${gLanguage}/${gParamMappingDirName}" "${gBuildScriptRootDir}/templates/config/${gLanguage}/${gParamMappingDirName}")
+  l_dirList=("${gBuildPath}/${gHelmBuildDirName}/templates/config/${gLanguage}/${gParamMappingDirName}" "${gBuildScriptRootDir}/templates/config/${gLanguage}/${l_runtimeVersion}${gParamMappingDirName}")
   #预先定义好各个参数映射文件对应的
 
   l_loadOk="false"
