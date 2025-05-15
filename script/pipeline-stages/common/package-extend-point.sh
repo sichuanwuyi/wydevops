@@ -323,6 +323,10 @@ function copyDockerImage_ex() {
       if [ -f "${l_savedFile}" ];then
         info "成功获取离线安装包中Docker镜像导出文件：${l_tmpImage//:/-}-${l_archType//\//-}.tar"
         cp -f "${l_savedFile}" "${l_targetDir}/"
+        # shellcheck disable=SC2181
+        if [ "$?" != 0 ];then
+          error "复制镜像导出文件到目标失败"
+        fi
       else
         error "获取离线安装包中Docker镜像导出文件失败：${l_tmpImage//:/-}-${l_archType//\//-}.tar"
       fi
@@ -352,6 +356,10 @@ function zipOfflinePackage_ex() {
   l_zipFile="${l_chartName//\//_}-${l_chartVersion}-${l_archType//\//-}.tar.gz"
   info "将${l_targetDir##*/}目录压缩为${l_zipFile}"
   tar -zcf "../${l_zipFile}" "."
+  # shellcheck disable=SC2181
+  if [ "$?" != 0 ];then
+    error "压缩${l_targetDir##*/}目录失败"
+  fi
 
   # shellcheck disable=SC2164
   cd "${l_curDir}"
