@@ -225,6 +225,7 @@ function _processProjectParamMapping() {
             continue
           fi
 
+          #如果l_paramValue中存在${...}变量占位符，则需要替换这些变量占位符的值。
           #更新文件中的指定参数的值。
           updateParam "${l_cicdConfigFile}" "${l_subValueItems[0]}" "${l_paramValue}"
           if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
@@ -314,6 +315,8 @@ function _readParamValueEx() {
   local l_sourceFiles
   local l_sourceFile
   local l_found
+  local l_paramValue
+  local l_varName
 
   gDefaultRetVal="null"
   l_found="false"
@@ -335,9 +338,25 @@ function _readParamValueEx() {
     invokeExtendChain "onReadParamValueFromFile" "${l_sourceFile}" "${l_paramPath}" "${l_readMode}"
 
     if [ "${gDefaultRetVal}" != "null" ];then
+      #检查l_paramValue值中是否还存在${...}变量占位符，如果存在则需要替换这些变量占位符的值。
+      l_paramValue="${gDefaultRetVal}"
+      while (true);do
+        if [[ "${l_paramValue}" =~ \$\{([^}]+)\} ]];then
+            l_varName="${BASH_REMATCH[1]}"  # 提取第一个匹配的变量名
+            info "在${l_paramValue}变量值中发现变量占位符: ${l_varName}"
+            _readParamValueEx "${l_buildPath}" "${l_targetFiles}" "${l_varName}" "true" "0"
+            # 这里可以添加变量替换逻辑
+            l_paramValue=${l_paramValue/\$\{$l_varName\}/${gDefaultRetVal}}
+            info "占位符替换后的参数值: ${l_paramValue}"
+        else
+            break;
+        fi
+      done
+      gDefaultRetVal="${l_paramValue}"
       l_found="true"
       break
     fi
+
   done
 
   if [[ "${l_found}" == "false" ]];then

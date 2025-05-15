@@ -607,6 +607,7 @@ chart:
                 #默认增长Websocket超时防止断开
                 timeout: 7200s
           destinationRule:
+            name: ${serviceName}-dr
             host: ${serviceName}-clusterip
             trafficPolicy:
               loadBalancer:

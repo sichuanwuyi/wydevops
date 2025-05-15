@@ -4,7 +4,7 @@ apiVersion: ${t_apiVersion}
 kind: DestinationRule
 metadata:
   namespace: {{ \$.Release.Namespace }}
-  name: {{ .name | trunc 53 | trimSuffix \"-\" }}-dr
+  name: {{ .istioRoute.destinationRule.name }}
   labels:
     helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
     app.kubernetes.io/version: ${gCurrentChartVersion}
