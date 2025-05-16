@@ -71,7 +71,7 @@ if [[ "${gClearCachedParams}" == "true" ]];then
   rm -f "${gBuildPath}/${gGlobalParamCacheFileName}" ||true
 fi
 
-if [ -f "${gBuildPath}/${gGlobalParamCacheFileName}" ];then
+if [[ -f "${gBuildPath}/${gGlobalParamCacheFileName}" && -f "${gBuildPath}/${gCiCdYamlFileName}" ]];then
   warn "从缓存文件中加载全局参数..."
   #从文件中加载缓存的全局参数的值
   loadGlobalParamsFromCacheFile

@@ -313,7 +313,7 @@ function copyDockerImage_ex() {
         if [ ! -f  "${l_exportedFile}" ];then
           info "拉取${l_image}镜像，并导出到目录${l_savedFile%/*}中"
           pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}" "${l_savedFile%/*}"
-          info "删除拉取得镜像"
+          info "删除拉取的镜像"
           docker rmi -f "${l_image}"
         else
           l_savedFile="${l_exportedFile}"

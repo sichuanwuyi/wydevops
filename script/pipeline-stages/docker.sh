@@ -5,6 +5,8 @@ function executeDockerStage() {
   export gBuildType
   export gCurrentStage
   export gCiCdYamlFile
+  export gDebugMode
+  export gDockerBuildDir
 
   info "加载公共${gCurrentStage}阶段功能扩展文件：${gCurrentStage}-extend-point.sh"
   # shellcheck disable=SC1090
@@ -23,6 +25,11 @@ function executeDockerStage() {
   else
     #根据项目生成Docker镜像
     _createDockerImageByDockerfile
+  fi
+
+  if [ "${gDebugMode}" == "true" ];then
+    #删除docker-build目录下的所有文件
+    rm -rf "${gDockerBuildDir:?}"/*
   fi
 }
 
