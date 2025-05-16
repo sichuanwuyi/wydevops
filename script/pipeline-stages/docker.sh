@@ -27,7 +27,7 @@ function executeDockerStage() {
     _createDockerImageByDockerfile
   fi
 
-  if [ "${gDebugMode}" == "true" ];then
+  if [ "${gDebugMode}" != "true" ];then
     #删除docker-build目录下的所有文件
     rm -rf "${gDockerBuildDir:?}"/*
   fi
