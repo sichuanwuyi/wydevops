@@ -950,7 +950,6 @@ function _pushDockerImageForDeployStage() {
   local l_packageIndex
   local l_images
   local l_image
-  local l_newImage
   local l_array
   local l_dockerOutDir
   local l_tmpFile
@@ -965,8 +964,6 @@ function _pushDockerImageForDeployStage() {
   # shellcheck disable=SC2206
   l_images=(${gDefaultRetVal//,/ })
 
-  echo "--------l_images=${gDefaultRetVal}---------"
-
   info "检查服务器${l_ip}的硬件架构..."
   invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}"
   # shellcheck disable=SC2015
@@ -980,8 +977,6 @@ function _pushDockerImageForDeployStage() {
 
   # shellcheck disable=SC2068
   for l_image in ${l_images[@]};do
-    echo "--------l_image=${l_image}---------"
-
     #从docker构建输出目录中获取l_image镜像。
     l_dockerOutDir="${l_image//\//_}"
     l_dockerOutDir="${l_dockerOutDir//:/-}"
@@ -998,20 +993,19 @@ function _pushDockerImageForDeployStage() {
     #完成docker仓库登录
     dockerLogin "${l_array[2]}" "${l_array[3]}" "${l_array[4]}"
 
-    #定义新镜像的名称。
-    #l_newImage="${l_array[1]}/${l_image#*/}"
-    #info "定义新镜像名称为:${l_newImage}"
-    l_newImage="${l_image}"
-
     #先删除已经存在的镜像。
-    invokeExtendChain "onBeforePushDockerImage" "${l_array[0]}" "${l_newImage}" "${l_array[2]}" \
+    invokeExtendChain "onBeforePushDockerImage" "${l_array[0]}" "${l_image}" "${l_archType}" "${l_array[2]}" \
                 "${l_array[1]}" "${l_array[5]}" "${l_array[3]}" "${l_array[4]}"
+    if [ "${gDefaultRetVal}" == "true|false" ];then
+      warn "目标镜像存在，且当前不是强制覆盖模式，则跳过镜像推送过程"
+      continue
+    fi
 
     #更名
-    l_result=$(docker tag "${l_image}" "${l_newImage}" 2>&1)
+    l_result=$(docker tag "${l_image}" "${l_image}" 2>&1)
 
-    info "将${l_newImage}镜像推送到${l_array[2]}仓库中..."
-    pushImage "${l_newImage}" "${l_archType}" "${l_array[2]}"
+    info "将${l_image}镜像推送到${l_array[2]}仓库中..."
+    pushImage "${l_image}" "${l_archType}" "${l_array[2]}"
 
     warn "删除之前加载的docker镜像:${l_image}"
     docker rmi -f "${l_image}"

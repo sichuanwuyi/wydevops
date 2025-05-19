@@ -678,7 +678,7 @@ function _createDockerImage() {
   #将生成的镜像推送到私有仓库（测试环境使用的仓库）中
   if [ "${gDockerRepoName}" ];then
     #先删除已经存在的镜像。
-    invokeExtendChain "onBeforePushDockerImage" "${gDockerRepoType}" "${l_image}" "${gDockerRepoName}" \
+    invokeExtendChain "onBeforePushDockerImage" "${gDockerRepoType}" "${l_image}" "${l_archType}" "${gDockerRepoName}" \
       "${gDockerRepoInstanceName}" "${gDockerRepoWebPort}" "${gDockerRepoAccount}" "${gDockerRepoPassword}"
     info "将${l_image}镜像推送到${gDockerRepoName}仓库中..."
     pushImage "${l_image}" "${l_archType}" "${gDockerRepoName}"

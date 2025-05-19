@@ -122,6 +122,8 @@ export gGlobalParamNames=(
 "gClearCachedParams=\"false\"" \
 #Docker镜像完成推送后是否删除
 "gDeleteImageAfterBuilding=\"false\"" \
+#部署阶段是否强制覆盖目标仓库中同名同版本的Docker镜像
+"gForceCoverage=\"false\"" \
 #是否是多模块工程？方便不同语言项目设计自己的编译方式：
 #例如，对于Java项目，如果是多模块项目则build时会从gBuildPath目录回退一级目录后再执行build。
 "gMultipleModelProject=\"false\"" \
@@ -145,6 +147,7 @@ function usage() {
     -c, --clearCachedParams  清除本地全局参数缓存文件。
     -d, --debug              启用DEBUG模式输出测试信息。
     -e, --enableNotify       使能向外部接口发送CICD过程通知（需要配置-N参数）。
+    -f, --forceCoverage      部署阶段强制覆盖目标仓库中同名同版本的Docker镜像。
     -h, --help               显示帮助信息。
     -m, --multipleModel      指明要构建的目标项目是多模块项目。
     -r, --removeImage        构建结束后删除使用过的Docker镜像。
@@ -431,6 +434,7 @@ function parseOptions1() {
   export gArchTypes
   export gOfflineArchTypes
   export gBuildScriptRootDir
+  export gForceCoverage
   export gMultipleModelProject
   export gClearCachedParams
 
@@ -439,10 +443,11 @@ function parseOptions1() {
 
   gDebugMode="false"
   gClearCachedParams="false"
+  gForceCoverage="false"
   gMultipleModelProject="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdehmrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,help,multipleModel,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdefhmrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -461,6 +466,9 @@ function parseOptions1() {
         gDebugMode="true"
         shift ;;
       -e|--enableNotify)
+        shift ;;
+      -f|--forceCoverage)
+        gForceCoverage="true"
         shift ;;
       -h|--help)
         usage
