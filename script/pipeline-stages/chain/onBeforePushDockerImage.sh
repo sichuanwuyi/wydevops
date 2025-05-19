@@ -2,7 +2,6 @@
 
 function onBeforePushDockerImage_harbor() {
   export gDefaultRetVal
-  export gForceCoverage
 
   local l_dockerRepoType=$1
   if [ "${l_dockerRepoType}" != "harbor" ];then
@@ -15,11 +14,13 @@ function onBeforePushDockerImage_harbor() {
   fi
 
   local l_image=$2
-  local l_dockerRepoHostAndPort=$3
-  local l_dockerRepoInstanceName=$4
-  local l_dockerRepoWebPort=$5
-  local l_dockerRepoAccount=$6
-  local l_dockerRepoPassword=$7
+  local l_archType=$3
+  local l_forceCoverage=$4
+  local l_dockerRepoHostAndPort=$5
+  local l_dockerRepoInstanceName=$6
+  local l_dockerRepoWebPort=$7
+  local l_dockerRepoAccount=$8
+  local l_dockerRepoPassword=$9
 
   local l_imageName
   local l_imageVersion
@@ -43,7 +44,7 @@ function onBeforePushDockerImage_harbor() {
     info "在${l_dockerRepoType}类型的docker仓库中查找现存的${l_imageName}:${l_versionItem}镜像..."
     existRepositoryInHarborProject "${l_dockerRepoHostAndPort}" "${l_dockerRepoInstanceName}" "${l_imageName}" "${l_versionItem}"
     if [ "${gDefaultRetVal}" == "true" ];then
-      if [ "${gForceCoverage}" == "true" ];then
+      if [ "${l_forceCoverage}" == "true" ];then
         info "目标镜像存在，且当前是强制覆盖模式，则开始清除仓库中现有版本..."
         deleteRepositoryInHarborProject "${l_dockerRepoHostAndPort}" "${l_dockerRepoInstanceName}" "${l_imageName}" "${l_versionItem}" \
           "${l_dockerRepoAccount}" "${l_dockerRepoPassword}"
@@ -67,7 +68,6 @@ function onBeforePushDockerImage_harbor() {
 function onBeforePushDockerImage_nexus() {
   export gDefaultRetVal
   export gBuildScriptRootDir
-  export gForceCoverage
 
   local l_dockerRepoType=$1
   if [ "${l_dockerRepoType}" != "nexus" ];then
@@ -81,9 +81,10 @@ function onBeforePushDockerImage_nexus() {
 
   local l_image=$2
   local l_archType=$3
-  local l_dockerRepoName=$4
-  local l_dockerRepoInstanceName=$5
-  local l_dockerRepoWebPort=$6
+  local l_forceCoverage=$4
+  local l_dockerRepoName=$5
+  local l_dockerRepoInstanceName=$6
+  local l_dockerRepoWebPort=$7
 
   local l_imageName
   local l_imageVersion
@@ -106,7 +107,7 @@ function onBeforePushDockerImage_nexus() {
     info "在${l_dockerRepoType}类型的docker仓库中查找现存的${l_imageName}:${l_versionItem}镜像..."
     queryNexusComponentId "${l_dockerRepoName%%:*}" "${l_dockerRepoWebPort}" "${l_dockerRepoInstanceName}" "${l_imageName}" "${l_versionItem}"
     if [ "${gDefaultRetVal}" ];then
-      if [ "${gForceCoverage}" == "true" ];then
+      if [ "${l_forceCoverage}" == "true" ];then
         info "目标镜像存在，且当前是强制覆盖模式，则开始清除仓库中现有版本..."
         deleteNexusComponentById "${l_dockerRepoName%%:*}" "${l_dockerRepoWebPort}" "${gDefaultRetVal}"
         info "目标镜像清除成功"
@@ -129,7 +130,6 @@ function onBeforePushDockerImage_nexus() {
 function onBeforePushDockerImage_registry() {
   export gDefaultRetVal
   export gBuildScriptRootDir
-  export gForceCoverage
 
   local l_dockerRepoType=$1
   if [ "${l_dockerRepoType}" != "registry" ];then
@@ -142,11 +142,13 @@ function onBeforePushDockerImage_registry() {
   fi
 
   local l_image=$2
-  local l_dockerRepoHostAndPort=$3
-  local l_dockerPath=$4
-  local l_dockerRepoWebPort=$5
-  local l_dockerRepoAccount=$6
-  local l_dockerRepoPassword=$7
+  local l_archType=$3
+  local l_forceCoverage=$4
+  local l_dockerRepoHostAndPort=$5
+  local l_dockerPath=$6
+  local l_dockerRepoWebPort=$7
+  local l_dockerRepoAccount=$8
+  local l_dockerRepoPassword=$9
 
   local l_imageName
   local l_imageVersion
@@ -170,7 +172,7 @@ function onBeforePushDockerImage_registry() {
     info "在${l_dockerRepoType}类型的docker仓库中查找现存的${l_imageName}:${l_versionItem}镜像..."
     queryDigestCodeOfImage "${l_dockerRepoHostAndPort}" "${l_dockerPath}" "${l_imageName}" "${l_versionItem}"
     if [ "${gDefaultRetVal}" ];then
-      if [ "${gForceCoverage}" == "true" ];then
+      if [ "${l_forceCoverage}" == "true" ];then
         info "目标镜像存在，且当前是强制覆盖模式，则开始清除仓库中现有版本..."
         deleteImageByDigestCode "${l_dockerRepoHostAndPort}" "${l_dockerPath}" "${l_imageName}" "${l_versionItem}" \
           "${l_dockerRepoAccount}" "${l_dockerRepoPassword}" "${gDefaultRetVal}"

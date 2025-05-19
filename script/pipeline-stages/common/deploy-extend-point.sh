@@ -938,6 +938,7 @@ function _pushDockerImageForDeployStage() {
   export gHelmBuildOutDir
   export gServiceName
   export gDockerRepoInstanceName
+  export gForceCoverage
 
   local l_packageName=$1
   local l_dockerRepoInfo=$2
@@ -994,7 +995,7 @@ function _pushDockerImageForDeployStage() {
     dockerLogin "${l_array[2]}" "${l_array[3]}" "${l_array[4]}"
 
     #先删除已经存在的镜像。
-    invokeExtendChain "onBeforePushDockerImage" "${l_array[0]}" "${l_image}" "${l_archType}" "${l_array[2]}" \
+    invokeExtendChain "onBeforePushDockerImage" "${l_array[0]}" "${l_image}" "${l_archType}" "${gForceCoverage}" "${l_array[2]}" \
                 "${l_array[1]}" "${l_array[5]}" "${l_array[3]}" "${l_array[4]}"
     if [ "${gDefaultRetVal}" == "true|false" ];then
       warn "目标镜像存在，且当前不是强制覆盖模式，则跳过镜像推送过程"
