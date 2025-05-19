@@ -67,6 +67,7 @@ function onBeforePushDockerImage_harbor() {
 function onBeforePushDockerImage_nexus() {
   export gDefaultRetVal
   export gBuildScriptRootDir
+  export gForceCoverage
 
   local l_dockerRepoType=$1
   if [ "${l_dockerRepoType}" != "nexus" ];then
@@ -128,6 +129,7 @@ function onBeforePushDockerImage_nexus() {
 function onBeforePushDockerImage_registry() {
   export gDefaultRetVal
   export gBuildScriptRootDir
+  export gForceCoverage
 
   local l_dockerRepoType=$1
   if [ "${l_dockerRepoType}" != "registry" ];then
