@@ -13,7 +13,7 @@ bash "${_SCRIPT_ROOT_DIR}/wydevops.sh" -c -e -d -m \
 -B double \
 -I /d/cachedImage \
 -L java \
--S deploy \
+-S build,docker,chart,package,deploy \
 -M local \
 -T true \
 -W "${_SCRIPT_ROOT_DIR}" \

@@ -81,8 +81,13 @@ spec:
       containers:
       {{- range .containers }}
         - name: {{ .name | trunc 63 | trimSuffix \"-\" }}
+          {{- if \$.Values.${t_moduleName}.securityContext }}
           securityContext:
             {{- toYaml \$.Values.${t_moduleName}.securityContext | nindent 12 }}
+          {{- else if \$.Values.${t_moduleName}.podSecurityContext }}
+          securityContext:
+            {{- toYaml \$.Values.${t_moduleName}.podSecurityContext | nindent 12 }}
+          {{- end}}
           {{- if \$.Values.image.registry }}
           image: {{ \$.Values.image.registry }}/{{ .repository }}:{{ .tag | default \$.Chart.AppVersion }}
           {{- else }}
@@ -92,6 +97,14 @@ spec:
           {{- if .ports }}
           ports:
             {{- toYaml .ports | nindent 12 }}
+          {{- end }}
+          {{- if .args }}
+          args:
+          {{- toYaml .args | nindent 12 }}
+          {{- end }}
+          {{- if .command }}
+          command:
+          {{- toYaml .command | nindent 12 }}
           {{- end }}
           {{- if .env }}
           env:

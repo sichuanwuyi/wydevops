@@ -41,6 +41,7 @@ function pullImage(){
   local l_savedFile=$5
 
   local l_repoName1="${l_repoName}"
+  local l_fileName
 
   #从本地、本地镜像缓存目录或私库(如果设置了私库)中获取目标镜像。
   _pullImageFromPrivateRepository "${l_image}" "${l_archType}" "${l_repoName}" "${l_imageCachedDir}" "${l_savedFile}"
@@ -54,6 +55,9 @@ function pullImage(){
         info "将从公网拉取的${l_archType}架构的${l_image}镜像推送到${l_repoName1}仓库中..."
         pushImage "${l_image}" "${l_archType}" "${l_repoName1}"
         if [ "${gDefaultRetVal}" == "true" ];then
+          info "将导出的镜像文件复制到${l_savedFile%/*}目录中..."
+          l_fileName="${l_image//\//_}-${l_archType//\//-}.tar"
+          cp -f "${l_imageCachedDir}/${l_fileName}" "${l_savedFile}"
           gDefaultRetVal="${l_image}"
         fi
       else
@@ -267,8 +271,8 @@ function _pullImageFromPrivateRepository(){
   fi
 
   if [[ "${gDefaultRetVal}" == "true" && "${l_savedFilePath}" ]];then
-    info "将本地${l_archType}架构的镜像${l_image}导出到${l_savedFilePath}目录中..."
-    _cacheImageToDir "${l_image}" "${l_archType}" "${l_savedFilePath}"
+    info "将本地${l_archType}架构的镜像${l_image}导出到${l_savedFilePath%/*}目录中..."
+    _cacheImageToDir "${l_image}" "${l_archType}" "${l_savedFilePath%/*}"
   fi
 
 }

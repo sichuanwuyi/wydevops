@@ -691,7 +691,7 @@ function _deployServiceInK8S() {
       warn "更新集群内拉取docker镜像使用的仓库地址为: ${l_array[2]}"
 
       l_repoInfos="${gDefaultRetVal}"
-      if [[ "${l_array[1]}" != "${gDockerRepoInstanceName}" || "${l_array[2]}" != "${gDockerRepoName}" ]];then
+      #if [[ "${l_array[1]}" != "${gDockerRepoInstanceName}" || "${l_array[2]}" != "${gDockerRepoName}" ]];then
         info "将离线包中的镜像推送到K8S集群使用的Docker仓库中..."
         l_repoInfos="${gDefaultRetVal}"
         readParam "${gCiCdYamlFile}" "deploy[${l_index}].packageName"
@@ -701,7 +701,7 @@ function _deployServiceInK8S() {
           #如果未定义docker镜像仓库，则要将集群docker镜像仓库名称追加在image.registry参数的后面。
           l_array[2]="${l_array[2]}/${l_array[1]}"
         fi
-      fi
+      #fi
       # 使用正则表达式替换已存在的参数
       # shellcheck disable=SC2001
       l_settingParams=$(echo "${l_settingParams}" | sed "s/\(image\.registry\)=[^,]*\(,\|\\n\|$\)/\1=${l_array[2]//\//\\\/}\2/g")
@@ -936,6 +936,8 @@ function _pushDockerImageForDeployStage() {
   export gDefaultRetVal
   export gCiCdYamlFile
   export gHelmBuildOutDir
+  export gServiceName
+  export gDockerRepoInstanceName
 
   local l_packageName=$1
   local l_dockerRepoInfo=$2
@@ -951,7 +953,7 @@ function _pushDockerImageForDeployStage() {
   local l_newImage
   local l_array
   local l_dockerOutDir
-
+  local l_tmpFile
   local l_result
 
   #获取需要推送的镜像名称信息。
@@ -962,6 +964,8 @@ function _pushDockerImageForDeployStage() {
 
   # shellcheck disable=SC2206
   l_images=(${gDefaultRetVal//,/ })
+
+  echo "--------l_images=${gDefaultRetVal}---------"
 
   info "检查服务器${l_ip}的硬件架构..."
   invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}"
@@ -976,24 +980,29 @@ function _pushDockerImageForDeployStage() {
 
   # shellcheck disable=SC2068
   for l_image in ${l_images[@]};do
+    echo "--------l_image=${l_image}---------"
 
     #从docker构建输出目录中获取l_image镜像。
-    l_dockerOutDir="${l_image//\//-}"
+    l_dockerOutDir="${l_image//\//_}"
     l_dockerOutDir="${l_dockerOutDir//:/-}"
-    l_dockerOutDir="${gHelmBuildOutDir}/${l_archType//\//-}/${l_dockerOutDir}-${l_archType//\//-}.tar"
-    if [ -f "${l_dockerOutDir}" ];then
-      l_result=$(docker load -i "${l_dockerOutDir}" 2>&1 | grep -oP "^.*(Loaded image: ${l_image}).*$")
-      [[ ! "${l_result}" ]] && error "加载docker镜像失败：${l_dockerOutDir}"
-      warn "成功加载docker镜像：${l_result}"
+    l_tmpFile="${gHelmBuildOutDir}/${l_archType//\//-}/${l_dockerOutDir}-${l_archType//\//-}.tar"
+    info "尝试从${l_tmpFile##*/}文件中加载docker镜像:${l_image}"
+    if [ -f "${l_tmpFile}" ];then
+      l_result=$(docker load -i "${l_tmpFile}" 2>&1 | grep -oP "^.*(Loaded image: ${l_image}).*$")
+      [[ ! "${l_result}" ]] && error "加载docker镜像失败：${l_image}"
+      warn "成功加载docker镜像：${l_image}"
     else
-      error "文件不存在:${l_dockerOutDir}"
+      error "文件不存在:${l_tmpFile}"
     fi
 
     #完成docker仓库登录
     dockerLogin "${l_array[2]}" "${l_array[3]}" "${l_array[4]}"
 
     #定义新镜像的名称。
-    l_newImage="${l_array[1]}/${l_image#*/}"
+    #l_newImage="${l_array[1]}/${l_image#*/}"
+    #info "定义新镜像名称为:${l_newImage}"
+    l_newImage="${l_image}"
+
     #先删除已经存在的镜像。
     invokeExtendChain "onBeforePushDockerImage" "${l_array[0]}" "${l_newImage}" "${l_array[2]}" \
                 "${l_array[1]}" "${l_array[5]}" "${l_array[3]}" "${l_array[4]}"
@@ -1061,8 +1070,10 @@ function _getDockerImageInChart() {
     l_images="${l_images//${l_result}/}"
     l_images="${l_images//,,/,}"
     #添加单一镜像
-    l_images="${l_images},${gServiceName}:${l_businessVersion}"
-    l_images="${l_images//,,/,}"
+    if [[ ! ("${l_images}" =~ ^(.*)${gServiceName}:${l_businessVersion},(.*)$) ]];then
+      l_images="${l_images},${gServiceName}:${l_businessVersion}"
+      l_images="${l_images//,,/,}"
+    fi
   elif [ "${gDefaultRetVal}" == "base" ];then
     #删除业务镜像
     readParam "${gCiCdYamlFile}" "globalParams.businessVersion"
@@ -1090,6 +1101,11 @@ function _getDockerImageInChart() {
 
   l_registryKey="wydevops${RANDOM}"
   l_result=$(helm template "${l_chartFile}" -n test --set image.registry=${l_registryKey} 2>&1)
+  if [ "$?" != 0 ];then
+    l_result=$(echo -e "${l_result}" | grep "^.*(Error|failed).*$")
+    error "执行helm template命令失败: ${l_result}"
+  fi
+
   l_result=$(echo -e "${l_result}" | grep -oP "^([ ]*)image: ${l_registryKey}/.*$")
   if [ "${l_result}" ];then
     stringToArray "${l_result}" "l_lines"

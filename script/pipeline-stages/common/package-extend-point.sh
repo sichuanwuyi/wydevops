@@ -305,17 +305,17 @@ function copyDockerImage_ex() {
     l_images=(${gDefaultRetVal//,/ })
     # shellcheck disable=SC2068
     for l_image in ${l_images[@]};do
-
       l_tmpImage="${l_image//\//_}"
       l_savedFile="${gHelmBuildOutDir}/${l_archType//\//-}/${l_tmpImage//:/-}-${l_archType//\//-}.tar"
       if [ ! -f "${l_savedFile}" ];then
         l_exportedFile="${gImageCacheDir}/${l_tmpImage//:/-}-${l_archType//\//-}.tar"
         if [ ! -f  "${l_exportedFile}" ];then
           info "拉取${l_image}镜像，并导出到目录${l_savedFile%/*}中"
-          pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}" "${l_savedFile%/*}"
+          pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}" "${l_savedFile}"
           info "删除拉取的镜像"
           docker rmi -f "${l_image}"
         else
+          #将l_savedFile变量指向本地缓存中的镜像导出文件。
           l_savedFile="${l_exportedFile}"
         fi
       fi
@@ -423,20 +423,22 @@ function handleBuildingSingleImageForPackage_ex() {
       fi
     done
 
+    [[ "${l_paramValue}" =~ ^([ ]*),.*$ ]] && l_paramValue="${l_paramValue:1}"
+
     if [[ "${gDockerRepoType}" == "harbor" || ("${gDockerRepoInstanceName}" && "${gDockerImageNameWithInstance}" == "true") ]];then
       l_serviceName="${gDockerRepoInstanceName}/${l_serviceName}"
     fi
 
     debug "添加单镜像名:${l_serviceName}:${l_businessVersion}"
     if [ "${l_paramValue}" ];then
-      l_flag=$(echo "${l_paramValue}" | grep -oP "^(.*)${l_serviceName}:${l_businessVersion}")
-      [[ ! "${l_flag}" ]] && l_paramValue="${l_serviceName}:${l_businessVersion},${l_paramValue:1}"
+      l_flag=$(echo "${l_paramValue}" | grep -oP "^(.*)${l_serviceName}:${l_businessVersion}(.*)$")
+      [[ ! "${l_flag}" ]] && l_paramValue="${l_serviceName}:${l_businessVersion},${l_paramValue}"
     else
       l_paramValue="${l_serviceName}:${l_businessVersion}"
     fi
 
-    debug "更新globalParams.packageImages参数的值为：${l_paramValue}"
-    updateParam "${l_ciCdYamlFile}" "globalParams.packageImages" "${l_paramValue}"
+    debug "更新globalParams.packageImages${l_i}参数的值为：${l_paramValue}"
+    updateParam "${l_ciCdYamlFile}" "globalParams.packageImages${l_i}" "${l_paramValue}"
 
     debug "更新package[${l_i}].images参数的值为：${l_paramValue}"
     updateParam "${l_ciCdYamlFile}" "package[${l_i}].images" "${l_paramValue}"
@@ -503,73 +505,8 @@ function handleBuildingOneImageForPackage_ex() {
       fi
     done
 
-    debug "更新globalParams.packageImages参数的值为：${l_paramValue:1}"
-    updateParam "${l_ciCdYamlFile}" "globalParams.packageImages" "${l_paramValue:1}"
-
-    debug "更新package[${l_i}].images参数的值为：${l_paramValue:1}"
-    updateParam "${l_ciCdYamlFile}" "package[${l_i}].images" "${l_paramValue:1}"
-
-    ((l_i = l_i + 1))
-  done
-
-}
-
-function handleBuildingBusinessImageForPackage_ex() {
-  export gDefaultRetVal
-  export gBuildType
-
-  local l_ciCdYamlFile=$1
-
-  local l_serviceName
-  local l_businessVersion
-
-  local l_i
-  local l_j
-  local l_images
-  local l_arrayLen
-  local l_flag
-  local l_paramValue
-
-  #读取服务名称
-  readParam "${l_ciCdYamlFile}" "globalParams.serviceName"
-  l_serviceName="${gDefaultRetVal}"
-
-  #读取服务的版本
-  readParam "${l_ciCdYamlFile}" "globalParams.businessVersion"
-  l_businessVersion="${gDefaultRetVal}"
-
-  ((l_i = 0))
-  while true; do
-    readParam "${l_ciCdYamlFile}" "package[${l_i}].images"
-    if [ "${gDefaultRetVal}" == "null" ];then
-      break
-    fi
-
-    #将gDefaultRetVal值转换成数组。
-    stringToArray "${gDefaultRetVal}" "l_images" $','
-    #获取数组的长度
-    l_arrayLen="${#l_images[@]}"
-
-    l_paramValue=""
-    for (( l_j=0; l_j < l_arrayLen; l_j++ )) do
-      #如果是单镜像打包模式，则需要移除可能存在的业务镜像和基础镜像。
-      if [ "${gBuildType}" == "business" ];then
-        l_flag=$(echo -e "${l_images[${l_j}]}" | grep -oP "^(.*)${l_serviceName//-/\-}\-base:" )
-        if [ "${l_flag}" ];then
-          debug "从package[${l_i}].images参数值中移除${l_images[${l_j}]}镜像"
-          #是基础镜像，则直接跳过。
-          continue
-        fi
-      fi
-      #去重后追加到l_paramValue参数后面，英文逗号隔开。
-      l_flag=$(echo "${l_paramValue}" | grep -ioP "^(.*)${l_images[${l_j}]//-/\-}(.*)$" )
-      if [ ! "${l_flag}" ];then
-        l_paramValue="${l_paramValue},${l_images[${l_j}]}"
-      fi
-    done
-
-    debug "更新globalParams.packageImages参数的值为：${l_paramValue:1}"
-    updateParam "${l_ciCdYamlFile}" "globalParams.packageImages" "${l_paramValue:1}"
+    debug "更新globalParams.packageImages${l_i}参数的值为：${l_paramValue:1}"
+    updateParam "${l_ciCdYamlFile}" "globalParams.packageImages${l_i}" "${l_paramValue:1}"
 
     debug "更新package[${l_i}].images参数的值为：${l_paramValue:1}"
     updateParam "${l_ciCdYamlFile}" "package[${l_i}].images" "${l_paramValue:1}"
@@ -613,6 +550,9 @@ function _scanAllDockerImages() {
   registerTempFile "${l_tmpFile}"
 
   l_content=$(helm template test "${l_chartImage}" -n test.com --set image.registry=)
+  if [ "$?" != 0 ];then
+    error "执行helm template命令失败"
+  fi
   echo "${l_content}" > "${l_tmpFile}"
 
   l_imageArray=","

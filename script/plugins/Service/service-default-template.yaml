@@ -1,6 +1,6 @@
 {{- range \$.Values.${t_moduleName}.containers }}
 
-  {{- if .service.clusterIP }}
+  {{- if and .service .service.clusterIP }}
   {{- with .service.clusterIP }}
 ---
 apiVersion: v1
@@ -25,7 +25,7 @@ spec:
   {{- end }}
   {{- end }}
 
-  {{- if .service.nodePort }}
+  {{- if and .service .service.nodePort }}
   {{- with .service.nodePort }}
 ---
 apiVersion: v1

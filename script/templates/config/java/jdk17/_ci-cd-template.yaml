@@ -141,7 +141,7 @@ globalParams:
   #需要放到项目默认ConfigMap中的文本文件的相对路径列表，文件间使用英文逗号分隔
   configMapFiles:
   #需要打包到离线安装包中镜像名称，格式：{镜像名称}:{镜像版本},...
-  packageImages: ${baseImage}:${baseVersion},${businessImage}:${businessVersion}
+  packageImages0: ${baseImage}:${baseVersion},${businessImage}:${businessVersion}
 
   #chart镜像的名称, 默认与服务的名称相同
   chartName: ${serviceName}
@@ -676,7 +676,7 @@ package:
     #设置离线安装包中需要包含的镜像列表。
     #wydevops会自动从chart镜像中收集需要的docker镜像，并与下列参数的值进行合并去重。
     #可在这个参数中设置好需要额外上传的其他docker镜像。
-    images: ${packageImages}
+    images: ${packageImages0}
 
 deploy:
     #列表项的唯一名称

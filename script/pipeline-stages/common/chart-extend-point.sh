@@ -195,13 +195,14 @@ function onAfterCreatingChartImage_ex() {
 
   #执行helm的打包命令
   l_errorFlag=$(helm package . -d "${l_chartTgzOutDir}" 2>&1 | grep -oP "^.*(Error|failed).*$")
-  if [ "${l_errorFlag}" ];then
+  if [ ${l_errorFlag} ];then
     error "执行命令(helm package . -d ${l_chartTgzOutDir})失败: ${l_errorFlag}"
   fi
 
   #测试chart镜像是否正确。
-  l_errorFlag=$(helm template test "${l_chartTgzOutDir}/${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz" -n test.com 2>&1 | grep "^.*(Error|failed).*$")
-  if [ "${l_errorFlag}" ];then
+  l_errorFlag=$(helm template test "${l_chartTgzOutDir}/${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz" -n test.com 2>&1)
+  if [ "$?" != 0 ];then
+    l_errorFlag=$(echo "${l_errorFlag}" | grep "^.*(Error|failed).*$")
     error "chart镜像(${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz)正确性检测未通过: ${l_errorFlag}"
   else
     info "chart镜像(${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz)正确性检测已通过"
