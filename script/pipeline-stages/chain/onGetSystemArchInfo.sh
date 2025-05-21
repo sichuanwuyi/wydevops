@@ -23,6 +23,9 @@ function onGetSystemArchInfo_ubuntu() {
     #本地执行uname命令
     l_result=$(uname -sm)
   fi
+  if [ ! "${l_result}" ];then
+    error "SSH连接${l_ip}服务失败, 请确保SSH服务已开启。"
+  fi
   info "返回结果：${l_result}"
 
   #连接被拒绝或超时
