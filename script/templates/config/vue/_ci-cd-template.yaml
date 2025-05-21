@@ -386,9 +386,7 @@ chart:
                 servicePort: ${servicePorts}
                 nodePort: ${nodePorts}
             #定义环境变量
-            #env:
-            # - name: SERVICE_PORT
-            #   value: "80"
+            env:
             volumeMounts:
               - name: ${serviceName}-workdir
                 mountPath: ${workDirInContainer}
