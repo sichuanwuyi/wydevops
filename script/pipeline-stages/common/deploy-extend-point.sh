@@ -937,7 +937,6 @@ function _pushDockerImageForDeployStage() {
   export gCiCdYamlFile
   export gHelmBuildOutDir
   export gServiceName
-  export gDockerRepoInstanceName
   export gForceCoverage
 
   local l_packageName=$1
@@ -1020,6 +1019,9 @@ function _getDockerImageInChart() {
   export gDefaultRetVal
   export gCiCdYamlFile
   export gServiceName
+  export gDockerRepoInstanceName
+  export gDockerImageNameWithInstance
+  export gDockerRepoType
 
   local l_packageName=$1
   local l_chartFile=$2
@@ -1036,6 +1038,7 @@ function _getDockerImageInChart() {
   local l_lineCount
   local l_i
   local l_line
+  local l_prefix
 
   getListIndexByPropertyName "${gCiCdYamlFile}" "package" "name" "${l_packageName}"
   if [[ "${gDefaultRetVal}" -eq -1 ]];then
@@ -1050,37 +1053,43 @@ function _getDockerImageInChart() {
     fi
   fi
 
+  l_prefix=""
+  if [[ "${gDockerRepoType}" == "harbor"
+    || ("${gDockerRepoInstanceName}" && "${gDockerImageNameWithInstance}" == "true") ]];then
+    l_prefix="${gDockerRepoInstanceName}/"
+  fi
+
   readParam "${gCiCdYamlFile}" "globalParams.buildType"
   if [ "${gDefaultRetVal}" == "single" ];then
     #删除基础镜像
     readParam "${gCiCdYamlFile}" "globalParams.baseVersion"
     l_baseVersion="${gDefaultRetVal}"
-    l_result="${gServiceName}-base:${l_baseVersion}"
+    l_result="${l_prefix}${gServiceName}-base:${l_baseVersion}"
     l_images="${l_images//${l_result}/}"
     l_images="${l_images//,,/,}"
     #删除业务镜像
     readParam "${gCiCdYamlFile}" "globalParams.businessVersion"
     l_businessVersion="${gDefaultRetVal}"
-    l_result="${gServiceName}-business:${l_businessVersion}"
+    l_result="${l_prefix}${gServiceName}-business:${l_businessVersion}"
     l_images="${l_images//${l_result}/}"
     l_images="${l_images//,,/,}"
     #添加单一镜像
-    if [[ ! ("${l_images}" =~ ^(.*)${gServiceName}:${l_businessVersion},(.*)$) ]];then
-      l_images="${l_images},${gServiceName}:${l_businessVersion}"
+    if [[ ! ("${l_images}" =~ ^(.*)${l_prefix}${gServiceName}:${l_businessVersion//\./\\\\.}(.*)$) ]];then
+      l_images="${l_images},${l_prefix}${gServiceName}:${l_businessVersion}"
       l_images="${l_images//,,/,}"
     fi
   elif [ "${gDefaultRetVal}" == "base" ];then
     #删除业务镜像
     readParam "${gCiCdYamlFile}" "globalParams.businessVersion"
     l_businessVersion="${gDefaultRetVal}"
-    l_result="${gServiceName}-business:${l_businessVersion}"
+    l_result="${l_prefix}${gServiceName}-business:${l_businessVersion}"
     l_images="${l_images//${l_result}/}"
     l_images="${l_images//,,/,}"
   elif [ "${gDefaultRetVal}" == "business" ];then
     #删除基础镜像
     readParam "${gCiCdYamlFile}" "globalParams.baseVersion"
     l_baseVersion="${gDefaultRetVal}"
-    l_result="${gServiceName}-base:${l_baseVersion}"
+    l_result="${l_prefix}${gServiceName}-base:${l_baseVersion}"
     l_images="${l_images//${l_result}/}"
     l_images="${l_images//,,/,}"
   fi

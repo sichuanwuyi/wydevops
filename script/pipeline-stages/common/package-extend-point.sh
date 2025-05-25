@@ -666,30 +666,30 @@ function _filterValidDockerImages() {
     l_images[0]="${l_singleImage%:*}-business:${l_singleImage##*:}"
     l_images[1]="${l_singleImage%:*}-base:${l_singleImage##*:}"
     #检查必须要的镜像是否存在。
-    if [[ ! "${l_imageArray}" =~ ^(.*),${l_singleImage},(.*)$ ]];then
+    if [[ ! "${l_imageArray}" =~ ^(.*)${l_singleImage}(.*)$ ]];then
       error "chart镜像中未使用docker镜像:${l_singleImage},请检查并修正配置文件。"
     fi
   elif [ "${gBuildType}" == "double" ];then
     l_images[0]="${l_singleImage}"
     #检查必须要的镜像是否存在。
-    if [[ ! "${l_imageArray}" =~ ^(.*),${l_baseImage},(.*)$ ]];then
+    if [[ ! "${l_imageArray}" =~ ^(.*)${l_baseImage}(.*)$ ]];then
       error "chart镜像中未使用docker镜像:${l_baseImage},请检查并修正配置文件。"
     fi
-    if [[ ! "${l_imageArray}" =~ ^(.*),${l_businessImage},(.*)$ ]];then
+    if [[ ! "${l_imageArray}" =~ ^(.*)${l_businessImage}(.*)$ ]];then
       error "chart镜像中未使用docker镜像:${l_businessImage},请检查并修正配置文件。"
     fi
   elif [ "${gBuildType}" == "base" ];then
     l_images[0]="${l_singleImage}"
     l_images[1]="${l_singleImage%-*}-business:${l_singleImage##*:}"
     #检查必须要的镜像是否存在。
-    if [[ ! "${l_imageArray}" =~ ^(.*),${l_baseImage},(.*)$ ]];then
+    if [[ ! "${l_imageArray}" =~ ^(.*)${l_baseImage}(.*)$ ]];then
       error "chart镜像中未使用docker镜像:${l_baseImage},请检查并修正配置文件。"
     fi
   elif [ "${gBuildType}" == "business" ];then
     l_images[0]="${l_singleImage}"
     l_images[1]="${l_singleImage%-*}-base:${l_singleImage##*:}"
     #检查必须要的镜像是否存在。
-    if [[ ! "${l_imageArray}" =~ ^(.*),${l_businessImage},(.*)$ ]];then
+    if [[ ! "${l_imageArray}" =~ ^(.*)${l_businessImage}(.*)$ ]];then
       error "chart镜像中未使用docker镜像:${l_businessImage},请检查并修正配置文件。"
     fi
   fi
@@ -697,9 +697,10 @@ function _filterValidDockerImages() {
   #删除不需要的镜像。
   # shellcheck disable=SC2068
   for l_image in ${l_images[@]};do
-    if [[ "${l_imageArray}" =~ ^(.*),${l_image},(.*)$ ]];then
+    if [[ "${l_imageArray}" =~ ^(.*)${l_image}(.*)$ ]];then
       warn "从打包的docker镜像列表中移除了不需要的镜像：${l_image}"
-      l_imageArray="${l_imageArray//,${l_image},/,}"
+      l_imageArray="${l_imageArray//${l_image}/}"
+      l_imageArray="${l_imageArray//,,/,}"
     fi
   done
 

@@ -167,11 +167,12 @@ function initialGlobalParamsForDockerStage_ex(){
   fi
   info "读取参数docker.enableNoCache的值:${gEnableNoCacheOnDockerBuild}"
 
+  #如果gArchTypes尚未赋值，择从ci-cd.yaml文件中读取。
   if [ ! "${gArchTypes}" ];then
     readParam "${l_cicdYaml}" "docker.archTypes"
     gArchTypes="${gDefaultRetVal}"
+    warn "检测到gArchTypes全局变量尚未赋值,则从ci-cd.yaml文件中读取参数docker.archTypes的值:${gArchTypes}"
   fi
-  info "读取参数docker.archTypes的值:${gArchTypes}"
 
   if [ "${gBuildType}" != "thirdParty" ];then
     #是否强制使用Docker模板文件。
