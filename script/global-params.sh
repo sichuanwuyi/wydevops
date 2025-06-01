@@ -366,9 +366,9 @@ function loadGlobalParamsFromCacheFile() {
 
   #读取文件中全部的有效行。
   l_content=$(awk "NR==1,NR==-1" "${gBuildPath}/${gGlobalParamCacheFileName}" \
-    | grep -oP "^[a-zA-Z_]?[a-zA-Z0-9_\-].*$")
+    | grep -oE "^[a-zA-Z_]?[a-zA-Z0-9_\-].*$")
 
-  l_lineCount=$(echo -e "${l_content}" | grep -oP "^[a-zA-Z_]" | wc -l)
+  l_lineCount=$(grep -cE "^[a-zA-Z_]" <<< "${l_content}")
   for ((l_i=1; l_i <= l_lineCount; l_i++));do
     l_line=$(echo "${l_content}" | sed -n "${l_i}p")
     l_paramName="${l_line%%:*}"
@@ -400,7 +400,7 @@ function cacheGlobalParamsToFile() {
   for l_paramName in ${gGlobalParamNames[@]};do
     l_paramName="${l_paramName%%=*}"
     eval "l_paramValue=\"\${${l_paramName}}\""
-    l_rowCount=$(echo -e "${l_paramValue}" | grep -oP "^([ ]*).*$" | wc -l)
+    l_rowCount=$(grep -cE "^([ ]*).*$" <<< "${l_paramValue}")
     if [ "${l_rowCount}" -le 1 ];then
       echo "${l_paramName}: ${l_paramValue}" >> "${gBuildPath}/${gGlobalParamCacheFileName}"
     else
@@ -710,10 +710,10 @@ function getParamValueInJsonConfigFile() {
   #使用默认值初始化l_paramValue
   l_paramValue=""
   # shellcheck disable=SC2002
-  l_content=$(cat "${l_configFile}" | grep -noP "${l_startRowRegex}")
+  l_content=$(grep -noE "${l_startRowRegex}" "${l_configFile}")
   if [ "${l_content}" ];then
     l_rowNumber=${l_content%%:*}
-    l_content=$(awk "NR==${l_rowNumber},NR==-1" "${l_configFile}" | grep -m 1 -noP "^[ ]*${l_paramName}:(.*)$")
+    l_content=$(awk "NR==${l_rowNumber},NR==-1" "${l_configFile}" | grep -m 1 -noE "^[ ]*${l_paramName}:(.*)$")
     if [ "${l_content}" ];then
       #提取行号。
       (( l_rowNumber=l_rowNumber - 1 + ${l_content%%:*} ))
@@ -722,7 +722,8 @@ function getParamValueInJsonConfigFile() {
       #获取行中第一个冒号后的内容。
       l_content="${l_rowContent##*:}"
       #去掉获取内容的前后空格
-      l_content=$(echo -e "${l_content}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+      l_content="${l_content#"${l_content%%[![:space:]]*}"}"
+      l_content="${l_content%"${l_content##*[![:space:]]}"}"
       #获取逗号左边的内容。
       l_content="${l_content%,*}"
       #删除单引号

@@ -36,7 +36,7 @@ function sendNotify_ex() {
   for (( l_i = 0; l_i < l_maxTryCount; l_i++ )); do
     info "尝试发送通知消息...${l_i}"
     l_errorFlag=$(curl -s -X POST -H "Content-Type:application/json" --data "@${l_tmpFile}" "${gExternalNotifyUrl}" 2>&1)
-    l_errorFlag=$(echo "${l_errorFlag}" | grep -oP  "^.*(Error|bad\/illegal|failed|timed out).*$")
+    l_errorFlag=$(grep -oP  "^.*(Error|bad\/illegal|failed|timed out).*$" <<< "${l_errorFlag}")
     if [ ! "${l_errorFlag}" ];then
       break
     fi

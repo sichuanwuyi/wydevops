@@ -22,7 +22,7 @@ function onAddHelmRepo_harbor() {
 
   info "登录Harbor仓库(helm registry login ${l_repoHostAndPort} --insecure -u ${l_account} -p ${l_password})"
   l_result=$(helm registry login "${l_repoHostAndPort}" --insecure -u "${l_account}" -p "${l_password}" 2>&1)
-  l_errorLog=$(echo "${l_result}" | grep -ioP "Login Succeeded")
+  l_errorLog=$(grep -oE "Login Succeeded" <<< "${l_result}")
   if [ ! "${l_errorLog}" ];then
     error "登录失败:\n${l_result}" "*"
   else
@@ -57,7 +57,7 @@ function onAddHelmRepo_nexus() {
   info "再向本地缓存中添加${l_repoInstanceName}仓库信息..." "-n"
   #如果指定了Chart仓库，则需要先登录Chart仓库，为后续Chart镜像推送做准备。
   l_result=$(helm repo add "${l_repoInstanceName}" "http://${l_repoHostAndPort}/repository/${l_repoInstanceName}/" --username "${l_account}" --password "${l_password}" 2>&1)
-  l_errorLog=$(echo "${l_result}" | grep -ioP "^.*(Error|failed).*$")
+  l_errorLog=$(grep -iE 'Error|failed' <<< "${l_result}")
   if [ "${l_errorLog}" ];then
     error "添加失败:\n${l_result}" "*"
   else

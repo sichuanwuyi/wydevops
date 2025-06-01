@@ -42,6 +42,7 @@ export gGlobalParamCacheFileName
 export gArchTypes
 export gPipelineScriptsDir
 export gLanguage
+export gCiCdYamlFileName
 
 parseOptions1 "${@}"
 

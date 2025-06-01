@@ -38,12 +38,7 @@ function _buildSubModule() {
   fi
 
   info "开始构建项目(pnpm run build)..."
-  pnpm run build 2>&1 | tee "./build.tmp"
-  # shellcheck disable=SC2002
-  l_errorLog=$(cat "./build.tmp" | grep "Build failed")
-  rm -f "./build.tmp" || true
-
-  if [ "${l_errorLog}" ];then
+  if ! pnpm run build 2>&1 ;then
     error "项目${gServiceName}编译失败"
   fi
 

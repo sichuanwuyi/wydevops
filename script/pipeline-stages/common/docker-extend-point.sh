@@ -63,7 +63,7 @@ function onBeforeCreatingCustomizedImage_ex() {
 
   #检查l_dockerFile文件中是否设定了--platform=${l_archType}
   # shellcheck disable=SC2002
-  l_content=$(cat "${l_dockerFile}" | grep -ioP "^([ ]*)FROM([ ]+).*$")
+  l_content=$(grep -ioE "^([ ]*)FROM([ ]+).*$" "${l_dockerFile}")
   if [ ! "${l_content}" ];then
     error "自定义的${l_dockerFile}文件中未找到From语句"
   fi
@@ -75,7 +75,7 @@ function onBeforeCreatingCustomizedImage_ex() {
   # shellcheck disable=SC2068
   for ((l_i = 0; l_i < l_lineCount; l_i++ ));do
     l_fromLine="${l_lines[${l_i}]}"
-    l_fromLine=$(echo "${l_fromLine}" | grep -inoP "^.*(--platform=${l_archType//\//\\\/}).*$" )
+    l_fromLine=$(grep -inoE "^.*(--platform=${l_archType//\//\\\/}).*$" <<< "${l_fromLine}")
     if [[ ! "${l_fromLine}" ]];then
       error "自定义的${l_dockerFile}文件中From语句中未定义\"--platform\"参数或该参数的值不为${l_archType}"
     fi
@@ -377,7 +377,7 @@ function initialDockerFile_ex() {
 
   #Dockerfile模板文件中的占位符号只能是大写字母、数子和”-“构成。
   # shellcheck disable=SC2002
-  l_placeholders=$(cat "${l_targetDockerFile}" | grep -oP "_([A-Z]?[A-Z0-9\-]+)_" | sort | uniq -c)
+  l_placeholders=$(grep -oE "_([A-Z]?[A-Z0-9\-]+)_" "${l_targetDockerFile}" | sort | uniq -c)
   # shellcheck disable=SC2068
   for l_placeholder in ${l_placeholders[@]};do
     if [[ "${l_placeholder}" =~ ^(_).*$ ]];then
@@ -669,7 +669,7 @@ function _createDockerImage() {
   fi
 
   # shellcheck disable=SC2002
-  l_errorLog=$(cat "${l_tmpFile}" | grep -oP "^(.*)naming to docker.io/(${l_image}|library/${l_image}) (.*)done$")
+  l_errorLog=$(grep -oE "^(.*)naming to docker.io/(${l_image}|library/${l_image}) (.*)done$" "${l_tmpFile}")
   unregisterTempFile "${l_tmpFile}"
 
   if [ ! "${l_errorLog}" ];then

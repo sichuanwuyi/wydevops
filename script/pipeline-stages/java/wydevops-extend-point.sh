@@ -101,8 +101,8 @@ function _onLoadMatchedAdditionalConfigFiles_ex() {
     # shellcheck disable=SC2068
     for l_ymalFile in ${l_yamlList[@]}
     do
-     readParam "${l_ymalFile}" "spring.profiles.active"
-     if [ "${gDefaultRetVal}" != "null" ];then
+      readParam "${l_ymalFile}" "spring.profiles.active"
+      if [ "${gDefaultRetVal}" != "null" ];then
         gActiveProfile="${gDefaultRetVal}"
         l_configFileName="application-${gActiveProfile}.yml"
         l_configFile="${l_ymalFile%/*}/${l_configFileName}"
@@ -112,7 +112,7 @@ function _onLoadMatchedAdditionalConfigFiles_ex() {
            fi
          fi
         break
-     fi
+      fi
     done
   fi
   gDefaultRetVal="${l_targetFile}"

@@ -92,7 +92,7 @@ function deleteImageByDigestCode() {
 
     #再清除容器中对应的blobs数据。
     #获取docker-registry镜像的ID。
-    l_rowDatas=$(docker ps -a | grep -oP ".*${l_array[0]}")
+    l_rowDatas=$(docker ps -a | grep -oE ".*${l_array[0]}")
     if [ "${l_rowDatas}" ];then
       # shellcheck disable=SC2068
       for l_containerId in ${l_rowDatas[@]};do
@@ -146,7 +146,7 @@ function _remoteDeleteImageByBlobData() {
 
   #再清除容器中对应的blobs数据。
   #获取docker-registry镜像的ID。
-  l_rowDatas=$(ssh -o "StrictHostKeyChecking no" -p "${l_array[2]}" "${l_array[3]}@${l_array[1]}" docker ps -a | grep -oP ".*${l_array[0]}")
+  l_rowDatas=$(ssh -o "StrictHostKeyChecking no" -p "${l_array[2]}" "${l_array[3]}@${l_array[1]}" docker ps -a | grep -oE ".*${l_array[0]}")
   if [ "${l_rowDatas}" ];then
     # shellcheck disable=SC2068
     for l_containerId in ${l_rowDatas[@]};do

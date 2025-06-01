@@ -92,10 +92,11 @@ function onBeforeReplaceParamPlaceholder_ex() {
 
   #检查文件中是否存在未定义好的占位符号。
   # shellcheck disable=SC2002
-  l_placeholders=$(cat "${l_cicdYaml}" | grep -oP "^([ ]*[a-zA-Z_\-]+)" |grep -oP "_([A-Z]?[A-Z0-9\-]+)_" | sort | uniq -c)
+  #l_placeholders=$(cat "${l_cicdYaml}" | grep -oP "^([ ]*[a-zA-Z_\-]+)" |grep -oP "_([A-Z]?[A-Z0-9\-]+)_" | sort | uniq -c)
+  l_placeholders=$(grep -E '^[^#]' <<< "${l_cicdYaml}" | grep -oP "(?<![A-Za-z0-9])_[A-Z0-9\-]+_(?![A-Za-z0-9])" | sort | uniq -c)
   # shellcheck disable=SC2068
   for l_placeholder in ${l_placeholders[@]};do
-    if [[ "${l_placeholder}" =~ ^(_).*$ ]];then
+    if [[ "${l_placeholder}" =~ ^_[A-Z0-9\-]+_$ ]];then
       warn "${l_cicdYaml}文件中占位符${l_placeholder}未定义值"
     fi
   done
@@ -231,7 +232,6 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
       if [ "${l_paramMappingFiles}" ];then
         # shellcheck disable=SC2068
         for l_mappingFile in ${l_paramMappingFiles[@]};do
-
           declare -A _paramMappingMap
           #将参数映射文件中的配置读取到_paramMappingMap变量中。
           initialMapFromConfigFile "${l_mappingFile}" "_paramMappingMap"
@@ -249,6 +249,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
             gDefaultRetVal=""
             #如果${l_array[1]}里面包含了application.yml文件，则尝试读取当前环境的配置文件。
             invokeExtendPointFunc "onLoadMatchedAdditionalConfigFiles" "获取当前部署环境对应的配置文件" "${l_array[1]//\"/}"
+
             if [ "${gDefaultRetVal}" ] && [ "${gDefaultRetVal}" != "null" ];then
               l_array[1]="${gDefaultRetVal},${l_array[1]//\"/}"
               l_configMapFiles="${gDefaultRetVal},${l_configMapFiles:1}"
@@ -854,8 +855,11 @@ function _replaceParamPlaceholder() {
     fi
     l_paramName="${l_line%%:*}"
     l_paramValue="${l_line#*:}"
-    #删除头尾空格
-    l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+    #去掉头部和尾部的空格。
+    l_paramValue="${l_paramValue#"${l_paramValue%%[![:space:]]*}"}"
+    l_paramValue="${l_paramValue%"${l_paramValue##*[![:space:]]}"}"
+
     #保留参数值中的引号
     l_paramValue="${l_paramValue//\\\"/\\\\\"}"
     #保留参数值中的“/”符号
@@ -864,7 +868,7 @@ function _replaceParamPlaceholder() {
     l_paramValue="${l_paramValue//\-/\\-}"
 
     if [[ "${l_paramValue}" =~ ^(.*)\$\{(.*)$ ]];then
-      l_paramRef=$(echo -e "${l_paramValue}" | grep -oP "\\$\\{[a-zA-Z0-9_\\-]+\\}")
+      l_paramRef=$(grep -oE "\\$\\{[a-zA-Z0-9_\\-]+\\}" <<< "${l_paramValue}")
       stringToArray "${l_paramRef}" "l_refItems"
       l_itemCount="${#l_refItems[@]}"
       for (( l_j = 0; l_j < l_itemCount; l_j++ )); do
@@ -874,8 +878,11 @@ function _replaceParamPlaceholder() {
         l_refItem="${l_refItem%\}*}"
         #得到引用的参数值。
         l_paramRef="${l_rowDataMap[${l_refItem}]}"
-        #删除参数值的头尾空格
-        l_paramRef=$(echo -e "${l_paramRef}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+        #去掉头部和尾部的空格。
+        l_paramRef="${l_paramRef#"${l_paramRef%%[![:space:]]*}"}"
+        l_paramRef="${l_paramRef%"${l_paramRef##*[![:space:]]}"}"
+
         l_paramValue="${l_paramValue//\$\{${l_refItem}\}/${l_paramRef}}"
       done
     fi
@@ -894,7 +901,7 @@ function _replaceParamPlaceholder() {
   clearCachedFileContent "${l_cicdYaml}"
 
   # shellcheck disable=SC2002
-  l_lines=$(echo -e "${l_content}" | grep -oP "\\\$\{[a-zA-Z0-9_\-]+\}" | sort | uniq -c)
+  l_lines=$(grep -oE "\\\$\{[a-zA-Z0-9_\-]+\}" <<< "${l_content}" | sort | uniq -c)
   if [ "${lines}" ];then
     error "ci-cd.yaml文件中存在未明确配置的参数:\n${lines}"
   fi

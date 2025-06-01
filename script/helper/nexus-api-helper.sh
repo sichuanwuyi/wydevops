@@ -17,7 +17,7 @@ function queryNexusComponentId() {
   echo "curl -s -X 'GET' -H 'accept: application/json' http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/search?repository=${l_repository}&name=${l_componentName}&version=${l_componentVersion}"
   l_result=$(curl -s -X 'GET' -H 'accept: application/json' \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/search?repository=${l_repository}&name=${l_componentName}&version=${l_componentVersion}" 2>&1)
-  l_result=$(echo -e "${l_result}" | grep -m 1 -oP "^([ ]*)\"id\" : (.*)$")
+  l_result=$(grep -m 1 -oE "^([ ]*)\"id\" : (.*)$" <<< "${l_result}")
   if [ "${l_result}" ];then
     l_id="${l_result#*:}"
     l_id="${l_id%\"*}"
@@ -45,7 +45,7 @@ function deleteNexusComponentById() {
   echo "curl -s -X 'DELETE' -H 'accept: application/json' -u ${gDockerRepoAccount}:${gDockerRepoPassword} http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}"
   l_result=$(curl -s -X 'DELETE' -H 'accept: application/json' -u "${gDockerRepoAccount}:${gDockerRepoPassword}" \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}" 2>&1)
-  l_errorLog=$(echo -e "${l_result}" |  grep -ioP "^(.*)(Error|Failed)(.*)$")
+  l_errorLog=$(grep -ioE "^(.*)(Error|Failed)(.*)$" <<< "${l_result}")
   [[ "${l_errorLog}" ]] && error "删除仓库中现有的同名同版本的镜像失败: ${l_result}"
   gDefaultRetVal="true"
 
@@ -71,7 +71,7 @@ function pushNexusChartComponent(){
   curl -s -v -F file=@"${l_chartFile}" -u "${l_account}":"${l_password}" \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components?repository=${l_repository}" 2>&1 | tee "${l_tmpFile}"
   l_result=$(cat "${l_tmpFile}")
-  l_errorLog=$(echo -e "${l_result}" | grep -ioP "^(.*)(Error|Failed)(.*)$")
+  l_errorLog=$(grep -ioE "^(.*)(Error|Failed)(.*)$" <<< "${l_result}")
   if [ "${l_errorLog}" ];then
     error "推送失败：\n${l_result}"
   else

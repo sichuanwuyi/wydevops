@@ -9,12 +9,12 @@ function onInstallCommand_windows() {
   local l_errorLog
 
   gDefaultRetVal="false"
-  l_errorLog=$(winget --version 2>&1 | grep "not found")
-  if [ ! "${l_errorLog}" ];then
+  if command -v winget >/dev/null 2>&1; then
     info "-------windows系统下安装${l_command}命令--------"
 
-    l_errorLog=$("${l_command}" --version 2>&1 | grep "not found")
-    [[ ! "${l_errorLog}" ]] && gDefaultRetVal="true"
+    if command -v "${l_command}" >/dev/null 2>&1; then
+        gDefaultRetVal="true"
+    fi
   fi
 
   gDefaultRetVal="true|${gDefaultRetVal}"
@@ -26,14 +26,14 @@ function onInstallCommand_ubuntu() {
   local l_errorLog
 
   gDefaultRetVal="false"
-  l_errorLog=$(apt --version 2>&1 | grep "not found")
-  if [ ! "${l_errorLog}" ];then
+  if command -v apt &>/dev/null; then
     info "-------ubuntu系统下安装${l_command}命令--------"
 
     sudo apt install -y "${l_command}" 2>&1
 
-    l_errorLog=$("${l_command}" --version 2>&1 | grep "not found")
-    [[ ! "${l_errorLog}" ]] && gDefaultRetVal="true"
+    if command -v "${l_command}" >/dev/null 2>&1; then
+      gDefaultRetVal="true"
+    fi
   fi
   gDefaultRetVal="true|${gDefaultRetVal}"
 }

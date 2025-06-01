@@ -2,21 +2,20 @@
 #不同语言项目使用这个统一的全功能配置文件。
 #不同语言项目可能存在不同的参数默认值，请在对应的语言子目录下的_ci-cd-config.yaml文件中配置。
 globalParams:
-  #服务英文名称，
-  #需要手动配置serviceName参数的值。
+  #服务英文名称，wydevops会自动从yaml类型的配置文件中读取版本信息覆盖serviceName参数。
+  #详细配置见配置文件：./param-mapping/params-mapping-in-yaml-file.config
   serviceName: _SERVICE-NAME_
   #服务中文名称
   serviceNameZh: ${serviceName}
   #服务别名，默认等于serviceName，主要用于向外发送的通知内容中。
   serviceCode: ${serviceName}
   #对本服务的一个中文描述说明文本，会写入Chart镜像。
-  description: "vue服务: ${serviceName}"
+  description: java服务-${serviceName}
   #对本服务的一个英文描述说明文本，会写入Chart镜像。
-  descriptionEn: "vue service: ${serviceName}"
-
+  descriptionEn: java service - ${serviceName}
   businessImage: ${serviceName}-business
-  #vue项目需要手动配置businessVersion参数的值。
-  #无法像后端服务可通过参数映射文件进行配置
+  #wydevops会自动从yaml类型的配置文件中读取版本信息覆盖businessVersion参数。
+  #详细配置见配置文件：./param-mapping/params-mapping-in-yaml-file.config
   businessVersion: 1.0.0
   #业务版本号作为部分名称的后缀时的值, 例如deployment[].name等，用于区分不同版本的资源。
   #脚本会自动随businessVersion值变更而自动更新，主要是用于适配istio的灰度发布功能。
@@ -25,7 +24,6 @@ globalParams:
   baseVersion: ${businessVersion}
   #是否能回滚到上一个版本：如果修改了数据库表结构或字段属性，需要设置为true。
   rollback: true
-
   #服务所属应用的中文名称。逻辑上，一个应用下可以包含多个业务板块，一个业务板块下可以包含多个服务。
   systemName: ${serviceName}
   #服务所属应用的英文名称。
@@ -48,20 +46,17 @@ globalParams:
   subSystemDescrEn: Subsystem functional description
   #运行时Runtime的版本
   runtimeVersion:
-
   #是否使能离线构建，为true则会使用offline子目录下的Dockerfile文件。
   enableOfflineBuild: false
-
   #Dockerfile文件中From语言中定义的基础镜像。
   #支持多个基础镜像，相互之间使用英文逗号隔开。
   #注意：注意多个基础镜像间的顺序应与在Dockerfile文件中出现的顺序保持一致。
-  baseFromImage: node:23-alpine,nginx:1.27.3
+  baseFromImage: openjdk:17-jdk
   #需要拷贝到docker构建目录中的目录，多个目录间使用英文逗号隔开。
   copyDirsIntoDocker:
   #需要拷贝到docker构建目录中的文件，多个文件间使用英文逗号隔开。
   copyFilesIntoDocker:
-
-  buildType: single
+  buildType: _BUILD-TYPE_
   appDirInContainer: /usr/local/app/${serviceName}
   #默认值为"/app",可自定义。
   #当构建类型为single时，脚本会自动在baseWorkDir值的后面添加"-single"后缀。
@@ -69,7 +64,6 @@ globalParams:
   baseWorkDir: /app
   workDirInContainer: ${baseWorkDir}/${serviceName}
   archTypes: linux/arm64,linux/amd64
-
   #需要生成的离线安装报的架构类型，多个架构间使用英文逗号隔离。
   offlineArchTypes: _OFFLINE-ARCH-TYPES_
   useTemplate: _USE-TEMPLATE_
@@ -79,7 +73,6 @@ globalParams:
   nodeSelector:
   #服务驱逐优先级
   priorityClassName:
-
   #服务主端口，也是k8s服务探活和就绪的检测端口，默认是containerPorts参数中第一个端口。
   mainPort: _MAIN-PORT_
   #申明docker容器需要开放的端口列表，端口间使用逗号隔开。
@@ -89,7 +82,6 @@ globalParams:
   #NodePort类型的Service资源绑定的容器端口列表，端口间使用逗号隔开。
   #默认范围：30000-32767
   nodePorts:
-
   #应用设置的路由前缀参数。
   #当gatewayPath="/"或空时，表示不启用重写机制。
   gatewayPath: /${serviceName}
@@ -103,7 +95,6 @@ globalParams:
   apisixRouteRegexUri: "[ \"^${gatewayPath}(?:/|$)(.*)\", \"/$1\" ]"
   #todo apisixIngressTargetRegex参数的值会自动根据gatewayPath的值更新。
   apisixIngressTargetRegex: ^${gatewayPath}(?:/|$)(.*)
-
   #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
   istioVirtualServiceHost: *
   #启用指定的DestinationRule资源名称。
@@ -114,42 +105,35 @@ globalParams:
   ingressTlsHosts:
   #使用ingress-nginx时，启用HTTPS时需要的secret名称。
   ingressSecretName:
-
   ingressApiVersion: networking.k8s.io/v1
   apisixApiVersion: apisix.apache.org/v2
   #istio各类资源的ApiVersion参数值
   istioApiVersion: networking.istio.io/v1beta1
-
   #定义K8S集群内部拉取docker镜像时使用的secret资源的名称，默认设置为空
   imagePullSecret:
-
   #是否启用K8S服务存活探针
   livenessProbeEnable: true
-  livenessUri: /
+  livenessUri: /health
   #是否启用K8S服务就绪探针
   readinessProbeEnable: true
-  readinessUri: /
+  readinessUri: /health
   #探活和就绪使用的HTTP还是HTTPS
   httpGetScheme: HTTP
-
   #K8S服务CPU和内存资源配置相关参数
   cpuLimits: 500m
   memoryLimits: 500Mi
   cpuRequests: 500m
   memoryRequests: 500Mi
-
   #需要放到项目默认ConfigMap中的文本文件的相对路径列表，文件间使用英文逗号分隔
   configMapFiles:
   #需要打包到离线安装包中镜像名称，格式：{镜像名称}:{镜像版本},...
   packageImages0: ${baseImage}:${baseVersion},${businessImage}:${businessVersion}
-
   #chart镜像的名称, 默认与服务的名称相同
   chartName: ${serviceName}
   #chart镜像的版本, 默认与服务的版本相同
   chartVersion: ${businessVersion}
   #chart镜像中应用的版本，默认与服务的版本相同
   appVersion: ${businessVersion}
-
   #部署类型：k8s(默认值)、docker(支撑docker-compose方式)
   deployType: k8s
   #当前部署环境名称：dev、test，可以自定义。
@@ -164,9 +148,7 @@ globalParams:
   #参数不为空时即表示需要挂载PVC，参数值即为PVC资源名称。
   #挂载路径默认为${serviceName}-workdir
   persistentVolumeClaimName:
-
 #------以下配置为高级配置，在未充分理解的情况下不要轻易改动------#
-
 #项目编译阶段的配置参数
 #（项目如可本地构建异构项目（如Java、Go等），直接忽略这个配置节）
 build:
@@ -181,7 +163,7 @@ build:
     #项目编译节点SSH连接密码
     sshPassword: 123456
     #项目编译使用的镜像名称和版本
-    buildImage: vue-build-image-linux-arm64:1.0.0
+    buildImage: java-build-image-linux-arm64:1.0.0
   #目标架构linux/amd64
   linux-amd64:
     #项目编译节点的IP地址
@@ -191,8 +173,7 @@ build:
     #项目编译节点SSH连接密码
     sshPassword: 123456
     #项目编译使用的镜像名称和版本
-    buildImage: vue-build-image-linux-amd64:1.0.0
-
+    buildImage: java-build-image-linux-amd64:1.0.0
 #docker构建阶段的配置参数
 docker:
   #构建类型(全部小写)：
@@ -204,12 +185,12 @@ docker:
   # customize: 自定义模式，指定docker构建目录后由本脚本自动完成构建。
   buildType: ${buildType}
   #执行docker build命令时是否添加--no-cache参数。
-  enableNoCache: false
+  enableNoCache: true
   #是否强制使用Docker模板文件。
   useTemplate: ${useTemplate}
   #projectType参数决定了生成时使用的默认Dockerfile模板。
-  #有效值(全部为小写)：java、python、c、c++、vue、nodejs
-  projectType: vue
+  #有效值(全部为小写)：java、python、c、c++、vue、nextjs等
+  projectType: java
   #容器中应用工作路径，
   workDir: ${workDirInContainer}
   #docker容器中应用存储路径，注意要与挂载路径保持一致。
@@ -252,7 +233,7 @@ docker:
       #举例：bitnami/prometheus:2.51.2镜像的导出文件名称为bitnami-prometheus-1.0.0-linux-amd64.tar
       location:
   customizes:
-      #自定义Docker构建目录中生成的镜像名称和版本，不能空。
+    #自定义Docker构建目录中生成的镜像名称和版本，不能空。
     - name: ${serviceName}-linux-amd64:${businessVersion}
       #目标架构类型, 当buildType=customize时，会忽略docker.archTypes参数。
       #该值必须与下面的dockerfile参数指定的文件中的From语句中的--platform参数保持一致，否则会报错。
@@ -265,12 +246,11 @@ docker:
       archType: linux/arm64
       #指定自定义Docker构建目录和Dockerfile文件。
       dockerfile: ./docker/arm64/Dockerfile
-
 #chart过程需要完成helm打包的chart镜像配置项列表。
 #每一项对应一个chart镜像打包配置；即同时可支持多个chart镜像的打包。
 #绝大多数项目只会存在一个chart镜像打包配置项。
 chart:
-    #列表项的唯一名称
+  #列表项的唯一名称
   - name: ${chartName}
     version: ${chartVersion}
     appVersion: ${appVersion}
@@ -308,7 +288,8 @@ chart:
           create: true
           annotations: {}
           name: ""
-        podSecurityContext: {}
+        podSecurityContext:
+          runAsUser: 0
         securityContext: {}
         autoscaling:
           enabled: false
@@ -322,31 +303,30 @@ chart:
         podLabels:
           version: ${businessVersion}
         podAnnotations:
-          wydevops/service-name: ${serviceNameZh}
-          wydevops/service-name-en: ${serviceName}
-          wydevops/service-descr: ${description}
-          wydevops/service-descr-en: ${descriptionEn}
-          wydevops/system-name: ${systemName}
-          wydevops/system-name-en: ${systemNameEn}
-          wydevops/system-version: ${systemVersion}
-          wydevops/system-descr: ${systemDescr}
-          wydevops/system-descr-en: ${systemDescrEn}
-          wydevops/sub-system-name: ${subSystemName}
-          wydevops/sub-system-name-en: ${subSystemNameEn}
-          wydevops/sub-system-version: ${subSystemVersion}
-          wydevops/sub-system-descr: ${subSystemDescr}
-          wydevops/sub-system-descr-en: ${subSystemDescrEn}
+          wydevops/service-name: "${serviceNameZh}"
+          wydevops/service-name-en: "${serviceName}"
+          wydevops/service-descr: "${description}"
+          wydevops/service-descr-en: "${descriptionEn}"
+          wydevops/system-name: "${systemName}"
+          wydevops/system-name-en: "${systemNameEn}"
+          wydevops/system-descr: "${systemDescr}"
+          wydevops/system-descr-en: "${systemDescrEn}"
+          wydevops/sub-system-name: "${subSystemName}"
+          wydevops/sub-system-name-en: "${subSystemNameEn}"
+          wydevops/sub-system-version: "${subSystemVersion}"
+          wydevops/sub-system-descr: "${subSystemDescr}"
+          wydevops/sub-system-descr-en: "${subSystemDescrEn}"
         #参数不为空时即表示需要挂载PVC，参数值即为PVC资源名称。
         #挂载路径默认为${serviceName}-workdir
         persistentVolumeClaimName: ${persistentVolumeClaimName}
         volumes:
           - name: ${serviceName}-workdir
             emptyDir: {}
-#          - name: ${serviceName}-config
-#            configMap:
-#              defaultMode: 493
-#              name: ${serviceName}-${versionSuffix}-configmap
-#              optional: false
+          - name: ${serviceName}-config
+            configMap:
+              defaultMode: 493
+              name: ${serviceName}-${versionSuffix}-configmap
+              optional: false
           #挂载公共配置信息
           #- name: public-params
           #  configMap:
@@ -390,9 +370,9 @@ chart:
             volumeMounts:
               - name: ${serviceName}-workdir
                 mountPath: ${workDirInContainer}
-                #- name: ${serviceName}-config
+              - name: ${serviceName}-config
                 #mountPath参数的前缀必须与docker.workDir参数一致。
-              #  mountPath: ${workDirInContainer}/wydevops-config
+                mountPath: ${workDirInContainer}/wydevops-config
               #挂载公共配置信息
               #- name: public-params
               #  mountPath: /var/params
@@ -429,11 +409,10 @@ chart:
                 port: ${mainPort}
                 path: ${readinessUri}
         #定义configmap名称（格式：{服务名称}-{版本后缀}-configmap）及其包含的文件列表
-#        configMaps:
-#            #名称必须与volumes中的某个ConfigMap名相同
-#          - name: ${serviceName}-${versionSuffix}-configmap
-#            files: ${configMapFiles}
-
+        configMaps:
+          #名称必须与volumes中的某个ConfigMap名相同
+          - name: ${serviceName}-${versionSuffix}-configmap
+            files: ${configMapFiles}
         resourcePlugins:
           - name: ConfigMap
             generatorName: default
@@ -487,7 +466,6 @@ chart:
             generatorName: default
             enable: false
             configPath: apisixRoute
-
         #Ingress-nginx网关路由配置
         ingressRoute:
           type: Ingress
@@ -506,9 +484,9 @@ chart:
             nginx.ingress.kubernetes.io/use-regex: "true"
             #$2表示rules[0].paths[0].path的值中第二个圆括号中的子路径。
             nginx.ingress.kubernetes.io/rewrite-target: /$1
-#         tls:
-#           - hosts: [ ${ingressTlsHosts} ]
-#             secretName: ${ingressSecretName}
+          #         tls:
+          #           - hosts: [ ${ingressTlsHosts} ]
+          #             secretName: ${ingressSecretName}
           rules:
             - host:
               paths:
@@ -516,35 +494,33 @@ chart:
                   pathType: Prefix
                   serviceName: ${serviceName}-clusterip
                   servicePort: ${mainPort}
-
         #ingress-apisix网关路由配置
-#        ingressRoute:
-#          name: ${serviceName}
-#          type: Ingress
-#          apiVersion: ${ingressApiVersion}
-#          className: apisix
-#          #annotations下属参数用于路由重写配置
-#          #其中app-root与use-regex、rewrite-target不能同时配置。
-#          annotations:
-#            #使能跨越访问功能
-#            k8s.apisix.apache.org/enable-cors: "true"
-#            #使能websocket功能
-#            k8s.apisix.apache.org/enable-websocket: "${websocket}"
-#            #下面的rewrite-target-regex和rewrite-target-regex-template配合可以删除请求的URI中的某个子路径。
-#            k8s.apisix.apache.org/rewrite-target-regex: "${apisixIngressTargetRegex}"
-#            #$1表示rewrite-target-regex的值中第一个圆括号中的子路径。
-#            k8s.apisix.apache.org/rewrite-target-regex-template: "/$1"
-#          #         tls:
-#          #           - hosts: [ ${ingressTlsHosts} ]
-#          #             secretName: ${ingressSecretName}
-#          rules:
-#            - host:
-#              paths:
-#                - path: ^${gatewayPath}(?:/|$)(.*)
-#                  pathType: Prefix
-#                  serviceName: ${serviceName}-clusterip
-#                  servicePort: ${mainPort}
-
+        #        ingressRoute:
+        #          name: ${serviceName}
+        #          type: Ingress
+        #          apiVersion: ${ingressApiVersion}
+        #          className: apisix
+        #          #annotations下属参数用于路由重写配置
+        #          #其中app-root与use-regex、rewrite-target不能同时配置。
+        #          annotations:
+        #            #使能跨越访问功能
+        #            k8s.apisix.apache.org/enable-cors: "true"
+        #            #使能websocket功能
+        #            k8s.apisix.apache.org/enable-websocket: "${websocket}"
+        #            #下面的rewrite-target-regex和rewrite-target-regex-template配合可以删除请求的URI中的某个子路径。
+        #            k8s.apisix.apache.org/rewrite-target-regex: "${apisixIngressTargetRegex}"
+        #            #$1表示rewrite-target-regex的值中第一个圆括号中的子路径。
+        #            k8s.apisix.apache.org/rewrite-target-regex-template: "/$1"
+        #          #         tls:
+        #          #           - hosts: [ ${ingressTlsHosts} ]
+        #          #             secretName: ${ingressSecretName}
+        #          rules:
+        #            - host:
+        #              paths:
+        #                - path: ^${gatewayPath}(?:/|$)(.*)
+        #                  pathType: Prefix
+        #                  serviceName: ${serviceName}-clusterip
+        #                  servicePort: ${mainPort}
         #Apisix网关路由配置
         apisixRoute:
           type: ApisixRoute
@@ -566,7 +542,6 @@ chart:
               backends:
                 - serviceName: ${serviceName}-clusterip
                   servicePort: ${mainPort}
-
         istioRoute:
           apiVersion: ${istioApiVersion}
           gateway:
@@ -621,7 +596,6 @@ chart:
               - name: ${versionSuffix}
                 labels:
                   version: ${businessVersion}
-
     #需要写入values.yaml文件的自定义配置信息。
     params:
       #CPU和内存资源的配置参数
@@ -662,7 +636,6 @@ chart:
               ranges: "[1,1000,100]"
               units: "兆字节:Mi,吉字节:Gi|MB:Mi,GB:Gi"
               description: "服务最大可用内存额度，取值范围：1-1000，单位：兆字节或吉字节|Memory Maximum Available Quota, Range: [1,1000], Unit: MB or GB"
-
 package:
   - name: ${chartName}
     #绑定离线打包的chart
@@ -675,9 +648,8 @@ package:
     #wydevops会自动从chart镜像中收集需要的docker镜像，并与下列参数的值进行合并去重。
     #可在这个参数中设置好需要额外上传的其他docker镜像。
     images: ${packageImages0}
-
 deploy:
-    #列表项的唯一名称
+  #列表项的唯一名称
   - name: ${chartName}
     #要部署的离线包名称。
     packageName: ${chartName}

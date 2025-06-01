@@ -12,15 +12,15 @@ function dockerLogin(){
   local l_errorLog
 
   if [ "${l_repoName}" ];then
-    info "执行命令(docker logout ${l_repoName} && docker login ${l_repoName} -u ${l_account} -p ${l_password})..." "-n"
+    info "执行命令(docker logout ${l_repoName} && echo ${l_password} | docker login ${l_repoName} -u ${l_account} --password-stdin)..." "-n"
     # shellcheck disable=SC2088
     l_tmpFile="${gTempFileDir}/docker-${RANDOM}.tmp"
     registerTempFile "${l_tmpFile}"
     #先执行登出（避免某些情况下直接登入失败）,再执行登入。
-    docker logout "${l_repoName}" && docker login "${l_repoName}" -u "${l_account}" -p "${l_password}" 2>&1 | tee "${l_tmpFile}"
+    docker logout "${l_repoName}" && echo "${l_password}" | docker login "${l_repoName}" -u "${l_account}" --password-stdin  2>&1 | tee "${l_tmpFile}"
     # shellcheck disable=SC2002
     l_tmpFileContent=$(cat "${l_tmpFile}")
-    l_errorLog=$(echo "${l_tmpFileContent}" | grep -oP "^.*(Error|failed|panic).*$")
+    l_errorLog=$(grep -E "^.*(Error|failed|panic).*$" <<< "${l_tmpFileContent}")
     unregisterTempFile "${l_tmpFile}"
     # shellcheck disable=SC2015
     if [[ "${l_errorLog}" ]];then
@@ -76,7 +76,7 @@ function existDockerImage() {
   local l_imageInfo
 
   gDefaultRetVal="false"
-  l_imageInfo=$(docker image list | grep -oP "^(.*)${l_image%:*}([ ]+)${l_image##*:}([ ]+).*$")
+  l_imageInfo=$(docker image list | grep -oE "^(.*)${l_image%:*}([ ]+)${l_image##*:}([ ]+).*$")
   if [ "${l_imageInfo}" ];then
     # shellcheck disable=SC2068
     #判断镜像名称和版本是否一致。
@@ -84,8 +84,9 @@ function existDockerImage() {
       && "${l_imageInfo#* }" =~ ^([ ]*)${l_image##*:} ]];then
       if [ "${l_archType}" ];then
         #判断镜像的架构类型是否一致
-        l_architecture=$(docker inspect "${l_image}" | grep "Architecture")
-        l_errorLog=$(echo "${l_architecture}" | grep -oP "^.*${l_archType#*/}.*$" )
+        #l_architecture=$(docker inspect "${l_image}" | grep "Architecture")
+        #l_errorLog=$(grep -oE "^.*${l_archType#*/}.*$" <<< "${l_architecture}")
+        l_errorLog=$(docker inspect -f '{{.Architecture}}' "${l_image}" | grep -x "${l_archType#*/}")
         if [ "${l_errorLog}" ];then
           gDefaultRetVal="true"
         fi
@@ -122,9 +123,10 @@ function pullAndCheckImage(){
   registerTempFile "${l_tmpFile}"
   docker pull "--platform=${l_archType}" "${l_tmpImage}" 2>&1 | tee "${l_tmpFile}"
   # shellcheck disable=SC2002
-  l_errorLog=$(cat "${l_tmpFile}" | grep -ioP "^.*(Error|failed).*$")
+  l_errorLog=$(grep -ioE "^.*(Error|failed).*$" "${l_tmpFile}")
   if [ ! "${l_errorLog}" ];then
-    l_errorLog=$(docker inspect "${l_tmpImage}" | grep "Architecture" | grep -oP "^.*${l_archType#*/}.*$" )
+    #l_errorLog=$(docker inspect "${l_tmpImage}" | grep "Architecture" | grep -oE "^.*${l_archType#*/}.*$" )
+    l_errorLog=$(docker inspect -f '{{.Architecture}}' "${l_tmpImage}" | grep -x "${l_archType#*/}")
     if [ ! "${l_errorLog}" ];then
       gDefaultRetVal="false"
     else
@@ -163,14 +165,14 @@ function pushImage() {
 
   gDefaultRetVal="true"
 
-  l_errorLog=$(docker tag "${l_image}" "${l_repoName}/${l_image}-${l_archType//\//-}" 2>&1 | grep -oP "^.*(Error|failed).*$")
+  l_errorLog=$(docker tag "${l_image}" "${l_repoName}/${l_image}-${l_archType//\//-}" 2>&1 | grep -oE "^.*(Error|failed).*$")
   if [ "${l_errorLog}" ];then
     error "--->执行命令(docker tag ${l_image} ${l_repoName}/${l_image}-${l_archType//\//-})失败：${l_errorLog}"
   else
     info "--->成功执行命令(docker tag ${l_image} ${l_repoName}/${l_image}-${l_archType//\//-})"
   fi
 
-  l_errorLog=$(docker push "${l_repoName}/${l_image}-${l_archType//\//-}" 2>&1 | grep -oP "^.*(Error|failed).*$")
+  l_errorLog=$(docker push "${l_repoName}/${l_image}-${l_archType//\//-}" 2>&1 | grep -oE "^.*(Error|failed).*$")
   if [ "${l_errorLog}" ];then
     #报错前删除刚定义的镜像。
     docker rmi -f "${l_repoName}/${l_image}-${l_archType//\//-}"
@@ -224,7 +226,7 @@ function saveImage(){
   registerTempFile "${l_tmpFile}"
   docker save -o "${l_fileName}" "${l_image}" 2>&1 | tee "${l_tmpFile}"
   # shellcheck disable=SC2002
-  l_errorLog=$(cat "${l_tmpFile}" | grep -oP "^.*(Error|failed).*$")
+  l_errorLog=$(grep -oE "^.*(Error|failed).*$" "${l_tmpFile}")
   unregisterTempFile "${l_tmpFile}"
 
   # shellcheck disable=SC2164
@@ -314,7 +316,7 @@ function _loadImageFromDir() {
     l_targetFiles=$(find "${l_cacheDir}" -maxdepth 1 -type f -name "${l_fileName}")
     if [ "${l_targetFiles}" ];then
       l_targetFile=${l_targetFiles[0]}
-      l_errorLog=$(docker load -i "${l_targetFile}" 2>&1 | grep -oP "^.*(Loaded image: ${l_image}).*$")
+      l_errorLog=$(docker load -i "${l_targetFile}" 2>&1 | grep -oE "^.*(Loaded image: ${l_image}).*$")
       [[ "${l_errorLog}" ]] && gDefaultRetVal="true"
     fi
   fi
@@ -357,7 +359,7 @@ function _cacheImageToDir() {
   info "将${l_image}镜像导出到${l_cacheDir}/${l_fileName}文件中..."
   docker save -o "${l_fileName}" "${l_image}" 2>&1 | tee "${l_tmpFile}"
   # shellcheck disable=SC2002
-  l_errorLog=$(cat "${l_tmpFile}" | grep -oP "^.*(Error|failed).*$")
+  l_errorLog=$(grep -oE "^.*(Error|failed).*$" "${l_tmpFile}")
   unregisterTempFile "${l_tmpFile}"
 
   # shellcheck disable=SC2164
@@ -388,7 +390,7 @@ function _createDockerManifest() {
   l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
 
   l_result=$(docker manifest create --insecure --amend "${l_repoName}/${l_image}" "${l_tmpImage}" 2>&1)
-  l_errorLog=$(echo "${l_result}" | grep -ioP "^.*(Error|error|failed|invalid).*$")
+  l_errorLog=$(grep -ioE "^.*(Error|error|failed|invalid).*$" <<< "${l_result}")
   if [ "${l_errorLog}" ];then
     error "--->执行命令(docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage})失败:\n${l_result}"
   else
@@ -396,7 +398,7 @@ function _createDockerManifest() {
   fi
 
   l_result=$(docker manifest annotate "${l_repoName}/${l_image}" "${l_tmpImage}" --os "${l_archType%%/*}" --arch "${l_archType#*/}" 2>&1)
-  l_errorLog=$(echo "${l_result}" | grep -oP "^.*(Error|error|failed|invalid).*$")
+  l_errorLog=$(grep -oE "^.*(Error|error|failed|invalid).*$" <<< "${l_result}")
   if [ "${l_errorLog}" ];then
     error "--->执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage} --os ${l_archType%%/*} --arch ${l_archType#*/})失败:\n${l_result}"
   else
@@ -404,7 +406,7 @@ function _createDockerManifest() {
   fi
 
   l_result=$(docker manifest push --insecure --purge "${l_repoName}/${l_image}" 2>&1)
-  l_errorLog=$(echo "${l_result}" | grep -ioP "^(.*)(error|failed|invalid)(.*)$")
+  l_errorLog=$(grep -ioE "^(.*)(error|failed|invalid)(.*)$" <<< "${l_result}")
   if [ "${l_errorLog}" ];then
     error "--->执行命令(docker manifest push --insecure --purge ${l_repoName}/${l_image})失败:\n${l_result}"
   else

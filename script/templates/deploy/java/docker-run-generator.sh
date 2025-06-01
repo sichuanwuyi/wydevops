@@ -44,8 +44,8 @@ function generateDockerRunShellFile() {
   if [ "${l_repoName}" ];then
   echo "#!/usr/bin/env bash
   # shellcheck disable=SC2027
-  echo \"docker login ${l_repoName} -u ${l_account} -p ${l_password}\"
-  docker login \"${l_repoName}\" -u \"${l_account}\" -p \"${l_password}\"
+  echo \"echo ${l_password} | docker login ${l_repoName} -u ${l_account} --password-stdin\"
+  echo \"${l_password}\" | docker login \"${l_repoName}\" -u \"${l_account}\" --password-stdin
   echo \"docker rm -f ${l_chartName}\"
   docker rm -f \"${l_chartName}\"
   echo \"docker run -d ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}\"

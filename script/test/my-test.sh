@@ -12,13 +12,43 @@ source "${_selfRootDir}/helper/yaml-helper.sh"
 export gDefaultRetVal
 
 #定义测试文件名称。
-tmpFile="/d/react/react-next-app/react-next-app-demo/nextjs-dashboard/ci-cd.yaml"
+tmpFile="./my-test.yaml"
 
-#readParam "${tmpFile}" "chart[0].deployments[0].name"
-#readParam "${tmpFile}" "destination" "" 467 470 14 0 false 0 true
+#fileContent=$(cat "${tmpFile}")
 
-updateParam "${tmpFile}" "chart[0].deployments[0].name" "- a: 1\n  b: 2\n- c: 3\n  d: 4"
-updateParam "${tmpFile}" "chart[0].deployments[0].name[0]" "a"
-updateParam "${tmpFile}" "chart[0].deployments[0].name[1]" "b"
+readParam "${tmpFile}" "image.nodes[1]"
+updateParam "${tmpFile}" "image.registry" "docker.io"
+echo "-------gDefaultRetVal-----${gDefaultRetVal}"
 
-echo "----gDefaultRetVal=${gDefaultRetVal}---"
+deleteParam "${tmpFile}" "server.info"
+echo "-------gDefaultRetVal-----${gDefaultRetVal}"
+
+readParam "${tmpFile}" "image.nodes[2]"
+echo "-------gDefaultRetVal-----${gDefaultRetVal}"
+
+updateParam "${tmpFile}" "image.nodes[1]"  "192.168.1.111"
+echo "-------gDefaultRetVal-----${gDefaultRetVal}"
+
+deleteParam "${tmpFile}" "image.nodes[3]"
+echo "-------gDefaultRetVal-----${gDefaultRetVal}"
+
+insertParam "${tmpFile}" "image.nodes[5]"  "192.168.1.133"
+echo "-------gDefaultRetVal-----${gDefaultRetVal}"
+
+insertParam "${tmpFile}" "server.nodes[1]"  "ip: 192.168.1.100\nport: 9999"
+echo "-------gDefaultRetVal-----${gDefaultRetVal}"
+
+updateParam "${tmpFile}" "server.nodes[2]"  "ip: 192.168.1.100\nport: AAAA"
+echo "-------gDefaultRetVal-----${gDefaultRetVal}"
+
+insertParam "${tmpFile}" "server.nodes[3]"  "ip: 192.168.1.100\nport: 8888"
+echo "-------gDefaultRetVal-----${gDefaultRetVal}"
+
+#insertParam "${tmpFile}" "server.info" "|\nappName: dddd\nappVersion: 1.0.0\nappType: web"
+
+insertParam "${tmpFile}" "server.info[0]" "appName: dddd\nappVersion: 1.0.0\nappType: web"
+
+#tmpFile1="./ci-cd-config.yaml"
+#tmpFile2="./_ci-cd-template.yaml"
+#
+#combine "${tmpFile1}" "${tmpFile2}" "" "" "true" "true"

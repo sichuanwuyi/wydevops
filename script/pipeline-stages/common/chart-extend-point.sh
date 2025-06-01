@@ -98,10 +98,13 @@ function onBeforeCreatingChartImage_ex() {
 
   if [ "${gCustomizedHelm}" == "false" ];then
     #执行helm create生成打包内容
-    l_content=$(helm create "${l_chartPath}" | grep -ioP "^.*(Error|failed).*$")
-    if [ "${l_content}" ];then
-      error "执行命令(helm create ${l_chartPath})失败: ${l_content}"
+    l_content=$(helm create "${l_chartPath}" 2>&1)
+    if [[ $? -ne 0 ]]; then
+        l_content=$(grep -E 'Error|failed' <<< "${l_content}")
+        error "执行命令(helm create ${l_chartPath})失败: ${l_content}"
     fi
+    info "执行命令(helm create ${l_chartPath})成功"
+
     #删除的无效的文件或目录。
     l_abortedFiles=("tests" "NOTES.txt" "ingress.yaml" "_helpers.tpl" \
       "deployment.yaml" "hpa.yaml" "service.yaml" "serviceAccount.yaml")
@@ -179,6 +182,7 @@ function onAfterCreatingChartImage_ex() {
   export gChartRepoInstanceName
 
   local l_chartTgzOutDir
+  local l_output
   local l_errorFlag
 
   #获得输出目录
@@ -194,19 +198,20 @@ function onAfterCreatingChartImage_ex() {
   invokeExtendPointFunc "onBeforeHelmPackage" "HelmPackage执行前扩展" "${l_chartTgzOutDir}" "${gCurrentChartName}" "${gCurrentChartVersion}"
 
   #执行helm的打包命令
-  l_errorFlag=$(helm package . -d "${l_chartTgzOutDir}" 2>&1 | grep -oP "^.*(Error|failed).*$")
-  if [ ${l_errorFlag} ];then
-    error "执行命令(helm package . -d ${l_chartTgzOutDir})失败: ${l_errorFlag}"
+  l_output=$(helm package . -d "${l_chartTgzOutDir}" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    l_output=$(grep -E 'Error|failed' <<< "${l_output}")
+    error "执行命令(helm package . -d ${l_chartTgzOutDir})失败: ${l_output}"
   fi
+  info "执行命令(helm package . -d ${l_chartTgzOutDir})成功"
 
   #测试chart镜像是否正确。
-  l_errorFlag=$(helm template test "${l_chartTgzOutDir}/${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz" -n test.com 2>&1)
-  if [ "$?" != 0 ];then
-    l_errorFlag=$(echo "${l_errorFlag}" | grep "^.*(Error|failed).*$")
-    error "chart镜像(${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz)正确性检测未通过: ${l_errorFlag}"
-  else
-    info "chart镜像(${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz)正确性检测已通过"
+  if ! l_errorFlag=$(helm template test "${l_chartTgzOutDir}/${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz" -n test.com 2>&1); then
+      # 使用更高效的正则匹配和错误信息截断
+      l_errorFlag=$(grep -Em1 'Error|failed' <<< "${l_errorFlag}")
+      error "chart镜像(${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz)正确性检测未通过: ${l_errorFlag:-未知错误}"
   fi
+  info "chart镜像(${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz)正确性检测已通过"
 
   if [ "${gChartRepoInstanceName}" ];then
     #将生成的Chart镜像推送到chart仓库中。不同的仓库类型chart镜像推送方式是不同的。
@@ -409,7 +414,7 @@ function onEnablePersistentVolumeClaim_ex() {
   l_pvcName="${gDefaultRetVal}"
   #deleteParam "${l_valuesYaml}" "${l_moduleName}.${l_paramName}"
 
-  getListIndexByPropertyName "${l_valuesYaml}" "${l_moduleName}.volumes" "name" "${gServiceName}-workdir"
+  getListIndexByPropertyNameQuickly "${l_valuesYaml}" "${l_moduleName}.volumes" "name" "${gServiceName}-workdir"
   l_index="${gDefaultRetVal}"
   if [ "${l_index}" -eq -1 ];then
     return
@@ -631,19 +636,24 @@ function combineParamsToValuesYaml_ex() {
       [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
       # shellcheck disable=SC2002
-      l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
+      #l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
+      l_paramList=$(grep -oE '\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default .*)*[ ]+\}\}' "${l_configFile}" | sort | uniq -c)
       if [ "${l_paramList}" ];then
 
         stringToArray "${l_paramList}" "l_lines"
         l_lineCount="${#l_lines[@]}"
         for ((l_i=0; l_i < l_lineCount; l_i++ ));do
-          l_paramName=$(echo -e "${l_lines[${l_i}]}" | grep -oP ".Values(\.[a-zA-Z0-9_\-]+)+( |\|)")
+          l_paramName=$(grep -oE ".Values(\.[a-zA-Z0-9_\-]+)+( |\|)" <<< "${l_lines[${l_i}]}")
           [[ "${l_paramName}" =~ ^(.*)\|$ ]] && l_paramName="${l_paramName%|*}"
-          l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+          #去掉头部和尾部的空格。
+          l_paramName="${l_paramName#"${l_paramName%%[![:space:]]*}"}"
+          l_paramName="${l_paramName%"${l_paramName##*[![:space:]]}"}"
+
           l_paramName="${l_paramName/\.Values\./}"
 
           # shellcheck disable=SC2145
-          l_result=$(echo "${!_paramDeployValueMap[@]} " | grep -oP "${l_paramName} ")
+          l_result=$(grep -oE "${l_paramName} " <<< "${!_paramDeployValueMap[@]} ")
           if [ "${l_result}" ];then
             #读取部署时设置的值。
             l_paramValue="${_paramDeployValueMap[${l_paramName}]}"
@@ -654,7 +664,11 @@ function combineParamsToValuesYaml_ex() {
               l_paramValue="${l_lines[${l_i}]#*|}"
               l_paramValue="${l_paramValue%%\}*}"
               l_paramValue="${l_paramValue// default/}"
-              l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+              #去掉头部和尾部的空格。
+              l_paramValue="${l_paramValue#"${l_paramValue%%[![:space:]]*}"}"
+              l_paramValue="${l_paramValue%"${l_paramValue##*[![:space:]]}"}"
+
               if [[ "${l_paramValue}" =~ ^(\") ]];then
                 #去掉头尾引号
                 l_paramValue="${l_paramValue/\"/}"
@@ -729,7 +743,7 @@ function handleBuildingSingleImageForChart_ex() {
         if [ "${gDefaultRetVal}" == "${gServiceName}-${gBusinessVersion//./-}" ];then
 
           #删除volumes中的${gServiceName}-workdir目录挂载配置
-          getListIndexByPropertyName "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].volumes" "name" "${gServiceName}-workdir"
+          getListIndexByPropertyNameQuickly "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].volumes" "name" "${gServiceName}-workdir"
           if [ "${gDefaultRetVal}" -ge 0 ];then
             l_k="${gDefaultRetVal}"
             l_param="chart[${l_i}].deployments[${l_j}].volumes[${l_k}]"
@@ -742,7 +756,7 @@ function handleBuildingSingleImageForChart_ex() {
           fi
 
           #删除initContainers中的业务镜像配置。
-          getListIndexByPropertyName "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].initContainers" "name" "${gServiceName}-${gBusinessVersion//./-}-business"
+          getListIndexByPropertyNameQuickly "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].initContainers" "name" "${gServiceName}-${gBusinessVersion//./-}-business"
           if [ "${gDefaultRetVal}" -ge 0 ];then
             l_param="chart[${l_i}].deployments[${l_j}].initContainers[${gDefaultRetVal}]"
             deleteParam "${gCiCdYamlFile}" "${l_param}"
@@ -754,7 +768,7 @@ function handleBuildingSingleImageForChart_ex() {
           fi
 
           #对containers中name为${gServiceName}-base的配置项进行修正。
-          getListIndexByPropertyName "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].containers" "name" "${gServiceName}-${gBusinessVersion//./-}-base"
+          getListIndexByPropertyNameQuickly "${gCiCdYamlFile}" "chart[${l_i}].deployments[${l_j}].containers" "name" "${gServiceName}-${gBusinessVersion//./-}-base"
           if [ "${gDefaultRetVal}" -ge 0 ];then
             l_k="${gDefaultRetVal}"
             l_param="chart[${l_i}].deployments[${l_j}].containers[${l_k}]"
@@ -775,7 +789,7 @@ function handleBuildingSingleImageForChart_ex() {
             done
 
             #删除当前container中的name属性为${gServiceName}-workdir的volumeMounts列表项。
-            getListIndexByPropertyName "${gCiCdYamlFile}" "${l_param}.volumeMounts" "name" "${gServiceName}-workdir"
+            getListIndexByPropertyNameQuickly "${gCiCdYamlFile}" "${l_param}.volumeMounts" "name" "${gServiceName}-workdir"
             if [ "${gDefaultRetVal}" -ge 0 ];then
               l_k="${gDefaultRetVal}"
               deleteParam "${gCiCdYamlFile}" "${l_param}.volumeMounts[${gDefaultRetVal}]"
@@ -1095,7 +1109,7 @@ function _processMultiplePorts() {
     else
       #循环展开端口配置。
       for (( l_j=0; l_j < l_containerPortCount; l_j++ )); do
-        l_containerPort=$(echo "${l_containerPorts[${l_j}]}" | grep -oP "^([ ]*)([0-9]+)([ ]*)$")
+        l_containerPort=$(grep -oE "^([ ]*)([0-9]+)([ ]*)$" <<< "${l_containerPorts[${l_j}]}")
         if [ ! "${l_containerPort}" ];then
           error "多端口配置错误：containerPort端口必须是整数，端口间以逗号隔开"
         fi
@@ -1245,7 +1259,6 @@ function _initialPackageYamlFile() {
   export gChartNames
 
   local l_content
-  local l_listItems
   local l_itemCount
   local l_i
   local l_chartName
@@ -1260,8 +1273,7 @@ function _initialPackageYamlFile() {
   #将ci-cd.yaml文件中的chart列表项拆分到对应的目录下，并命名为package.yaml。
   readParam "${gCiCdYamlFile}" "chart"
   l_content="${gDefaultRetVal}"
-  l_listItems=$(echo "${l_content}" | grep -oP "^(- ).*$")
-  l_itemCount=${#l_listItems[@]}
+  l_itemCount=$(grep -cE '^- ' <<< "${l_content}")
   for (( l_i=0; l_i < l_itemCount; l_i++ ));do
     readParam "${gCiCdYamlFile}" "chart[${l_i}].name"
     l_chartName="${gDefaultRetVal}"
@@ -1296,7 +1308,7 @@ function getDeployValueOfParam() {
   ((l_index = -1))
   info "根据chart打包项的名称，获取该chart镜像对应的部署配置节的序号(用于后续读取参数的初始化值) ..." "-n"
   #根据l_chartName获取打包名。
-  getListIndexByPropertyName "${gCiCdYamlFile}" "package" "chartName" "${l_chartName}"
+  getListIndexByPropertyNameQuickly "${gCiCdYamlFile}" "package" "chartName" "${l_chartName}"
   if [ "${gDefaultRetVal}" -ge 0 ];then
     # shellcheck disable=SC2206
     l_array=(${gDefaultRetVal})
@@ -1305,7 +1317,7 @@ function getDeployValueOfParam() {
     if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
       l_packageName="${gDefaultRetVal}"
       #根据l_packageName获取打包名。
-      getListIndexByPropertyName "${gCiCdYamlFile}" "deploy" "packageName" "${l_packageName}"
+      getListIndexByPropertyNameQuickly "${gCiCdYamlFile}" "deploy" "packageName" "${l_packageName}"
       #获得l_chartName对应的部署配置项的序号，根据这个序号读取各个参数的默认配置值。
       # shellcheck disable=SC2206
       l_index="${gDefaultRetVal}"
@@ -1323,13 +1335,19 @@ function getDeployValueOfParam() {
   while true;do
     readParam "${gCiCdYamlFile}" "deploy[${l_index}].params[${l_i}]"
     [[ "${gDefaultRetVal}" == "null" ]] && break
-    l_paramName=$(echo "${gDefaultRetVal}" | grep "^name:.*$")
+    l_paramName=$(grep -E "^name:.*$" <<< "${gDefaultRetVal}")
     l_paramName="${l_paramName//name:/}"
-    l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
 
-    l_paramValue=$(echo "${gDefaultRetVal}" | grep "^value:.*$")
+    #去掉头部和尾部的空格。
+    l_paramName="${l_paramName#"${l_paramName%%[![:space:]]*}"}"
+    l_paramName="${l_paramName%"${l_paramName##*[![:space:]]}"}"
+
+    l_paramValue=$(grep -E "^value:.*$" <<< "${gDefaultRetVal}")
     l_paramValue="${l_paramValue//value:/}"
-    l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+    #去掉头部和尾部的空格。
+    l_paramValue="${l_paramValue#"${l_paramValue%%[![:space:]]*}"}"
+    l_paramValue="${l_paramValue%"${l_paramValue##*[![:space:]]}"}"
 
     l_paramName="${l_paramName/\.Values\./}"
     # shellcheck disable=SC2034

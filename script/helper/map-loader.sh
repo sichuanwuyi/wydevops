@@ -24,7 +24,7 @@ function initialMapFromConfigFile() {
   local l_array
 
   # shellcheck disable=SC2002
-  l_content=$(cat "${l_configFile}" | grep -noP "^([ ]*)[_a-zA-Z]+")
+  l_content=$(grep -noE "^([ ]*)[_a-zA-Z]+" "${l_configFile}")
   stringToArray "${l_content}" "l_lines"
   # shellcheck disable=SC2154
   l_lineCount=${#l_lines[@]}

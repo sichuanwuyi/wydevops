@@ -27,6 +27,7 @@ function initialGlobalParamsForDeployStage_ex() {
   local l_array
   local l_businessParamNames
   local l_businessParamIndex
+  local l_paramContentBlock
 
   #扫描gCiCdYamlFile文件中chart[?].deployment[?].configMaps参数，在指定的文件中查找”{{ .Values.* }}“格式的参数定义。
   #如果有则提取这些参数及其默认值，回写到项目中的ci-cd-config.yaml文件中。
@@ -82,9 +83,12 @@ function initialGlobalParamsForDeployStage_ex() {
     #恢复层级数。
     ((l_layerLevel = 3))
 
+    #读取l_cicdConfigFile文件中的deploy[${l_targetIndex}].params内容块。
+    readParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params"
+    l_paramContentBlock="${gDefaultRetVal}"
+
     info "读取${l_cicdConfigFile##*/}文件中deploy[${l_targetIndex}].params列表中所有的name的值。"
-    _readValueOfListItemNames "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params"
-    l_businessParamNames="${gDefaultRetVal}"
+    _readValueOfListItemNames "${l_paramContentBlock}"
     if [[ "${l_businessParamNames}" && "${l_businessParamNames}" != "null" ]];then
       l_businessParamNames="${l_businessParamNames},"
       l_businessParamIndex="${l_targetIndex}"
@@ -96,22 +100,28 @@ function initialGlobalParamsForDeployStage_ex() {
       [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
       # shellcheck disable=SC2002
-      l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
+      l_paramList=$(grep -oE "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default .*)*[ ]+\}\}" "${l_configFile}" | sort | uniq -c)
       if [ "${l_paramList}" ];then
-
+        ((l_paramIndex = -1))
         stringToArray "${l_paramList}" "l_lines"
         l_lineCount="${#l_lines[@]}"
         for ((l_i=0; l_i < l_lineCount; l_i++ ));do
-          l_paramName=$(echo -e "${l_lines[${l_i}]}" | grep -oP ".Values(\.[a-zA-Z0-9_\-]+)+( |\|)")
+          l_paramName=$(grep -oE ".Values(\.[a-zA-Z0-9_\-]+)+( |\|)" <<< "${l_lines[${l_i}]}")
           [[ "${l_paramName}" =~ ^(.*)\|$ ]] && l_paramName="${l_paramName%|*}"
-          l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+          #去掉左右空格
+          l_paramName="${l_paramName#"${l_paramName%%[![:space:]]*}"}"
+          l_paramName="${l_paramName%"${l_paramName##*[![:space:]]}"}"
 
           l_paramValue=""
           if [[ "${l_lines[${l_i}]}" =~ ^(.*)(\|[ ]*default)(.*) ]];then
             l_paramValue="${l_lines[${l_i}]#*|}"
             l_paramValue="${l_paramValue%%\}*}"
             l_paramValue="${l_paramValue// default/}"
-            l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+            #去掉头部和尾部的空格。
+            l_paramValue="${l_paramValue#"${l_paramValue%%[![:space:]]*}"}"
+            l_paramValue="${l_paramValue%"${l_paramValue##*[![:space:]]}"}"
+
             if [[ "${l_paramValue}" =~ ^(\") ]];then
               #去掉头尾引号
               l_paramValue="${l_paramValue/\"/}"
@@ -123,7 +133,9 @@ function initialGlobalParamsForDeployStage_ex() {
           gParamDeployedValueMap["${l_paramName}"]="${l_paramValue}"
 
           #不存在name=l_paramName的项，则插入之。
-          getListIndexByPropertyName "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params" "name" "${l_paramName}" "true" "${gCiCdYamlFile}"
+          getListIndexByPropertyNameQuickly "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params" "name" \
+            "${l_paramName}" "true" "${l_paramContentBlock}" "${l_paramIndex}" "${gCiCdYamlFile}"
+
           if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
             # shellcheck disable=SC2206
             l_array=(${gDefaultRetVal})
@@ -136,8 +148,7 @@ function initialGlobalParamsForDeployStage_ex() {
             # shellcheck disable=SC2206
             l_array=(${gDefaultRetVal})
             l_paramIndex="${l_array[0]}"
-            readParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params[${l_paramIndex}].value"
-            l_paramValue="${gDefaultRetVal}"
+            readParamInList "${l_paramContentBlock}" "${l_paramIndex}" "value"
             gParamDeployedValueMap["${l_paramName}"]="${l_paramValue}"
             if [ "${l_paramValue}" ];then
               info "${l_paramValue}" "*"
@@ -162,8 +173,8 @@ function initialGlobalParamsForDeployStage_ex() {
       # shellcheck disable=SC2068
       for l_paramName in ${l_array[@]};do
         warn "清除未用到的参数项:${l_paramName}"
-        getListIndexByPropertyName "${l_cicdConfigFile}" "deploy[${l_businessParamIndex}].params" \
-          "name" "${l_paramName}" "false" "${gCiCdYamlFile}"
+        getListIndexByPropertyNameQuickly "${l_cicdConfigFile}" "deploy[${l_businessParamIndex}].params" \
+          "name" "${l_paramName}" "false" "${l_paramContentBlock}" "-1" "${gCiCdYamlFile}"
         deleteParam "${l_cicdConfigFile}" "deploy[${l_businessParamIndex}].params[${gDefaultRetVal}]"
       done
     fi
@@ -274,8 +285,7 @@ function onBeforeDeployingServicePackageByK8sMode_ex() {
   local l_packageName=$2
 
   #检查本地是否安装有helm工具。
-  l_errorLog=$(helm version | grep -oP "not found" )
-  if [ "${l_errorLog}" ];then
+  if ! command -v helm &> /dev/null; then
     #检查当前操作系统类型
     invokeExtendChain "onGetSystemArchInfo"
     # shellcheck disable=SC2015
@@ -323,7 +333,7 @@ function onCheckAndInitialParamInConfigFile_ex(){
   l_localBaseDir="${l_localBaseDir}/${l_chartName}-${l_chartVersion}/config"
   mkdir -p "${l_localBaseDir}"
 
-  getListIndexByPropertyName "${gCiCdYamlFile}" "chart" "name" "${l_chartName}"
+  getListIndexByPropertyNameQuickly "${gCiCdYamlFile}" "chart" "name" "${l_chartName}"
   [[  "${gDefaultRetVal}" =~ ^(\-1) ]] && error "${gCiCdYamlFile##*/}文件中未找到name=${l_chartName}的chart列表项"
   l_chartIndex="${gDefaultRetVal}"
 
@@ -362,7 +372,7 @@ function onCheckAndInitialParamInConfigFile_ex(){
 
       #检测配置文件中是否存在动态配置的参数，如果存在则需要替换赋值。
       # shellcheck disable=SC2002
-      l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
+      l_paramList=$(grep -oE "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default .*)*[ ]+\}\}" "${l_configFile}" | sort | uniq -c)
       if [ "${l_paramList}" ];then
 
         stringToArray "${l_paramList}" "l_lines"
@@ -374,9 +384,10 @@ function onCheckAndInitialParamInConfigFile_ex(){
           #去掉缺少值设置。
           l_paramName="${l_paramName%%|*}"
           #去掉头部和尾部的空格。
-          l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+          l_paramName="${l_paramName#"${l_paramName%%[![:space:]]*}"}"
+          l_paramName="${l_paramName%"${l_paramName##*[![:space:]]}"}"
 
-          l_result=$(echo -e "${l_paramNameList}" | grep -oP "${l_paramName}( |$)" )
+          l_result=$(grep -oE "${l_paramName}( |$)" <<< "${l_paramNameList}")
           if [ ! "${l_result}" ];then
             #如果参数的值未定义，则告警输出。
             l_hasUndefineParam="true"
@@ -517,10 +528,10 @@ function _deployServiceByDocker(){
       info "检测服务器${l_ip}是否已安装docker ..." "-n"
       l_content=$(timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "docker -v")
       #连接被拒绝或超时
-      l_errorLog=$(echo -e "${l_content}" | grep -ioP "(refused|timed[ ]*out)")
+      l_errorLog=$(grep -oE "(refused|timed[ ]*out)" <<< "${l_content}")
       [[ "${l_errorLog}" ]] && error "SSH连接${l_ip}服务失败：\n${l_content}"
       #命令不存在则报错退出。
-      l_errorLog=$(echo -e "${l_content}" | grep -ioP "not[ ]*found")
+      l_errorLog=$(grep -oE "not[ ]*found" <<< "${l_content}")
       [[ "${l_errorLog}" ]] && error "服务器${l_ip}上未安装docker，请正确安装后再试。"
       info "已安装" "*"
 
@@ -528,10 +539,10 @@ function _deployServiceByDocker(){
         info "检测服务器${l_ip}是否已安装docker compose ..." "-n"
         l_content=$(timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "docker compose version")
         #连接被拒绝或超时
-        l_errorLog=$(echo -e "${l_content}" | grep -ioP "(refused|timed[ ]*out)")
+        l_errorLog=$(grep -oE "(refused|timed[ ]*out)" <<< "${l_content}")
         [[ "${l_errorLog}" ]] && error "SSH连接${l_ip}服务失败：\n${l_content}"
         #命令不存在则报错退出。
-        l_errorLog=$(echo -e "${l_content}" | grep -ioP "not[ ]*found")
+        l_errorLog=$(grep -oE "not[ ]*found" <<< "${l_content}")
         [[ "${l_errorLog}" ]] && error "服务器${l_ip}上未安装docker compose，请正确安装后再试。"
         info "已安装" "*"
       fi
@@ -614,6 +625,8 @@ function _deployServiceInK8S() {
   local l_paramName
   local l_paramValue
 
+  local l_content
+
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].activeProfile"
   l_activeProfile="${gDefaultRetVal}"
 
@@ -656,27 +669,36 @@ function _deployServiceInK8S() {
       readParam "${l_settingFile}" "${gServiceName}"
       l_settingParams="${gDefaultRetVal%,*}"
       #多行转成单行。
-      l_settingParams=$(echo "${l_settingParams}" | tr -d '\n' | sed 's/,[[:space:]]*/,/g')
+      #l_settingParams=$(echo "${l_settingParams}" | tr -d '\n' | sed 's/,[[:space:]]*/,/g')
+      l_settingParams=$(sed -e ':a;N;$!ba;s/\n//g' -e 's/,[[:space:]]\+/,/g' <<< "${l_settingParams}")
     fi
-
     info "从ci-cd.yaml文件中读取deploy[${l_index}].params下的参数值覆盖l_settingParams变量中的参数值"
+
+    readParam "${gCiCdYamlFile}" "deploy[${l_index}].params"
+    l_content="${gDefaultRetVal}"
+
     l_tmpIndex=0
     while true;do
-      readParam "${gCiCdYamlFile}" "deploy[${l_index}].params[${l_tmpIndex}].name"
-      [[ "${gDefaultRetVal}" == "null" ]] && break
+      readParamInList "${l_content}" "${l_tmpIndex}" "name"
+      [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && break
+
       #得到参数名称
       # shellcheck disable=SC2001
       l_paramName=$(echo "${gDefaultRetVal}" | sed 's/\.Values\.//g')
-      #去掉头部和尾部的空格。
-      l_paramName=$(echo -e "${l_paramName}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
 
-      readParam "${gCiCdYamlFile}" "deploy[${l_index}].params[${l_tmpIndex}].value"
-      if [ "${gDefaultRetVal}" != "null" ];then
-        #得到参数值
-        l_paramValue=$(echo -e "${gDefaultRetVal}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+      #去掉头部和尾部的空格。
+      l_paramName="${l_paramName#"${l_paramName%%[![:space:]]*}"}"
+      l_paramName="${l_paramName%"${l_paramName##*[![:space:]]}"}"
+
+      readParamInList "${l_content}" "${l_tmpIndex}" "value"
+      if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
+        l_paramValue="${gDefaultRetVal}"
+        #去掉头部和尾部的空格。
+        l_paramValue="${l_paramValue#"${l_paramValue%%[![:space:]]*}"}"
+        l_paramValue="${l_paramValue%"${l_paramValue##*[![:space:]]}"}"
+
         # 使用正则表达式替换已存在的参数
-        # shellcheck disable=SC2001
-        l_settingParams=$(echo "$l_settingParams" | sed "s/\(${l_paramName}\)=[^,]*\(,\|\\n\|$\)/\1=${l_paramValue//\//\\\/}\2/g")
+        l_settingParams=$(echo "${l_settingParams}" | sed -r "s/(^|,)(${l_paramName})=[^,]*(,|$)/\1\2=${l_paramValue}\3/g")
         # 如果替换后没有变化则追加参数
         [[ "${l_settingParams}" == *"${l_paramName}="* ]] || l_settingParams="${l_settingParams},${l_paramName}=${l_paramValue}"
       fi
@@ -690,18 +712,16 @@ function _deployServiceInK8S() {
       l_array=(${gDefaultRetVal//,/ })
       warn "更新集群内拉取docker镜像使用的仓库地址为: ${l_array[2]}"
 
+      info "尝试将离线包中的镜像推送到K8S集群使用的Docker仓库中..."
       l_repoInfos="${gDefaultRetVal}"
-      #if [[ "${l_array[1]}" != "${gDockerRepoInstanceName}" || "${l_array[2]}" != "${gDockerRepoName}" ]];then
-        info "将离线包中的镜像推送到K8S集群使用的Docker仓库中..."
-        l_repoInfos="${gDefaultRetVal}"
-        readParam "${gCiCdYamlFile}" "deploy[${l_index}].packageName"
-        _pushDockerImageForDeployStage "${gDefaultRetVal}" "${l_repoInfos}" "${l_chartFile}" "${l_ip}" "${l_port}" \
-          "${l_account}" "${l_password}"
-        if [ ! "${gDockerRepoInstanceName}" ];then
-          #如果未定义docker镜像仓库，则要将集群docker镜像仓库名称追加在image.registry参数的后面。
-          l_array[2]="${l_array[2]}/${l_array[1]}"
-        fi
-      #fi
+      readParam "${gCiCdYamlFile}" "deploy[${l_index}].packageName"
+      _pushDockerImageForDeployStage "${gDefaultRetVal}" "${l_repoInfos}" "${l_chartFile}" "${l_ip}" "${l_port}" \
+        "${l_account}" "${l_password}"
+      if [ ! "${gDockerRepoInstanceName}" ];then
+        #如果未定义docker镜像仓库，则要将集群docker镜像仓库名称追加在image.registry参数的后面。
+        l_array[2]="${l_array[2]}/${l_array[1]}"
+      fi
+
       # 使用正则表达式替换已存在的参数
       # shellcheck disable=SC2001
       l_settingParams=$(echo "${l_settingParams}" | sed "s/\(image\.registry\)=[^,]*\(,\|\\n\|$\)/\1=${l_array[2]//\//\\\/}\2/g")
@@ -735,7 +755,7 @@ function _deployServiceInK8S() {
 
     info "卸载${l_namespace}命名空间中正在运行的${l_chartName}服务..." "-n"
     l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
-    l_errorLog=$(echo -e "${l_content}" | grep -ioP "^(.*)Error:(.*)$")
+    l_errorLog=$(grep -oE "^(.*)Error:(.*)$" <<< "${l_content}")
     if [ "${l_errorLog}" ];then
       warn "失败" "*"
       warn "未找到正在运行的${l_chartName}服务:${l_errorLog}"
@@ -760,7 +780,7 @@ function _deployServiceInK8S() {
       l_content=$(helm install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
     fi
 
-    l_errorLog=$(echo -e "${l_content}" | grep -ioP "^(.*)Error:(.*)$")
+    l_errorLog=$(grep -oE "^(.*)Error:(.*)$" <<< "${l_content}")
     if [ "${l_errorLog}" ];then
       error "${l_chartName}服务安装失败:\n${l_content}"
     else
@@ -844,13 +864,13 @@ function _getDeployIndexByChartIndex(){
   readParam "${l_cicdYamlFile}" "chart[${l_chartIndex}].name"
   if [ "${gDefaultRetVal}" != "null" ];then
     l_chartName="${gDefaultRetVal}"
-    getListIndexByPropertyName "${l_cicdYamlFile}" "package" "chartName" "${l_chartName}"
+    getListIndexByPropertyNameQuickly "${l_cicdYamlFile}" "package" "chartName" "${l_chartName}"
     l_packageIndex="${gDefaultRetVal}"
     if [ "${l_packageIndex}" -ge 0 ];then
       readParam "${l_cicdYamlFile}" "package[${l_packageIndex}].name"
       if [ "${gDefaultRetVal}" != "null" ];then
         l_packageName="${gDefaultRetVal}"
-        getListIndexByPropertyName "${l_cicdYamlFile}" "deploy" "packageName" "${l_packageName}"
+        getListIndexByPropertyNameQuickly "${l_cicdYamlFile}" "deploy" "packageName" "${l_packageName}"
         l_deployIndex="${gDefaultRetVal}"
       fi
     fi
@@ -872,7 +892,6 @@ function _createDeployItem(){
 
   local l_deployIndex
   local l_targetIndex
-  local l_itemCount
   local l_templateFile
 
   _getDeployIndexByChartIndex "${l_cicdYamlFile}" "${l_chartIndex}"
@@ -883,7 +902,7 @@ function _createDeployItem(){
   [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && error "${l_cicdYamlFile}文件中deploy[${l_deployIndex}].name异常：不存在或为空"
 
   #获取l_cicdConfigFile文件中对应的deploy项的序号
-  getListIndexByPropertyName "${l_cicdConfigFile}" "deploy" "name" "${gDefaultRetVal}" "false" "${gCiCdYamlFile}"
+  getListIndexByPropertyNameQuickly "${l_cicdConfigFile}" "deploy" "name" "${gDefaultRetVal}" "false" "" "-1" "${gCiCdYamlFile}"
   l_targetIndex="${gDefaultRetVal}"
 
   if [ "${l_targetIndex}" -eq -1 ];then
@@ -911,22 +930,38 @@ function _createDeployItem(){
 function _readValueOfListItemNames() {
   export gDefaultRetVal
 
-  local l_cicdYamlFile=$1
-  local l_listParamPath=$2
+  local l_paramDefineBlock=$1
 
-  local l_itemCount
+  local l_tmpContent
+  local l_tmpSpaceNum
+  local l_tmpSpaceNum1
+  local l_lineCount
+  local l_paramLines
+  local l_tmpLineArray
+
   local l_i
   local l_paramName
   local l_paramNames
 
   gDefaultRetVal=""
-  readParam "${l_cicdYamlFile}" "${l_listParamPath}"
-  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" = "null" ]] && return
+  [ ! "${l_paramDefineBlock}" ] && return
 
-  l_itemCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\-).*$" | wc -l)
-  for ((l_i = 0; l_i < l_itemCount; l_i++));do
-    readParam "${l_cicdYamlFile}" "${l_listParamPath}[${l_i}].name"
-    l_paramName="${gDefaultRetVal}"
+  _getMatchedLines "${l_paramDefineBlock}" "^([ ]*\- .*$)" "first"
+  l_tmpContent="${gDefaultRetVal#*:}"
+  #获取前导空格数量。
+  l_tmpContent="${l_tmpContent%%[^ ]*}"  # 提取行首连续空格
+  l_tmpSpaceNum=${#l_tmpContent}         # 直接获取空格数量
+
+  l_lineCount=$(grep -cE "^[ ]{${l_tmpSpaceNum}}\- " <<< "${l_paramDefineBlock}")
+
+  #从l_paramDefineBlock中提前l_paramName参数定义所在的行内容。
+  ((l_tmpSpaceNum1 = l_tmpSpaceNum + 2))
+  l_paramLines=$(grep -E "^([ ]{${l_tmpSpaceNum}}\- |[ ]{${l_tmpSpaceNum1}})name:(.*)$" <<< "${l_paramDefineBlock}")
+  # 将多行内容转换为数组
+  mapfile -t l_tmpLineArray <<< "${l_paramLines}"
+
+  for ((l_i = 0; l_i < l_lineCount; l_i++));do
+    l_paramName="${l_tmpLineArray[${l_i}]#*:}"
     l_paramNames="${l_paramNames},${l_paramName}"
   done
   gDefaultRetVal="${l_paramNames:1}"
@@ -983,8 +1018,9 @@ function _pushDockerImageForDeployStage() {
     l_tmpFile="${gHelmBuildOutDir}/${l_archType//\//-}/${l_dockerOutDir}-${l_archType//\//-}.tar"
     info "尝试从${l_tmpFile##*/}文件中加载docker镜像:${l_image}"
     if [ -f "${l_tmpFile}" ];then
-      l_result=$(docker load -i "${l_tmpFile}" 2>&1 | grep -oP "^.*(Loaded image: ${l_image}).*$")
-      [[ ! "${l_result}" ]] && error "加载docker镜像失败：${l_image}"
+      if ! docker load -i "${l_tmpFile}" >/dev/null;then
+        error "加载docker镜像失败：${l_image}"
+      fi
       warn "成功加载docker镜像：${l_image}"
     else
       error "文件不存在:${l_tmpFile}"
@@ -1040,7 +1076,7 @@ function _getDockerImageInChart() {
   local l_line
   local l_prefix
 
-  getListIndexByPropertyName "${gCiCdYamlFile}" "package" "name" "${l_packageName}"
+  getListIndexByPropertyNameQuickly "${gCiCdYamlFile}" "package" "name" "${l_packageName}"
   if [[ "${gDefaultRetVal}" -eq -1 ]];then
     warn "${gCiCdYamlFile##*/}文件中不存在name参数值为${l_packageName}的package项, 尝试从chart镜像中获取..."
   else
@@ -1106,11 +1142,11 @@ function _getDockerImageInChart() {
   l_registryKey="wydevops${RANDOM}"
   l_result=$(helm template "${l_chartFile}" -n test --set image.registry=${l_registryKey} 2>&1)
   if [ "$?" != 0 ];then
-    l_result=$(echo -e "${l_result}" | grep "^.*(Error|failed).*$")
+    l_result=$(grep -E "^.*(Error|failed).*$" <<< "${l_result}")
     error "执行helm template命令失败: ${l_result}"
   fi
 
-  l_result=$(echo -e "${l_result}" | grep -oP "^([ ]*)image: ${l_registryKey}/.*$")
+  l_result=$(grep -oE "^([ ]*)image: ${l_registryKey}/.*$" <<< "${l_result}")
   if [ "${l_result}" ];then
     stringToArray "${l_result}" "l_lines"
     l_lineCount=${#l_lines[@]}

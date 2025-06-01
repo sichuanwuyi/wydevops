@@ -36,10 +36,10 @@ function loadAndPushDockerImage() {
   resultVal="true"
 
   if [ "${l_dockerRepoName}" ];then
-    docker login "${l_dockerRepoName}" -u "${l_dockerRepoAccount}" -p "${l_dockerRepoPassword}"
+    echo "${l_dockerRepoPassword}" | docker login "${l_dockerRepoName}" -u "${l_dockerRepoAccount}" --password-stdin
     # shellcheck disable=SC2181
     if [[ "$?" -ne 0 ]];then
-      echo "登录docker仓库失败：docker login ${l_dockerRepoName} -u ${l_dockerRepoAccount} -p ${l_dockerRepoPassword}"
+      echo "登录docker仓库失败：echo ${l_dockerRepoPassword} | docker login ${l_dockerRepoName} -u ${l_dockerRepoAccount} --password-stdin"
       resultVal="false"
       return
     fi
@@ -50,7 +50,7 @@ function loadAndPushDockerImage() {
   # shellcheck disable=SC2068
   for l_file in ${l_fileList[@]};do
     l_errorLog=$(docker load -i "${l_file}" 2>&1)
-    l_errorLog=$(echo -e "${l_errorLog}" | grep -oP "^Loaded image:(.*)$")
+    l_errorLog=$(echo -e "${l_errorLog}" | grep -oE "^Loaded image:(.*)$")
     if [ "${l_errorLog}" ];then
       l_image="${l_errorLog#*:}"
       l_image="${l_image// /}"

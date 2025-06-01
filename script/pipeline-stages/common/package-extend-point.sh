@@ -216,9 +216,15 @@ function createUIJsonFile_ex() {
   #从文件中读取现有内容。
   l_uiJsonFileContent=$(cat "${l_uiJsonFile}")
   #获取最后一个“}”符号所在的行数据。
-  l_endLine=$(echo -e "${l_uiJsonFileContent}" | grep -noP "^[ ]*\\}" | tail -n 1)
+   #l_endLine=$(echo -e "${l_uiJsonFileContent}" | grep -noP "^[ ]*\\}" | tail -n 1)
+  _getMatchedLines "${l_uiJsonFileContent}" "^[ ]*\\}" "last"
+  l_endLine="${gDefaultRetVal#*:}"
   #获取最后一个“}”符号所在的行的前导空格数量。
-  l_spaceNum=$(echo -e "${l_endLine}" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
+  #l_spaceNum=$(echo -e "${l_endLine}" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
+  #获取前导空格数量。
+  l_endLine="${l_endLine%%[^ ]*}"  # 提取行首连续空格
+  l_spaceNum=${#l_endLine}         # 直接获取空格数量
+
   ((l_spaceNum = l_spaceNum + 2))
   l_spaceStr=$(printf "%${l_spaceNum}s")
    #获取最后一个“}”符号所在的行的行号。
@@ -408,7 +414,7 @@ function handleBuildingSingleImageForPackage_ex() {
     for (( l_j=0; l_j < l_arrayLen; l_j++ )) do
       #如果是单镜像打包模式，则需要移除可能存在的业务镜像和基础镜像。
       if [ "${gBuildType}" == "single" ];then
-        l_flag=$(echo -e "${l_images[${l_j}]}" | grep -oP "^(.*)${l_serviceName//-/\-}(\-base|\-business):" )
+        l_flag=$(grep -oE "^(.*)${l_serviceName//-/\-}(\-base|\-business):" <<< "${l_images[${l_j}]}")
         if [ "${l_flag}" ];then
           debug "从package[${l_i}].images参数值中移除${l_images[${l_j}]}镜像"
           #是基础镜像，则直接跳过。
@@ -417,7 +423,7 @@ function handleBuildingSingleImageForPackage_ex() {
       fi
 
       #去重后追加到l_paramValue参数后面，英文逗号隔开。
-      l_flag=$(echo "${l_paramValue}" | grep -ioP "^(.*)${l_images[${l_j}]//-/\-}(.*)$" )
+      l_flag=$(grep -ioE "^(.*)${l_images[${l_j}]//-/\-}(.*)$" <<< "${l_paramValue}")
       if [ ! "${l_flag}" ];then
         l_paramValue="${l_paramValue},${l_images[${l_j}]}"
       fi
@@ -431,7 +437,7 @@ function handleBuildingSingleImageForPackage_ex() {
 
     debug "添加单镜像名:${l_serviceName}:${l_businessVersion}"
     if [ "${l_paramValue}" ];then
-      l_flag=$(echo "${l_paramValue}" | grep -oP "^(.*)${l_serviceName}:${l_businessVersion}(.*)$")
+      l_flag=$(grep -oE "^(.*)${l_serviceName}:${l_businessVersion}(.*)$" <<< "${l_paramValue}")
       [[ ! "${l_flag}" ]] && l_paramValue="${l_serviceName}:${l_businessVersion},${l_paramValue}"
     else
       l_paramValue="${l_serviceName}:${l_businessVersion}"
@@ -491,7 +497,7 @@ function handleBuildingOneImageForPackage_ex() {
     l_paramValue=""
     for (( l_j=0; l_j < l_arrayLen; l_j++ )) do
       #如果是单镜像打包模式，则需要移除可能存在的业务镜像和基础镜像。
-      l_flag=$(echo -e "${l_images[${l_j}]}" | grep -oP "^(.*)${l_serviceName//-/\-}\-${l_suffix}:" )
+      l_flag=$(grep -oE "^(.*)${l_serviceName//-/\-}\-${l_suffix}:" <<< "${l_images[${l_j}]}")
       if [ "${l_flag}" ];then
         debug "从package[${l_i}].images参数值中移除${l_images[${l_j}]}镜像"
         #直接跳过。
@@ -499,7 +505,7 @@ function handleBuildingOneImageForPackage_ex() {
       fi
 
       #去重后追加到l_paramValue参数后面，英文逗号隔开。
-      l_flag=$(echo "${l_paramValue}" | grep -ioP "^(.*)${l_images[${l_j}]//-/\-}(.*)$" )
+      l_flag=$(grep -ioE "^(.*)${l_images[${l_j}]//-/\-}(.*)$" <<< "${l_paramValue}")
       if [ ! "${l_flag}" ];then
         l_paramValue="${l_paramValue},${l_images[${l_j}]}"
       fi
@@ -545,18 +551,13 @@ function _scanAllDockerImages() {
   local l_image
   local l_tmpImage
 
-  # shellcheck disable=SC2088
-  l_tmpFile="${gTempFileDir}/helm-template-${RANDOM}.tmp"
-  registerTempFile "${l_tmpFile}"
-
   l_content=$(helm template test "${l_chartImage}" -n test.com --set image.registry=)
   if [ "$?" != 0 ];then
     error "执行helm template命令失败"
   fi
-  echo "${l_content}" > "${l_tmpFile}"
 
   l_imageArray=","
-  l_splitLines=$(echo "${l_content}" | grep -noP "\-\-\-")
+  l_splitLines=$(grep -noE "\-\-\-" <<< "${l_content}")
   # shellcheck disable=SC2068
   for l_splitLine in ${l_splitLines[@]};do
     if [ ! "${l_startRow}" ];then
@@ -564,10 +565,10 @@ function _scanAllDockerImages() {
     elif [ ! "${l_endRow}" ];then
       l_endRow="${l_splitLine%%:*}"
     else
-      l_subContent=$(awk "NR==${l_startRow}, NR==${l_endRow}" "${l_tmpFile}")
+      l_subContent=$(awk "NR==${l_startRow}, NR==${l_endRow}" <<< "${l_content}")
       l_startRow=""
       l_endRow=""
-      l_flag=$(echo "${l_subContent}" | grep -ioP "^(.*)kind: (DaemonSet|StatefulSet|Deployment)(.*)$")
+      l_flag=$(grep -ioE "^(.*)kind: (DaemonSet|StatefulSet|Deployment)(.*)$" <<< "${l_subContent}")
       if [ "${l_flag}" ];then
         # shellcheck disable=SC2088
         l_subTempFile="${gTempFileDir}/service-${RANDOM}.tmp"
@@ -608,8 +609,6 @@ function _scanAllDockerImages() {
       fi
     fi
   done
-  #删除临时文件
-  unregisterTempFile "${l_tmpFile}"
 
   readParam "${gCiCdYamlFile}" "package[${l_index}].images"
   if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
@@ -734,7 +733,7 @@ function _convertToJson() {
   local l_j
 
   readParam "${l_ciCdYamlFile}" "${l_paramPath}"
-  l_content=$(echo -e "${gDefaultRetVal}" | grep -oP "^[a-zA-Z0-9]+.*")
+  l_content=$(grep -oE "^[a-zA-Z0-9]+.*" <<< "${gDefaultRetVal}")
   stringToArray "${l_content}" "l_items"
 
   l_jsonContent="    {"
@@ -745,11 +744,17 @@ function _convertToJson() {
   for ((l_i = 0; l_i <= l_itemCount; l_i++));do
     l_content="${l_items[${l_i}]}"
     l_key="${l_content%%:*}"
-    #删除左右空格
-    l_key=$(echo -e "${l_key}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+    #去掉头部和尾部的空格。
+    l_key="${l_key#"${l_key%%[![:space:]]*}"}"
+    l_key="${l_key%"${l_key##*[![:space:]]}"}"
+
     l_value="${l_content#*:}"
-    #删除左右空格
-    l_value=$(echo -e "${l_value}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+    #去掉头部和尾部的空格。
+    l_value="${l_value#"${l_value%%[![:space:]]*}"}"
+    l_value="${l_value%"${l_value##*[![:space:]]}"}"
+
     [[ "${l_i}" -eq "${l_itemCount}" ]] && l_endChar=""
     if [ "${l_value}" ];then
       l_jsonContent="${l_jsonContent}\n  ${l_spaceStr}\"${l_key}\": ${l_value}${l_endChar}"

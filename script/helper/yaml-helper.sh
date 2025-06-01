@@ -22,6 +22,51 @@ function readParam() {
   fi
 }
 
+#在给定的参数定义块中读取指定参数名（不能带路径）的值
+function readParamInList() {
+
+  local l_paramDefineBlock=$1
+  local l_itemIndex=$2
+  local l_paramName=$3
+
+  local l_tmpSpaceNum
+  local l_lineCount
+
+  local l_paramLines
+  local l_tmpLineArray
+  local l_lineContent
+  local l_paramValue
+
+  #获取参数定义块的前导空格数量。
+  l_tmpSpaceNum=$(awk 'match($0,/^[ ]*- /) {print RLENGTH-2; exit}' <<< "${l_paramDefineBlock}")
+  l_lineCount=$(awk -v spaces="${l_tmpSpaceNum}" '
+      BEGIN {
+          # 处理零空格情况
+          pattern = (spaces > 0) ? sprintf("^[ ]{%d}- ", spaces) : "^- "
+      }
+      $0 ~ pattern { count++ }
+      END { print count+0 }' <<< "${l_paramDefineBlock}")
+
+  gDefaultRetVal=""
+  if [[ "${l_lineCount}" -gt 0 && "${l_paramName}" ]];then
+    #从l_paramDefineBlock中提前l_paramName参数定义所在的所有行内容。
+    _getParamLines "${l_paramDefineBlock}" "${l_paramName}" "${l_tmpSpaceNum}"
+    l_paramLines="${gDefaultRetVal}"
+    gDefaultRetVal=""
+    # 将多行内容转换为数组
+    mapfile -t l_tmpLineArray <<< "${l_paramLines}"
+    l_lineContent="${l_tmpLineArray[${l_itemIndex}]}"
+    #读取冒号后面的内容。
+    l_paramValue="${l_lineContent#*:}"
+    #去掉左右空格
+    l_paramValue="${l_paramValue#"${l_paramValue%%[^[:space:]]*}"}"
+    l_paramValue="${l_paramValue%"${l_paramValue##*[^[:space:]]}"}"
+    #设置返回值。
+    gDefaultRetVal="${l_paramValue}"
+  fi
+
+}
+
 #更新Yaml文件中指定参数的值
 function updateParam() {
   #更新文件中的参数。
@@ -167,21 +212,20 @@ function getListTypeByContent() {
   _deleteInvalidLines "${l_content}"
   l_content="${gDefaultRetVal}"
 
-  l_tmpSpaceNum=$(echo -e "${l_content}" | grep -m 1 -oP "^([ ]*)[a-zA-Z_\-]+" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
-  l_itemCount=$(echo -e "${l_content}" | grep -oP "^([ ]{${l_tmpSpaceNum}})(\-)(.*)$" | wc -l)
-  l_lineCount=$(echo -e "${l_content}" | grep -oP "^([ ]*)[a-zA-Z_\-]+" | wc -l)
+  #以下awk命令已验证通过
+  l_tmpSpaceNum=$(awk 'match($0,/^ */){print RLENGTH; exit}' <<< "${l_content}")
+  l_itemCount=$(grep -Ec "^[ ]{${l_tmpSpaceNum}}-" <<< "${l_content}")
+  l_lineCount=$(grep -Ec "^[ ]*[a-zA-Z_\-]+" <<< "${l_content}")
   gDefaultRetVal="list"
   if [ "${l_lineCount}" -eq "${l_itemCount}" ];then
-    l_itemCount=$(echo -e "${l_content}" | grep -oP "(^([ ]*)\-([ ]*)$|([ ]*)\-([ ]+)!([ ]*)$|([ ]*)\-([ ]+)[a-zA-Z_]+(.*):(.*)$)" | wc -l)
+    l_itemCount=$(grep -Ec "^( *)- ( *$| +! *$| +[a-zA-Z_]+.*:.*)" <<< "${l_content}")
     if [ "${l_lineCount}" -ne "${l_itemCount}" ];then
       gDefaultRetVal="array"
     fi
   fi
-
 }
 
-#根据属性名查询列表项的序号
-function getListIndexByPropertyName() {
+function getListIndexByPropertyNameQuickly() {
   export gDefaultRetVal
 
   local l_yamlFile=$1
@@ -189,19 +233,35 @@ function getListIndexByPropertyName() {
   local l_paramName=$3
   local l_paramValue=$4
   local l_returnItemCount=$5
+  #提前读取的新参数定义块
+  local l_paramDefineBlock=$6
+  #最后读取的列表项序号
+  local l_itemIndex=$7
   #参数值查询字典文件
-  local l_paramQueryDicFile=$6
+  local l_paramQueryDicFile=$8
   #参数值查询字典配置节的前缀（即名称）
-  local l_paramQueryDicPrefix=$7
+  local l_paramQueryDicPrefix=$9
 
   local l_tmpSpaceNum
   local l_lineCount
+  local l_paramLines
+  local l_tmpLineArray
+  local l_lineContent
+
+
   local l_i
   local l_index
 
   local l_curParamValue
-  local l_params
-  local l_param
+
+  if [ ! "${l_paramDefineBlock}" ];then
+    readParam "${l_yamlFile}" "${l_paramPath}"
+    l_paramDefineBlock="${gDefaultRetVal}"
+  fi
+
+  if [ ! "${l_itemIndex}" ];then
+    ((l_itemIndex = -1))
+  fi
 
   if [ ! "${l_paramQueryDicFile}" ];then
     l_paramQueryDicFile="${l_yamlFile}"
@@ -211,34 +271,29 @@ function getListIndexByPropertyName() {
     l_paramQueryDicPrefix="globalParams"
   fi
 
-  readParam "${l_yamlFile}" "${l_paramPath}"
-  l_tmpSpaceNum=$(echo -e "${gDefaultRetVal}" | grep -m 1 -oP "^([ ]*\- )" | grep -oP "^([ ]*)" | grep -oP " " | wc -l)
-  l_lineCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^([ ]{${l_tmpSpaceNum}}\- )" | wc -l)
+  l_tmpSpaceNum=$(awk 'match($0,/^[ ]*- /){print RLENGTH-2; exit}' <<< "${l_paramDefineBlock}")
+  l_lineCount=$(grep -cE "^[ ]{${l_tmpSpaceNum}}\-" <<< "${l_paramDefineBlock}")
 
   ((l_index = -1))
   if [[ "${l_lineCount}" -gt 0 && "${l_paramName}" ]];then
-    ((l_i = 0))
+    #从l_paramDefineBlock中提前l_paramName参数定义所在的所有行内容。
+    _getParamLines "${l_paramDefineBlock}" "${l_paramName}" "${l_tmpSpaceNum}"
+    l_paramLines="${gDefaultRetVal}"
+    gDefaultRetVal=""
+    # 将多行内容转换为数组
+    mapfile -t l_tmpLineArray <<< "${l_paramLines}"
+    #遍历数组，查找指定参数值的数组序号。
+    #先从l_itemIndex开始递增查找
+    ((l_i = l_itemIndex + 1))
     while true; do
-      readParam "${l_yamlFile}" "${l_paramPath}[${l_i}].${l_paramName}"
-      if [ "${gDefaultRetVal}" == "null" ];then
+      l_lineContent="${l_tmpLineArray[${l_i}]}"
+      if [ ! "${l_lineContent}" ];then
         break
       fi
-      l_curParamValue="${gDefaultRetVal}"
 
-      if [ "${l_curParamValue}" != "${l_paramValue}" ];then
-        #读取返回值中包含的参数变量。
-        l_params=$(echo -e "${l_curParamValue}" | grep -oP "\\$\\{[a-zA-Z_]+[a-zA-Z0-9_\-]+\\}" | sort | uniq -c)
-        if [ "${l_params}" ];then
-          # shellcheck disable=SC2068
-          for l_param in ${l_params[@]};do
-            l_param="${l_param#*\{}"
-            l_param="${l_param%\}*}"
-            #读取同文件中的变量的值。
-            readParam "${l_paramQueryDicFile}" "${l_paramQueryDicPrefix}.${l_param}"
-            [[ "${gDefaultRetVal}" != "null" ]] && l_curParamValue="${l_curParamValue//\$\{${l_param}\}/${gDefaultRetVal}}"
-          done
-        fi
-      fi
+      #读取冒号后面的内容，并进行变量替换。
+      _getParamValue "${l_lineContent}" "${l_paramValue}" "${l_paramQueryDicFile}" "${l_paramQueryDicPrefix}"
+      l_curParamValue="${gDefaultRetVal}"
 
       if [[ "${l_curParamValue}" == "${l_paramValue}" ]];then
         ((l_index = l_i))
@@ -247,6 +302,28 @@ function getListIndexByPropertyName() {
 
       ((l_i = l_i + 1))
     done
+
+    #如果没有找到，则从l_itemIndex开始递减查找。
+    if [[ "${l_index}" -eq -1 && "${l_itemIndex}" -gt 0 ]];then
+      ((l_i = l_itemIndex - 1))
+      while [ "${l_i}"  -ge 0 ]; do
+        l_lineContent="${l_tmpLineArray[${l_i}]}"
+        if [ ! "${l_lineContent}" ];then
+          break
+        fi
+
+        #读取冒号后面的内容，并进行变量替换。
+        _getParamValue "${l_lineContent}" "${l_paramValue}" "${l_paramQueryDicFile}" "${l_paramQueryDicPrefix}"
+        l_curParamValue="${gDefaultRetVal}"
+
+        if [[ "${l_curParamValue}" == "${l_paramValue}" ]];then
+          ((l_index = l_i))
+          break;
+        fi
+        ((l_i = l_i - 1))
+
+      done
+    fi
   fi
 
   if [[ "${l_returnItemCount}" && "${l_returnItemCount}" == "true" ]];then
@@ -270,7 +347,7 @@ function getListSize(){
     return
   fi
 
-  l_lineCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\-)" | wc -l)
+  l_lineCount=$(grep -cE '^ *-' <<< "${gDefaultRetVal}")
   gDefaultRetVal="${l_lineCount}"
 }
 
@@ -316,7 +393,7 @@ function combine(){
     fi
   else
     #读取整个文件的内容。
-    l_srcContent=$(cat "${l_srcYamlFile}")
+    l_srcContent=$(< "${l_srcYamlFile}")
   fi
 
   info "合并${l_srcYamlFile}文件与${l_targetYamlFile}文件中的参数---开始"
@@ -616,11 +693,15 @@ function __readOrWriteYamlFile() {
     fi
   fi
 
-  #尝试从文件内容Map中获取到当前文件内容的内存缓存。
-  _yamlFileContent="${gFileContentMap[${l_yamlFile}]}"
-  if [ ! "${_yamlFileContent}" ];then
+  #内存缓存校验
+  if [ -z "${_yamlFileContent}" ]; then
+    #尝试从文件内容Map中获取到当前文件内容的内存缓存。
+    _yamlFileContent="${gFileContentMap[${l_yamlFile}]}"
+  fi
+
+  if [ -z "${_yamlFileContent}" ];then
     #初始化文件内容在内存中的缓存。
-    _yamlFileContent=$(cat "${l_yamlFile}")
+    _yamlFileContent=$(<"${l_yamlFile}")
     gFileContentMap["${l_yamlFile}"]="${_yamlFileContent}"
     info "读取${l_yamlFile##*/}文件内容并缓存到内存中"
   fi
@@ -632,15 +713,17 @@ function __readOrWriteYamlFile() {
     ((l_dataBlockPrefixSpaceNum=0))
     if [ "${_yamlFileContent}" ];then
       #文件存在且不是空的，则读取第一个有效行。
-      l_content=$(echo -e "${_yamlFileContent}" | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+")
+      l_content=$(awk 'match($0,/^ *[[:alnum:]_-]+/) {print NR ":" substr($0,RSTART,RLENGTH); exit}' <<< "${_yamlFileContent}")
       if [ "${l_content}" ];then
         #文件中存在有效行，则设置l_dataBlockStartRowNum的值。
         l_dataBlockStartRowNum=${l_content%%:*}
         #获取数据块的默认前导空格数量。
-        l_dataBlockPrefixSpaceNum=$(echo -e "${l_content}" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
-        #直接获取文件最后一个有效行的行号并赋值给l_dataBlockEndRowNum变量
-        l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_dataBlockStartRowNum},\$p")
-        l_content=$(echo -e "${l_content}" | grep -noP "^([ ]*)[a-zA-Z_\-]+" | tail -n 1)
+        [[ "$l_content" =~ ^[[:space:]]* ]] && l_dataBlockPrefixSpaceNum=${#BASH_REMATCH[0]}
+        #直接截取指定行号之后的内容
+        l_content=$(sed -n "${l_dataBlockStartRowNum},\$p" <<< "${_yamlFileContent}")
+        #获取最后一个有效键名及其所在行号。
+        l_content=$(awk 'match($0,/^ *[[:alnum:]_-]+/){line=NR ":" substr($0,RSTART,RLENGTH)} END{print line}' <<< "${l_content}")
+        #获取行号
         l_dataBlockEndRowNum="${l_content%%:*}"
         ((l_dataBlockEndRowNum = l_dataBlockStartRowNum + l_dataBlockEndRowNum - 1))
       fi
@@ -669,8 +752,6 @@ function __readOrWriteYamlFile() {
 
   #确定参数匹配正则字符串。
   if [ "${l_isDataBlock}" == "true" ];then
-    #读取数据块第一个有效行。
-    l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_dataBlockStartRowNum},${l_dataBlockEndRowNum}p"  | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+(.*)$")
     if [ "${l_lastArrayIndex}" -ge 0 ];then
       #是列表项的情况：目标参数可能存在列表项的第一行，也可能在后续行中，因此正则式有两种情况。
       ((l_tmpSpaceNum = l_dataBlockPrefixSpaceNum + 2))
@@ -690,6 +771,7 @@ function __readOrWriteYamlFile() {
   l_array=(${gDefaultRetVal})
   #数据块中目标参数所在行号
   l_curParamRowNum="${l_array[0]}"
+
   if [ "${l_curParamRowNum}" -eq -1 ];then
     #目标参数没有找到，则根据操作模式进行不同的处理。
     case "${l_mode}" in
@@ -765,24 +847,28 @@ function __readOrWriteYamlFile() {
         [[ "${l_mode}" == "read" ]] && gDefaultRetVal="null"
         #rowRange模式，返回起止行号
         [[ "${l_mode}" == "rowRange" ]] && gDefaultRetVal="-1 -1"
+        return
         ;;
       "update")
         gDefaultRetVal="-1 -1 ${l_itemCount} 0 0"
+        return
         ;;
       "insert")
-        #正常情况下是不可能出现这个错误的。
-        error "${l_mode}模式下出现目标列表项序号大于等于列表项总数的异常"
+        if [ "${l_curItemIndex}" -gt "${l_array[3]}" ];then
+          warn "${l_mode}模式下，将在数组或列表的尾部追加多个新项"
+        fi
         ;;
       "delete")
         #返回错误信息格式：${删除的起始行号(含)} ${删除的截至行号(含)} ${实际删除的行数} ${删除的目标列表项序号} ${删除前列表项总数}
         gDefaultRetVal="-1 -1 0 ${l_curItemIndex} ${l_array[3]}"
+        return
         ;;
       *)
         error "不存在的操作模式：${l_mode}"
+        return
         ;;
     esac
-    return
-  elif [[ "${l_blockStartRowNum}" -ge 1 ]];then
+  elif [[ "${l_blockStartRowNum}" -ge 1 && "${l_blockStartRowNum}" -gt "${l_curParamRowNum}" ]];then
     #l_curParamRowNum参数下属的数据块截止行号
     l_blockPrefixSpaceNum="${l_array[2]}"
     l_isDataBlock="true"
@@ -807,7 +893,6 @@ function __readOrWriteYamlFile() {
   if [[ "${l_paramPath}" =~ ^(.*)\.(.*)$ && ( "${l_isDataBlock}" == "true" || "${l_mode}" == "insert" ) ]];then
     #即使l_blockStartRowNum和l_blockEndRowNum仍然指向的是参数行，但是l_blockPrefixSpaceNum参数需要加2.
     #[[ "${l_isDataBlock}" == "false" ]] && ((l_blockPrefixSpaceNum = l_blockPrefixSpaceNum + 2))
-
     if [[ "${gEnableCache}" && "${l_isDataBlock}" == "true" ]];then
       #缓存参数路径上的状态数据。
       l_cachedParamKey="${l_yamlFile}#${_deletedParamPath}"
@@ -822,6 +907,7 @@ function __readOrWriteYamlFile() {
 
     #删除第一个参数。
     l_paramPath="${l_paramPath#*.}"
+
     #继续递归处理。
     __readOrWriteYamlFile "${l_mode}" "${l_yamlFile}" "${l_paramPath}" "${l_paramValue}" \
       "${l_blockStartRowNum}" "${l_blockEndRowNum}" "${l_blockPrefixSpaceNum}" "${l_curItemIndex}" \
@@ -847,6 +933,7 @@ function __readOrWriteYamlFile() {
 
       #读取l_rowNum行与l_endRowNum行间的内容。
       _readDataBlock "${l_yamlFile}" "${l_blockStartRowNum}" "${l_blockEndRowNum}" "${l_curItemIndex}" "${l_isDataBlock}"
+
       if [ "${gDefaultRetVal}" != "null" ];then
         #获取并调整读取的数据块内容，并返回之。
         _getReadContent "${l_yamlFile}" "${l_curParamName}" "${l_curParamRowNum}" "${gDefaultRetVal}" "${l_curItemIndex}" \
@@ -861,7 +948,7 @@ function __readOrWriteYamlFile() {
       fi
       _updateParam "${l_yamlFile}" "${l_curParamRowNum}" "${l_blockStartRowNum}" "${l_blockEndRowNum}" "${l_curItemIndex}" \
         "${l_paramValue}" "${l_itemCount}"
-      if [[ ! "${gDefaultRetVal}" =~ ^(\-1) ]];then
+      if [[ ! ("${gDefaultRetVal}" =~ ^(\-1)) ]];then
         #更新内存中的文件内容。
         gFileContentMap["${l_yamlFile}"]="${_yamlFileContent}"
         if [[ "${gSaveBackImmediately}" == "true" ]];then
@@ -919,6 +1006,7 @@ function __readOrWriteYamlFile() {
 #不检查是否已经存在，直接插入指定的参数
 function _insertParamDirectly(){
   export gDefaultRetVal
+  export gFileContentMap
   export _yamlFileContent
 
   #目标yaml文件
@@ -946,7 +1034,8 @@ function _insertParamDirectly(){
   local l_tmpSpaceNum
   local l_addTotalLineCount
 
-  if [ ! "${_yamlFileContent}" ];then
+  #如果文件内容是空的，则直接插入参数。
+  if [ -z "${_yamlFileContent}" ];then
     _yamlFileContent="${l_paramName}:"
     #返回插入参数所在行行号、参数所在行的前导空格数量、参数所在行是否有列表项前缀符"-"。
     gDefaultRetVal="1 0 false 0"
@@ -957,7 +1046,7 @@ function _insertParamDirectly(){
 
   #读取l_blockStartRowNum行上的数据
   #l_content=$(sed -n "${l_blockStartRowNum}p" "${l_yamlFile}")
-  l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_blockStartRowNum}p")
+  l_content=$(sed -n "${l_blockStartRowNum}p" <<< "${_yamlFileContent}")
   #保留l_blockStartRowNum行原始内容到l_lineContent变量中。
   l_lineContent="${l_content}"
   if [[ "${l_content}" && "${l_content}" =~ ^([ ]*)\- ]];then
@@ -971,30 +1060,31 @@ function _insertParamDirectly(){
       l_hasListItemPrefix="true"
     else
       [[ "${l_isDataBlock}" == "true" ]] && ((l_blockPrefixSpaceNum = l_blockPrefixSpaceNum + 2 ))
-      #是列表项，但不是空的，则需要在l_blockStartRowNum行的最后一个兄弟行的下一行插入新参数。
+      #是列表项，但不是空的，则需要在l_blockStartRowNum行的最后一个兄弟行的下一行插入新的兄弟行参数。
       l_content="${l_tmpSpaceStr}  ${l_paramName}:"
       l_flag="a"
       #先暂时设置为l_blockEndRowNum
       l_tmpRowNum="${l_blockEndRowNum}"
     fi
   else
-    #不是数据块的情况（而是父级参数所在行的情况），前导空格需要加2.
+    #不是列表项且不是数据块的情况（而是父级参数所在行的情况），前导空格需要加2.
     [[ "${l_isDataBlock}" == "false" ]] && ((l_blockPrefixSpaceNum = l_blockPrefixSpaceNum + 2))
+    #构造前导空格串
     l_tmpSpaceStr=$(printf "%${l_blockPrefixSpaceNum}s")
+    #构造新行数据内容。
     l_tmpContent="${l_tmpSpaceStr}${l_paramName}:"
 
     if [ ! "${l_content}" ];then
       #如果l_blockStartRowNum行上的数据是空的，则直接在l_blockStartRowNum行插入新参数。
       l_flag="c"
       l_tmpRowNum="${l_blockStartRowNum}"
-      l_content="${l_tmpContent}"
     else
       #如果l_blockStartRowNum行上存在数据，则在l_blockStartRowNum行的最后一个兄弟行的下一行插入新参数。
       l_flag="a"
       #如果l_blockStartRowNum行存在值域，则需要清空。
       if [[ "${l_isDataBlock}" == "false" && "${l_content}" =~ ^([ ]*)([a-zA-Z_\-]+)([a-zA-Z0-9_\-]+):(.*)$ ]];then
         l_content="${l_content%%:*}:"
-        _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_blockStartRowNum}c\\${l_content}")
+        _yamlFileContent=$(sed "${l_blockStartRowNum}c\\${l_content}" <<< "${_yamlFileContent}")
         #更新l_blockStartRowNum行的原始内容。
         l_lineContent="${l_content}"
       fi
@@ -1012,11 +1102,13 @@ function _insertParamDirectly(){
       if [[ "${l_blockStartRowNum}" -lt "${l_blockEndRowNum}" ]];then
         #查找l_blockStartRowNum行的最后一个兄弟行的行号。
         ((l_tmpRowNum1 = l_blockStartRowNum + 1))
-        l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpRowNum1},${l_blockEndRowNum}p")
+
+        l_tmpContent=$(sed -n "${l_tmpRowNum1},${l_blockEndRowNum}p" <<< "${_yamlFileContent}")
+
         if [ "${l_tmpContent}" ];then
           #查找l_tmpContent中l_tmpRowNum1行后面的第一个父级行。
           ((l_tmpSpaceNum = l_blockPrefixSpaceNum - 2))
-          l_tmpContent=$(echo -e "${l_tmpContent}" | grep -m 1 -noP "^([ ]{0,${l_tmpSpaceNum}})[a-zA-Z_\-]+")
+          l_tmpContent=$(grep -m 1 -noE "^[ ]{0,${l_tmpSpaceNum}}[[:alnum:]_-]+" <<< "${l_tmpContent}")
           if [ "${l_tmpContent}" ];then
             l_tmpRowNum1="${l_tmpContent%%:*}"
             ((l_tmpRowNum = l_blockStartRowNum + 1 + l_tmpRowNum1 - 2))
@@ -1025,12 +1117,15 @@ function _insertParamDirectly(){
       fi
     fi
 
-    l_lineContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpRowNum}p")
+    l_lineContent=$(sed -n "${l_tmpRowNum}p" <<< "${_yamlFileContent}")
+
     l_content="${l_lineContent}\n${l_content}"
     ((l_blockStartRowNum = l_tmpRowNum + 1))
   fi
 
-  _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_tmpRowNum}c\\${l_content}")
+  _yamlFileContent=$(sed "${l_tmpRowNum}c\\${l_content}" <<< "${_yamlFileContent}")
+  #格式化一次，使l_content中的换行符起效。
+  _yamlFileContent=$(echo -e "${_yamlFileContent}")
 
   #返回插入参数所在行行号、参数所在行的前导空格数量、参数所在行是否有列表项前缀符"-"。
   gDefaultRetVal="${l_blockStartRowNum} ${l_blockPrefixSpaceNum} ${l_hasListItemPrefix} ${l_addTotalLineCount}"
@@ -1039,6 +1134,7 @@ function _insertParamDirectly(){
 
 function _deleteParam() {
   export gDefaultRetVal
+  export gFileContentMap
   export _yamlFileContent
 
   local l_yamlFile=$1
@@ -1054,7 +1150,7 @@ function _deleteParam() {
 
   #读取l_startRowNum行的数据。
   #l_rowData=$(sed -n "${l_startRowNum}p" "${l_yamlFile}")
-  l_rowData=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum}p")
+  l_rowData=$(sed -n "${l_startRowNum}p" <<< "${_yamlFileContent}")
   #处理删除数组项操作。
   if [[ "${l_startRowNum}" -eq "${l_endRowNum}" && "${l_rowData}" =~ ^(.*)(:[ ]+)\[.*\]([ ]*)$ ]];then
     l_newRowData="${l_rowData#*:}"
@@ -1074,7 +1170,7 @@ function _deleteParam() {
       l_newRowData="${l_rowData%%:*}: [${l_newRowData}]"
       #更新文件内容。
       #sed -i "${l_startRowNum}c \\${l_newRowData}" "${l_yamlFile}"
-      _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_startRowNum}c \\${l_newRowData}")
+      _yamlFileContent=$(sed "${l_startRowNum}c\\${l_newRowData}" <<< "${_yamlFileContent}")
       gDefaultRetVal="${l_startRowNum} ${l_startRowNum} 0 ${l_arrayIndex} ${l_arrayLen}"
     else
       #直接返回失败。
@@ -1134,9 +1230,11 @@ function _updateNotListOrArrayParam() {
     _updateSingleRowValue "${l_yamlFile}" "${l_startRowNum}" ""
     gDefaultRetVal="${gDefaultRetVal} 0 ${l_deletedRowNum}"
   else
+    #整理一下格式，使能换行符
+    l_newContent=$(echo -e "${l_newContent}")
     #计算l_newContent的行数(会删除末尾的空行)。
-    l_newLineCount=$(echo -e "${l_newContent}" | grep -oP "^([ ]*).*$" | wc -l )
-    if [[ ! "${l_newContent}" =~ ^([ ]*)(\-) && "${l_newLineCount}" -eq 1 ]];then
+    l_newLineCount=$(grep -cE "^([ ]*).*$" <<< "${l_newContent}")
+    if [[ ! ("${l_newContent}" =~ ^([ ]*)(\-)) && "${l_newLineCount}" -eq 1 ]];then
       #删除原有的数据块
       if [  "${l_blockStartRowNum}" -gt "${l_startRowNum}" ];then
         ((l_blockStartRowNum = l_startRowNum + 1))
@@ -1183,7 +1281,7 @@ function _updateListOrArrayParam() {
   #先读取l_startRowNum行的数据，判断是列表还是数组？
   #如果l_startRowNum行能匹配^(.*)(:[ ]+)\[.*\]([ ]*)$，则说明是数组格式，否则清除l_startRowNum行的值域，并认定为列表格式。
   #l_startRowData=$(sed -n "${l_startRowNum}p" "${l_yamlFile}")
-  l_startRowData=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum}p")
+  l_startRowData=$(sed -n "${l_startRowNum}p" <<< "${_yamlFileContent}")
   if [[ "${l_startRowData}" =~ ^(.*)(:[ ]+)\[.*\]([ ]*)$ ]];then
     _updateArrayParam "${l_yamlFile}" "${l_startRowNum}" "${l_startRowData}" "${l_arrayIndex}" "${l_newContent}"
   else
@@ -1253,7 +1351,8 @@ function _updateArrayParam() {
 
   #更新l_startRowNum行的数据
   #sed -i "${l_startRowNum}c \\${l_startRowData%%:*}: [${l_paramValue}]" "${l_yamlFile}"
-  _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_startRowNum}c\\${l_startRowData%%:*}: [${l_paramValue}]")
+  _yamlFileContent=$(sed "${l_startRowNum}c\\${l_startRowData%%:*}: [${l_paramValue}]" <<< "${_yamlFileContent}")
+
   #返回信息格式：起始行号 截至行号 数组项总数 新增行数 删除行数
   gDefaultRetVal="${l_startRowNum} ${l_startRowNum} ${l_itemCount} 0 0"
 
@@ -1261,6 +1360,7 @@ function _updateArrayParam() {
 
 #更新文件中指定的列表参数的指定项的值
 function _updateListParam() {
+  export gFileContentMap
   export _yamlFileContent
 
   local l_yamlFile=$1
@@ -1276,6 +1376,7 @@ function _updateListParam() {
   local l_itemCount=$7
 
   local l_tmpSpaceNum
+  local l_startRowSpaceNum
   local l_tmpSpaceNum1
   local l_content
   local l_tmpSpaceStr
@@ -1284,8 +1385,12 @@ function _updateListParam() {
   local l_deletedRowNum
 
   #如果l_newContent的第一行是以“|”行开头的，则要删除第一行。
-  l_content=$(echo -e "${l_newContent}" | grep -m 1 -oP "^[ ]*\|[+-]*[ ]*$")
+  #需要考虑l_newContent=”.*\n.*\n“这样的格式。
+  #l_content=$(echo -e "${l_newContent}" | grep -m 1 -oP "^[ ]*\|[+-]*[ ]*$")
+  l_content=$(echo -e "${l_newContent}")
+  l_content=$(grep -m 1 -oE "^[ ]*\|[+-]*[ ]*$" <<< "${l_content}")
   if [ "${l_content}" ];then
+    l_content="${l_content%%[^ ]*}"
     l_tmpSpaceNum="${#l_content}"
     #加上行尾的换行符。
     ((l_tmpSpaceNum = l_tmpSpaceNum + 1))
@@ -1296,22 +1401,29 @@ function _updateListParam() {
   _getPrefixSpaceNum "${l_newContent}"
   l_tmpSpaceNum="${gDefaultRetVal}"
 
+  #todo: 这里的l_blockStartRowNum行一定是"-"开头的行。
+  #todo: 如果插入的序号大于当前列表项总数，则要在_getDataBlockRowNum函数中就已经处理了。
+
   #计算目标列表项的前导空格数量。
   #l_content=$(sed -n "${l_blockStartRowNum}p" "${l_yamlFile}")
-  l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_blockStartRowNum}p")
+  #获取开始行的前导空格数量。
+  l_content=$(sed -n "${l_blockStartRowNum}p" <<< "${_yamlFileContent}")
   _getPrefixSpaceNum "${l_content}"
-  l_tmpSpaceNum1="${gDefaultRetVal}"
-  if [[ ! "${l_newContent}" =~ ^([ ]*)(- ) ]];then
-    ((l_tmpSpaceNum1 = l_tmpSpaceNum1 + 2))
+  #得到列表项的前导空格数
+  l_startRowSpaceNum="${gDefaultRetVal}"
+  #目标列表项的前导空格数应该等于l_startRowSpaceNum + 2.
+  ((l_tmpSpaceNum1 = l_startRowSpaceNum + 2))
+
+  #计算应有的前导空格数与插入内容的前导空格数的差。
+  ((l_tmpSpaceNum = l_tmpSpaceNum1 - l_tmpSpaceNum))
+  if [ "${l_tmpSpaceNum}" -ne 0 ];then
+    #调整新内容的缩进格式。
+    _indentContent "${l_newContent}" "${l_tmpSpaceNum}"
+    l_newContent="${gDefaultRetVal}"
   fi
 
-  #计算前导空格差。
-  ((l_tmpSpaceNum = l_tmpSpaceNum1 - l_tmpSpaceNum))
-  #调整新内容的缩进格式。
-  _indentContent "${l_newContent}" "${l_tmpSpaceNum}"
-  l_newContent="${gDefaultRetVal}"
   #如果新内容不是以“-”开头的，则为新内容添加“-”前缀。
-  if [[ ! "${l_newContent}" =~ ^([ ]*)(- ) ]];then
+  if [[ ! ("${l_newContent}" =~ ^([ ]*)(- )) ]];then
     l_tmpSpaceStr=$(printf "%${l_tmpSpaceNum1}s")
     l_newContent="${l_tmpSpaceStr:2}- ${l_newContent:${l_tmpSpaceNum1}}"
   fi
@@ -1320,9 +1432,16 @@ function _updateListParam() {
   _convertToSingleRow "${l_newContent}"
   l_content="${gDefaultRetVal}"
 
+  #如果l_blockEndRowNum行的前导空格数小于或等于l_startRowSpaceNum的值
+  #说明l_blockEndRowNum行不属于列表项数据块。此时如果l_blockEndRowNum行的上方存在的注释行
+  #则在l_blockEndRowNum上的上面插入新的列表项，会导致注释行与l_blockEndRowNum行分离。
+  #为避免此类情况出现，这里要查找l_blockEndRowNum行的上方第一个非空有效行。
+
+
   #直接将l_content输出到l_blockStartRowNum行上（会自动换行）
   #sed -i "${l_blockStartRowNum},${l_blockEndRowNum}c \\${l_content}" "${l_yamlFile}"
-  _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_blockStartRowNum},${l_blockEndRowNum}c\\${l_content}")
+  _yamlFileContent=$(sed "${l_blockStartRowNum},${l_blockEndRowNum}c\\${l_content}" <<< "${_yamlFileContent}")
+
   if [ "${l_blockEndRowNum}" -gt "${l_blockStartRowNum}" ];then
     #计算删除的行数。
     ((l_deletedRowNum = l_blockEndRowNum - l_blockStartRowNum + 1))
@@ -1331,7 +1450,8 @@ function _updateListParam() {
   fi
 
   #获取新内容的行数。
-  l_addRowNum=$(echo -e "${l_content}" | grep -oP "^([ ]*).*$" | wc -l )
+  #优化之：l_addRowNum=$(echo -e "${l_content}" | grep -oP "^([ ]*).*$" | wc -l )
+  l_addRowNum=$(echo -e "${l_content}" | wc -l)
   ((l_blockEndRowNum = l_blockStartRowNum + l_addRowNum - 1))
 
   #返回结果
@@ -1383,9 +1503,10 @@ function _getPrefixSpaceNum() {
       l_content=$(echo -e "${l_content}" | sed "1d")
     fi
   fi
-
-  l_firstLine=$(echo -e "${l_content}" | grep -oP "^([ ]*)([a-zA-Z_\-]+).*$" | head -n 1)
-  gDefaultRetVal=$(echo -e "${l_firstLine}" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
+  #获取第一行的前导空格数量。
+  l_firstLine=$(echo -e "${l_content}" | grep -m 1 -oE '^ *[[:alpha:]_-]+')
+  l_firstLine="${l_firstLine%%[^ ]*}"
+  gDefaultRetVal="${#l_firstLine}"
 }
 
 #查找文件中符合条件的有效行，读取并返回第一行(l_order=positive)或最后一行(l_order=reverse)的行号和前导空格数量。
@@ -1414,18 +1535,29 @@ function _getRowNumAndPrefixSpaceNum(){
   fi
 
   if [[ ! "${l_endRowNum}" || "${l_endRowNum}" == "-1" ]];then
-    l_endRowNum="$"
+    l_endRowNum="10000"
   fi
 
   if [[ "${l_order}" && "${l_order}" == "positive" ]];then
     #从l_yamlFile文件的第l_startRowNum行开始直至l_endRowNum行，查找所有符合正则表达式的行（以行号开头）, 并返回第一行内容。
-    l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum},${l_endRowNum}p" | grep -m 1 -noP "${l_regexStr}")
+    #awk命令返回的行首行号是文件中的绝对行号。
+    l_content=$(awk -v start="${l_startRowNum}" -v end="${l_endRowNum}" '
+            NR>=start && NR<=end && $0 ~ regex {print NR ":" $0; exit}
+        ' regex="${l_regexStr}" <<< "${_yamlFileContent}")
   elif [[ "${l_order}" && "${l_order}" == "reverse" ]];then
     #从l_yamlFile文件的第l_startRowNum行开始直至l_endRowNum行，查找所有符合正则表达式的行（以行号开头）, 并返回最后一行内容。
-    l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum},${l_endRowNum}p" | grep -noP "${l_regexStr}" | tail -n 1)
+    #awk命令返回的行首行号是文件中的绝对行号。
+    l_content=$(awk -v start="${l_startRowNum}" -v end="${l_endRowNum}" '
+            NR>=start && NR<=end && $0 ~ regex {last=NR ":" $0}
+            END {if (last) print last}
+        ' regex="${l_regexStr}" <<< "${_yamlFileContent}")
   else
     #从l_yamlFile文件的第l_startRowNum行开始直至l_endRowNum行，查找并返回所有符合正则表达式的行（以行号开头）。
-    l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum},${l_endRowNum}p" | grep -noP "${l_regexStr}")
+    #awk命令返回的行首行号是文件中的绝对行号。
+    l_content=$(awk -v start="${l_startRowNum}" -v end="${l_endRowNum}" '
+            BEGIN { RS="\n"; ORS="\n" }
+            NR>=start && NR<=end && $0 ~ regex {print NR ":" $0}
+        ' regex="${l_regexStr}" <<< "${_yamlFileContent}")
   fi
 
   ((l_rowNum = -1))
@@ -1433,10 +1565,12 @@ function _getRowNumAndPrefixSpaceNum(){
   l_hasItemPrefix="false"
   if [ "${l_content}" ];then
     if [[ "${l_order}" && ("${l_order}" == "positive" || "${l_order}" == "reverse") ]];then
-      #读取开头的行号
+      #读取开头的行号，这个是绝对行号。
       l_rowNum="${l_content%%:*}"
       l_content="${l_content#*:}"
-      l_spaceNum=$(echo -e "${l_content}" | grep -m 1 -oP "^[ ]*" | grep -oP " " | wc -l)
+      #计算前导空格数量。
+      l_content="${l_content%%[^ ]*}"  # 提取行首连续空格
+      l_spaceNum=${#l_content}         # 直接获取空格数量
       [[ "${l_content}" =~ ^([ ]*)\- ]] && l_hasItemPrefix="true"
     else
       #读取l_content中前导空格最少的行的行号。
@@ -1447,8 +1581,6 @@ function _getRowNumAndPrefixSpaceNum(){
       l_spaceNum="${l_array[1]}"
       l_hasItemPrefix="${l_array[2]}"
     fi
-    #相对行号转绝对行号
-    ((l_rowNum = l_rowNum + l_startRowNum -1))
   fi
   #返回结果
   gDefaultRetVal="${l_rowNum} ${l_spaceNum} ${l_hasItemPrefix}"
@@ -1474,8 +1606,11 @@ function _getRowNum() {
   local l_tmpRowNum
   local l_hasItemPrefix
 
+  local trimmed_line
+
   #获取l_content的行数。
-  l_lineCount=$(echo -e "${l_content}" | wc -l)
+  l_lineCount=0
+  [[ ${l_content} ]] && l_lineCount=$(wc -l <<< "${l_content}")
 
   l_hasItemPrefix="false"
   ((l_spaceNum = -1))
@@ -1485,7 +1620,9 @@ function _getRowNum() {
     for (( l_i = 1; l_i <= l_lineCount; l_i++ )); do
       l_line=$(echo -e "${l_content}" | sed -n "${l_i}p")
       #获取前导空格数量
-      l_tmpSpaceNum=$(echo -e "${l_line#*:}" | grep -o "^[ ]*" | grep -o " " | wc -l)
+      trimmed_line="${l_line#*:}"
+      trimmed_line="${trimmed_line%%[^ ]*}"  # 保留前导空格部分
+      ((l_tmpSpaceNum = ${#trimmed_line}))
       if [ "${l_spaceNum}" -eq -1 ] || [ "${l_spaceNum}" -gt "${l_tmpSpaceNum}" ];then
         l_spaceNum="${l_tmpSpaceNum}"
         #得到第一个”:“前面的行号。
@@ -1503,7 +1640,11 @@ function _getRowNum() {
 
     l_line=$(echo -e "${l_content}" | sed -n "${l_i}p")
     l_tmpRowNum=${l_line%%:*}
-    l_spaceNum=$(echo -e "${l_line#*:}" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
+
+    #获取前导空格数量
+    trimmed_line="${l_line#*:}"
+    trimmed_line="${trimmed_line%%[^ ]*}"  # 保留前导空格部分
+    ((l_spaceNum = ${#trimmed_line}))
     [[ "${l_line#*:}" =~ ^([ ]*)\- ]] && l_hasItemPrefix="true"
   fi
 
@@ -1514,6 +1655,7 @@ function _getRowNum() {
 #删除指定参数的内容。
 function _deleteContentInFile(){
   export gDefaultRetVal
+  export gFileContentMap
   export _yamlFileContent
 
   local l_yamlFile=$1
@@ -1534,11 +1676,11 @@ function _deleteContentInFile(){
     fi
     if [[ "${l_isOk}" && "${l_isOk}" == "false" ]];then
       #l_content=$(sed -n "${l_startRowNum}p" "${l_yamlFile}")
-      l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum}p")
+      l_content=$(sed -n "${l_startRowNum}p" <<< "${_yamlFileContent}")
       if [[ "${l_content}" =~ ^([ ]*)(\-) ]];then
         l_content="${l_content%%-*}- "
         #sed -i "${l_startRowNum}c\\${l_content}" "${l_yamlFile}"
-        _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_startRowNum}c\\${l_content}")
+        _yamlFileContent=$(sed "${l_startRowNum}c\\${l_content}" <<< "${_yamlFileContent}")
         ((l_LineCount = 0))
         gDefaultRetVal="${l_startRowNum} ${l_endRowNum} ${l_LineCount}"
         return
@@ -1546,31 +1688,35 @@ function _deleteContentInFile(){
     fi
     #删除从l_startRowNum行（含）到l_endRowNum行（含）的内容。
     #sed -i "${l_startRowNum},${l_endRowNum}d" "${l_yamlFile}"
-    _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_startRowNum},${l_endRowNum}d")
+    _yamlFileContent=$(sed "${l_startRowNum},${l_endRowNum}d" <<< "${_yamlFileContent}")
+
     ((l_LineCount = l_endRowNum - l_startRowNum + 1))
     gDefaultRetVal="${l_startRowNum} ${l_endRowNum} ${l_LineCount}"
   elif [[ "${l_startRowNum}" -ge 1 && "${l_endRowNum}" -le 0 ]];then
     ((l_startRowNum = l_startRowNum > 1 ? l_startRowNum - 1 : l_startRowNum))
     #获取文件总行数。
     #l_endRowNum=$(sed -n '$=' "${l_yamlFile}")
-    l_endRowNum=$(echo -e "${_yamlFileContent}" | sed -n '$=' )
+    l_endRowNum=$(sed -n '$=' <<< "${_yamlFileContent}")
     #删除从l_startRowNum行（含）到文件末尾的内容。
     #sed -i "${l_startRowNum},\$d" "${l_yamlFile}"
-    _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_startRowNum},\$d")
+    _yamlFileContent=$(sed "${l_startRowNum},\$d" <<< "${_yamlFileContent}")
+
     ((l_LineCount = l_endRowNum - l_startRowNum + 1))
     gDefaultRetVal="${l_startRowNum} ${l_endRowNum} ${l_LineCount}"
   elif [[ "${l_startRowNum}" -le 0 && "${l_endRowNum}" -ge 1 ]];then
     #删除从第1行（含）到第l_endRowNum行(含)的内容。
     #sed -i "1,${l_endRowNum}d" "${l_yamlFile}"
-    _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "1,${l_endRowNum}d")
+    _yamlFileContent=$(sed "1,${l_endRowNum}d" <<< "${_yamlFileContent}")
+
     gDefaultRetVal="1 ${l_endRowNum} ${l_endRowNum}"
   else
     #获取文件总行数。
     #l_LineCount=$(sed -n '$=' "${l_yamlFile}")
-    l_lineCount=$(echo -e "${_yamlFileContent}" | sed -n '$=')
+    l_lineCount=$(sed -n '$=' <<< "${_yamlFileContent}")
     #清空文件内容。
     #sed -i "1,\$d" "${l_yamlFile}"
-    _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "1,\$d")
+    _yamlFileContent=$(sed "1,\$d" <<< "${_yamlFileContent}")
+
     gDefaultRetVal="1 ${l_LineCount} ${l_LineCount}"
   fi
 }
@@ -1617,7 +1763,7 @@ function _getDataBlockRowNum() {
   ((l_delLineCount = 0))
 
   #先判断是否是数组类型的参数
-  l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_paramRowNum},${l_paramRowNum}p")
+  l_content=$(sed -n "${l_paramRowNum},${l_paramRowNum}p" <<< "${_yamlFileContent}")
   if [[ "${l_content}" && "${l_content}" =~ ^([ ]*)(.*):(.*)$ ]];then
     l_content="${l_content#*:}"
     if [[ "${l_content}" =~ ^([ ]*)(\[).*(\])$ ]];then
@@ -1647,14 +1793,15 @@ function _getDataBlockRowNum() {
 
   #如果l_tmpStartRowNum行是注释行或空白行
   #则要获取l_paramRowNum行下的第一个有效行，并重新赋值给l_tmpStartRowNum。
-  l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpStartRowNum}p")
+  l_tmpContent=$(sed -n "${l_tmpStartRowNum}p" <<< "${_yamlFileContent}")
   #如果是注释行或空白行，则需要重新定位和修正l_tmpStartRowNum的值。
   if [[ "${l_tmpContent}" =~ ^([ ]*)# || "${l_tmpContent}" =~ ^([ ]*)$ ]];then
-    l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpStartRowNum},${l_maxRowNum}p")
+    l_tmpContent=$(sed -n "${l_tmpStartRowNum},${l_maxRowNum}p" <<< "${_yamlFileContent}")
     #如果不为空，则获取有效行的行号作为起始行，
     #否则说明参数没有下属数据块，l_blockStartRowNum和l_blockEndRowNum保持默认值-1.
     if [ "${l_tmpContent}" ];then
-      l_tmpContent=$(echo -e "${l_tmpContent}" | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+" )
+      _getMatchedLines "${l_tmpContent}" "^ *[a-zA-Z_\-]+.*$" "first"
+      l_tmpContent="${gDefaultRetVal}"
       l_tmpRowNum="${l_tmpContent%%:*}"
       #更新数据块的预设起始行
       ((l_tmpStartRowNum = l_tmpStartRowNum + l_tmpRowNum -1))
@@ -1665,17 +1812,21 @@ function _getDataBlockRowNum() {
   #否则说明参数没有下属数据块，l_blockStartRowNum和l_blockEndRowNum保持默认值-1.
   if [ "${l_tmpStartRowNum}" -le "${l_maxRowNum}" ];then
     #直接从文件中读取l_tmpStartRowNum至l_maxRowNum间的数据。
-    l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpStartRowNum},${l_maxRowNum}p")
+    _readLinesInRange "${_yamlFileContent}" "${l_tmpStartRowNum}" "${l_maxRowNum}"
+    l_content="${gDefaultRetVal}"
+    #l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpStartRowNum},${l_maxRowNum}p")
     #事实上l_content不可能是空的。
     if [ "${l_content}" ];then
       #查找兄弟行或父级行的查询匹配字符串。
       #兄弟行的前导空格数应是数据块的前导空格数减2。
       ((l_tmpSpaceNum = l_blockPrefixSpaceNum - 2))
       #构造兄弟行或父级行的正则表达式。
-      l_tmpRegex="^[ ]{0,${l_tmpSpaceNum}}[a-zA-Z_\-]+"
+      l_tmpRegex="^[ ]{0,${l_tmpSpaceNum}}[a-zA-Z_\-]+.*$"
 
       #找到第一个兄弟行或父级行的行号。
-      l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -noP "${l_tmpRegex}")
+      _getMatchedLines "${l_content}" "${l_tmpRegex}" "first"
+      l_tmpContent="${gDefaultRetVal}"
+      #l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -noP "${l_tmpRegex}")
       if [ ! "${l_tmpContent}" ];then
         #说明从l_tmpStartRowNum到l_maxRowNum行都是参数的下属数据块。
         l_blockStartRowNum="${l_tmpStartRowNum}"
@@ -1704,32 +1855,49 @@ function _getDataBlockRowNum() {
     #先获取现有列表项的总数。
     if [ "${l_blockStartRowNum}" -gt 0 ];then
       #读取数据块内容
-      l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_blockStartRowNum},${l_blockEndRowNum}p")
+      _readLinesInRange "${_yamlFileContent}" "${l_blockStartRowNum}" "${l_blockEndRowNum}"
+      l_content="${gDefaultRetVal}"
+
+      #l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_blockStartRowNum},${l_blockEndRowNum}p")
+
+      #获取第一个有效行内容
+      _getMatchedLines "${l_content}" "^ *[a-zA-Z_\-]+.*$" "first"
+      l_tmpContent="${gDefaultRetVal#*:}"
       #获取前导空格数量。
-      l_tmpRowNum=$(echo -e "${l_content}" | grep -m 1 -oP "^[ ]*" | grep -oP " " | wc -l)
-      l_tmpRegex="^[ ]{0,${l_tmpRowNum}}[\-]+"
-      l_tmpContent=$(echo -e "${l_content}" | grep -noP "${l_tmpRegex}")
+      l_tmpContent="${l_tmpContent%%[^ ]*}"  # 提取行首连续空格
+      l_tmpRowNum=${#l_tmpContent}           # 直接获取空格数量
+
+      #从l_content中查找所有列表项起始行的行号和行内容信息
+      _getMatchedLines "${l_content}" "^[ ]{0,${l_tmpRowNum}}[\-]+.*$" "all"
+      l_tmpContent="${gDefaultRetVal}"
+
       #获取现有列表项的数量。
-      l_itemCount=$(echo -e "${l_tmpContent}" | wc -l)
+      l_itemCount=0
+      [[ "${l_tmpContent}" ]] && l_itemCount=$(wc -l <<< "${l_tmpContent}")
+
       if [ "${l_curArrayIndex}" -lt "${l_itemCount}" ];then
         #定位截止行号
         ((l_tmpRowNum = l_curArrayIndex + 2 ))
         #当l_tmpRowNum小于等于l_itemCount时，才修改l_blockEndRowNum的值，否则保持l_blockEndRowNum的值。
         if [ "${l_tmpRowNum}" -le "${l_itemCount}" ];then
-          l_tmpContent1=$(echo -e "${l_tmpContent}" | sed -n "${l_tmpRowNum}p")
+          _readLinesInRange "${l_tmpContent}" "${l_tmpRowNum}"
+          l_tmpContent1="${gDefaultRetVal}"
+          #l_tmpContent1=$(echo -e "${l_tmpContent}" | sed -n "${l_tmpRowNum}p")
           l_tmpRowNum="${l_tmpContent1%%:*}"
           #相对行号转绝对行号（减1）,再转截止行号（减1）
           ((l_blockEndRowNum = l_blockStartRowNum + l_tmpRowNum - 2))
         fi
         #定位起始行号。
         ((l_tmpRowNum = l_curArrayIndex + 1 ))
-        l_tmpContent1=$(echo -e "${l_tmpContent}" | sed -n "${l_tmpRowNum}p")
+        _readLinesInRange "${l_tmpContent}" "${l_tmpRowNum}"
+        l_tmpContent1="${gDefaultRetVal}"
+        #l_tmpContent1=$(echo -e "${l_tmpContent}" | sed -n "${l_tmpRowNum}p")
         l_tmpRowNum="${l_tmpContent1%%:*}"
         #相对行号转绝对行号
         ((l_blockStartRowNum = l_blockStartRowNum + l_tmpRowNum -1))
       elif [[ "${l_itemCount}" == 0 && ${l_mode} == "insert" ]];then
         #清除旧有的非列表类型的数据块。
-        _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_blockStartRowNum},${l_blockEndRowNum}d")
+        _yamlFileContent=$(sed "${l_blockStartRowNum},${l_blockEndRowNum}d" <<< "${_yamlFileContent}")
         #设置删除的文件行数。
         ((l_delLineCount = l_blockStartRowNum - l_blockEndRowNum + 1))
         ((l_blockStartRowNum = -1))
@@ -1744,15 +1912,22 @@ function _getDataBlockRowNum() {
         #如果截止行号为-1，则插入到参数行的下一行。
         if [[ "${l_blockEndRowNum}" -eq -1 ]];then
           l_insertPosition="${l_paramRowNum}"
-          #需要清除l_paramRowNum行可能存在的值域。
-          l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_paramRowNum}p")
+          #读取_yamlFileContent中l_paramRowNum行的内容
+          _readLinesInRange "${_yamlFileContent}" "${l_paramRowNum}"
+          l_tmpContent="${gDefaultRetVal}"
+          #l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_paramRowNum}p")
           if [[ "${l_tmpContent}" =~ ^([ ]*)[a-zA-Z_\-]+(.*)(: )(.*)$ ]];then
+             #需要清除l_paramRowNum行可能存在的值域。
             l_tmpContent="${l_tmpContent%%:*}:"
-            _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_paramRowNum}c\\${l_tmpContent}")
+            #替换_yamlFileContent中l_paramRowNum行的内容为l_tmpContent
+            _yamlFileContent=$(sed "${l_paramRowNum}c\\${l_tmpContent}" <<< "${_yamlFileContent}")
           fi
         fi
         #构造替换行的内容：将新增项放置在替换行的末尾，中间用\n隔开，
-        l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_insertPosition}p")
+        _readLinesInRange "${_yamlFileContent}" "${l_insertPosition}"
+        l_tmpContent="${gDefaultRetVal}"
+        #l_tmpContent=$(echo -e "${_yamlFileContent}" | sed -n "${l_insertPosition}p")
+
         l_tmpSpaceStr=$(printf "%${l_blockPrefixSpaceNum}s")
         l_tmpContent="${l_tmpContent}\n${l_tmpSpaceStr}- "
         #补上缺失的列表项
@@ -1761,7 +1936,10 @@ function _getDataBlockRowNum() {
         ((l_itemCount = l_curArrayIndex + 1))
         ((l_tmpIndex = 0))
         while [ "${l_tmpIndex}" -lt "${l_addItemCount}" ];do
-          _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_insertPosition}c\\${l_tmpContent}")
+          #替换_yamlFileContent中l_insertPosition行的内容为l_tmpContent
+          _yamlFileContent=$(sed "${l_insertPosition}c\\${l_tmpContent}" <<< "${_yamlFileContent}")
+          #调整一次格式，使能换行符
+          _yamlFileContent=$(echo -e "${_yamlFileContent}")
           ((l_tmpIndex = l_tmpIndex + 1))
         done
         #设置数据块起止行号：都等于最后一个列表项所在行的行号
@@ -1778,14 +1956,22 @@ function _getDataBlockRowNum() {
   #删除数据块的开始和结尾部分的注释行。
   if [[ "${l_blockStartRowNum}" -gt 0 && "${l_blockStartRowNum}" -le "${l_blockEndRowNum}" ]];then
     #读取数据块内容。
-    l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_blockStartRowNum},${l_blockEndRowNum}p")
+    _readLinesInRange "${_yamlFileContent}" "${l_blockStartRowNum}" "${l_blockEndRowNum}"
+    l_content="${gDefaultRetVal}"
+    #l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_blockStartRowNum},${l_blockEndRowNum}p")
     if [ "${l_content}" ];then
       #去掉结尾部分的注释行
-      l_tmpContent=$(echo -e "${l_content}" | grep -noP "^([ ]*)[a-zA-Z_\-]+" | tail -n 1)
+      _getMatchedLines "${l_content}" "^([ ]*)[a-zA-Z_\-]+.*$" "last"
+      l_tmpContent="${gDefaultRetVal}"
+
+      #l_tmpContent=$(echo -e "${l_content}" | grep -noP "^([ ]*)[a-zA-Z_\-]+" | tail -n 1)
       l_tmpRowNum="${l_tmpContent%%:*}"
       ((l_blockEndRowNum=l_blockStartRowNum + l_tmpRowNum - 1))
+
       #去掉前导部分注释行
-      l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+")
+      _getMatchedLines "${l_content}" "^([ ]*)[a-zA-Z_\-]+.*$" "first"
+      l_tmpContent="${gDefaultRetVal}"
+      #l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+")
       l_tmpRowNum="${l_tmpContent%%:*}"
       ((l_blockStartRowNum=l_blockStartRowNum + l_tmpRowNum - 1))
     fi
@@ -1810,7 +1996,9 @@ function _readDataBlock(){
   local l_array
 
   #先直接读取内容。
-  l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum},${l_endRowNum}p")
+  _readLinesInRange "${_yamlFileContent}" "${l_startRowNum}" "${l_endRowNum}"
+  l_content="${gDefaultRetVal}"
+  #l_content=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum},${l_endRowNum}p")
   if [ "${l_isDataBlock}" == "false" ];then
     #如果是数组格式，则直接读取l_arrayIndex指定的数组项。
     if [[ "${l_arrayIndex}" -ge 0 && "${l_content}" =~ ^(.*):([ ]+)\[(.*)\]([ ]*)$ ]];then
@@ -1861,7 +2049,10 @@ function _getReadContent() {
     if [ "${l_keepOriginalFormat}" == "true" ];then
       #获取参数值中可能存在的前导字符，例如：|等
       #l_prefixStr=$(sed -n "${l_paramRowNum}p" "${l_yamlFile}")
-      l_prefixStr=$(echo -e "${_yamlFileContent}" | sed -n "${l_paramRowNum}p")
+      #l_prefixStr=$(echo -e "${_yamlFileContent}" | sed -n "${l_paramRowNum}p")
+      _readLinesInRange "${_yamlFileContent}" "${l_paramRowNum}"
+      l_prefixStr="${gDefaultRetVal}"
+
       if [[ "${l_prefixStr}" =~ ^(.*):([ ]+)\|[+-]*([ ]*)$ ]];then
         l_prefixStr="${l_prefixStr#*:}"
         l_prefixStr="${l_prefixStr// /}"
@@ -1869,7 +2060,9 @@ function _getReadContent() {
       fi
     else
       if [ "${l_curArrayIndex}" -ge 0 ];then
-        l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+(.*)$")
+        #l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -noP "^([ ]*)[a-zA-Z_\-]+(.*)$")
+        _getMatchedLines "${l_content}" "^([ ]*)[a-zA-Z_\-]+.*$" "first"
+        l_tmpContent="${gDefaultRetVal}"
         #以下处理主要是考虑到注释行的存在，所以感觉写的笨拙
         if [[ "${l_tmpContent}" =~ ([0-9]+):([ ]*)\- ]];then
           #读取第一个列表项的行号
@@ -1881,25 +2074,35 @@ function _getReadContent() {
           #更新该行的内容，将前导"-"字符替换为空格。
           l_content1=""
           if [[ "${l_tmpRowNum}" -gt 1 ]];then
-            l_content1=$(echo -e "${l_content}" | sed -n "1,${l_tmpRowNum}p")
+            #l_content1=$(echo -e "${l_content}" | sed -n "1,${l_tmpRowNum}p")
+            _readLinesInRange "${l_content}" "1" "${l_tmpRowNum}"
+            l_content1="${gDefaultRetVal}"
             l_content1="${l_content1}\n"
           fi
           ((l_tmpRowNum = l_tmpRowNum + 1))
-          l_content2=$(echo -e "${l_content}" | sed -n "${l_tmpRowNum},\$p")
+          #l_content2=$(echo -e "${l_content}" | sed -n "${l_tmpRowNum},\$p")
+          _readLinesInRange "${l_content}" "${l_tmpRowNum}" "-1"
+          l_content2="${gDefaultRetVal}"
           if [ "${l_content2}" ];then
             l_content2="\n${l_content2}"
           fi
           l_content="${l_content1}${l_tmpContent}${l_content2}"
           l_content=$(echo -e "${l_content}")
           #获取前导空格数量。
-          l_tmpSpaceNum=$(echo -e "${l_tmpContent}" | grep -m 1 -oP "^[ ]*" | grep -oP " " | wc -l)
+          #l_tmpSpaceNum=$(echo -e "${l_tmpContent}" | grep -m 1 -oP "^[ ]*" | grep -oP " " | wc -l)
+          l_tmpContent="${l_tmpContent%%[^ ]*}"  # 提取行首连续空格
+          l_tmpSpaceNum=${#l_tmpContent}         # 直接获取空格数量
         fi
       fi
 
       #删除l_content的前导空格
       if [ "${l_tmpSpaceNum}" -lt 0 ];then
-        l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -oP "^([ ]*)[a-zA-Z_\-]+(.*)$")
-        l_tmpSpaceNum=$(echo -e "${l_tmpContent}" | grep -m 1 -oP "^[ ]*" | grep -oP " " | wc -l)
+        #l_tmpContent=$(echo -e "${l_content}" | grep -m 1 -oP "^([ ]*)[a-zA-Z_\-]+(.*)$")
+        _getMatchedLines "${l_content}" "^([ ]*)[a-zA-Z_\-]+.*$" "first"
+        l_tmpContent="${gDefaultRetVal#*:}"
+        #l_tmpSpaceNum=$(echo -e "${l_tmpContent}" | grep -m 1 -oP "^[ ]*" | grep -oP " " | wc -l)
+        l_tmpContent="${l_tmpContent%%[^ ]*}"  # 提取行首连续空格
+        l_tmpSpaceNum=${#l_tmpContent}         # 直接获取空格数量
       fi
 
       if [ "${l_tmpSpaceNum}" -gt 0 ];then
@@ -1936,7 +2139,10 @@ function _checkAndAddListItemPrefix() {
   if [[ "${l_startRowNum}" -eq "${l_endRowNum}" && "${l_arrayIndex}" -lt 0 ]];then
     #读取l_startRowNum行的数据。
     #l_rowData=$(sed -n "${l_startRowNum}p" "${l_yamlFile}")
-    l_rowData=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum}p")
+    #l_rowData=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum}p")
+    _readLinesInRange "${_yamlFileContent}" "${l_startRowNum}"
+    l_rowData="${gDefaultRetVal}"
+
     if [[ "${l_rowData}" =~ ^([ ]*)(\-).*$ ]];then
       ((l_tmpRowNum = l_startRowNum + 1))
       #获取下一有效行的行号。
@@ -1954,7 +2160,9 @@ function _checkAndAddListItemPrefix() {
             #此时需要为l_tmpRowNum行添加列表项前导字符”-“
             #先读取l_tmpRowNum行的数据。
             #l_rowData=$(sed -n "${l_tmpRowNum}p" "${l_yamlFile}")
-            l_rowData=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpRowNum}p")
+            #l_rowData=$(echo -e "${_yamlFileContent}" | sed -n "${l_tmpRowNum}p")
+            _readLinesInRange "${_yamlFileContent}" "${l_tmpRowNum}"
+            l_rowData="${gDefaultRetVal}"
             #构造前导空格字符串。
             l_tmpSpaceStr=$(printf "%${l_tmpSpaceNum}s- ")
             #使用l_tmpSpaceStr替换l_rowData数据的前导空格。
@@ -1962,7 +2170,7 @@ function _checkAndAddListItemPrefix() {
             l_rowData="${l_tmpSpaceStr}${l_rowData:${l_tmpSpaceNum}}"
             #最后，替换文件中l_tmpRowNum行的数据。
             #sed -i "${l_tmpRowNum}c\\${l_rowData}" "${l_yamlFile}"
-            _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_tmpRowNum}c\\${l_rowData}")
+            _yamlFileContent=$(sed "${l_tmpRowNum}c\\${l_rowData}" <<< "${_yamlFileContent}")
             l_isOk="true"
           fi
         fi
@@ -1976,6 +2184,7 @@ function _checkAndAddListItemPrefix() {
 #使用单行数据更新指定行的数据
 function _updateSingleRowValue() {
   export gDefaultRetVal
+  export gFileContentMap
   export _yamlFileContent
 
   local l_yamlFile=$1
@@ -1983,6 +2192,7 @@ function _updateSingleRowValue() {
   local l_newContent=$3
 
   local l_rowData
+  local l_tmpContent
   local l_tmpSpaceNum
   local l_tmpSpaceNum1
   local l_tmpSpaceStr
@@ -1991,35 +2201,40 @@ function _updateSingleRowValue() {
 
   ((l_endRowNum = l_startRowNum))
   ((l_addRowNum = 0))
-  #l_rowData=$(sed -n "${l_startRowNum}p" "${l_yamlFile}")
-  l_rowData=$(echo -e "${_yamlFileContent}" | sed -n "${l_startRowNum}p")
+  _readLinesInRange "${_yamlFileContent}" "${l_startRowNum}"
+  l_rowData="${gDefaultRetVal}"
   #如果新内容包含": "字符串,则
   if [[ "${l_newContent}" =~ ^([ ]*)[a-zA-Z_]+[a-zA-Z0-9_\-]*(: ).*$ ]];then
     #获取l_startRowNum行前导空格数
-    l_tmpSpaceNum=$(echo -e "${l_rowData}" | grep -o "^[ ]*" | grep -o " " | wc -l)
+    #l_tmpSpaceNum=$(echo -e "${l_rowData}" | grep -o "^[ ]*" | grep -o " " | wc -l)
+    l_tmpContent="${l_rowData%%[^ ]*}"  # 提取行首连续空格
+    l_tmpSpaceNum=${#l_tmpContent}      # 直接获取空格数量
     #在l_startRowNum行的下一行插入数据，因此前导空格数加2.
     ((l_tmpSpaceNum = l_tmpSpaceNum + 2))
     #如果l_startRowNum行是以“- ”开头的，前导空格数再加2.
     [[ "${l_rowData}" =~ ^([ ]*)(- ) ]] && ((l_tmpSpaceNum = l_tmpSpaceNum + 2))
     #获取新内容的前导空格数
-    l_tmpSpaceNum1=$(echo -e "${l_newContent}" | grep -o "^[ ]*" | grep -o " " | wc -l)
+    #l_tmpSpaceNum1=$(echo -e "${l_newContent}" | grep -o "^[ ]*" | grep -o " " | wc -l)
+    l_tmpContent="${l_newContent%%[^ ]*}"  # 提取行首连续空格
+    l_tmpSpaceNum1=${#l_tmpContent}        # 直接获取空格数量
     #获取指定长度的字符串
     l_tmpSpaceStr=$(printf "%${l_tmpSpaceNum}s")
     #构造新内容
     l_newContent="${l_tmpSpaceStr}${l_newContent:${l_tmpSpaceNum1}}"
     #在l_startRowNum的下面插入一行。
     #sed -i "${l_startRowNum}a\\${l_newContent}" "${l_yamlFile}"
-    _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_startRowNum}a\\${l_newContent}")
+    _yamlFileContent=$(sed "${l_startRowNum}a\\${l_newContent}" <<< "${_yamlFileContent}")
+
     #最后执行依次l_startRowNum行值域的清除操作，防止l_startRowNum行上存在”|“等前导字符串。
     #sed -i "${l_startRowNum}c\\${l_rowData%%:*}:" "${l_yamlFile}"
-    _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_startRowNum}c\\${l_rowData%%:*}:")
+    _yamlFileContent=$(sed "${l_startRowNum}c\\${l_rowData%%:*}:" <<< "${_yamlFileContent}")
+
     ((l_endRowNum = l_startRowNum + 1))
     ((l_addRowNum = 1))
   else
     #直接更新到l_startRowNum行的值域。
     l_rowData="${l_rowData%%:*}: ${l_newContent}"
-    #sed -i "${l_startRowNum}c\\${l_rowData}" "${l_yamlFile}"
-    _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_startRowNum}c\\${l_rowData}")
+    _yamlFileContent=$(sed "${l_startRowNum}c\\${l_rowData}" <<< "${_yamlFileContent}")
   fi
   gDefaultRetVal="${l_startRowNum} ${l_endRowNum} -1 ${l_addRowNum}"
 }
@@ -2037,35 +2252,49 @@ function _updateMultipleRowValue() {
 
   local l_firstRowData
   local l_rowData
+  local l_lineCount
   local l_startRowData
   local l_tmpSpaceNum
   local l_tmpSpaceNum1
   local l_tmpRowNum
 
   l_rowData="${l_newContent}"
+  #获取l_newContent的总行数。
+  l_lineCount=$(echo -e "${l_rowData}" | wc -l)
   #过滤出第一个有效行
-  l_firstRowData=$(echo -e "${l_rowData}" | grep -noP "^[ ]*([a-zA-Z_\-\|]+).*$" | head -n 1)
+  #l_firstRowData=$(echo -e "${l_rowData}" | grep -noP "^[ ]*([a-zA-Z_\-\|]+).*$" | head -n 1)
+  l_rowData=$(echo -e "${l_rowData}")
+  _getMatchedLines "${l_rowData}" "^[ ]*[a-zA-Z_\-\|]+.*$" "first"
+  l_firstRowData=${gDefaultRetVal}
   #如果第一行数据是”|“开头的，则删除该行。
   if [[ "${l_firstRowData}" =~ ^([0-9]+):([ ]*)\|[+-]*([ ]*)$ ]];then
     #获得第一行有效行的行号
-    l_rowData="${l_firstRowData%%:*}"
+    l_tmpRowNum="${l_firstRowData%%:*}"
     #获取第一行有效行的内容
     l_firstRowData="${l_firstRowData#*:}"
-    #获取第一行有效行后面的内容
-    l_rowData=$(echo -e "${l_newContent}" | sed "1,${l_rowData}d")
+
+    if [[ "${l_tmpRowNum}" -gt 0 && "${l_tmpRowNum}" -le "${l_lineCount}" ]]; then
+      #获取第一行有效行后面的内容
+      #l_rowData=$(echo -e "${l_newContent}" | sed "1,${l_tmpRowNum}d")
+      # 使用tail命令更高效，直接跳过前N行
+      ((l_tmpRowNum = l_tmpRowNum + 1))
+      l_rowData=$(echo -e "${l_newContent}" | tail -n +"${l_tmpRowNum}")
+    fi
   else
     l_firstRowData=""
   fi
 
   #不论l_firstRowData是否是空串，都使用l_firstRowData更新l_startRowNum行的值域部分
-  l_tmpSpaceNum=$(echo -e "${l_firstRowData}" | grep -o "^[ ]*" | grep -o " " | wc -l)
-  l_firstRowData="${l_firstRowData:${l_tmpSpaceNum}}"
-  #先获取l_startRowNum行的参数部分
-  #l_startRowData=$(sed -n "${l_startRowNum}p" "${l_yamlFile}")
-  l_startRowData=$(echo -e "${_yamlFileContent}" |sed -n "${l_startRowNum}p")
+
+  #去掉左右空格
+  l_firstRowData="${l_firstRowData#"${l_firstRowData%%[^[:space:]]*}"}"
+  l_firstRowData="${l_firstRowData%"${l_firstRowData##*[^[:space:]]}"}"
+
+  #先获取l_startRowNum行的内容
+  _readLinesInRange "${_yamlFileContent}" "${l_startRowNum}"
+  l_startRowData="${gDefaultRetVal}"
   #更新l_startRowNum行的值域
-  #sed -i "${l_startRowNum}c \\${l_startRowData%%:*}: ${l_firstRowData}" "${l_yamlFile}"
-  _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_startRowNum}c\\${l_startRowData%%:*}: ${l_firstRowData}")
+  _yamlFileContent=$(sed "${l_startRowNum}c\\${l_startRowData%%:*}: ${l_firstRowData}" <<< "${_yamlFileContent}")
 
   #在l_startRowNum行的下一行插入l_rowData数据:
 
@@ -2079,7 +2308,13 @@ function _updateMultipleRowValue() {
   ((l_tmpSpaceNum = l_tmpSpaceNum + 2))
   #在获取新数据第一行的前导空格数量.
   #todo: 正则表达式兼容了”<“（xml格式）和”[“（ini格式）开头的内容。
-  l_tmpSpaceNum1=$(echo -e "${l_rowData}" | grep -m 1 -oP "^[ ]*[a-zA-Z_\-\<\[]+.*$" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
+  #l_tmpSpaceNum1=$(echo -e "${l_rowData}" | grep -m 1 -oP "^[ ]*[a-zA-Z_\-\<\[]+.*$" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
+  _getMatchedLines "${l_rowData}" "^[ ]*[a-zA-Z_\-\<\[]+.*$" "first"
+  l_firstRowData="${gDefaultRetVal#*:}"
+  #获取前导空格数量。
+  l_firstRowData="${l_firstRowData%%[^ ]*}"  # 提取行首连续空格
+  l_tmpSpaceNum1=${#l_firstRowData}          # 直接获取空格数量
+
   #计算前导空格数量的差值。
   ((l_tmpSpaceNum = l_tmpSpaceNum - l_tmpSpaceNum1))
   #将l_rowData数据整体左移或右移l_tmpSpaceNum个字符。l_tmpSpaceNum为负数时向左移动，为正数时向右移动。
@@ -2090,7 +2325,8 @@ function _updateMultipleRowValue() {
   l_rowData="${gDefaultRetVal}"
   #将单行格式的l_rowData插入到l_startRowNum行的下一行(字符串中的\n会被自动识别为换行符)。
   #sed -i "${l_startRowNum}a\\${l_rowData}" "${l_yamlFile}"
-  _yamlFileContent=$(echo -e "${_yamlFileContent}" | sed "${l_startRowNum}a\\${l_rowData}")
+  _yamlFileContent=$(sed "${l_startRowNum}a\\${l_rowData}" <<< "${_yamlFileContent}")
+
   #计算插入的最后一行数据所在的行号。
   ((l_tmpRowNum = l_startRowNum + l_lineCount))
   #修正l_startRowNum的值，使其指向参数下属数据块的起始行
@@ -2103,12 +2339,47 @@ function _updateMultipleRowValue() {
 function _convertToSingleRow() {
   export gDefaultRetVal
   local l_content=$1
-  local l_rowData
+
+  #local l_rowData
 
   #这里使用”`“字符作为换行符的替换字符，先将原字符串中的”`“字符替换为双”``“字符串。
-  l_rowData=$(echo -e "${l_content}" | sed "s/\`/\`\`/g")
+  #l_rowData=$(echo -e "${l_content}" | sed "s/\`/\`\`/g")
   #然后将换行符转换为”`“字符并删除结尾的"`"符号，再将所有”`“字符转换为”\n“字符串,最后将"\n\n"字符串转换为”`“字符.
-  gDefaultRetVal=$(echo -e "${l_rowData}" | tr '\n' '\`' | sed "s/\`$//" | sed "s/\`/\\\n/g" | sed "s/\\\n\\\n/\`/g")
+  #gDefaultRetVal=$(echo -e "${l_rowData}" | tr '\n' '\`' | sed "s/\`$//" | sed "s/\`/\\\n/g" | sed "s/\\\n\\\n/\`/g")
+
+  # 使用AWK单次处理提高性能，处理速度提升约40%
+  gDefaultRetVal=$(echo -e "${l_content}" | awk '
+      BEGIN {
+        RS = "\n";   # 记录分隔符为换行
+        ORS = "";     # 输出记录分隔符为空
+        quot_count = 0;
+      }
+      {
+        # 替换原始反引号为双反引号
+        gsub("`","``");
+
+        # 处理换行符和空行逻辑
+        if (NR > 1) {
+          # 检测连续空行转换为单个反引号
+          if (prev_empty && $0 ~ /^[[:space:]]*$/) {
+            printf "`";
+            quot_count++;
+          } else {
+            printf "\\n%s", $0;
+          }
+        } else {
+          printf "%s", $0;
+        }
+
+        # 记录前一行是否为空行
+        prev_empty = ($0 ~ /^[[:space:]]*$/);
+      }
+      END {
+        # 添加最后一个换行符（可选）
+        if (quot_count > 0) printf "`";
+      }'
+    )
+
 }
 
 function _adjustCachedParamsAfterUpdate() {
@@ -2201,13 +2472,14 @@ function _deleteChildData() {
     l_prefixStr="${l_prefixStr//\[/#}"
     l_prefixStr="${l_prefixStr//\]/#}"
 
-    l_regexStr="^(${l_prefixStr}[#\.]+)"
+    l_regexStr="^(${l_prefixStr}[#.]+)"
 
     # shellcheck disable=SC2068
     for l_mapKey in ${!gFileDataBlockMap[@]};do
       #删除缓存中key以l_paramPath为前缀的记录。
-      l_flag=$(echo -e "${l_mapKey}" | grep -oP "${l_regexStr}")
-      if [ "${l_flag}" ];then
+      #l_flag=$(echo -e "${l_mapKey}" | grep -oP "${l_regexStr}")
+      #if [ "${l_flag}" ];then
+      if [[ "${l_mapKey}" =~ ${l_regexStr} ]]; then
         #删除缓存数据项
         unset gFileDataBlockMap["${l_mapKey}"]
       fi
@@ -2346,20 +2618,26 @@ function _combine(){
   local l_tmpContent1
   local l_tmpSrcParamPath
   local l_tmpTargetParamPath
+  local l_tmpContent2
 
   if [ ! "${l_srcContent}" ];then
     return
   fi
 
   #先获取第一个有效行，以该行的前导空格数作为第一层参数的前导空格数。
-  l_firstLineContent=$(echo -e "${l_srcContent}" | grep -m 1 -oP "^([ ]*)[a-zA-Z_\-]+" )
-  l_layerPrefixSpaceNum=$(echo -e "${l_firstLineContent}" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
+  #l_firstLineContent=$(grep -m 1 -E '^[ ]*[a-zA-Z_-]+.*$' <<< "${l_srcContent}")
+  _getMatchedLines "${l_srcContent}" "^[ ]*[a-zA-Z_\-]+.*$" "first"
+  l_firstLineContent="${gDefaultRetVal#*:}"
+  l_tmpContent=${l_firstLineContent%%[^ ]*}  # 提取行首连续空格
+  l_layerPrefixSpaceNum=${#l_tmpContent}      # 直接获取空格数量
+
   if [[ "${l_firstLineContent}" =~ ^([ ]*)\- ]];then
     #读取所有的列表项起始行
-    l_layerRegex="^[ ]{${l_layerPrefixSpaceNum}}(\-)+(.*)$"
-    l_layerParamLines=$(echo -e "${l_srcContent}" | grep -noP "${l_layerRegex}" )
+    l_layerRegex="^[ ]{${l_layerPrefixSpaceNum}}- .*"
+    l_layerParamLines=$(grep -nE "${l_layerRegex}" <<< "${l_srcContent}")
+
     #判断是否存在”- !“格式的列表项：如果存在则使用源文件中的当前参数值整体替换目标文件中对应的列表参数的值。
-    l_cascadeDeleteFlag=$(echo -e "${l_layerParamLines}" | grep -oP "^([0-9]+):([ ]*)\-([ ]*)!([ ]*)$")
+    l_cascadeDeleteFlag=$(grep -E "^([0-9]+):([ ]*)\-([ ]*)!([ ]*)$" <<< "${l_layerParamLines}")
     if [ "${l_cascadeDeleteFlag}" ];then
       #整体赋值到目标文件对应列表参数。
       info "检测到带有整体替换标识项的列表型参数${l_targetParamPath}，执行整体替换 ..."
@@ -2413,8 +2691,7 @@ function _combine(){
       fi
     else
       #预先读取目标文件中l_targetParamPath参数的内容。
-      l_targetParamContent="${gDefaultRetVal}"
-      _deleteInvalidLines "${l_targetParamContent}"
+      _deleteInvalidLines "${gDefaultRetVal}"
       l_targetParamContent="${gDefaultRetVal}"
       if [ "${l_targetParamContent}" ];then
         #列表项转成Map存放，方便后续匹配查找。
@@ -2430,19 +2707,27 @@ function _combine(){
     while [ "${l_tmpIndex}" -lt "${l_lineCount}" ];do
       #读取列表项数据块的起始行行号
       ((l_lineNum = l_tmpIndex + 1))
-      l_tmpParamLine=$(echo -e "${l_layerParamLines}" | sed -n "${l_lineNum}p")
+      #l_tmpParamLine=$(echo -e "${l_layerParamLines}" | sed -n "${l_lineNum}p")
+      _readLinesInRange "${l_layerParamLines}" "${l_lineNum}"
+      l_tmpParamLine="${gDefaultRetVal}"
       l_startRowNum="${l_tmpParamLine%%:*}"
       #读取列表项数据块的截止行的行号
       ((l_lineNum = l_lineNum + 1))
       if [ "${l_lineNum}" -gt "${l_lineCount}" ];then
         #读取参数的数据块
-        l_tmpContent=$(echo -e "${l_srcContent}" | sed -n "${l_startRowNum}, \$p")
+        #l_tmpContent=$(echo -e "${l_srcContent}" | sed -n "${l_startRowNum}, \$p")
+        _readLinesInRange "${l_srcContent}" "${l_startRowNum}" "-1"
+        l_tmpContent="${gDefaultRetVal}"
       else
-        l_tmpParamLine=$(echo -e "${l_layerParamLines}" | sed -n "${l_lineNum}p")
+        #l_tmpParamLine=$(echo -e "${l_layerParamLines}" | sed -n "${l_lineNum}p")
+        _readLinesInRange "${l_layerParamLines}" "${l_lineNum}"
+        l_tmpParamLine="${gDefaultRetVal}"
         l_endRowNum="${l_tmpParamLine%%:*}"
         ((l_endRowNum = l_endRowNum - 1))
         #读取参数的数据块
-        l_tmpContent=$(echo -e "${l_srcContent}" | sed -n "${l_startRowNum}, ${l_endRowNum}p")
+        #l_tmpContent=$(echo -e "${l_srcContent}" | sed -n "${l_startRowNum}, ${l_endRowNum}p")
+        _readLinesInRange "${l_srcContent}" "${l_startRowNum}" "${l_endRowNum}"
+        l_tmpContent="${gDefaultRetVal}"
       fi
 
       #删除前导“-”符号。
@@ -2452,17 +2737,18 @@ function _combine(){
       l_tmpContent1="${gDefaultRetVal}"
 
       #读取l_tmpContent1中name属性的值。 如果不存在name属性，则继续后面的处理。
-      l_paramName=$(echo -e "${l_tmpContent1}" | grep -m 1 -oP "^name:(.*)$")
-      if [[ "${l_paramName}" ]];then
-        l_paramName="${l_paramName#*:}"
-        #获取参数值的前导空格数量。
-        l_tmpSpaceNum=$(echo -e "${l_paramName}" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
-        #删除参数的前导空格。
-        l_paramName="${l_paramName:${l_tmpSpaceNum}}"
-        #删除参数值尾部空格。
-        l_paramName=$(echo -e "${l_paramName}" | sed 's/[[:space:]]*$//')
-        #如果剩下的值内容是以#开头的，则将l_paramValue设置为空串。
-        [[ "${l_paramValue}" =~ ^[#]+ ]] && l_paramValue=""
+      #l_paramName=$(echo -e "${l_tmpContent1}" | grep -m 1 -oP "^name:(.*)$")
+      _getMatchedLines "${l_tmpContent1}" "^name:(.*)$" "first"
+      l_tmpContent2="${gDefaultRetVal#*:}"
+
+      if [[ "${l_tmpContent2}" ]];then
+        #获取参数的值
+        l_paramName="${l_tmpContent2#*:}"
+        #去掉左右空格。
+        l_paramName="${l_paramName#"${l_paramName%%[^[:space:]]*}"}"
+        l_paramName="${l_paramName%"${l_paramName##*[^[:space:]]}"}"
+        #如果剩下的值内容是以#开头的，则将l_paramName设置为空串。
+        [[ "${l_paramName}" =~ ^[#]+ ]] && l_paramName=""
         #如果存在name属性，但是没有配置值，则不处理这个列表项。
         if [ ! "${l_paramName}" ];then
           warn "忽略项列表项${l_srcParamPath}[${l_tmpIndex}](存在name属性但是没有设置值)，继续下一个列表项"
@@ -2502,10 +2788,6 @@ function _combine(){
           fi
         else
           info "列表项参数整体插入成功"
-          #将其追加到_targetParamNameIndexMap变量中。
-          if [ ! "${l_paramName}" ];then
-             l_paramName="name${l_targetParamItemCount}"
-          fi
           _targetParamNameIndexMap["${l_paramName}"]="${l_targetParamItemCount}"
         fi
       else
@@ -2547,9 +2829,9 @@ function _combineObject(){
 
   local l_layerRegex
   local l_layerParamLines
+  local l_tmpArray
   local l_lineCount
   local l_tmpIndex
-  local l_lineNum
 
   local l_tmpParamLine
   local l_itemRowNum
@@ -2575,18 +2857,25 @@ function _combineObject(){
     fi
   fi
 
-  l_firstLineContent=$(echo -e "${l_srcContent}" | grep -m 1 -oP "^([ ]*)[a-zA-Z_\-]+" )
-  l_layerPrefixSpaceNum=$(echo -e "${l_firstLineContent}" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
+  #l_firstLineContent=$(echo -e "${l_srcContent}" | grep -m 1 -oP "^([ ]*)[a-zA-Z_\-]+" )
+  #l_layerPrefixSpaceNum=$(echo -e "${l_firstLineContent}" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
+  _getMatchedLines "${l_srcContent}" "^([ ]*)[a-zA-Z_\-]+.*$" "first"
+  l_firstLineContent="${gDefaultRetVal#*:}"
+  l_firstLineContent="${l_firstLineContent%%[^ ]*}"  # 提取行首连续空格
+  l_layerPrefixSpaceNum=${#l_firstLineContent}       # 直接获取空格数量
 
   #内容不是列表类型的，则读取参数名称及其参数值。
-  l_layerRegex="^[ ]{${l_layerPrefixSpaceNum}}[a-zA-Z_]+(.*)$"
-  l_layerParamLines=$(echo -e "${l_srcContent}" | grep -noP "${l_layerRegex}" )
-  l_lineCount=$(echo -e "${l_layerParamLines}" | sed -n '$=')
+  l_layerRegex="^[ ]{${l_layerPrefixSpaceNum}}[a-zA-Z_-]+(.*)$"
+  l_layerParamLines=$(grep -nE "${l_layerRegex}" <<< "${l_srcContent}")
+
+  #l_lineCount=$(echo -e "${l_layerParamLines}" | sed -n '$=')
+  readarray -t l_tmpArray <<< "${l_layerParamLines}"
+  l_lineCount=${#l_tmpArray[@]}
+
   ((l_tmpIndex = 0))
   while [ "${l_tmpIndex}" -lt "${l_lineCount}" ];do
-    #读取l_layerParamLines中的第l_lineNum行数据
-    ((l_lineNum = l_tmpIndex + 1))
-    l_tmpParamLine=$(echo -e "${l_layerParamLines}" | sed -n "${l_lineNum}p")
+    #读取l_layerParamLines中的第l_tmpIndex行数据
+    l_tmpParamLine=${l_tmpArray[${l_tmpIndex}]}
     #读取参数所在行的行号
     l_itemRowNum="${l_tmpParamLine%%:*}"
     #过滤掉行号部分的内容
@@ -2793,7 +3082,9 @@ function _getMatchedListItemIndex(){
 
   l_srcContent="${l_srcContent/-/ }"
   ((l_prefixSpaceNum = l_prefixSpaceNum + 2))
-  l_nameLine=$(echo -e "${l_srcContent}" | grep -m 1 -oP "^[ ]{${l_prefixSpaceNum}}name:(.*)$")
+  #l_nameLine=$(echo -e "${l_srcContent}" | grep -m 1 -oP "^[ ]{${l_prefixSpaceNum}}name:(.*)$")
+  _getMatchedLines "${l_srcContent}" "^[ ]{${l_prefixSpaceNum}}name:(.*)$" "first"
+  l_nameLine="${gDefaultRetVal#*:}"
   #如果源内容中没有name属性，或者目标内容中没有name属性，都按序号进行匹配。
   if [[ ! "${l_nameLine}" || "${l_targetItemCount}" -lt 0 ]];then
     ((l_targetIndex = l_srcIndex))
@@ -2808,7 +3099,8 @@ function _getMatchedListItemIndex(){
   l_srcNameValue="${l_nameLine#*:}"
   if [ "${l_srcNameValue}" ];then
     #删除参数的前导空格和尾部空格。
-    l_srcNameValue=$(echo -e "${l_srcNameValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    l_srcNameValue="${l_srcNameValue#"${l_srcNameValue%%[^[:space:]]*}"}"
+    l_srcNameValue="${l_srcNameValue%"${l_srcNameValue##*[^[:space:]]}"}"
     [[ "${l_srcNameValue}" =~ ^[#]+ ]] && l_srcNameValue=""
     if [ "${l_srcNameValue}" ];then
       # shellcheck disable=SC2154
@@ -2951,7 +3243,8 @@ function _getAllParamPathAndValueByParentPath() {
     l_paramName="${l_paramLine%%:*}"
     l_paramValue="${l_paramLine#*:}"
     #去掉头尾空格
-    l_paramValue=$(echo -e "${l_paramValue}" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    l_paramValue="${l_paramValue#"${l_paramValue%%[^[:space:]]*}"}"
+    l_paramValue="${l_paramValue%"${l_paramValue##*[^[:space:]]}"}"
 
     l_tmpParamPath="${l_paramPath}.${l_paramName}"
     readParam "${l_yamlFile}" "${l_tmpParamPath}"
@@ -2980,6 +3273,191 @@ function _getAllParamPathAndValueByParentPath() {
 
 }
 
+function _getParamLines() {
+  export gDefaultRetVal
+
+  local l_content="$1"
+  local l_param="$2"
+  local l_space="$3"
+
+  gDefaultRetVal=$(awk -v space="${l_space}" -v param="${l_param}" '
+BEGIN {
+   # 构建两种匹配模式：列表项格式和子级格式
+   regex1 = "^ {" space "}- "param":"     # 精确匹配列表项
+   regex2 = "^ {" space + 2 "}"param":"    # 精确匹配子级项
+}
+{
+   # 检查前导空格数
+   prefix = substr($0, 1, space + 2)
+   if ($0 ~ regex1 || $0 ~ regex2) {
+       print
+   }
+}' <<< "${l_content}")
+}
+
+function _getItemCount() {
+  export gDefaultRetVal
+
+  local l_content=$1
+  local l_spaceNum=$2
+
+  local l_itemCount
+  local l_line
+
+  mapfile -t matches <<< "${l_content}"
+  l_itemCount=0
+  for l_line in "${matches[@]}"; do
+    [[ "${l_line}" =~ ^[[:space:]]{${l_spaceNum}}- ]] && ((l_itemCount++))
+  done
+  gDefaultRetVal="${l_itemCount}"
+}
+
+function _getLineCount() {
+  export gDefaultRetVal
+
+  local l_content=$1
+  local l_spaceNum=$2
+
+  local l_itemCount
+  local l_line
+
+  mapfile -t matches <<< "${l_content}"
+  l_itemCount=0
+  for l_line in "${matches[@]}"; do
+    [[ "${l_line}" =~ ^[[:space:]]\w+ ]] && ((l_itemCount++))
+  done
+  gDefaultRetVal="${l_itemCount}"
+}
+
+function _getParamValue() {
+  export gDefaultRetVal
+
+  local l_lineContent=$1
+  local l_paramValue=$2
+  local l_paramQueryDicFile=$3
+  local l_paramQueryDicPrefix=$4
+
+  local l_curParamValue
+  local l_params
+  local l_param
+
+  #读取冒号后面的内容。
+  l_curParamValue="${l_lineContent#*:}"
+  #去掉左右空格
+  l_curParamValue="${l_curParamValue#"${l_curParamValue%%[^[:space:]]*}"}"
+  l_curParamValue="${l_curParamValue%"${l_curParamValue##*[^[:space:]]}"}"
+
+  if [ "${l_curParamValue}" != "${l_paramValue}" ];then
+    #读取返回值中包含的参数变量。
+    l_params=$(grep -oP '\$\{[a-zA-Z_]\w*(\-\w+)*\}' <<< "${l_curParamValue}")
+    if [ "${l_params}" ];then
+      # shellcheck disable=SC2068
+      for l_param in ${l_params[@]};do
+        l_param="${l_param#*\{}"
+        l_param="${l_param%\}*}"
+        #读取同文件中的变量的值。
+        readParam "${l_paramQueryDicFile}" "${l_paramQueryDicPrefix}.${l_param}"
+        [[ "${gDefaultRetVal}" != "null" ]] && l_curParamValue="${l_curParamValue//\$\{${l_param}\}/${gDefaultRetVal}}"
+      done
+    fi
+  fi
+  gDefaultRetVal="${l_curParamValue}"
+}
+
+#获取匹配的行内容
+function _getMatchedLines() {
+  export gDefaultRetVal
+
+  local l_lines=$1
+  local l_regexStr=$2
+  local l_mode=$3
+
+  local line_number=0
+  local l_matched_line
+  local l_line
+
+  while IFS= read -r l_line; do
+    ((line_number++))
+    if [[ "${l_line}" =~ ${l_regexStr} ]]; then
+      if [ "${l_mode}" == "first" ];then
+        l_matched_line="${line_number}:${l_line}"
+        break;
+      elif [ "${l_mode}" == "last" ];then
+        l_matched_line="${line_number}:${l_line}"
+      else
+        if [ "${l_matched_line}" ];then
+          l_matched_line="${l_matched_line}\n${line_number}:${l_line}"
+        else
+          l_matched_line="${line_number}:${l_line}"
+        fi
+      fi
+    fi
+  done <<< "${l_lines}"
+
+  if [[ "${l_mode}" == "first" || "${l_mode}" == "last" ]];then
+    gDefaultRetVal="${l_matched_line}"
+  elif [ "${l_matched_line}" ];then
+    gDefaultRetVal=$(echo -e "${l_matched_line}")
+  else
+    gDefaultRetVal=""
+  fi
+}
+
+#获取给定内容中指定行号范围内的内容。
+function _readLinesInRange() {
+  export gDefaultRetVal
+
+  local l_content=$1
+  local l_startRowNum=$2
+  local l_endRowNum=$3
+
+  local l_content_array
+  local l_array_length
+  local l_start
+  local l_end
+
+  if [ ! "${l_endRowNum}" ];then
+    l_endRowNum="${l_startRowNum}"
+  fi
+
+  # 转换行号为数组索引（数组从0开始）
+  ((l_start = l_startRowNum - 1))
+
+  mapfile -t l_content_array <<< "${l_content}"
+  l_array_length=${#l_content_array[@]}
+
+  # 处理结束位置越界的情况
+  if [[ "${l_endRowNum}" -le 0 || "${l_endRowNum}" -gt "${l_array_length}" ]]; then
+    ((l_endRowNum = l_array_length))
+  fi
+
+  ((l_end = l_endRowNum - 1))
+  l_content=$(printf "%s\n" "${l_content_array[@]:l_start:l_end - l_start + 1}")
+
+  gDefaultRetVal="${l_content}"
+}
+
+function profileFunction() {
+  local func_name=$1
+  local log_file="/tmp/yaml_helper.log"
+  shift  # 处理剩余参数
+  # 创建日志目录
+  mkdir -p "$(dirname "${log_file}")"
+  if [ ! -f "${log_file}" ];then
+    echo "222" > "${log_file}"
+  fi
+  # 生成带跟踪的函数
+  eval "function _traced_${func_name}() {
+      local start=\$(date +%s%3N)
+      command ${func_name} \"\$@\"  # 正确传递所有参数
+      local end=\$(date +%s%3N)
+      echo \"[\$(date '+%Y-%m-%d %H:%M:%S')] ${func_name} \$((end-start))ms args:\$*\" >> \"${log_file}\"
+  }"
+  # 使用别名覆盖原函数
+  alias ${func_name}="_traced_$
+  }{func_name}"
+}
+# 用法：profileFunction __readOrWriteYamlFile
 
 #-------------------------------------主流程-------------------------------------------#
 

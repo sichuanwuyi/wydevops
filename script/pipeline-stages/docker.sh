@@ -6,6 +6,8 @@ function executeDockerStage() {
   export gCurrentStage
   export gCiCdYamlFile
   export gDebugMode
+  export gBuildStages
+  export gValidBuildStages
   export gDockerBuildDir
 
   info "加载公共${gCurrentStage}阶段功能扩展文件：${gCurrentStage}-extend-point.sh"
@@ -56,7 +58,8 @@ function _processThirdPartyImage(){
   if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
     error "docker.thirdParties参数为空"
   fi
-  l_itemCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\- )" | wc -l)
+  #l_itemCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\- )" | wc -l)
+  l_itemCount=$(grep -cE "^- " <<< "${gDefaultRetVal}")
 
   # shellcheck disable=SC2206
   l_allArchTypes=(${gArchTypes//,/ })
@@ -121,7 +124,8 @@ function _createDockerImageByCustomizeDir(){
   if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
     error "docker.customizes参数为空"
   fi
-  l_itemCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\- )" | wc -l)
+  #l_itemCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\- )" | wc -l)
+  l_itemCount=$(grep -cE "^- " <<< "${gDefaultRetVal}")
 
   for ((l_i=0; l_i < l_itemCount; l_i++));do
     readParam "${gCiCdYamlFile}" "docker.customizes[${l_i}].name"

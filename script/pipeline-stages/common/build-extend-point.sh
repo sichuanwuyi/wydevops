@@ -18,7 +18,7 @@ function initialGlobalParamsForBuildStage_ex() {
     #初始化C++项目编译阶段需要的全局变量
     readParam "${gCiCdYamlFile}" "build"
     l_content="${gDefaultRetVal}"
-    l_archTypes=$(echo "${l_content}" | grep -oP "^[a-zA-Z_]+(\-)(amd64|arm64).*$")
+    l_archTypes=$(grep -Eo '^[[:alnum:]_]+-(amd64|arm64)' <<< "${l_content}")
     # shellcheck disable=SC2068
     for l_archType in ${l_archTypes[@]};do
       l_archType="${l_archType%%:*}"

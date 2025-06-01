@@ -56,20 +56,13 @@ function _buildSubModule() {
   export gCurrentStageResult
 
   local l_cmd=$1
-
-  local l_errorLog
   local l_info
 
-   mvn clean ${l_cmd} -Dmaven.test.skip=true 2>&1 | tee "./build.tmp"
-   # shellcheck disable=SC2002
-   l_errorLog=$(cat "./build.tmp" | grep "BUILD SUCCESS")
-   rm -f "./build.tmp" || true
+  if ! mvn clean ${l_cmd} -Dmaven.test.skip=true ;then
+    error "项目${gServiceName}编译失败"
+  fi
 
-   if [ ! "${l_errorLog}" ];then
-     error "项目${gServiceName}编译失败"
-   fi
-
-   l_info="项目${gServiceName}编译成功：mvn clean ${l_cmd} -Dmaven.test.skip=true"
-   info "${l_info}"
-   gCurrentStageResult="INFO|${l_info}"
+  l_info="项目${gServiceName}编译成功：mvn clean ${l_cmd} -Dmaven.test.skip=true"
+  info "${l_info}"
+  gCurrentStageResult="INFO|${l_info}"
 }

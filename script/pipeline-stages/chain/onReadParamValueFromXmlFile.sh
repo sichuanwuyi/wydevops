@@ -61,7 +61,7 @@ function onReadParamValueFromXmlFile_chinese() {
   ((l_arrayLen = l_arrayLen - 1))
   l_paramName="${l_subPaths[l_arrayLen]}"
   # shellcheck disable=SC2002
-  l_item=$(cat "${l_sourceFile}" | grep "<${l_paramName}>")
+  l_item=$(grep -F "<${l_paramName}>" "${l_sourceFile}")
   if [ "${l_item}" ];then
     # shellcheck disable=SC2206
     l_array=(${l_item})

@@ -53,7 +53,7 @@ function _onBeforeCreatingDockerImage_ex() {
   # shellcheck disable=SC2068
   for l_file in ${l_fileList[@]};do
     l_ignoredFile=${l_file##*/}
-    l_flag=$(echo "${l_ignoredFiles}" | grep " ${l_ignoredFile} ")
+    l_flag=$(grep -E " ${l_ignoredFile} " <<< "${l_ignoredFiles}")
     if [ "${l_flag}" ];then
       warn "忽略${l_ignoredFile}文件"
       continue
@@ -69,7 +69,7 @@ function _onBeforeCreatingDockerImage_ex() {
     fi
 
     l_ignoredDir=${l_file##*/}
-    l_flag=$(echo "${l_ignoredDirs}" | grep " ${l_ignoredDir} ")
+    l_flag=$(grep -E " ${l_ignoredDir} " <<< "${l_ignoredDirs}")
     if [ "${l_flag}" ];then
       warn "忽略${l_ignoredDir}目录"
       continue

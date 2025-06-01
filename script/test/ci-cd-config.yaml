@@ -1,0 +1,13 @@
+chart:
+  - name: ${chartName}
+    deployments:
+      - name: ${serviceName}-${versionSuffix}
+        initContainers:
+          - name: docker-client-init
+            repository: docker
+            pullPolicy: Always
+            tag: dind
+            command: [ "sh", "-c", "cp /usr/local/bin/docker /shared-volume/" ]
+            volumeMounts:
+              - name: docker-client
+                mountPath: /shared-volume/

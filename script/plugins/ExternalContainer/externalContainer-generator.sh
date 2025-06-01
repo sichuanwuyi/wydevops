@@ -180,7 +180,7 @@ function _combineExternalContainerCreatedByWydevops() {
     for (( l_j = 0; l_j < l_paramPathCount; l_j++ ));do
       l_targetParamPath="${l_paramPaths[${l_j}]}"
       l_targetParamPath="${l_targetParamPath#*|}"
-      getListIndexByPropertyName "${l_valuesYaml}" "${l_targetParamPath}" "" "" "true"
+      getListIndexByPropertyNameQuickly "${l_valuesYaml}" "${l_targetParamPath}" "" "" "true"
       # shellcheck disable=SC2206
       l_array=(${gDefaultRetVal})
       l_indexArray["${l_j}"]="${l_array[1]}"

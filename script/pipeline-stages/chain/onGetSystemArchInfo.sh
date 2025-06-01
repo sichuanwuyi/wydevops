@@ -29,20 +29,20 @@ function onGetSystemArchInfo_ubuntu() {
   info "返回结果：${l_result}"
 
   #连接被拒绝或超时
-  l_errorLog=$(echo -e "${l_result}" | grep -ioP "(refused|timed[ ]*out)")
+  l_errorLog=$(grep -io "(refused|timed[ ]*out)" <<< "${l_result}")
   [[ "${l_errorLog}" ]] && error "SSH连接${l_ip}服务失败：\n${l_result}"
 
   #uname命令不存在，肯定不是linux系统，直接返回。
-  l_errorLog=$(echo -e "${l_result}" | grep -ioP "not[ ]*found")
+  l_errorLog=$(grep -io "not[ ]*found" <<< "${l_result}")
   [[ "${l_errorLog}" ]] && return
 
   #如果命令执行结果中没有linux串，则判定为windows系统
   l_systemType="linux"
-  l_errorLog=$(echo -e "${l_result}" | grep -ioP "linux")
+  l_errorLog=$(grep -io "linux" <<< "${l_result}")
   [[ ! "${l_errorLog}" ]] && l_systemType="windows"
 
   #如果命令执行结果中包含了x86串，则判定为linux/amd64架构，反之为linux/arm64
-  l_errorLog=$(echo -e "${l_result}" | grep -ioP "x86")
+  l_errorLog=$(grep -io "x86" <<< "${l_result}")
   if [[ "${l_errorLog}" ]];then
     l_result="${l_systemType}/amd64"
   else

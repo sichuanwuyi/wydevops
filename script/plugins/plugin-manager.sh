@@ -42,7 +42,7 @@ function invokeResourceGenerator() {
     l_registerItem="${l_registerItems[${l_i}]}"
     l_fileName="${l_registerItem%%|*}"
     l_registerItem="${l_registerItem#*|}"
-    l_result=$(echo -e "${l_registerItem}" | grep -oP "${l_funcName},")
+    l_result=$(echo -e "${l_registerItem}" | grep -oE "${l_funcName},")
     if [ "${l_result}" ];then
       info "找到匹配的资源生成器方法：${l_funcName}"
       "${l_funcName}" "${l_fileName}" "${@}"
@@ -97,8 +97,8 @@ function registerPlugin() {
       l_registerContent="${l_registerContent};${l_generatorNames}"
 
       #检测生成器方法是否存在重复。
-      l_result=$(echo -e "${l_registerContent}" | grep -oP "[a-zA-Z0-9_\-]+," | sort | uniq -c | grep -oP "^([ ]*)[2-9]{1}[0-9]*(.*)$")
-      l_result=$(echo -e "${l_result}" | grep -oP "[a-zA-Z_]+[a-zA-Z0-9_\-]*")
+      l_result=$(grep -oE "[a-zA-Z0-9_\-]+," <<< "${l_registerContent}" | sort | uniq -c | grep -oE "^([ ]*)[2-9]{1}[0-9]*(.*)$")
+      l_result=$(grep -oE "[a-zA-Z_]+[a-zA-Z0-9_\-]*" <<< "${l_result}")
       [[ "${l_result}" ]] && error "以下资源生成器方法重名:${l_result}"
 
       gPluginRegTables["${l_resourceType}"]="${l_registerContent}"

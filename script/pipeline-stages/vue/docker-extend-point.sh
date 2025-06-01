@@ -28,7 +28,7 @@ function _onBeforeCreatingDockerImage_ex() {
 
   local l_flag
   # shellcheck disable=SC2002
-  l_flag=$(cat "${l_dockerfile}" | grep -oP "^(.*)--from=(.*)$")
+  l_flag=$(grep -oE "^(.*)--from=(.*)$" "${l_dockerfile}")
   if [ "${l_flag}" ];then
     cp -rf "${gBuildPath}/src" "${gDockerBuildDir}/"
     cp -rf "${gBuildPath}/public" "${gDockerBuildDir}/"
