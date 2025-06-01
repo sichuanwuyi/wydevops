@@ -276,6 +276,9 @@ function createUIYamlFile_ex() {
 
   #创建ui-config.yaml文件。
   l_uiYamlFile="${l_targetDir}/ui-config.yaml"
+  if [ -f "${l_uiYamlFile}" ];then
+    rm -f "${l_uiYamlFile}"
+  fi
 
   readParam "${gCiCdYamlFile}" "chart[${l_index}].params.configurable"
   if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" != "null" ]];then
