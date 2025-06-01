@@ -68,7 +68,7 @@ source "${gPipelineScriptsDir}/chain/extend-chain-manager.sh"
 invokeExtendPointFunc "onBeforeInitGlobalParams" "全局参数初始化前扩展点"
 
 #删除_global_params.yaml文件
-if [[ "${gClearCachedParams}" == "true" ]];then
+if [[ "${gClearCachedParams}" == "true" || "${gWorkMode}" == "jenkins"  ]];then
   rm -f "${gBuildPath}/${gGlobalParamCacheFileName}" ||true
 fi
 
