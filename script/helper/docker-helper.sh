@@ -56,7 +56,8 @@ function pullImage(){
         pushImage "${l_image}" "${l_archType}" "${l_repoName1}"
         if [ "${gDefaultRetVal}" == "true" ];then
           info "将导出的镜像文件复制到${l_savedFile%/*}目录中..."
-          l_fileName="${l_image//\//_}-${l_archType//\//-}.tar"
+          l_fileName="${l_image//\//_}"
+          l_fileName="${l_fileName//:/-}-${l_archType//\//-}.tar"
           cp -f "${l_imageCachedDir}/${l_fileName}" "${l_savedFile}"
           gDefaultRetVal="${l_image}"
         fi
@@ -310,8 +311,8 @@ function _loadImageFromDir() {
 
   gDefaultRetVal="false"
   if [ -d "${l_cacheDir}" ];then
-    l_fileName="${l_image//\//_}-${l_archType//\//-}.tar"
-    l_fileName="${l_fileName//:/-}"
+    l_fileName="${l_image//\//_}"
+    l_fileName="${l_fileName//:/-}-${l_archType//\//-}.tar"
 
     l_targetFiles=$(find "${l_cacheDir}" -maxdepth 1 -type f -name "${l_fileName}")
     if [ "${l_targetFiles}" ];then
@@ -341,8 +342,8 @@ function _cacheImageToDir() {
     fi
   fi
 
-  l_fileName="${l_image//\//_}-${l_archType//\//-}.tar"
-  l_fileName="${l_fileName//:/-}"
+  l_fileName="${l_image//\//_}"
+  l_fileName="${l_fileName//:/-}-${l_archType//\//-}.tar"
 
   if [ -f "${l_cacheDir}/${l_fileName}" ];then
     info "先删除已经存在的同名文件:${l_cacheDir}/${l_fileName}"

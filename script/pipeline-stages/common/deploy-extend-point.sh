@@ -771,6 +771,10 @@ function _deployServiceInK8S() {
     #等待3秒
     sleep 3s
 
+    if [ ! -f "${l_chartFile}" ];then
+      l_chartFile="${l_chartName} --version ${l_chartVersion}"
+    fi
+
     if [ "${l_settingParams}" ];then
       [[ "${l_settingParams}" =~ ^(,) ]] && l_settingParams="${l_settingParams:1}"
       info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
@@ -973,6 +977,7 @@ function _pushDockerImageForDeployStage() {
   export gHelmBuildOutDir
   export gServiceName
   export gForceCoverage
+  export gImageCacheDir
 
   local l_packageName=$1
   local l_dockerRepoInfo=$2
@@ -1017,14 +1022,19 @@ function _pushDockerImageForDeployStage() {
     l_dockerOutDir="${l_dockerOutDir//:/-}"
     l_tmpFile="${gHelmBuildOutDir}/${l_archType//\//-}/${l_dockerOutDir}-${l_archType//\//-}.tar"
     info "尝试从${l_tmpFile##*/}文件中加载docker镜像:${l_image}"
-    if [ -f "${l_tmpFile}" ];then
-      if ! docker load -i "${l_tmpFile}" >/dev/null;then
-        error "加载docker镜像失败：${l_image}"
+    if [ ! -f "${l_tmpFile}" ];then
+      warn "目标文件不存在:${l_tmpFile}"
+      l_tmpFile="${gImageCacheDir}/${l_dockerOutDir}-${l_archType//\//-}.tar"
+      info "继续尝试从本地镜像缓存目录中查找镜像导出文件:${l_tmpFile}"
+      if [ ! -f "${l_tmpFile}" ];then
+        error "找不到${l_image}镜像的导出文件"
       fi
-      warn "成功加载docker镜像：${l_image}"
-    else
-      error "文件不存在:${l_tmpFile}"
     fi
+
+    if ! docker load -i "${l_tmpFile}" >/dev/null;then
+      error "加载docker镜像失败：${l_image}"
+    fi
+    warn "成功加载docker镜像：${l_image}"
 
     #完成docker仓库登录
     dockerLogin "${l_array[2]}" "${l_array[3]}" "${l_array[4]}"
@@ -1110,7 +1120,7 @@ function _getDockerImageInChart() {
     l_images="${l_images//${l_result}/}"
     l_images="${l_images//,,/,}"
     #添加单一镜像
-    if [[ ! ("${l_images}" =~ ^(.*)${l_prefix}${gServiceName}:${l_businessVersion//\./\\\\.}(.*)$) ]];then
+    if [[ ! ("${l_images}" =~ ^(.*)${l_prefix}${gServiceName}:${l_businessVersion}(.*)$) ]];then
       l_images="${l_images},${l_prefix}${gServiceName}:${l_businessVersion}"
       l_images="${l_images//,,/,}"
     fi
