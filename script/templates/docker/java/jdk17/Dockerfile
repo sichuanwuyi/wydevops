@@ -6,7 +6,7 @@ ENV TZ=_TZ_
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 ENV JAVA_OPTS="--add-opens java.base/sun.reflect.annotation=ALL-UNNAMED -Dspring.config.location=_WORK-DIR-IN-CONTAINER_/wydevops-config/"
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 RUN mkdir -p _WORK-DIR-IN-CONTAINER_/wydevops-config
 
