@@ -70,6 +70,7 @@ invokeExtendPointFunc "onBeforeInitGlobalParams" "全局参数初始化前扩展
 #删除_global_params.yaml文件
 if [[ "${gClearCachedParams}" == "true" || "${gWorkMode}" == "jenkins"  ]];then
   rm -f "${gBuildPath}/${gGlobalParamCacheFileName}" ||true
+  rm -f "${gBuildPath}/${gCiCdYamlFileName}" ||true
 fi
 
 if [[ -f "${gBuildPath}/${gGlobalParamCacheFileName}" && -f "${gBuildPath}/${gCiCdYamlFileName}" ]];then
