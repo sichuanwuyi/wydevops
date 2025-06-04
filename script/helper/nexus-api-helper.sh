@@ -68,7 +68,7 @@ function pushNexusChartComponent(){
   registerTempFile "${l_tmpFile}"
 
   info "开始推送${l_chartFile##*/}镜像到chart仓库中..." "-n"
-  curl -s -v -F file=@"${l_chartFile}" -u "${l_account}":"${l_password}" \
+  curl -s -v -X 'POST' -F file=@"${l_chartFile}" -u "${l_account}":"${l_password}" \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components?repository=${l_repository}" 2>&1 | tee "${l_tmpFile}"
   l_result=$(cat "${l_tmpFile}")
   l_errorLog=$(grep -ioE "^(.*)(Error|Failed)(.*)$" <<< "${l_result}")
