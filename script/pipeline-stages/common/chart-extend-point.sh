@@ -636,8 +636,8 @@ function combineParamsToValuesYaml_ex() {
       [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
       # shellcheck disable=SC2002
-      #l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+\}\}" | sort | uniq -c)
-      l_paramList=$(grep -oE '\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default .*)*[ ]+\}\}' "${l_configFile}" | sort | uniq -c)
+      #l_paramList=$(cat "${l_configFile}" | grep -oP "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default.*)*[ ]+}}" | sort | uniq -c)
+      l_paramList=$(grep -oE '\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default .*)*[ ]+}}' "${l_configFile}" | sort | uniq -c)
       if [ "${l_paramList}" ];then
 
         stringToArray "${l_paramList}" "l_lines"

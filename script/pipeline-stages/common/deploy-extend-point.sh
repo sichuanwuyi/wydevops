@@ -100,7 +100,7 @@ function initialGlobalParamsForDeployStage_ex() {
       [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
       # shellcheck disable=SC2002
-      l_paramList=$(grep -oE "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default .*)*[ ]+\}\}" "${l_configFile}" | sort | uniq -c)
+      l_paramList=$(grep -oE "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default .*)*[ ]+}}" "${l_configFile}" | sort | uniq -c)
       if [ "${l_paramList}" ];then
         ((l_paramIndex = -1))
         stringToArray "${l_paramList}" "l_lines"
@@ -372,7 +372,7 @@ function onCheckAndInitialParamInConfigFile_ex(){
 
       #检测配置文件中是否存在动态配置的参数，如果存在则需要替换赋值。
       # shellcheck disable=SC2002
-      l_paramList=$(grep -oE "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default .*)*[ ]+\}\}" "${l_configFile}" | sort | uniq -c)
+      l_paramList=$(grep -oE "\{\{[ ]+\.Values(\.[a-zA-Z0-9_\-]+)+[ ]*(\|[ ]*default .*)*[ ]+}}" "${l_configFile}" | sort | uniq -c)
       if [ "${l_paramList}" ];then
 
         stringToArray "${l_paramList}" "l_lines"
@@ -717,10 +717,6 @@ function _deployServiceInK8S() {
       readParam "${gCiCdYamlFile}" "deploy[${l_index}].packageName"
       _pushDockerImageForDeployStage "${gDefaultRetVal}" "${l_repoInfos}" "${l_chartFile}" "${l_ip}" "${l_port}" \
         "${l_account}" "${l_password}"
-      if [ ! "${gDockerRepoInstanceName}" ];then
-        #如果未定义docker镜像仓库，则要将集群docker镜像仓库名称追加在image.registry参数的后面。
-        l_array[2]="${l_array[2]}/${l_array[1]}"
-      fi
 
       # 使用正则表达式替换已存在的参数
       # shellcheck disable=SC2001
@@ -993,7 +989,6 @@ function _pushDockerImageForDeployStage() {
   local l_array
   local l_dockerOutDir
   local l_tmpFile
-  local l_result
 
   #获取需要推送的镜像名称信息。
   _getDockerImageInChart "${l_packageName}" "${l_chartFile}"
@@ -1046,9 +1041,6 @@ function _pushDockerImageForDeployStage() {
       warn "目标镜像存在，且当前不是强制覆盖模式，则跳过镜像推送过程"
       continue
     fi
-
-    #更名
-    l_result=$(docker tag "${l_image}" "${l_image}" 2>&1)
 
     info "将${l_image}镜像推送到${l_array[2]}仓库中..."
     pushImage "${l_image}" "${l_archType}" "${l_array[2]}"

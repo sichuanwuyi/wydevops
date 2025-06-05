@@ -3046,13 +3046,13 @@ function _deleteInvalidLines() {
   fi
 
   #去除注释行和空白行
-  l_lineCount=$(echo -e "${l_srcContent}" | sed -n '$=')
+  l_lineCount=$(sed -n '$=' <<< "${l_srcContent}")
   l_tmpIndex=1;
   while [ "${l_tmpIndex}" -le "${l_lineCount}" ];do
-    l_tmpContent=$(echo -e "${l_srcContent}" | sed -n "${l_tmpIndex}p")
+    l_tmpContent=$(sed -n "${l_tmpIndex}p" <<< "${l_srcContent}")
     if [[ "${l_tmpContent}" =~ ^([ ]*)# || "${l_tmpContent}" =~ ^([ ]*)$ ]];then
       #删除注释行或空白行
-      l_srcContent=$(echo -e "${l_srcContent}" | sed "${l_tmpIndex}d")
+      l_srcContent=$(sed "${l_tmpIndex}d" <<< "${l_srcContent}")
       ((l_lineCount = l_lineCount -1))
       continue
     fi
@@ -3200,16 +3200,16 @@ function _getAllParamPathAndValueByParentPath() {
   local l_currentIndex
 
   #排除注释行
-  l_firstLine=$(echo -e  "${l_paramDataBlock}" | grep -m 1 -oP "^[a-zA-Z_\-]+" )
+  l_firstLine=$(grep -m 1 -oP "^[a-zA-Z_\-]+.*" <<< "${l_paramDataBlock}")
   [[ ! "${l_firstLine}" ]] && return
 
   if [[ "${l_paramPathPrefix}" && ! "${l_paramPathPrefix}" =~ ^(.*)(\.)$ ]];then
     l_paramPathPrefix="${l_paramPathPrefix}."
   fi
 
-  if [[ "${l_firstLine}" =~ ^(\-) ]];then
-    l_content=$(echo -e  "${l_paramDataBlock}" | grep -oP "^(\-)" )
-    l_listItemCount=$(echo -e  "${l_content}" | wc -l )
+  if [[ "${l_firstLine}" =~ ^(\- ) ]];then
+    l_content=$(grep -oP "^(\- )" <<< "${l_paramDataBlock}")
+    l_listItemCount=$(wc -l <<< "${l_content}")
     getListTypeByContent "${l_content}"
     if [ "${gDefaultRetVal}" == "array" ];then
       #处理数组项
@@ -3234,7 +3234,7 @@ function _getAllParamPathAndValueByParentPath() {
     return
   fi
 
-  l_content=$(echo -e  "${l_paramDataBlock}" | grep -oP "^([a-zA-Z_]+).*$" )
+  l_content=$(grep -oP "^([a-zA-Z_]+).*$" <<< "${l_paramDataBlock}")
   stringToArray "${l_content}" "l_paramLines"
   l_listItemCount=${#l_paramLines[@]}
   # shellcheck disable=SC2068
