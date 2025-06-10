@@ -6,13 +6,13 @@ _SCRIPT_ROOT_DIR="/e/tmt/wydevops/script"
 #如果是多模块项目，则路径以主模块目录结尾，最后面不能有"/"
 _PROJECT_MAIN_MODULE_DIR="/E/tmt/wydevops/sample/java/java-sample/"
 
-bash "${_SCRIPT_ROOT_DIR}/wydevops.sh" -e -d -m \
+bash "${_SCRIPT_ROOT_DIR}/wydevops.sh" -e -f -m \
 -A linux/amd64 \
 -O linux/amd64 \
 -B single \
 -I /d/cachedImage \
 -L java \
--S deploy \
+-S build,docker,chart,package,deploy \
 -M local \
 -T true \
 -W "${_SCRIPT_ROOT_DIR}" \

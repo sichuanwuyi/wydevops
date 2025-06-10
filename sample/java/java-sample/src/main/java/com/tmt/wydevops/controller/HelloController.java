@@ -25,6 +25,7 @@ public class HelloController {
         json.put("name", "wydevops");
         json.put("myName", myName);
         json.put("birthday", "2024-05-29");
+        json.put("version", "1.0.2");
         return json;
     }
 

@@ -291,6 +291,7 @@ chart:
     #每一个配置项都会对应生成一套deployment.yaml、route.yaml、service.yaml、configMap.yaml
     # serviceAccount.yaml、hpa.yaml等配置文件
     deployments:
+        #特别注意：deployment的name名称不要带版本信息。否则会导致金丝雀发布失败。
       - name: ${serviceName}-${versionSuffix}
         #指明引用的外部Chart镜像名称。如果是带路径的名称，则直接使用，否则会尝试从Chart仓库拉取镜像。
         #这个参数主要用来支持单pod多服务的Chart打包方式。wydevops会将外部chart镜像中deployment[0]的
@@ -317,6 +318,7 @@ chart:
           targetCPUUtilizationPercentage: 80
           # targetMemoryUtilizationPercentage: 80
         nodeSelector: ${nodeSelector}
+        serviceSelector: ${serviceName}
         tolerations: []
         affinity: {}
         podLabels:

@@ -19,8 +19,7 @@ spec:
   ports:
     {{- toYaml .ports | nindent 4 }}
   selector:
-    app.kubernetes.io/name: ${t_deploymentName}
-    app.kubernetes.io/instance: {{ \$.Release.Name }}
+    app: {{ \$.Values.${t_moduleName}.serviceSelector }}
 
   {{- end }}
   {{- end }}
@@ -38,14 +37,13 @@ metadata:
     app.kubernetes.io/version: ${gCurrentChartVersion}
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: {{ .name | trunc 54 | trimSuffix \"-\" }}-nodeport
-    app.kubernetes.io/instance: {{ .name | trunc 54 | trimSuffix \"-\" }}-nodeport
+    app.kubernetes.io/instance: {{ \$.Release.Name }}
 spec:
   type: NodePort
   ports:
     {{- toYaml .ports | nindent 4 }}
   selector:
-    app.kubernetes.io/name: ${t_deploymentName}
-    app.kubernetes.io/instance: {{ \$.Release.Name }}
+    app: {{ \$.Values.${t_moduleName}.serviceSelector }}
 
   {{- end }}
   {{- end }}
