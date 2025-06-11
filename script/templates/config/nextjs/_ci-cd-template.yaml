@@ -609,8 +609,9 @@ chart:
             name: ${serviceName}-dr
             host: ${serviceName}-clusterip
             trafficPolicy:
-              loadBalancer:
-                simple: ROUND_ROBIN
+              #定义全局负载均衡策略，当启用金丝雀部署时，应删除loadBalancer配置。
+              #loadBalancer:
+              #  simple: ROUND_ROBIN
               connectionPool:
                 tcp:
                   maxConnections: 100  # 最大连接数
@@ -622,6 +623,10 @@ chart:
               - name: ${versionSuffix}
                 labels:
                   version: ${businessVersion}
+                # 在每个subset中单独定义流量策略（如果需要）
+                trafficPolicy:
+                  loadBalancer:
+                    simple: ROUND_ROBIN
 
     #需要写入values.yaml文件的自定义配置信息。
     params:
