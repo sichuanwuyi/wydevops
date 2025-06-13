@@ -1345,8 +1345,8 @@ function _addParamsToValuesYaml(){
 
       insertParam "${l_valuesYaml}" "params.${l_paramPrefix}${l_key//\"/}" "${l_value}"
       [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && \
-          error "向${l_valuesYaml##*/}文件中插入params.${l_key//\"/}参数失败"
-      info "向${l_valuesYaml##*/}文件中插入params.${l_key//\"/}参数成功，值为：${l_value}"
+          error "向${l_valuesYaml##*/}文件中插入params.${l_paramPrefix}${l_key//\"/}参数失败"
+      info "向${l_valuesYaml##*/}文件中插入params.${l_paramPrefix}${l_key//\"/}参数成功，值为：${l_value}"
     else
       if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
         l_key="${gDefaultRetVal}"
@@ -1358,7 +1358,7 @@ function _addParamsToValuesYaml(){
             error "${l_valuesYaml##*/}文件中${l_paramPath}[${l_i}].groupIndex参数异常：缺失或值为空"
           l_key="${l_key//\"/}[${gDefaultRetVal}]"
         fi
-        l_paramPrefix="${l_paramPrefix}${l_key//\"/}."
+        l_paramPrefix="${l_key//\"/}."
       fi
       #递归调用自身，处理items属性。
       _addParamsToValuesYaml "${l_valuesYaml}" "${l_paramPath}[${l_i}].items" "${l_paramPrefix}"
