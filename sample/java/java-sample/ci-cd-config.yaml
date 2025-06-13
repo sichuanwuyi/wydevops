@@ -25,14 +25,91 @@ chart:
     params:
       testParam: test
       configurable:
-        - name: "后台管理页面"
-          catalog: "高级选项"
+        - name: "Taos集群配置|Taos Cluster Config"
+          catalog: "数据源配置|Data Source Config"
           items:
-            - name: "管理端口号"
-              key: "nodePort"
+            - name: "登录账号|Login Account"
+              key: "TaosdbConfig.username"
               required: true
               type: "input"
-              len: 120
+              maxLen: 20
+              value: "wydevops"
+              description: "Taos数据库的登录账号|Login account of Taos database"
+            - name: "登录密码|Login Password"
+              key: "TaosdbConfig.password"
+              required: true
+              type: "password"
+              maxLen: 20
+              value: "123456"
+              description: "Taos数据库的登录账号的密码|Password of login account of Taos database"
+            - name: "节点配置列表|Node Config List"
+              required: false
+              type: "group"
+              groupIndex: 0
+              items:
+                - name: "节点配置1|Node Config 1"
+                  key: "TaosdbConfig.hosts"
+                  required: true
+                  type: "group"
+                  groupIndex: 0
+                  items:
+                    - key: "hostName"
+                      name: "主机域名(FQDN)|Hostname (FQDN)"
+                      required: true
+                      type: "input"
+                      maxLen: 50
+                      value: "http://taosdb1:6043"
+                      description: "Taos数据库节点的主机名称|Hostname of Taos database node"
+                    - key: "ip"
+                      name: "IP地址|IP Address"
+                      required: true
+                      type: "input"
+                      maxLen: 15
+                      value: "192.168.100.10"
+                      express: "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+                      description: "必须满足IP地址格式|Must be a valid IP address format"
+                    - key: "port"
+                      name: "端口号|Port Number"
+                      required: true
+                      type: "inputNumber"
+                      value: 6043
+                      ranges: "[1025,65535,1]"
+                      description: "Taos数据库访问端口号|Port number of Taos database"
+                - name: "节点配置2|Node Config 2"
+                  key: "TaosdbConfig.hosts"
+                  required: true
+                  type: "group"
+                  groupIndex: 1
+                  items:
+                    - key: "hostName"
+                      name: "主机域名(FQDN)|Hostname (FQDN)"
+                      required: true
+                      type: "input"
+                      maxLen: 50
+                      value: "http://taosdb1:6043"
+                      description: "Taos数据库节点的主机名称|Hostname of Taos database node"
+                    - key: "ip"
+                      name: "IP地址|IP Address"
+                      required: true
+                      type: "input"
+                      maxLen: 15
+                      value: "192.168.100.11"
+                      express: "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+                      description: "必须满足IP地址格式|Must be a valid IP address format"
+                    - key: "port"
+                      name: "端口号|Port Number"
+                      required: true
+                      type: "inputNumber"
+                      value: 6043
+                      ranges: "[1025,65535,1]"
+                      description: "Taos数据库访问端口号|Port number of Taos database"
+        - name: "后台管理页面|Admin Page"
+          catalog: "高级选项|Advanced Options"
+          items:
+            - name: "管理端口号|Admin Port Number"
+              key: "nodePort"
+              required: true
+              type: "inputNumber"
               value: 30088
               ranges: "[30000,32767,1]"
               description: "内置的管理页面访问端口号|Port number of built-in admin page"
