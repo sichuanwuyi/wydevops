@@ -1350,7 +1350,6 @@ function _addParamsToValuesYaml(){
     else
       if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
         l_key="${gDefaultRetVal}"
-        echo "--------------l_key=${l_key}-------------"
         #如果不是已数组索引结尾，则需要读取groupIndex属性值作为数组索引值。
         if [[ ! ("${l_key}" =~ ^.*\[\d+\]) ]];then
           #读取数组索引
@@ -1361,7 +1360,6 @@ function _addParamsToValuesYaml(){
         fi
         l_paramPrefix="${l_paramPrefix}${l_key//\"/}."
       fi
-      echo "----------l_paramPrefix=${l_paramPrefix}-------------"
       #递归调用自身，处理items属性。
       _addParamsToValuesYaml "${l_valuesYaml}" "${l_paramPath}[${l_i}].items" "${l_paramPrefix}"
     fi
