@@ -587,11 +587,13 @@ chart:
             http:
               - match:
                   - uri:
-                      prefix: "${gatewayPath}"
+                      #注意下列prefix值应以“/”结尾，此时rewrite.uri才可以设置为“/”
+                      #如果下列prefix值未以“/”结尾，则rewrite.uri应设置为“ ”
+                      prefix: "${gatewayPath}/"
                 #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。
                 rewrite:
-                  #设置为" "表示删除上述prefix参数指定的前缀。
-                  uri: " "
+                  #如果上述prefix字段不以“/”结尾，则设置为" "表示删除上述prefix参数指定的前缀。
+                  uri: "/"
                 route:
                   - destination:
                       port:

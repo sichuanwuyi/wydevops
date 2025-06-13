@@ -484,15 +484,7 @@ function addParamsToValuesYaml_ex(){
   local l_paramPath=$2
   local l_valuesYaml=$3
 
-  local l_itemCount
   local l_i
-  local l_j
-  local l_k
-  local l_type
-  local l_key
-  local l_arrayIndex
-  local l_subKey
-  local l_value
 
   readParam "${l_packageYaml}" "${l_paramPath}"
   if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
@@ -500,74 +492,18 @@ function addParamsToValuesYaml_ex(){
     insertParam "${l_valuesYaml}" "${l_paramPath}" "${gDefaultRetVal}"
     #读取params.configurable配置节中的参数和默认值，并写入params配置节下。
     #最后删除params.configurable配置节
+
     ((l_i = 0))
     while true; do
       readParam "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items"
       [[ "${gDefaultRetVal}" == "null" ]] && break
       [[  ! "${gDefaultRetVal}" ]] && \
         error "${l_valuesYaml##*/}文件中${l_paramPath}.configurable[${l_i}].items配置节异常：值为空"
-
-      ((l_j = 0))
-      while true; do
-        readParam "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items[${l_j}].type"
-        [[ "${gDefaultRetVal}" == "null" ]] && break
-        [[ ! "${gDefaultRetVal}" ]] && \
-          error "${l_valuesYaml##*/}文件中${l_paramPath}.configurable[${l_i}].items[${l_j}].type参数异常：值为空"
-
-        l_type="${gDefaultRetVal}"
-
-        readParam "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items[${l_j}].key"
-        [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && \
-          error "${l_valuesYaml##*/}文件中${l_paramPath}.configurable[${l_i}].items[${l_j}].key参数异常：缺失或值为空"
-
-        l_key="${gDefaultRetVal}"
-        if [ "${l_type}" == "\"group\"" ];then
-          ((l_k = 0))
-          while true; do
-            readParam "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items[${l_j}].items[${l_k}].key"
-            [[ "${gDefaultRetVal}" == "null" ]] && break
-            [[ ! "${gDefaultRetVal}" ]] && \
-              error "${l_valuesYaml##*/}文件中${l_paramPath}.configurable[${l_i}].items[${l_j}].items[${l_k}].key参数异常：缺失或值为空"
-            l_subKey="${gDefaultRetVal}"
-
-            readParam "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items[${l_j}].groupIndex"
-
-            if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
-              l_arrayIndex="${gDefaultRetVal}"
-            else
-              l_arrayIndex="0"
-            fi
-            l_subKey="${l_key}[${l_arrayIndex}].${l_subKey}"
-
-            readParam "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items[${l_j}].items[${l_k}].value"
-            [[ "${gDefaultRetVal}" == "null" ]] && \
-              error "${l_valuesYaml##*/}文件中缺失了${l_paramPath}.configurable[${l_i}].items[${l_j}].items[${l_k}].value参数"
-
-            l_value="${gDefaultRetVal}"
-            insertParam "${l_valuesYaml}" "params.${l_subKey//\"/}" "${l_value}"
-            [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && \
-              error "向${l_valuesYaml##*/}文件中插入params.${l_subKey//\"/}参数失败"
-            info "向${l_valuesYaml##*/}文件中插入params.${l_subKey//\"/}参数成功，值为：${l_value}"
-
-            ((l_k = l_k + 1))
-          done
-        else
-          readParam "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items[${l_j}].value"
-          [[ "${gDefaultRetVal}" == "null" ]] && \
-            error "${l_valuesYaml##*/}文件中缺失了${l_paramPath}.configurable[${l_i}].items[${l_j}].value参数"
-
-          l_value="${gDefaultRetVal}"
-          insertParam "${l_valuesYaml}" "params.${l_key//\"/}" "${l_value}"
-          [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && \
-              error "向${l_valuesYaml##*/}文件中插入params.${l_key//\"/}参数失败"
-          info "向${l_valuesYaml##*/}文件中插入params.${l_key//\"/}参数成功，值为：${l_value}"
-        fi
-
-        ((l_j = l_j + 1))
-      done
-
+      #递归读取所有的参数及其默认值
+      _addParamsToValuesYaml "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items"
       ((l_i = l_i + 1))
     done
+
     #删除params.configurable配置节
     deleteParam "${l_valuesYaml}" "${l_paramPath}.configurable"
     if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
@@ -575,6 +511,7 @@ function addParamsToValuesYaml_ex(){
     else
       info "删除${l_valuesYaml##*/}文件中${l_paramPath}.configurable参数成功"
     fi
+
   fi
 
   #将l_paramNameList中的params参数配置到values.yaml文件的params配置节中。
@@ -1357,6 +1294,78 @@ function getDeployValueOfParam() {
     else
       warn "加载参数默认值：${l_paramName}=> (值为空)"
     fi
+    ((l_i = l_i + 1))
+  done
+
+}
+
+function _addParamsToValuesYaml(){
+  export gDefaultRetVal
+
+  local l_valuesYaml=$1
+  local l_paramPath=$2
+  local l_paramPrefix=$3
+
+  local l_i
+  local l_type
+  local l_key
+  local l_value
+
+  if [ ! "${l_paramPrefix}" ];then
+    l_paramPrefix=""
+  fi
+
+  #循环读取l_paramPath路径下的所有项的items属性
+  ((l_i = 0))
+  while true; do
+
+    readParam "${l_valuesYaml}" "${l_paramPath}[${l_i}]"
+    [[ "${gDefaultRetVal}" == "null" ]] && break
+    [[  ! "${gDefaultRetVal}" ]] && \
+      error "${l_valuesYaml##*/}文件中${l_paramPath}[${l_i}]配置节异常：值为空"
+
+    readParam "${l_valuesYaml}" "${l_paramPath}[${l_i}].type"
+    [[ "${gDefaultRetVal}" == "null" ]] && break
+    [[ ! "${gDefaultRetVal}" ]] && \
+      error "${l_valuesYaml##*/}文件中${l_paramPath}[${l_i}].type参数异常：值为空"
+    l_type="${gDefaultRetVal}"
+
+    readParam "${l_valuesYaml}" "${l_paramPath}[${l_i}].key"
+
+    if [ "${l_type}" != "\"group\"" ];then
+
+      [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && \
+        error "${l_valuesYaml##*/}文件中${l_paramPath}[${l_i}].key参数异常：缺失或值为空"
+      l_key="${gDefaultRetVal}"
+
+      readParam "${l_valuesYaml}" "${l_paramPath}[${l_i}].value"
+      [[ "${gDefaultRetVal}" == "null" ]] && \
+        error "${l_valuesYaml##*/}文件中缺失了${l_paramPath}[${l_i}].value参数"
+      l_value="${gDefaultRetVal}"
+
+      insertParam "${l_valuesYaml}" "params.${l_paramPrefix}${l_key//\"/}" "${l_value}"
+      [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && \
+          error "向${l_valuesYaml##*/}文件中插入params.${l_key//\"/}参数失败"
+      info "向${l_valuesYaml##*/}文件中插入params.${l_key//\"/}参数成功，值为：${l_value}"
+    else
+      if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
+        l_key="${gDefaultRetVal}"
+        echo "--------------l_key=${l_key}-------------"
+        #如果不是已数组索引结尾，则需要读取groupIndex属性值作为数组索引值。
+        if [[ ! ("${l_key}" =~ ^.*\[\d+\]) ]];then
+          #读取数组索引
+          readParam "${l_valuesYaml}" "${l_paramPath}[${l_i}].groupIndex"
+          [[ "${gDefaultRetVal}" == "null" ]] && \
+            error "${l_valuesYaml##*/}文件中${l_paramPath}[${l_i}].groupIndex参数异常：缺失或值为空"
+          l_key="${l_key//\"/}[${gDefaultRetVal}]"
+        fi
+        l_paramPrefix="${l_paramPrefix}${l_key//\"/}."
+      fi
+      echo "----------l_paramPrefix=${l_paramPrefix}-------------"
+      #递归调用自身，处理items属性。
+      _addParamsToValuesYaml "${l_valuesYaml}" "${l_paramPath}[${l_i}].items" "${l_paramPrefix}"
+    fi
+
     ((l_i = l_i + 1))
   done
 

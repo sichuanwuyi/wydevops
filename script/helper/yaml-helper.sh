@@ -256,6 +256,10 @@ function getListIndexByPropertyNameQuickly() {
 
   if [ ! "${l_paramDefineBlock}" ];then
     readParam "${l_yamlFile}" "${l_paramPath}"
+    if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
+      gDefaultRetVal="-1"
+      return
+    fi
     l_paramDefineBlock="${gDefaultRetVal}"
   fi
 
@@ -282,6 +286,7 @@ function getListIndexByPropertyNameQuickly() {
     gDefaultRetVal=""
     # 将多行内容转换为数组
     mapfile -t l_tmpLineArray <<< "${l_paramLines}"
+
     #遍历数组，查找指定参数值的数组序号。
     #先从l_itemIndex开始递增查找
     ((l_i = l_itemIndex + 1))
@@ -2309,7 +2314,7 @@ function _updateMultipleRowValue() {
   #在获取新数据第一行的前导空格数量.
   #todo: 正则表达式兼容了”<“（xml格式）和”[“（ini格式）开头的内容。
   #l_tmpSpaceNum1=$(echo -e "${l_rowData}" | grep -m 1 -oP "^[ ]*[a-zA-Z_\-\<\[]+.*$" | grep -oP "^[ ]*" | grep -oP " " | wc -l)
-  _getMatchedLines "${l_rowData}" "^[ ]*[a-zA-Z_\-\<\[]+.*$" "first"
+  _getMatchedLines "${l_rowData}" "^[ ]*[a-zA-Z_\-\<\[\]+.*$" "first"
   l_firstRowData="${gDefaultRetVal#*:}"
   #获取前导空格数量。
   l_firstRowData="${l_firstRowData%%[^ ]*}"  # 提取行首连续空格
@@ -3349,7 +3354,7 @@ function _getParamValue() {
 
   if [ "${l_curParamValue}" != "${l_paramValue}" ];then
     #读取返回值中包含的参数变量。
-    l_params=$(grep -oP '\$\{[a-zA-Z_]\w*(\-\w+)*\}' <<< "${l_curParamValue}")
+    l_params=$(grep -oE '\$\{[a-zA-Z_]\w*(\-\w+)*\}' <<< "${l_curParamValue}")
     if [ "${l_params}" ];then
       # shellcheck disable=SC2068
       for l_param in ${l_params[@]};do
