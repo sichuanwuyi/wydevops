@@ -11,6 +11,9 @@ globalParams:
   #服务所属的业务板块的英文名称。
   subSystemNameEn: "business-module1"
 
+  #默认范围：30000-32767
+  nodePorts: 30100
+
   #K8S集群的ApiServer服务器的地址信息（必须配置）
   #格式：{服务器IP地址}|{SSH端口号}|{SSH连接账号}|{SSH连接密码}
   targetApiServer: 172.25.21.254|22|wuyi|Wpl118124

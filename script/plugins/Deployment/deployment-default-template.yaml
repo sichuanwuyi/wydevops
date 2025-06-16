@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: ${t_kindType}
 metadata:
   name: {{ .name | trunc 63 | trimSuffix \"-\" }}
+  namespace: {{ \$.Release.Namespace }}
   labels:
     helm.sh/chart: ${gCurrentChartName}-${gCurrentChartVersion}
     app.kubernetes.io/version: ${gCurrentChartVersion}

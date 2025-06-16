@@ -51,8 +51,6 @@ export gGlobalParamNames=(
 "gOfflineArchTypes" \
 #当前版本是否支持回滚操作
 "gRollback" \
-#k8s部署的命名空间
-"gTargetNamespace" \
 #K8s部署的网关Host参数
 "gTargetGatewayHosts" \
 #K8s部署的网关路由前缀参数
