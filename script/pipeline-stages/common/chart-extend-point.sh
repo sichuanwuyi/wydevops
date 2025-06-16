@@ -10,6 +10,7 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
   export gChartRepoInstanceName
   export gProjectChartTemplatesDir
   export gProjectTemplateDirName
+  export gTargetNamespace
   export gRollback
 
   local l_systemType
@@ -255,6 +256,7 @@ function onModifyingValuesYaml_ex(){
   export gBuildPath
   export gTargetGatewayHosts
   export gGatewayPath
+  export gTargetNamespace
   export gRollback
 
   local l_chartPath=$1
@@ -290,6 +292,8 @@ function onModifyingValuesYaml_ex(){
     insertParam "${l_valuesYaml}" "gatewayRoute.enableRewrite" "true"
   fi
 
+  #在values.yaml文件中定义targetNamespace参数
+  insertParam "${l_valuesYaml}" "targetNamespace" "${gTargetNamespace}"
   #在values.yaml文件中定义rollback参数
   insertParam "${l_valuesYaml}" "rollback" "${gRollback}"
 

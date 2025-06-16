@@ -50,6 +50,7 @@ export gChartNames
 
 #当前版本是否支持回滚
 export gRollback
+export gTargetNamespace
 export gCurrentChartName
 export gCurrentChartVersion
 #应用的当前版本号

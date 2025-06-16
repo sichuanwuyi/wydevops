@@ -126,9 +126,11 @@ function createConfigFile_ex() {
   local l_targetDir=$3
 
   local l_gatewayHost
+  local l_targetNamespace
   local l_valuesYaml
   local l_settingFile
   local l_curDir
+  local l_keys
   local l_key
 
   #仅当存在${l_chartName}-${l_chartVersion}.tgz文件时才生成settings.yaml。
@@ -137,6 +139,9 @@ function createConfigFile_ex() {
     readParam "${gCiCdYamlFile}" "globalParams.gatewayHost"
     [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && l_gatewayHost="${gDefaultRetVal}"
 
+    readParam "${gCiCdYamlFile}" "globalParams.targetNamespace"
+    [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && l_targetNamespace="${gDefaultRetVal}"
+
     l_valuesYaml="${l_chartName}/values.yaml"
 
     #创建settings.yaml。
@@ -144,6 +149,7 @@ function createConfigFile_ex() {
     echo "${gServiceName}: |" > "${l_settingFile}"
     echo "  image.registry=${gDockerRepoName}," >> "${l_settingFile}"
     echo "  gatewayRoute.host=${l_gatewayHost}," >> "${l_settingFile}"
+    echo "  targetNamespace=${l_targetNamespace}," >> "${l_settingFile}"
 
     l_curDir=$(pwd)
 
