@@ -1,0 +1,10 @@
+
+FROM --platform=_PLATFORM_ scratch
+USER root
+
+RUN mkdir -p _APP-DIR-IN-CONTAINER_
+
+COPY ./dependencies/ ./spring-boot-loader/ ./snapshot-dependencies/ ./application/ _APP-DIR-IN-CONTAINER_/
+
+ENTRYPOINT ["sh", "-c", "cp -rf _APP-DIR-IN-CONTAINER_/* _WORK-DIR-IN-CONTAINER_/" ]
+
