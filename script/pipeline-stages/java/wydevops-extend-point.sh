@@ -9,9 +9,14 @@ function _onBeforeInitGlobalParams_ex() {
   local l_pomXmlFile
   local l_tmpVersion
 
+  #xmllint命令检查
+  if ! command -v xmllint &> /dev/null; then
+    error "xmllint命令未找到，请先安装libxml2工具包"
+  fi
+
   l_pomXmlFile="${gBuildPath}/pom.xml"
   if [ ! -f "${l_pomXmlFile}" ];then
-    error "未找到Java项目的pom.xml文件"
+      error "未找到Java项目的pom.xml文件"
   fi
 
   #读取JDK的版本
@@ -19,6 +24,26 @@ function _onBeforeInitGlobalParams_ex() {
   if [ ! "${l_tmpVersion}" ];then
     l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.source"]/text()' "${l_pomXmlFile}" 2>&1)
   fi
+
+  #数值校验（支持整数和小数）
+  if ! [[ "${l_tmpVersion}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    l_pomXmlFile=$(dirname "${gBuildPath%/}")
+    l_pomXmlFile="${l_pomXmlFile}/pom.xml"
+    if [ ! -f "${l_pomXmlFile}" ];then
+      error "未找到Java项目的pom.xml文件"
+    fi
+
+    #再次读取JDK的版本
+    l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.target"]/text()' "${l_pomXmlFile}" 2>&1)
+    if [ ! "${l_tmpVersion}" ];then
+      l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.source"]/text()' "${l_pomXmlFile}" 2>&1)
+    fi
+  fi
+
+  if ! [[ "${l_tmpVersion}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    error "未找到Java项目的pom.xml文件中的maven.compiler.target或maven.compiler.source参数:${l_tmpVersion}"
+  fi
+
   gRuntimeVersion="jdk${l_tmpVersion}"
 
 }
