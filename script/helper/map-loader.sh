@@ -225,9 +225,16 @@ function _processProjectParamMapping() {
             continue
           fi
 
+          #处理l_paramValue={{ ... | default ....}}格式的值。从中提前默认值。
+          if [[ "${l_paramValue}" =~ \{\{.*\|([ ]*)default([ ]+)\"([^\"]+)\".*\}\} ]]; then
+              l_paramValue="${BASH_REMATCH[3]}"
+              warn "提取模板默认值: ${l_paramValue}"
+          fi
+
           #如果l_paramValue中存在${...}变量占位符，则需要替换这些变量占位符的值。
           #更新文件中的指定参数的值。
           updateParam "${l_cicdConfigFile}" "${l_subValueItems[0]}" "${l_paramValue}"
+
           if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
             warn "更新${l_cicdConfigFile##*/}文件中${l_subValueItems[0]}参数失败"
             l_hasError="true"
