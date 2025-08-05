@@ -399,15 +399,19 @@ function _createDockerManifest() {
     info "镜像manifests缓存目录创建成功:${l_cacheDir}"
   else
     info "镜像manifests缓存目录已经存在:${l_cacheDir}"
-    rm -rf "${l_cacheDir:?}/*"
-    info "镜像manifests缓存目录已清空"
+    #镜像manifests缓存目录不能清空，否则无法向现存的manifest list中添加新的架构，因此注释了下面两行。
+    #rm -rf "${l_cacheDir:?}/*"
+    #info "镜像manifests缓存目录已清空"
   fi
 
-  _getDigestValue "${l_image}" "${l_archType}" "${l_repoName}"
+  _readDigestValueOfManifestList "${l_image}" "${l_archType}" "${l_repoName}"
   l_digest="${gDefaultRetVal}"
 
-  #l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
-  l_tmpImage="${l_repoName}/${l_image%:*}@${l_digest}"
+  if [ "${l_digest}" ];then
+    l_tmpImage="${l_repoName}/${l_image%:*}@${l_digest}"
+  else
+    l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
+  fi
 
   l_result=$(docker manifest create --insecure --amend "${l_repoName}/${l_image}" "${l_tmpImage}" 2>&1)
   l_errorLog=$(grep -ioE "^.*(Error|error|failed|invalid).*$" <<< "${l_result}")
@@ -425,19 +429,20 @@ function _createDockerManifest() {
     info "--->成功执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage} --os ${l_archType%%/*} --arch ${l_archType#*/})"
   fi
 
-  l_result=$(docker manifest push --insecure --purge "${l_repoName}/${l_image}" 2>&1)
+  l_result=$(docker manifest push --insecure "${l_repoName}/${l_image}" 2>&1)
   l_errorLog=$(grep -ioE "^(.*)(error|failed|invalid)(.*)$" <<< "${l_result}")
   if [ "${l_errorLog}" ];then
-    error "--->执行命令(docker manifest push --insecure --purge ${l_repoName}/${l_image})失败:\n${l_result}"
+    error "--->执行命令(docker manifest push --insecure ${l_repoName}/${l_image})失败:\n${l_result}"
   else
-    info "--->成功执行命令(docker manifest push --insecure --purge ${l_repoName}/${l_image})"
+    info "--->成功执行命令(docker manifest push --insecure ${l_repoName}/${l_image})"
   fi
 
   #删除本地manifest缓存中的文件。
-  rm -rf "${l_cacheDir:?}"
+  #镜像manifests缓存目录不能清空，否则无法向现存的manifest list中添加新的架构，因此注释了下面两行。
+  #rm -rf "${l_cacheDir:?}"
 }
 
-function _getDigestValue(){
+function _readDigestValueOfManifestList(){
     export gDefaultRetVal
 
     local l_image=$1
@@ -456,6 +461,13 @@ function _getDigestValue(){
     local l_tmpContent
 
     l_content=$(docker manifest inspect  --insecure "${l_repoName}/${l_image}-${l_archType//\//-}")
+    l_tmpContent=$(grep -oE "\"config\":" <<< "${l_content}")
+    if [ "${l_tmpContent}" ]; then
+        #l_tmpContent=$(grep -m 1 -oE "sha256:[a-zA-Z0-9]+" <<< "${l_content}")
+        #gDefaultRetVal="${l_tmpContent}"
+        gDefaultRetVal=""
+        return
+    fi
 
     l_lines=$(sed -n "/\"architecture\": \"${l_arch}\"/=" <<< "${l_content}")
     # shellcheck disable=SC2068
