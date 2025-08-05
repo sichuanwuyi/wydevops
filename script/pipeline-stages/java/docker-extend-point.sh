@@ -37,7 +37,7 @@ function _onBeforeCreatingDockerImage_ex() {
   # shellcheck disable=SC2164
   cd "${gDockerBuildDir}"
 
-  if [[ "${l_jdkVersion}" -ge 17 ]];then
+  if [[ "${l_jdkVersion}" -ge 21 ]];then
     l_command="java -Djarmode=tools -jar ${l_jarFiles[0]} extract --destination ./extract --layers --launcher"
     if ! java -Djarmode=tools -jar "${l_jarFiles[0]}" extract --destination ./extract --layers --launcher;then
       error "分层解压jar文件异常"

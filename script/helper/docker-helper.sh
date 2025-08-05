@@ -103,6 +103,7 @@ function existDockerImage() {
 #拉取镜像并检查其架构是否与传入的一致
 function pullAndCheckImage(){
   export gDefaultRetVal
+  export gDockerRepoInstanceName
   export gTempFileDir
 
   local l_image=$1
@@ -163,29 +164,32 @@ function pushImage() {
 
   local l_tmpFile
   local l_errorLog
+  local l_tmpImage
 
-  gDefaultRetVal="true"
+  l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
 
-  l_errorLog=$(docker tag "${l_image}" "${l_repoName}/${l_image}-${l_archType//\//-}" 2>&1 | grep -oE "^.*(Error|failed).*$")
+  l_errorLog=$(docker tag "${l_image}" "${l_tmpImage}" 2>&1 | grep -oE "^.*(Error|failed).*$")
   if [ "${l_errorLog}" ];then
-    error "--->执行命令(docker tag ${l_image} ${l_repoName}/${l_image}-${l_archType//\//-})失败：${l_errorLog}"
+    error "--->执行命令(docker tag ${l_image} ${l_tmpImage})失败：${l_errorLog}"
   else
-    info "--->成功执行命令(docker tag ${l_image} ${l_repoName}/${l_image}-${l_archType//\//-})"
+    info "--->成功执行命令(docker tag ${l_image} ${l_tmpImage})"
   fi
 
-  l_errorLog=$(docker push "${l_repoName}/${l_image}-${l_archType//\//-}" 2>&1 | grep -oE "^.*(Error|failed).*$")
+  l_errorLog=$(docker push "${l_tmpImage}" 2>&1 | grep -oE "^.*(Error|failed).*$")
   if [ "${l_errorLog}" ];then
     #报错前删除刚定义的镜像。
-    docker rmi -f "${l_repoName}/${l_image}-${l_archType//\//-}"
-    error "--->执行命令(docker push ${l_repoName}/${l_image}-${l_archType//\//-})失败：${l_errorLog}"
+    docker rmi -f "${l_tmpImage}"
+    error "--->执行命令(docker push ${l_tmpImage})失败：${l_errorLog}"
   else
-    info "--->成功执行命令(docker push ${l_repoName}/${l_image}-${l_archType//\//-})"
+    info "--->成功执行命令(docker push ${l_tmpImage})"
   fi
 
   _createDockerManifest "${l_image}" "${l_archType}" "${l_repoName}"
 
   #删除无用的镜像
   docker rmi -f "${l_repoName}/${l_image}-${l_archType//\//-}"
+
+  gDefaultRetVal="true"
 }
 
 #将镜像导出到指定目录的文件中
@@ -372,12 +376,16 @@ function _cacheImageToDir() {
 }
 
 function _createDockerManifest() {
+  export gDefaultRetVal
+
   local l_image=$1
   local l_archType=$2
   local l_repoName=$3
 
   local l_cacheDir
   local l_tmpImage
+  local l_digest
+
   local l_result
   local l_errorLog
 
@@ -385,10 +393,21 @@ function _createDockerManifest() {
   l_tmpImage="${l_tmpImage//:/\-}"
   l_tmpImage="${l_tmpImage//\//_}"
   # shellcheck disable=SC2088
-  l_cacheDir="~/.docker/manifests/${l_tmpImage}"
-  rm -rf "${l_cacheDir}"
+  l_cacheDir="${HOME}/.docker/manifests/${l_tmpImage}"
+  if [ ! -d "${l_cacheDir}" ];then
+    mkdir -p "${l_cacheDir}"
+    info "镜像manifests缓存目录创建成功:${l_cacheDir}"
+  else
+    info "镜像manifests缓存目录已经存在:${l_cacheDir}"
+    rm -rf "${l_cacheDir:?}/*"
+    info "镜像manifests缓存目录已清空"
+  fi
 
-  l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
+  _getDigestValue "${l_image}" "${l_archType}" "${l_repoName}"
+  l_digest="${gDefaultRetVal}"
+
+  #l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
+  l_tmpImage="${l_repoName}/${l_image%:*}@${l_digest}"
 
   l_result=$(docker manifest create --insecure --amend "${l_repoName}/${l_image}" "${l_tmpImage}" 2>&1)
   l_errorLog=$(grep -ioE "^.*(Error|error|failed|invalid).*$" <<< "${l_result}")
@@ -401,7 +420,7 @@ function _createDockerManifest() {
   l_result=$(docker manifest annotate "${l_repoName}/${l_image}" "${l_tmpImage}" --os "${l_archType%%/*}" --arch "${l_archType#*/}" 2>&1)
   l_errorLog=$(grep -oE "^.*(Error|error|failed|invalid).*$" <<< "${l_result}")
   if [ "${l_errorLog}" ];then
-    error "--->执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage} --os ${l_archType%%/*} --arch ${l_archType#*/})失败:\n${l_result}"
+    error "--->执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage}  --os ${l_archType%%/*} --arch ${l_archType#*/})失败:\n${l_result}"
   else
     info "--->成功执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage} --os ${l_archType%%/*} --arch ${l_archType#*/})"
   fi
@@ -415,8 +434,44 @@ function _createDockerManifest() {
   fi
 
   #删除本地manifest缓存中的文件。
-  rm -rf "${l_cacheDir}"
+  rm -rf "${l_cacheDir:?}"
 }
+
+function _getDigestValue(){
+    export gDefaultRetVal
+
+    local l_image=$1
+    local l_archType=$2
+    local l_repoName=$3
+
+    # 提取指定系统架构的digest值（兼容manifest list和单一架构镜像）
+    local l_os="${l_archType%%/*}"
+    local l_arch="${l_archType#*/}"
+    local l_digest
+
+    local l_content
+    local l_lines
+    local l_line
+    local l_tmpLine
+    local l_tmpContent
+
+    l_content=$(docker manifest inspect  --insecure "${l_repoName}/${l_image}-${l_archType//\//-}")
+
+    l_lines=$(sed -n "/\"architecture\": \"${l_arch}\"/=" <<< "${l_content}")
+    # shellcheck disable=SC2068
+    for l_line in ${l_lines[@]};do
+      ((l_tmpLine = l_line + 1))
+      l_tmpContent=$(sed -n "${l_tmpLine}p" <<< "${l_content}")
+      if [[ "${l_tmpContent}" =~ ^([ ]+)\"os\":([ ]+)\"${l_os}\" ]];then
+        l_digest=$(sed -n "1,${l_line}p" <<< "${l_content}" | grep -oE "sha256:[a-zA-Z0-9]+" | tail -n 1)
+        break;
+      fi
+    done
+
+    gDefaultRetVal="${l_digest}"
+}
+
+
 
 #**********************私有方法-结束******************************
 

@@ -689,7 +689,6 @@ function _createDockerImage() {
 
   gCurrentStageResult="INFO|成功构建${l_archType}架构的${l_image}镜像"
   gDefaultRetVal="${l_image}"
-
 }
 
 function _onAfterCreatingDockerImage(){

@@ -42,7 +42,8 @@ function onBeforeReplaceParamPlaceholder_ex() {
   fi
 
   #为业务镜像和基础镜像添加项目名称前缀。
-  if [[ "${gDockerRepoType}" == "harbor" || ("${gDockerRepoInstanceName}" && "${gDockerImageNameWithInstance}" == "true") ]];then
+  #if [[ "${gDockerRepoType}" == "harbor" || ("${gDockerRepoInstanceName}" && "${gDockerImageNameWithInstance}" == "true") ]];then
+  if [[ "${gDockerRepoType}" == "harbor" ]];then
     info "为业务镜像和基础镜像添加仓库名称（nexus）或项目名称(harbor)前缀..."
     readParam "${l_cicdYaml}" "globalParams.businessImage"
     info "更新globalParams.businessImage参数的值为:${gDockerRepoInstanceName}/${gDefaultRetVal}"
