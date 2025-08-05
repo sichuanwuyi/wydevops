@@ -1092,8 +1092,8 @@ function _getDockerImageInChart() {
   fi
 
   l_prefix=""
-  if [[ "${gDockerRepoType}" == "harbor"
-    || ("${gDockerRepoInstanceName}" && "${gDockerImageNameWithInstance}" == "true") ]];then
+  #if [[ "${gDockerRepoType}" == "harbor" || ("${gDockerRepoInstanceName}" && "${gDockerImageNameWithInstance}" == "true") ]];then
+  if [[ "${gDockerRepoType}" == "harbor" ]];then
     l_prefix="${gDockerRepoInstanceName}/"
   fi
 

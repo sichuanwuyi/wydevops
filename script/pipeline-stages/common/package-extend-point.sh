@@ -434,7 +434,8 @@ function handleBuildingSingleImageForPackage_ex() {
 
     [[ "${l_paramValue}" =~ ^([ ]*),.*$ ]] && l_paramValue="${l_paramValue:1}"
 
-    if [[ "${gDockerRepoType}" == "harbor" || ("${gDockerRepoInstanceName}" && "${gDockerImageNameWithInstance}" == "true") ]];then
+    #if [[ "${gDockerRepoType}" == "harbor" || ("${gDockerRepoInstanceName}" && "${gDockerImageNameWithInstance}" == "true") ]];then
+    if [[ "${gDockerRepoType}" == "harbor" ]];then
       l_serviceName="${gDockerRepoInstanceName}/${l_serviceName}"
     fi
 
