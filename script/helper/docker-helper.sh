@@ -413,27 +413,24 @@ function _createDockerManifest() {
   fi
 
   l_result=$(docker manifest create --insecure --amend "${l_repoName}/${l_image}" "${l_tmpImage}" 2>&1)
-  echo "1----$?---l_result=${l_result}---"
-  l_errorLog=$(grep -ioE "^.*(Error|error|failed|invalid).*$" <<< "${l_result}")
-  if [ "${l_errorLog}" ];then
+  # shellcheck disable=SC2181
+  if [ "$?" -ne 0 ];then
     error "--->执行命令(docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage})失败:\n${l_result}"
   else
     info "--->成功执行命令(docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage})"
   fi
 
   l_result=$(docker manifest annotate "${l_repoName}/${l_image}" "${l_tmpImage}" --os "${l_archType%%/*}" --arch "${l_archType#*/}" 2>&1)
-  echo "1----$?---l_result=${l_result}---"
-  l_errorLog=$(grep -oE "^.*(Error|error|failed|invalid).*$" <<< "${l_result}")
-  if [ "${l_errorLog}" ];then
+  # shellcheck disable=SC2181
+  if [ "$?" -ne 0 ];then
     error "--->执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage}  --os ${l_archType%%/*} --arch ${l_archType#*/})失败:\n${l_result}"
   else
     info "--->成功执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage} --os ${l_archType%%/*} --arch ${l_archType#*/})"
   fi
 
   l_result=$(docker manifest push --insecure --purge "${l_repoName}/${l_image}" 2>&1)
-  echo "1----$?---l_result=${l_result}---"
-  l_errorLog=$(grep -ioE "^(.*)(error|failed|invalid)(.*)$" <<< "${l_result}")
-  if [ "${l_errorLog}" ];then
+  # shellcheck disable=SC2181
+   if [ "$?" -ne 0 ];then
     error "--->执行命令(docker manifest push --insecure --purge ${l_repoName}/${l_image})失败:\n${l_result}"
   else
     info "--->成功执行命令(docker manifest push --insecure --purge ${l_repoName}/${l_image})"
