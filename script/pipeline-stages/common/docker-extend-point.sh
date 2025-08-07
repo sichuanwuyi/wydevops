@@ -661,11 +661,11 @@ function _createDockerImage() {
   info "构建docker镜像:${l_image} ..."
 
   if [ "${gEnableNoCacheOnDockerBuild}" == "true" ];then
-    info "执行命令:docker build --no-cache --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir} ..."
-    docker build --no-cache --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
+    info "执行命令:docker build --no-cache --platform ${l_archType} --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir} ..."
+    docker build --no-cache --platform "${l_archType}" --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
   else
-    info "执行命令:docker build --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir} ..."
-    docker build --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
+    info "执行命令:docker build --platform ${l_archType} --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir} ..."
+    docker build --platform "${l_archType}" --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
   fi
 
   # shellcheck disable=SC2002

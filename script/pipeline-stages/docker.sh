@@ -181,6 +181,7 @@ function _createDockerImageByDockerfile() {
   export gServiceName
   export gDockerRepoName
   export gCurrentStageResult
+  export gImageCacheDir
 
   export gDockerfileTemplates
   export gDockerFileTemplateParamMap
@@ -191,9 +192,48 @@ function _createDockerImageByDockerfile() {
   local l_targetDockerFile
 
   local l_allArchTypes
+  local l_localArchType
   local l_archType
   local l_index
   local l_image
+
+  # shellcheck disable=SC2206
+  l_allArchTypes=(${gArchTypes//,/ })
+
+  #检查当前操作系统架构类型
+  invokeExtendChain "onGetSystemArchInfo"
+  l_localArchType=${gDefaultRetVal}
+
+  if [[ "${#l_allArchTypes[@]}" -gt 1 || "${l_localArchType##*/}" != "${l_allArchTypes[0]##*/}"  ]];then
+    info "检查本地是否存在tonistiigi/binfmt:latest镜像"
+    docker image inspect tonistiigi/binfmt:latest >/dev/null 2>&1
+    # shellcheck disable=SC2181
+    if [ "$?" -ne 0 ];then
+       if [ "${gDockerRepoName}" ];then
+         docker run --rm --privileged "${gDockerRepoName}/tonistiigi/binfmt:latest" --install all
+       fi
+
+       docker image inspect "${gDockerRepoName}/tonistiigi/binfmt:latest" >/dev/null 2>&1
+       if [ "$?" -ne 0 ];then
+         docker run --rm --privileged tonistiigi/binfmt:latest --install all
+         docker image inspect tonistiigi/binfmt:latest >/dev/null 2>&1
+         if [ "$?" -eq 0 ];then
+           info "成功从tonistiigi/binfmt:latest镜像中安装QEMU模拟"
+           if [ "${gDockerRepoName}" ];then
+             info "将tonistiigi/binfmt:latest镜像推送到镜像仓库中：${gImageCacheDir}"
+             pushImage "tonistiigi/binfmt:latest" "linux/${l_localArchType##*/}" "${gDockerRepoName}"
+           fi
+           info "将tonistiigi/binfmt:latest镜像缓存到本地镜像缓存目录中：${gImageCacheDir}"
+           saveImage "tonistiigi/binfmt:latest" "linux/${l_localArchType##*/}" "${gImageCacheDir}"
+         fi
+       else
+         info "成功从${gDockerRepoName}/tonistiigi/binfmt:latest镜像中安装QEMU模拟"
+       fi
+    else
+      docker run --rm --privileged tonistiigi/binfmt:latest --install all
+      info "成功从tonistiigi/binfmt:latest镜像中安装QEMU模拟"
+    fi
+  fi
 
   # shellcheck disable=SC2206
   l_DockerfileTemplates=(${gDockerfileTemplates})
@@ -201,8 +241,6 @@ function _createDockerImageByDockerfile() {
   for l_dockerFileTemplate in ${l_DockerfileTemplates[@]};do
     #设置DockerFile文件中_FROM-IMAGE_占位符的值。
     _setFromImage "${l_dockerFileTemplate}"
-    # shellcheck disable=SC2206
-    l_allArchTypes=(${gArchTypes//,/ })
     # shellcheck disable=SC2068
     for l_archType in ${l_allArchTypes[@]};do
       #设置DockerFile文件中_FROM-IMAGE_占位符的值。

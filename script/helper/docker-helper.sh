@@ -55,10 +55,10 @@ function pullImage(){
         info "将从公网拉取的${l_archType}架构的${l_image}镜像推送到${l_repoName1}仓库中..."
         pushImage "${l_image}" "${l_archType}" "${l_repoName1}"
         if [ "${gDefaultRetVal}" == "true" ];then
-          info "将导出的镜像文件复制到${l_savedFile%/*}目录中..."
+          info "将导出的镜像文件${l_savedFile}复制到${l_imageCachedDir}目录中..."
           l_fileName="${l_image//\//_}"
           l_fileName="${l_fileName//:/-}-${l_archType//\//-}.tar"
-          cp -f "${l_imageCachedDir}/${l_fileName}" "${l_savedFile}"
+          cp -f "${l_savedFile}" "${l_imageCachedDir}/${l_fileName}"
           gDefaultRetVal="${l_image}"
         fi
       else
@@ -112,7 +112,6 @@ function pullAndCheckImage(){
   local l_pullFromRepoName=$4
 
   local l_tmpImage
-  local l_tmpFile
   local l_errorLog
 
   gDefaultRetVal="true"
@@ -120,16 +119,17 @@ function pullAndCheckImage(){
   l_tmpImage="${l_image}"
   [[ "${l_pullFromRepoName}" == "true" && "${l_repoName}" ]] && l_tmpImage="${l_repoName}/${l_image}"
 
-  # shellcheck disable=SC2088
-  l_tmpFile="${gTempFileDir}/docker-pull-${RANDOM}.tmp"
-  registerTempFile "${l_tmpFile}"
-  docker pull "--platform=${l_archType}" "${l_tmpImage}" 2>&1 | tee "${l_tmpFile}"
-  # shellcheck disable=SC2002
-  l_errorLog=$(grep -ioE "^.*(Error|failed).*$" "${l_tmpFile}")
-  if [ ! "${l_errorLog}" ];then
-    #l_errorLog=$(docker inspect "${l_tmpImage}" | grep "Architecture" | grep -oE "^.*${l_archType#*/}.*$" )
+  info "先删除可能已存在的同名异构的镜像:${l_tmpImage}"
+  docker rmi "${l_tmpImage}" 2>/dev/null || true
+
+  info "执行命令：docker pull --platform ${l_archType} ${l_tmpImage}"
+  docker pull --platform "${l_archType}" "${l_tmpImage}"
+
+  # shellcheck disable=SC2181
+  if [ "$?" -eq 0 ];then
     l_errorLog=$(docker inspect -f '{{.Architecture}}' "${l_tmpImage}" | grep -x "${l_archType#*/}")
     if [ ! "${l_errorLog}" ];then
+      error "从${l_repoName}私库拉取${l_archType}架构的镜像${l_image}失败，架构类型与指定的${l_archType}不一致"
       gDefaultRetVal="false"
     else
       if [[ "${l_pullFromRepoName}" == "true" && "${l_repoName}" ]];then
@@ -151,8 +151,6 @@ function pullAndCheckImage(){
   else
     gDefaultRetVal="false"
   fi
-
-  unregisterTempFile "${l_tmpFile}"
 }
 
 function pushImage() {
@@ -229,7 +227,7 @@ function saveImage(){
   # shellcheck disable=SC2088
   l_tmpFile="${gTempFileDir}/docker-save-${RANDOM}.tmp"
   registerTempFile "${l_tmpFile}"
-  docker save -o "${l_fileName}" "${l_image}" 2>&1 | tee "${l_tmpFile}"
+  docker save --platform "${l_archType}" -o "${l_fileName}" "${l_image}" 2>&1 | tee "${l_tmpFile}"
   # shellcheck disable=SC2002
   l_errorLog=$(grep -oE "^.*(Error|failed).*$" "${l_tmpFile}")
   unregisterTempFile "${l_tmpFile}"
@@ -297,6 +295,8 @@ function _pullImageFromPublicRepository(){
   if [ "${gDefaultRetVal}" == "true" ];then
     info "将从公网拉取的${l_archType}架构的${l_image}镜像缓存到本地镜像缓存目录${l_imageCachedDir}中 ..."
     _cacheImageToDir "${l_image}" "${l_archType}" "${l_imageCachedDir}"
+  else
+    error "从公网拉取${l_archType}架构的${l_image}镜像失败"
   fi
 }
 
@@ -362,7 +362,7 @@ function _cacheImageToDir() {
   l_tmpFile="${gTempFileDir}/docker-save-${RANDOM}.tmp"
   registerTempFile "${l_tmpFile}"
   info "将${l_image}镜像导出到${l_cacheDir}/${l_fileName}文件中..."
-  docker save -o "${l_fileName}" "${l_image}" 2>&1 | tee "${l_tmpFile}"
+  docker save --platform "${l_archType}" -o "${l_fileName}" "${l_image}" 2>&1 | tee "${l_tmpFile}"
   # shellcheck disable=SC2002
   l_errorLog=$(grep -oE "^.*(Error|failed).*$" "${l_tmpFile}")
   unregisterTempFile "${l_tmpFile}"
@@ -384,7 +384,8 @@ function _createDockerManifest() {
 
   local l_cacheDir
   local l_tmpImage
-  local l_digest
+  local l_otherImage
+  local l_otherArchType
 
   local l_result
   local l_errorLog
@@ -403,21 +404,48 @@ function _createDockerManifest() {
     info "镜像manifests缓存目录已清空"
   fi
 
-  _readDigestValueOfManifestList "${l_image}" "${l_archType}" "${l_repoName}"
-  l_digest="${gDefaultRetVal}"
-
-  if [ "${l_digest}" ];then
-    l_tmpImage="${l_repoName}/${l_image%:*}@${l_digest}"
+  if [ "${l_archType}" == "linux/amd64" ];then
+    l_otherArchType="linux/arm64"
   else
-    l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
+    l_otherArchType="linux/amd64"
   fi
 
-  l_result=$(docker manifest create --insecure --amend "${l_repoName}/${l_image}" "${l_tmpImage}" 2>&1)
+  #获取其他架构的镜像名称。
+  info "获取现有${l_otherArchType}架构的镜像名称..." "-n"
+  l_otherImage="${l_repoName}/${l_image}-${l_otherArchType//\//-}"
+  _readDigestValueOfManifestList "${l_otherImage}" "${l_otherArchType}" "${l_repoName}"
+  if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
+    l_otherImage="${l_otherImage%:*}@${gDefaultRetVal}"
+    info "${l_otherImage}" "*"
+  else
+    l_otherImage=""
+    info "失败"
+  fi
+
+  #获取当前架构的镜像名称。
+  info "获取现有${l_archType}架构的镜像名称..." "-n"
+  gDefaultRetVal=""
+  l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
+  _readDigestValueOfManifestList "${l_tmpImage}" "${l_archType}" "${l_repoName}"
+  if [ "${gDefaultRetVal}" ];then
+    l_tmpImage="${l_tmpImage%:*}@${gDefaultRetVal}"
+  fi
+  info "${l_tmpImage}" "*"
+
+  # 删除已存在的manifest列表
+  docker manifest rm "${l_repoName}/${l_image}" 2>/dev/null || true
+
+  if [ "${l_otherImage}" ];then
+    # 创建新的manifest列表
+    l_result=$(docker manifest create --insecure --amend "${l_repoName}/${l_image}" "${l_tmpImage}" "${l_otherImage}" 2>&1)
+  else
+    l_result=$(docker manifest create --insecure --amend "${l_repoName}/${l_image}" "${l_tmpImage}" 2>&1)
+  fi
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
-    error "--->执行命令(docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage})失败:\n${l_result}"
+    error "--->执行命令(docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage} ${l_otherImage})失败:\n${l_result}"
   else
-    info "--->成功执行命令(docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage})"
+    info "--->成功执行命令(docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage} ${l_otherImage})"
   fi
 
   l_result=$(docker manifest annotate "${l_repoName}/${l_image}" "${l_tmpImage}" --os "${l_archType%%/*}" --arch "${l_archType#*/}" 2>&1)
@@ -426,6 +454,16 @@ function _createDockerManifest() {
     error "--->执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage}  --os ${l_archType%%/*} --arch ${l_archType#*/})失败:\n${l_result}"
   else
     info "--->成功执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage} --os ${l_archType%%/*} --arch ${l_archType#*/})"
+  fi
+
+  if [ "${l_otherImage}" ];then
+    l_result=$(docker manifest annotate "${l_repoName}/${l_image}" "${l_otherImage}" --os "${l_otherArchType%%/*}" --arch "${l_otherArchType#*/}" 2>&1)
+    # shellcheck disable=SC2181
+    if [ "$?" -ne 0 ];then
+      error "--->执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_otherImage}  --os ${l_otherArchType%%/*} --arch ${l_otherArchType#*/})失败:\n${l_result}"
+    else
+      info "--->成功执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_otherImage} --os ${l_otherArchType%%/*} --arch ${l_otherArchType#*/})"
+    fi
   fi
 
   l_result=$(docker manifest push --insecure --purge "${l_repoName}/${l_image}" 2>&1)
@@ -446,6 +484,7 @@ function _readDigestValueOfManifestList(){
     local l_image=$1
     local l_archType=$2
     local l_repoName=$3
+    local l_readConfig=$4
 
     # 提取指定系统架构的digest值（兼容manifest list和单一架构镜像）
     local l_os="${l_archType%%/*}"
@@ -458,12 +497,25 @@ function _readDigestValueOfManifestList(){
     local l_tmpLine
     local l_tmpContent
 
-    l_content=$(docker manifest inspect  --insecure "${l_repoName}/${l_image}-${l_archType//\//-}")
+    if [ ! "${l_readConfig}" ];then
+      l_readConfig="false"
+    fi
+
+    l_content=$(docker manifest inspect  --insecure "${l_image}")
+    # shellcheck disable=SC2181
+    # shellcheck disable=SC2320
+    if [ "$?" -ne 0 ];then
+      gDefaultRetVal="null"
+      return
+    fi
+
     l_tmpContent=$(grep -oE "\"config\":" <<< "${l_content}")
     if [ "${l_tmpContent}" ]; then
-        #l_tmpContent=$(grep -m 1 -oE "sha256:[a-zA-Z0-9]+" <<< "${l_content}")
-        #gDefaultRetVal="${l_tmpContent}"
         gDefaultRetVal=""
+        if [ "${l_readConfig}" == "true" ]; then
+            l_tmpContent=$(grep -m 1 -oE "sha256:[a-zA-Z0-9]+" <<< "${l_content}")
+            gDefaultRetVal="${l_tmpContent}"
+        fi
         return
     fi
 
