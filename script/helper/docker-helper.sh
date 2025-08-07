@@ -414,12 +414,14 @@ function _createDockerManifest() {
   info "获取现有${l_otherArchType}架构的镜像名称..." "-n"
   l_otherImage="${l_repoName}/${l_image}-${l_otherArchType//\//-}"
   _readDigestValueOfManifestList "${l_otherImage}" "${l_otherArchType}" "${l_repoName}"
-  if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
-    l_otherImage="${l_otherImage%:*}@${gDefaultRetVal}"
+  if [ "${gDefaultRetVal}" != "null" ];then
+    if [ "${gDefaultRetVal}" ];then
+      l_otherImage="${l_otherImage%:*}@${gDefaultRetVal}"
+    fi
     info "${l_otherImage}" "*"
   else
     l_otherImage=""
-    info "失败"
+    info "失败" "*"
   fi
 
   #获取当前架构的镜像名称。
