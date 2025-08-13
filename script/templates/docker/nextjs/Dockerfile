@@ -6,8 +6,8 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR _WORK-DIR-IN-CONTAINER_
 
-COPY .env* pnpm-lock.yaml *.ts *.js *.json ./
-RUN corepack enable pnpm && pnpm i --frozen-lockfile
+COPY .env*  *.ts *.js *.json ./
+RUN corepack enable npm && npm i
 
 
 FROM base AS builder
@@ -16,10 +16,10 @@ WORKDIR _WORK-DIR-IN-CONTAINER_
 COPY --from=deps _WORK-DIR-IN-CONTAINER_/node_modules ./node_modules
 COPY ./app ./app
 COPY ./public ./public
-COPY .env* pnpm-lock.yaml *.ts *.js *.json ./
+COPY .env*  *.ts *.js *.json ./
 
 ENV NODE_ENV=production
-RUN corepack enable pnpm && pnpm run build
+RUN corepack enable npm && npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner

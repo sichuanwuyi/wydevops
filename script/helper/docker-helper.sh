@@ -362,9 +362,10 @@ function _cacheImageToDir() {
   l_tmpFile="${gTempFileDir}/docker-save-${RANDOM}.tmp"
   registerTempFile "${l_tmpFile}"
   info "将${l_image}镜像导出到${l_cacheDir}/${l_fileName}文件中..."
+  info "执行命令(docker save --platform ${l_archType} -o ${l_fileName} ${l_image})..."
   docker save --platform "${l_archType}" -o "${l_fileName}" "${l_image}" 2>&1 | tee "${l_tmpFile}"
   # shellcheck disable=SC2002
-  l_errorLog=$(grep -oE "^.*(Error|failed).*$" "${l_tmpFile}")
+  l_errorLog=$(grep -oE "^.*(Error|failed).*$" <<< "${l_tmpFile}")
   unregisterTempFile "${l_tmpFile}"
 
   # shellcheck disable=SC2164
