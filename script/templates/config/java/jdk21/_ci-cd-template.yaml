@@ -105,7 +105,7 @@ globalParams:
   apisixIngressTargetRegex: ^${gatewayPath}(?:/|$)(.*)
 
   #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
-  istioVirtualServiceHost: ${gatewayHost}
+  istioVirtualServiceHost: *
   #启用指定的DestinationRule资源名称。
   istioSubset: ${serviceName}-subset
   #使用apisixRoute时，是否为当前服务启用网关的websocket功能

@@ -7,7 +7,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR _WORK-DIR-IN-CONTAINER_
 
 COPY .env* *.ts *.js *.json ./
-RUN corepack enable npm && npm i
+RUN corepack enable npm && npm i -f
 
 FROM base AS builder
 
