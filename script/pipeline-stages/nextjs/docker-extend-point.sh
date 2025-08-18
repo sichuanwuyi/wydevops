@@ -26,12 +26,12 @@ function _onBeforeCreatingDockerImage_ex() {
 
   local l_dockerfile=$3
 
-  cp -rf "${gBuildPath}/app" "${gDockerBuildDir}/"
-  cp -rf "${gBuildPath}/public" "${gDockerBuildDir}/"
-  cp -f "${gBuildPath}"/.env* "${gDockerBuildDir}/"
-  cp -f "${gBuildPath}/pnpm-lock.yaml" "${gDockerBuildDir}/"
-  cp "${gBuildPath}"/*.ts "${gDockerBuildDir}/"
-  cp "${gBuildPath}"/*.js "${gDockerBuildDir}/"
-  cp "${gBuildPath}"/*.json "${gDockerBuildDir}/"
+  cp -rf "${gBuildPath}/app" "${gDockerBuildDir}/" || true
+  cp -rf "${gBuildPath}/public" "${gDockerBuildDir}/" || true
+  cp -f "${gBuildPath}"/.env* "${gDockerBuildDir}/" || true
+  cp -f "${gBuildPath}/pnpm-lock.yaml" "${gDockerBuildDir}/" || true
+  cp "${gBuildPath}"/*.ts "${gDockerBuildDir}/" || true
+  cp "${gBuildPath}"/*.js "${gDockerBuildDir}/" || true
+  cp "${gBuildPath}"/*.json "${gDockerBuildDir}/" || true
 
 }
