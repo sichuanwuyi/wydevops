@@ -55,7 +55,7 @@ globalParams:
   #Dockerfile文件中From语言中定义的基础镜像。
   #支持多个基础镜像，相互之间使用英文逗号隔开。
   #注意：注意多个基础镜像间的顺序应与在Dockerfile文件中出现的顺序保持一致。
-  baseFromImage: node:23-alpine
+  baseFromImage: node:24-alpine
   #需要拷贝到docker构建目录中的目录，多个目录间使用英文逗号隔开。
   copyDirsIntoDocker:
   #需要拷贝到docker构建目录中的文件，多个文件间使用英文逗号隔开。
