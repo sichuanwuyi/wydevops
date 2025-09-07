@@ -708,7 +708,7 @@ function getParamValueInJsonConfigFile() {
   local l_paramValue
 
   #使用默认值初始化l_paramValue
-  l_paramValue=""
+  l_paramValue="${l_defaultValue}"
   # shellcheck disable=SC2002
   l_content=$(grep -noE "${l_startRowRegex}" "${l_configFile}")
   if [ "${l_content}" ];then

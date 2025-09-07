@@ -26,12 +26,13 @@ function _onBeforeCreatingDockerImage_ex() {
 
   local l_dockerfile=$3
 
+  info "将项目根目录下的必要的文件和目录复制到Docker构建目录中..."
   cp -rf "${gBuildPath}/app" "${gDockerBuildDir}/" || true
   cp -rf "${gBuildPath}/public" "${gDockerBuildDir}/" || true
   cp -f "${gBuildPath}"/.env* "${gDockerBuildDir}/" || true
-  cp -f "${gBuildPath}/pnpm-lock.yaml" "${gDockerBuildDir}/" || true
   cp "${gBuildPath}"/*.ts "${gDockerBuildDir}/" || true
-  cp "${gBuildPath}"/*.js "${gDockerBuildDir}/" || true
+  cp "${gBuildPath}"/*.mjs "${gDockerBuildDir}/" || true
   cp "${gBuildPath}"/*.json "${gDockerBuildDir}/" || true
+  info "复制结束"
 
 }

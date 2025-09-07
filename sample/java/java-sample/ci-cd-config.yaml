@@ -48,6 +48,7 @@ chart:
             - name: "节点配置列表|Node Config List"
               required: false
               type: "group"
+              key: "TaosdbConfig.nodes"
               groupIndex: 0
               items:
                 - name: "节点配置1|Node Config 1"
