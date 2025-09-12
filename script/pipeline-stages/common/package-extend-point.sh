@@ -646,6 +646,7 @@ function _filterValidDockerImages() {
   local l_singleImage
   local l_baseImage
   local l_businessImage
+  local l_tmpImage
 
   l_imageArray=",${l_imageArray},"
 
@@ -661,7 +662,8 @@ function _filterValidDockerImages() {
   l_dockerVersion="${gDefaultRetVal}"
   l_businessImage="${l_dockerName}:${l_dockerVersion}"
 
-  l_singleImage="${l_businessImage%-*}:${l_businessImage##*:}"
+  l_tmpImage="${l_businessImage%:*}"
+  l_singleImage="${l_tmpImage%-*}:${l_businessImage##*:}"
 
   #存储不需要镜像名称
   l_images=()

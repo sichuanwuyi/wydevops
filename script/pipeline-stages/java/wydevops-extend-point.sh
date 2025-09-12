@@ -48,6 +48,26 @@ function _onBeforeInitGlobalParams_ex() {
 
 }
 
+function _initialCiCdConfigFileByParamMappingFiles_ex() {
+    export gLanguage
+    local l_templateFile=$1
+    local l_tmpCiCdConfigFile=$2
+
+    local l_version
+
+    debug "针对${gLanguage}语言项目，处理从映射文件中加载的参数值..."
+
+    #读取globalParams.businessVersion参数的值。
+#    readParam "${l_templateFile}" "globalParams.businessVersion"
+#    if [ "${gDefaultRetVal}" == "null" ];then
+#      error "${l_templateFile}文件中globalParams.businessVersion参数不能为空"
+#    fi
+#
+#    if [[ "${gDefaultRetVal}" =~ ^(.*)-SNAPSHOT$ ]];then
+#      l_version="${gDefaultRetVal//-SNAPSHOT/}"
+#    fi
+}
+
 function _initGlobalParams_ex() {
   export gLanguage
   debug "针对${gLanguage}语言项目，修改或新增全局参数..."
@@ -153,3 +173,5 @@ export gRuntimeVersion
 
 #-------------------------私有方法----------------------------#
 
+
+}
