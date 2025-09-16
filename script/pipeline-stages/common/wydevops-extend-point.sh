@@ -22,15 +22,20 @@ function onBeforeReplaceParamPlaceholder_ex() {
   local l_cicdYaml=$1
   local l_placeholders
   local l_placeholder
-  local l_suffix
+  local l_tmpVersion
 
-   readParam "${l_cicdYaml}" "globalParams.businessVersion"
-   if [[ "${gDefaultRetVal}" != "null" ]];then
-     l_suffix="${gDefaultRetVal//./-}"
-     #转换为小写
-     l_suffix="${l_suffix,,}"
-     updateParam "${l_cicdYaml}" "globalParams.versionSuffix" "${l_suffix}"
-   fi
+  readParam "${l_cicdYaml}" "globalParams.businessVersion"
+  if [[ "${gDefaultRetVal}" != "null" ]];then
+    l_tmpVersion="${gDefaultRetVal,,}"
+    #如果版本号包含大写字母，则转换为小写
+    if [[ "${l_tmpVersion}" != "${gDefaultRetVal}" ]];then
+      #回写小写的版本号。
+      updateParam "${l_cicdYaml}" "globalParams.businessVersion" "${l_tmpVersion}"
+    fi
+    #回写版本后缀参数
+    l_tmpVersion="${l_tmpVersion//./-}"
+    updateParam "${l_cicdYaml}" "globalParams.versionSuffix" "${l_tmpVersion}"
+  fi
 
   readParam "${l_cicdYaml}" "globalParams.gatewayPath"
   if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "/" ]];then
