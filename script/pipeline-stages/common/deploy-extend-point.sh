@@ -443,6 +443,7 @@ function _deployServiceByDocker(){
   local l_ip
   local l_port
   local l_account
+  local l_password
 
   local l_content
   local l_archType
@@ -479,9 +480,10 @@ function _deployServiceByDocker(){
     l_ip="${l_array[0]}"
     l_port="${l_array[1]}"
     l_account="${l_array[2]}"
+    l_password="${l_array[3]}"
 
     info "检查服务器${l_ip}的硬件架构 ..."
-    invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}"
+    invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
     # shellcheck disable=SC2015
     [[ "${gDefaultRetVal}" == "false" ]] && error "读取${l_ip}服务器系统架构信息失败"
     info "读取到${l_ip}服务器的系统架构为:${gDefaultRetVal}"
@@ -990,6 +992,14 @@ function _pushDockerImageForDeployStage() {
   local l_dockerOutDir
   local l_tmpFile
 
+  #aws-ecr,ylzt,749059848629.dkr.ecr.us-east-2.amazonaws.com,ec2-user,Ylzt-Mall-Key.pem,80
+  local l_repoType
+  local l_repoName
+  local l_repoHostAndPort
+  local l_repoAccount
+  local l_repoPassword
+  local l_addPrefix
+
   #获取需要推送的镜像名称信息。
   _getDockerImageInChart "${l_packageName}" "${l_chartFile}"
   if [ ! "${gDefaultRetVal}" ];then
@@ -1000,7 +1010,7 @@ function _pushDockerImageForDeployStage() {
   l_images=(${gDefaultRetVal//,/ })
 
   info "检查服务器${l_ip}的硬件架构..."
-  invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}"
+  invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
   # shellcheck disable=SC2015
   [[ "${gDefaultRetVal}" == "false" ]] && error "读取${l_ip}服务器系统架构信息失败: ${l_content}"
   info "读取到${l_ip}服务器的系统架构为:${gDefaultRetVal}"
@@ -1009,6 +1019,13 @@ function _pushDockerImageForDeployStage() {
   #获取到需要推送的镜像
   # shellcheck disable=SC2206
   l_array=(${l_dockerRepoInfo//,/ })
+
+  l_repoType="${l_array[0]}"
+  l_instanceName="${l_array[1]}"
+  l_repoName="${l_array[2]}"
+  l_repoAccount="${l_array[3]}"
+  l_repoPassword="${l_array[4]}"
+  l_dockerRepoWebPort="${l_array[5]}"
 
   # shellcheck disable=SC2068
   for l_image in ${l_images[@]};do
@@ -1032,18 +1049,18 @@ function _pushDockerImageForDeployStage() {
     warn "成功加载docker镜像：${l_image}"
 
     #完成docker仓库登录
-    dockerLogin "${l_array[2]}" "${l_array[3]}" "${l_array[4]}"
+    #invokeExtendChain "onDockerLogin" "${l_repoType}" "${l_repoName}" "${l_repoAccount}" "${l_repoPassword}"
 
     #先删除已经存在的镜像。
-    invokeExtendChain "onBeforePushDockerImage" "${l_array[0]}" "${l_image}" "${l_archType}" "${gForceCoverage}" "${l_array[2]}" \
-                "${l_array[1]}" "${l_array[5]}" "${l_array[3]}" "${l_array[4]}"
+    invokeExtendChain "onBeforePushDockerImage" "${l_repoType}" "${l_image}" "${l_archType}" "${gForceCoverage}" "${l_repoName}" \
+                "${l_instanceName}" "${l_dockerRepoWebPort}" "${l_repoAccount}" "${l_repoPassword}"
     if [ "${gDefaultRetVal}" == "true|false" ];then
       warn "目标镜像存在，且当前不是强制覆盖模式，则跳过镜像推送过程"
       continue
     fi
 
-    info "将${l_image}镜像推送到${l_array[2]}仓库中..."
-    pushImage "${l_image}" "${l_archType}" "${l_array[2]}"
+    info "将${l_image}镜像推送到${l_repoName}仓库中..."
+    invokeExtendChain "onPushDockerImage" "${l_repoType}" "${l_image}" "${l_archType}" "${l_repoName}" "${l_instanceName}"
 
     warn "删除之前加载的docker镜像:${l_image}"
     docker rmi -f "${l_image}"

@@ -6,6 +6,7 @@ function onGetSystemArchInfo_ubuntu() {
   local l_ip=$1
   local l_port=$2
   local l_account=$3
+  local l_password=$4
 
   local l_result
   local l_errorLog
@@ -15,9 +16,15 @@ function onGetSystemArchInfo_ubuntu() {
 
   #先判断是否是linux系统
   if [ "${l_ip}" ];then
-    info "执行命令: ssh -o \"StrictHostKeyChecking no\" -p ${l_port} ${l_account}@${l_ip} uname -sm"
-    #3秒超时
-    l_result=$(ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "uname -sm")
+    if [[ "${l_password}" =~ ^(.*).pem$ ]];then
+      info "执行命令: ssh -i \"${l_password}\" -p ${l_port} ${l_account}@${l_ip} uname -sm"
+      #登录AWS EC2服务器后执行uname -sm命令
+      l_result=$(ssh -i "${l_password}" -p "${l_port}" "${l_account}@${l_ip}" "uname -sm")
+    else
+      info "执行命令: ssh -o \"StrictHostKeyChecking no\" -p ${l_port} ${l_account}@${l_ip} uname -sm"
+      #3秒超时
+      l_result=$(ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "uname -sm")
+    fi
   else
     info "执行命令: uname -sm"
     #本地执行uname命令

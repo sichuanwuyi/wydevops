@@ -79,9 +79,9 @@ export gGlobalParamNames=(
 "gTempFileDir=\"/c/temp\"" \
 
 #docker仓库相关参数
-#Docker仓库类型：nexus或harbor
+#Docker仓库类型：nexus、harbor、registry、aws-ecr
 "gDockerRepoType" \
-#仓库实例名称(nexus)或项目名称(harbor)
+#仓库实例名称(nexus)或项目名称(harbor)或registry服务名称(registry)或aws-ecr仓库名称(aws-ecr)
 "gDockerRepoInstanceName" \
 #仓库地址，{ip}:{端口}
 "gDockerRepoName" \

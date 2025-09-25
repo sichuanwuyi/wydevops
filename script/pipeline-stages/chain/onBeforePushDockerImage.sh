@@ -192,3 +192,16 @@ function onBeforePushDockerImage_registry() {
   done
   gDefaultRetVal="${l_result}"
 }
+
+function onBeforePushDockerImage_aws-ecr() {
+  export gDefaultRetVal
+
+  local l_dockerRepoType=$1
+  if [ "${l_dockerRepoType}" != "aws-ecr" ];then
+    gDefaultRetVal="false|false|false"
+    return
+  fi
+
+  #返回: 否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
+  gDefaultRetVal="true|true|true"
+}
