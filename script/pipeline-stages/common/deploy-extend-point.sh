@@ -136,7 +136,7 @@ function initialGlobalParamsForDeployStage_ex() {
           getListIndexByPropertyNameQuickly "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params" "name" \
             "${l_paramName}" "true" "${l_paramContentBlock}" "${l_paramIndex}" "${gCiCdYamlFile}"
 
-          if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
+          if [[ ! ("${gDefaultRetVal}" =~ ^(\-1)) ]];then
             # shellcheck disable=SC2206
             l_array=(${gDefaultRetVal})
             l_paramIndex="${l_array[1]}"
@@ -748,8 +748,16 @@ function _deployServiceInK8S() {
     fi
 
     info "获取服务器上~/.kube/config文件的内容"
-    #todo: 这里不要在前面添加timeout指令
-    ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
+    if [[ "${l_password}" =~ ^(.*).pem$ ]];then
+      ssh -i "${l_password}" -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
+      if [ "$?" -ne "0" ];then
+        warn "获取${l_ip}上~/.kube/config文件的内容失败, 使用本地~/.kube/config文件..."
+        cat ~/.kube/config > "${l_localBaseDir}/kube-config"
+      fi
+    else
+      #todo: 这里不要在前面添加timeout指令
+      ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
+    fi
 
     info "卸载${l_namespace}命名空间中正在运行的${l_chartName}服务..." "-n"
     l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
@@ -1049,7 +1057,7 @@ function _pushDockerImageForDeployStage() {
     warn "成功加载docker镜像：${l_image}"
 
     #完成docker仓库登录
-    #invokeExtendChain "onDockerLogin" "${l_repoType}" "${l_repoName}" "${l_repoAccount}" "${l_repoPassword}"
+    invokeExtendChain "onDockerLogin" "${l_repoType}" "${l_repoName}" "${l_repoAccount}" "${l_repoPassword}"
 
     #先删除已经存在的镜像。
     invokeExtendChain "onBeforePushDockerImage" "${l_repoType}" "${l_image}" "${l_archType}" "${gForceCoverage}" "${l_repoName}" \

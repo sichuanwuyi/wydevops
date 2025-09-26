@@ -72,9 +72,9 @@ function onPushDockerImage_aws-ecr() {
     return
   fi
 
-  if [[ ! ("${l_repoName}" =~ ^(${l_instanceName}).*$) ]];then
-    l_repoName="${l_repoName}/${l_instanceName}"
-  fi
+#  if [[ ! ("${l_repoName}" =~ ^(${l_instanceName}).*$) ]];then
+#    l_repoName="${l_repoName}/${l_instanceName}"
+#  fi
 
   #完成docker镜像推送
   pushImage "${l_image}" "${l_archType}" "${l_repoName}"

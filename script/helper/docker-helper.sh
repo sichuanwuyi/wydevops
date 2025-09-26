@@ -166,18 +166,18 @@ function pushImage() {
 
   l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
 
-  l_errorLog=$(docker tag "${l_image}" "${l_tmpImage}" 2>&1 | grep -oE "^.*(Error|failed).*$")
-  if [ "${l_errorLog}" ];then
-    error "--->执行命令(docker tag ${l_image} ${l_tmpImage})失败：${l_errorLog}"
+  docker tag "${l_image}" "${l_tmpImage}" 2>&1
+  if [ "$?" -ne 0 ];then
+    error "--->执行命令(docker tag ${l_image} ${l_tmpImage})失败"
   else
     info "--->成功执行命令(docker tag ${l_image} ${l_tmpImage})"
   fi
 
-  l_errorLog=$(docker push "${l_tmpImage}" 2>&1 | grep -oE "^.*(Error|failed).*$")
-  if [ "${l_errorLog}" ];then
+  docker push "${l_tmpImage}" 2>&1
+  if [ "$?" -ne 0 ];then
     #报错前删除刚定义的镜像。
     docker rmi -f "${l_tmpImage}"
-    error "--->执行命令(docker push ${l_tmpImage})失败：${l_errorLog}"
+    error "--->执行命令(docker push ${l_tmpImage})失败"
   else
     info "--->成功执行命令(docker push ${l_tmpImage})"
   fi
@@ -419,21 +419,26 @@ function _createDockerManifest() {
     if [ "${gDefaultRetVal}" ];then
       l_otherImage="${l_otherImage%:*}@${gDefaultRetVal}"
     fi
-    info "${l_otherImage}" "*"
+    info "" "*"
+    info "${l_otherImage}"
   else
     l_otherImage=""
     info "失败" "*"
   fi
 
   #获取当前架构的镜像名称。
-  info "获取现有${l_archType}架构的镜像名称..." "-n"
+  info "获取现有${l_archType}架构的镜像名称..." -n
   gDefaultRetVal=""
   l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
   _readDigestValueOfManifestList "${l_tmpImage}" "${l_archType}" "${l_repoName}"
   if [ "${gDefaultRetVal}" ];then
     l_tmpImage="${l_tmpImage%:*}@${gDefaultRetVal}"
+    info "" "*"
+    info "${l_tmpImage}"
+  else
+    info "失败" "*"
   fi
-  info "${l_tmpImage}" "*"
+
 
   # 删除已存在的manifest列表
   docker manifest rm "${l_repoName}/${l_image}" 2>/dev/null || true

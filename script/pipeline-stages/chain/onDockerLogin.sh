@@ -74,13 +74,14 @@ function onDockerLogin_aws-ecr() {
   #aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 749059848629.dkr.ecr.us-east-2.amazonaws.com
 
   # shellcheck disable=SC2206
-  l_array=(${l_repoHostAndPort//,/ })
+  l_array=(${l_repoHostAndPort//./ })
   l_arrayLen=${#l_array[@]}
-  if [ "${l_arrayLen}" -lt 2 ];then
+
+  if [ "${l_arrayLen}" -lt 3 ];then
     error "错误：aws-ecr仓库地址格式错误，必须包含区域信息，例如：749059848629.dkr.ecr.us-east-2.amazonaws.com, 其中区域信息为us-east-2"
   fi
 
-  l_region=${l_array[l_arrayLen-2]}
+  l_region="${l_array[${l_arrayLen}-3]}"
 
   info "aws ecr get-login-password --region ${l_region} | docker login --username ${l_repoAccount} --password-stdin ${l_repoHostAndPort}"
   aws ecr get-login-password --region "${l_region}" | docker login --username "${l_repoAccount}" --password-stdin "${l_repoHostAndPort}"
