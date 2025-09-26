@@ -63,6 +63,10 @@ function configMapGenerator_default() {
       l_configFileContent="${gFileContentMap[${l_targetFile}]}"
       l_configFile="${l_configFile##*/}"
       l_result=$(echo -e "${l_configFileContent}" | sed "s/${l_fileKey}/${l_configFile}/g")
+
+      #补丁：替换文件中存在的“`”字符为空串。
+      l_result=$(echo -e "${l_result}" | sed "s/\`//g")
+
       #修改后更新回内存
       gFileContentMap["${l_targetFile}"]="${l_result}"
       #同时回写到文件中
