@@ -17,5 +17,5 @@ EXPOSE _EXPOSE_
 
 WORKDIR _WORK-DIR-IN-CONTAINER_
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]
+ENTRYPOINT ["sh", "-c", "java -Xmx4096m -Xms1024m $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]
 
