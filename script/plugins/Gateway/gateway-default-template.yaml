@@ -14,7 +14,6 @@ metadata:
 spec:
   selector:
     #选中istio-ingressgateway相关Pod。
-    app: istio-ingressgateway
     istio: ingressgateway
   servers:
     - port:

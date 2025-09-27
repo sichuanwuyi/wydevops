@@ -583,6 +583,8 @@ chart:
             hosts:
               - "${istioVirtualServiceHost}"
             gateways:
+              #默认配置的istio集成亚马逊alb的网关，需要根据实际值进行设置。
+              #- istio-alb-gateway
               - ${serviceName}-gateway
             http:
               - match:
