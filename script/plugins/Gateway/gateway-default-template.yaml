@@ -14,12 +14,13 @@ metadata:
 spec:
   selector:
     #选中istio-ingressgateway相关Pod。
+    app: istio-ingressgateway
     istio: ingressgateway
   servers:
     - port:
         number: {{ .istioRoute.gateway.portNumber }}
         name: http
-        protocol: {{ .istioRoute.gateway.protocol | default \"HTTP\"}}
+        protocol: {{ .istioRoute.gateway.protocol | default \"HTTP\" | upper }}
       hosts:
         {{- if \$.Values.gatewayRoute.host }}
         - {{ \$.Values.gatewayRoute.host | quote }}
