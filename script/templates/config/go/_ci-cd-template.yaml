@@ -95,17 +95,19 @@ globalParams:
   gatewayPath: /${serviceName}
   #应用设置的路由Host名称，*表示任意Host。
   gatewayHost: *
+  #istio全局网关名称
+  istioGlobalGatewayName: wydevops-gateway
   #todo enableRewrite参数的值会自动根据gatewayPath的值更新。
   #是否启用网关路由重写机制，默认为true, 会根据gatewayPath的值自动更新设置：
   #当gatewayPath值为空或"/"时，会自动设置为false。
-  enableRewrite: "true"
+  enableRewrite: true
   #todo apisixRouteRegexUri参数的值会自动根据gatewayPath的值更新。
   apisixRouteRegexUri: "[ \"^${gatewayPath}(?:/|$)(.*)\", \"/$1\" ]"
   #todo apisixIngressTargetRegex参数的值会自动根据gatewayPath的值更新。
   apisixIngressTargetRegex: ^${gatewayPath}(?:/|$)(.*)
 
   #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
-  istioVirtualServiceHost: ${gatewayHost}
+  istioVirtualServiceHost: *
   #启用指定的DestinationRule资源名称。
   istioSubset: ${serviceName}-subset
   #使用apisixRoute时，是否为当前服务启用网关的websocket功能
@@ -571,7 +573,9 @@ chart:
         istioRoute:
           apiVersion: ${istioApiVersion}
           gateway:
-            name: ${serviceName}-gateway
+            name: ${istioGlobalGatewayName}
+            #https的证书所在的Secret对象名称
+            credentialName: ${ingressSecretName}
             #这个端口号是由istio-ingressgateway服务决定。
             portNumber: 80
             # 显式声明HTTP协议
@@ -583,15 +587,15 @@ chart:
             hosts:
               - "${istioVirtualServiceHost}"
             gateways:
-              - ${serviceName}-gateway
+              - ${istioGlobalGatewayName}
             http:
               - match:
                   - uri:
-                      prefix: "${gatewayPath}"
+                      prefix: "${gatewayPath}/"
                 #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。
                 rewrite:
                   #设置为" "表示删除上述prefix参数指定的前缀。
-                  uri: " "
+                  uri: "/"
                 route:
                   - destination:
                       port:
