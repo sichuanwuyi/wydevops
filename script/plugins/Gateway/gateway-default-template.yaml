@@ -16,6 +16,23 @@ spec:
     #选中istio-ingressgateway相关Pod。
     istio: ingressgateway
   servers:
+    {{- if .istioRoute.gateway.credentialName }}
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: {{ .istioRoute.gateway.credentialName }}
+      hosts:
+        {{- if \$.Values.gatewayRoute.host }}
+        - {{ \$.Values.gatewayRoute.host | quote }}
+        {{- else }}
+        {{- range .istioRoute.gateway.hosts }}
+        - {{ . | quote }}
+        {{- end }}
+        {{- end }}
+    {{- end }}
     - port:
         number: {{ .istioRoute.gateway.portNumber }}
         name: http

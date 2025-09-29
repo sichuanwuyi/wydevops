@@ -95,6 +95,8 @@ globalParams:
   gatewayPath: /${serviceName}
   #应用设置的路由Host名称，*表示任意Host。
   gatewayHost: *
+  #istio全局网关名称
+  istioGlobalGatewayName: ylzt-mall-gateway
   #todo enableRewrite参数的值会自动根据gatewayPath的值更新。
   #是否启用网关路由重写机制，默认为true, 会根据gatewayPath的值自动更新设置：
   #当gatewayPath值为空或"/"时，会自动设置为false。
@@ -113,7 +115,7 @@ globalParams:
   #使用ingress-nginx时，启用HTTPS协议的域名列表：
   ingressTlsHosts:
   #使用ingress-nginx时，启用HTTPS时需要的secret名称。
-  ingressSecretName:
+  ingressSecretName: cloudlotus-secret
 
   ingressApiVersion: networking.k8s.io/v1
   apisixApiVersion: apisix.apache.org/v2
@@ -462,7 +464,7 @@ chart:
             configPath:
           - name: Gateway
             generatorName: default
-            enable: true
+            enable: false
             configPath: istioRoute
           - name: VirtualService
             generatorName: default
@@ -571,7 +573,9 @@ chart:
         istioRoute:
           apiVersion: ${istioApiVersion}
           gateway:
-            name: ${serviceName}-gateway
+            name: ${istioGlobalGatewayName}
+            #https的证书所在的Secret对象名称
+            credentialName: ${ingressSecretName}
             #这个端口号是由istio-ingressgateway服务决定。
             portNumber: 80
             # 显式声明HTTP协议
@@ -584,8 +588,7 @@ chart:
               - "${istioVirtualServiceHost}"
             gateways:
               #默认配置的istio集成亚马逊alb的网关，需要根据实际值进行设置。
-              #- istio-alb-gateway
-              - ${serviceName}-gateway
+              - ${istioGlobalGatewayName}
             http:
               - match:
                   - uri:
