@@ -42,8 +42,10 @@ function standardCICD(){
       case ${l_stage} in
         build)
           partLog "第三部分 项目编译阶段"
+          info "------------l_targetScript=${l_targetScript}--------------"
           # shellcheck disable=SC1090
           source "${l_targetScript}"
+          exit 0;
           ;;
         docker)
           partLog "第四部分 项目docker镜像打包与推送阶段"
