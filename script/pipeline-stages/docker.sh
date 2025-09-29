@@ -334,6 +334,8 @@ export gWorkDirInDocker
 export gAppDirInDocker
 export gExposePorts
 export gTimeZone
+export gJvmOpts
+export gJavaOpts
 export gProjectBuildOutDir
 
 export gDockerFileTemplateParamMap

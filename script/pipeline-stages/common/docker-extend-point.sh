@@ -133,6 +133,8 @@ function initialGlobalParamsForDockerStage_ex(){
   export gAppDirInDocker
   export gExposePorts
   export gTimeZone
+  export gJvmOpts
+  export gJavaOpts
   export gProjectBuildOutDir
   export gThirdParties
   export gSaveBackImmediately
@@ -199,6 +201,17 @@ function initialGlobalParamsForDockerStage_ex(){
     readParam "${l_cicdYaml}" "docker.timeZone"
     gTimeZone="${gDefaultRetVal}"
     info "读取参数docker.timeZone的值:${gTimeZone}"
+
+    #读取JvmOpts参数
+    readParam "${l_cicdYaml}" "docker.jvmOpts"
+    gJvmOpts="${gDefaultRetVal}"
+    info "读取参数docker.gJvmOpts的值:${gJvmOpts}"
+
+    #读取JavaOpts参数
+    readParam "${l_cicdYaml}" "docker.javaOpts"
+    gJavaOpts="${gDefaultRetVal}"
+    info "读取参数docker.javaOpts的值:${gJavaOpts}"
+
     # shellcheck disable=SC2028
     l_typeNames=("business" "base")
     l_params=("name" "version" "fromImage")
@@ -307,6 +320,8 @@ function onAfterInitialingGlobalParamsForDockerStage_ex() {
   export gDockerBuildDir
   export gExposePorts
   export gTimeZone
+  export gJvmOpts
+  export gJavaOpts
   export gWorkDirInDocker
   export gAppDirInDocker
   export gServiceName
@@ -321,6 +336,8 @@ function onAfterInitialingGlobalParamsForDockerStage_ex() {
   gDockerFileTemplateParamMap["_WORK-DIR-IN-CONTAINER_"]="${gWorkDirInDocker}"
   gDockerFileTemplateParamMap["_APP-DIR-IN-CONTAINER_"]="${gAppDirInDocker}"
   gDockerFileTemplateParamMap["_SERVICE-NAME_"]="${gServiceName}"
+  gDockerFileTemplateParamMap["_JVM-OPTS_"]="${gJvmOpts}"
+  gDockerFileTemplateParamMap["_JAVA-OPTS_"]="${gJavaOpts}"
   #以下参数必须知道当前Dockerfile文件名称后才能确定。
   gDockerFileTemplateParamMap["_FROM-IMAGE0_"]=""
   #以下参数必须知道当前处理的架构类型后才能确定。
