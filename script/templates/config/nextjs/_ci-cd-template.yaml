@@ -100,7 +100,7 @@ globalParams:
   #todo enableRewrite参数的值会自动根据gatewayPath的值更新。
   #是否启用网关路由重写机制，默认为true, 会根据gatewayPath的值自动更新设置：
   #当gatewayPath值为空或"/"时，会自动设置为false。
-  enableRewrite: "false"
+  enableRewrite: false
   #todo apisixRouteRegexUri参数的值会自动根据gatewayPath的值更新。
   apisixRouteRegexUri: "[ \"^${gatewayPath}(?:/|$)(.*)\", \"/$1\" ]"
   #todo apisixIngressTargetRegex参数的值会自动根据gatewayPath的值更新。
@@ -594,9 +594,9 @@ chart:
                       #如果下列prefix值未以“/”结尾，则rewrite.uri应设置为“ ”
                       prefix: "${gatewayPath}/"
                 #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。
-                rewrite:
+                #rewrite:
                   #如果上述prefix字段不以“/”结尾，则设置为" "表示删除上述prefix参数指定的前缀。
-                  uri: "/"
+                  #uri: "/"
                 route:
                   - destination:
                       port:

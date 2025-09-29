@@ -17,6 +17,7 @@ COPY --from=deps _WORK-DIR-IN-CONTAINER_/node_modules ./node_modules
 COPY ./app ./app
 COPY ./public ./public
 COPY ./lib ./lib
+COPY ./hooks ./hooks
 COPY .env* *.ts *.mjs *.json ./
 
 ENV NODE_ENV=production
@@ -39,6 +40,7 @@ RUN mkdir _DOT-NEXT_
 
 COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/public ./public
 COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/lib ./lib
+COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/hooks ./hooks
 COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/_OUTPUT_ ./
 COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/static ./_DOT-NEXT_/static
 
