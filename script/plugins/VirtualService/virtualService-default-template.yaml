@@ -16,6 +16,15 @@ spec:
     {{- toYaml .istioRoute.virtualService.hosts | nindent 4 }}
   gateways:
     {{- toYaml .istioRoute.virtualService.gateways | nindent 4 }}
+  {{- if or .istioRoute.virtualService.tls.minProtocolVersion .istioRoute.virtualService.tls.maxProtocolVersion }}
+  tls:
+    {{- if .istioRoute.virtualService.tls.minProtocolVersion }}
+    minProtocolVersion: {{ .istioRoute.virtualService.tls.minProtocolVersion }}
+    {{- end }}
+    {{- if .istioRoute.virtualService.tls.maxProtocolVersion }}
+    maxProtocolVersion: {{ .istioRoute.virtualService.tls.maxProtocolVersion }}
+    {{- end}}
+  {{- end }}
   http:
     {{- range .istioRoute.virtualService.http }}
     - match:

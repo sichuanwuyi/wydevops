@@ -115,6 +115,8 @@ globalParams:
 
   #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
   istioVirtualServiceHost: *
+  minProtocolVersion: TLSV1_2
+  maxProtocolVersion: TLSV1_3
   #启用指定的DestinationRule资源名称。
   istioSubset: ${serviceName}-subset
   #使用apisixRoute时，是否为当前服务启用网关的websocket功能
@@ -122,7 +124,7 @@ globalParams:
   #使用ingress-nginx时，启用HTTPS协议的域名列表：
   ingressTlsHosts:
   #使用ingress-nginx时，启用HTTPS时需要的secret名称。
-  ingressSecretName: cloudlotus-secret
+  ingressSecretName:
 
   ingressApiVersion: networking.k8s.io/v1
   apisixApiVersion: apisix.apache.org/v2
@@ -600,6 +602,10 @@ chart:
             gateways:
               #默认配置的istio集成亚马逊alb的网关，需要根据实际值进行设置。
               - ${istioGlobalGatewayName}
+            # 新增TLS版本限制
+            tls:
+              minProtocolVersion: ${minProtocolVersion}
+              maxProtocolVersion: ${maxProtocolVersion}
             http:
               - match:
                   - uri:
