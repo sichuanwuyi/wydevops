@@ -603,9 +603,9 @@ chart:
               #默认配置的istio集成亚马逊alb的网关，需要根据实际值进行设置。
               - ${istioGlobalGatewayName}
             # 新增TLS版本限制
-            tls:
-              minProtocolVersion: ${minProtocolVersion}
-              maxProtocolVersion: ${maxProtocolVersion}
+            #tls:
+            #  minProtocolVersion: ${minProtocolVersion}
+            #  maxProtocolVersion: ${maxProtocolVersion}
             http:
               - match:
                   - uri:
