@@ -46,7 +46,7 @@ function _onBeforeCreatingDockerImage_ex() {
     return
   fi
 
-  l_ignoredFiles=" _global_params.yaml ci-cd.yaml debug.txt ci-cd-config.yaml wydevops-run.sh"
+  l_ignoredFiles=" _global_params.yaml ci-cd.yaml debug.txt ci-cd-config.yaml ${gCiCdConfigYamlFileName} wydevops-run.sh wydevops-run-test.sh"
   l_ignoredDirs=" ${gHelmBuildDirName} "
 
   l_fileList=$(find "${gBuildPath}" -maxdepth 1 -type f)

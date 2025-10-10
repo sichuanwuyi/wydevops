@@ -1008,7 +1008,7 @@ function _processMultiplePorts() {
 
   #将现有配置写入临时文件中。
   # shellcheck disable=SC2088
-  l_tmpFile="${gTempFileDir}/${RANDOM}.tmp"
+  l_tmpFile="${gTempFileDir}/${RANDOM}.yaml"
   registerTempFile "${l_tmpFile}"
   echo "ports:" > "${l_tmpFile}"
 

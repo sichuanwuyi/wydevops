@@ -1,8 +1,5 @@
 
 FROM --platform=_PLATFORM_ scratch
-USER root
-
-RUN mkdir -p _APP-DIR-IN-CONTAINER_
 
 COPY ./dependencies/ ./spring-boot-loader/ ./snapshot-dependencies/ ./application/ _APP-DIR-IN-CONTAINER_/
 

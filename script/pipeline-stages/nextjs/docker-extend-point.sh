@@ -23,8 +23,10 @@ function _onAfterInitialingGlobalParamsForDockerStage_ex() {
 function _onBeforeCreatingDockerImage_ex() {
   export gBuildPath
   export gDockerBuildDir
+  export gCiCdConfigYamlFileName
 
   local l_dockerfile=$3
+  local l_ciCdConfigFile="${gBuildPath}/${gCiCdConfigYamlFileName}"
 
   info "将项目根目录下的必要的文件和目录复制到Docker构建目录中..."
   cp -rf "${gBuildPath}/app" "${gDockerBuildDir}/" || true
@@ -34,5 +36,13 @@ function _onBeforeCreatingDockerImage_ex() {
   cp "${gBuildPath}"/*.mjs "${gDockerBuildDir}/" || true
   cp "${gBuildPath}"/*.json "${gDockerBuildDir}/" || true
   info "复制结束"
+
+  readParam "${l_ciCdConfigFile}" "globalParams.envFile"
+  if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
+    warn "删除${gDockerBuildDir}/.env.production文件"
+    rm -f "${gDockerBuildDir}/.env.production" || true
+    warn "将${gDefaultRetVal}文件重命名为.env.production文件"
+    mv -f "${gDockerBuildDir}/${gDefaultRetVal}" "${gDockerBuildDir}/.env.production" || true
+  fi
 
 }

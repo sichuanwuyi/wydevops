@@ -155,33 +155,34 @@ function usage() {
     -v, --version            显示本脚本的版本。
 
     [可选项]
-    -A, --archTypes     string    要构建的Docker镜像的架构类型，默认值=undefine,
-                                  可选值有：\"linux/amd64,linux/arm64\",\"linux/amd64\",\"linux/arm64\",\"undefine\"
-    -B, --buildType     string    构建类型:
-                                  single：单镜像模式，构建应用镜像
-                                  double：双镜像模式，构建应用基础镜像和应用业务镜像
-                                  base：仅构建应用基础镜像
-                                  business：仅构建应用业务镜像
-                                  thirdParty: 打包第三方镜像：拉取第三方镜像，缓存到本地镜像缓存目录中，
-                                              然后推送到私库中，最后导出到gDockerBuildOutDir目录中。
-                                  customize: 自定义模式：指定docker构建目录，脚本框架自动完成docker镜像构建和推送。
-    -C, --chartRepo     string    Chart镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},
-                                  {仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)}
-    -D, --dockerRepo    string    Docker镜像仓库信息, 格式：{仓库类型(nexus、harbor或registry)},{仓库实例名称(nexus)、项目名称(harbor)或组织代码(registry)},
-                                  {仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)},
-                                  {服务名称(仅对registry类型仓库有效)},{配置文件全路径名称(仅对registry类型仓库有效)}
-    -I, --imageCacheDir String    当workMode=local时，用于缓存Dockerfile文件中From行指定的Image镜像的本地目录。
-    -L, --language      string    项目语言类型或架构类型; 目前支持的有效值有：java、go、vue、nextjs、other等，依据具体实现而定。
-    -M, --workMode      string    工作模式：jenkins、local
-    -N, --notify        string    外部通知接口的地址
-    -O, --outArchTypes  string    要导出的离线安装包的架构类型，默认值=\"linux/amd64,linux/arm64\"
-    -P, --buildPath     string    构建目录，一般为目标工程的根目录或主模块目录（例如：Java多模块项目）
-    -S, --buildStages   string    执行的构建阶段，有效值包括：build、docker、chart、package、deploy、all，
-                                  有效值为前五个阶段的有序组合,阶段间用英文逗号隔开；或直接设置为all；为空时等同于all。
-                                  例如：build,docker,chart——表示依次执行指定的构建阶段。
-    -T, --template      string    是否忽略项目根目录下的Dockerfile系列文件,与开关量-t作用相同。有效取值：false或true
-    -W, --workDir       string    仅当workMode=local时，用于指定本脚本所在的目录；
-                                  当workMode=jenkins时，脚本所在的目录由全局变量BUILD_SCRIPT_ROOT指定
+    -A, --archTypes       string    要构建的Docker镜像的架构类型，默认值=undefine,
+                                    可选值有：\"linux/amd64,linux/arm64\",\"linux/amd64\",\"linux/arm64\",\"undefine\"
+    -B, --buildType       string    构建类型:
+                                    single：单镜像模式，构建应用镜像
+                                    double：双镜像模式，构建应用基础镜像和应用业务镜像
+                                    base：仅构建应用基础镜像
+                                    business：仅构建应用业务镜像
+                                    thirdParty: 打包第三方镜像：拉取第三方镜像，缓存到本地镜像缓存目录中，
+                                                然后推送到私库中，最后导出到gDockerBuildOutDir目录中。
+                                    customize: 自定义模式：指定docker构建目录，脚本框架自动完成docker镜像构建和推送。
+    -C, --chartRepo       string    Chart镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},
+                                    {仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)}
+    -D, --dockerRepo      string    Docker镜像仓库信息, 格式：{仓库类型(nexus、harbor或registry)},{仓库实例名称(nexus)、项目名称(harbor)或组织代码(registry)},
+                                    {仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)},
+                                    {服务名称(仅对registry类型仓库有效)},{配置文件全路径名称(仅对registry类型仓库有效)}
+    -I, --imageCacheDir   string    当workMode=local时，用于缓存Dockerfile文件中From行指定的Image镜像的本地目录。
+    -L, --language        string    项目语言类型或架构类型; 目前支持的有效值有：java、go、vue、nextjs、other等，依据具体实现而定。
+        --localConfigFile string  当workMode=local时，指定本地配置文件的名称, 默认值=\"ci-cd-config.yaml\"。
+    -M, --workMode        string    工作模式：jenkins、local
+    -N, --notify          string    外部通知接口的地址
+    -O, --outArchTypes    string    要导出的离线安装包的架构类型，默认值=\"linux/amd64,linux/arm64\"
+    -P, --buildPath       string    构建目录，一般为目标工程的根目录或主模块目录（例如：Java多模块项目）
+    -S, --buildStages     string    执行的构建阶段，有效值包括：build、docker、chart、package、deploy、all，
+                                    有效值为前五个阶段的有序组合,阶段间用英文逗号隔开；或直接设置为all；为空时等同于all。
+                                    例如：build,docker,chart——表示依次执行指定的构建阶段。
+    -T, --template        string    是否忽略项目根目录下的Dockerfile系列文件,与开关量-t作用相同。有效取值：false或true
+    -W, --workDir         string    仅当workMode=local时，用于指定本脚本所在的目录；
+                                    当workMode=jenkins时，脚本所在的目录由全局变量BUILD_SCRIPT_ROOT指定
   "
   exit 0
 }
@@ -447,7 +448,7 @@ function parseOptions1() {
   gMultipleModelProject="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdefhmrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdefhmrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -526,6 +527,14 @@ function parseOptions1() {
         fi
         shift 2
         ;;
+      --localConfigFile)
+        l_param="${2}"
+        if [ "${l_param}" ];then
+          gCiCdConfigYamlFileName="${l_param}"
+          warn "从命令行读取的本地配置文件(gCiCdConfigYamlFileName)参数值为: ${gCiCdConfigYamlFileName}"
+        fi
+        shift 2
+        ;;
       -M|--workMode)
         l_param="${2}"
         if [ "${l_param}" ];then
@@ -593,7 +602,7 @@ function parseOptions2() {
   gUseTemplate="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdefhmrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdefhmrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -646,6 +655,9 @@ function parseOptions2() {
         shift 2
         ;;
       -L|--language)
+        shift 2
+        ;;
+      --localConfigFile)
         shift 2
         ;;
       -M|--workMode)
