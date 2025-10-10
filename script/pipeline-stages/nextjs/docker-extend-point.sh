@@ -35,7 +35,7 @@ function _onBeforeCreatingDockerImage_ex() {
   cp "${gBuildPath}"/*.ts "${gDockerBuildDir}/" || true
   cp "${gBuildPath}"/*.mjs "${gDockerBuildDir}/" || true
   cp "${gBuildPath}"/*.json "${gDockerBuildDir}/" || true
-  info "复制结束"
+  info "项目文件复制结束"
 
   readParam "${l_ciCdConfigFile}" "globalParams.envFile"
   if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
