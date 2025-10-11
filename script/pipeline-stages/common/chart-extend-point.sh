@@ -451,9 +451,9 @@ function onBeforeHelmPackage_ex() {
   local l_ymalFile
 
   if [[ "${gCustomizedHelm}" == "false" && -d "${gProjectChartTemplatesDir}" ]];then
-    info "尝试将主模块目录下wydevops/templates/chart/templates子目录中的*.yaml文件复制到./templates目录中 ..."
+    info "尝试将主模块目录下wydevops/templates/chart/templates子目录中的yaml文件和子目录复制到./templates目录中 ..."
     #为项目自定义部分特殊配置提供了扩展。
-    l_yamlList=$(find "${gProjectChartTemplatesDir}" -type f -name "*.yaml")
+    l_yamlList=$(find "${gProjectChartTemplatesDir}" -maxdepth 1 -type f -name "*.yaml")
     if [ "${l_yamlList}" ];then
       # shellcheck disable=SC2068
       for l_ymalFile in ${l_yamlList[@]};do
@@ -461,6 +461,18 @@ function onBeforeHelmPackage_ex() {
         cp -f "${l_ymalFile}" "./templates/"
       done
     fi
+
+    l_yamlList=$(find "${gProjectChartTemplatesDir}" -maxdepth 1 -type d)
+    if [ "${l_yamlList}" ];then
+      # shellcheck disable=SC2068
+      for l_ymalFile in ${l_yamlList[@]};do
+        if [ "${l_ymalFile}" != "${gProjectChartTemplatesDir}" ];then
+          info "将项目配置的额外的${l_ymalFile##*/}目录复制到chart镜像的templates目录中"
+          cp -rf "${l_ymalFile}" "./templates/"
+        fi
+      done
+    fi
+
   fi
 }
 

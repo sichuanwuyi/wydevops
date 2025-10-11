@@ -46,6 +46,17 @@ function _onBeforeInitGlobalParams_ex() {
 
   gRuntimeVersion="jdk${l_tmpVersion}"
 
+  mkdir -p "${gBuildPath}/wydevops/templates/" || true
+  if [ -d "${gBuildPath}/src/main/resources/templates/chart" ];then
+    #将项目resources/templates目录下的chart目录复制到${gBuildPath}/wydevops/templates目录中
+    cp -rf "${gBuildPath}/src/main/resources/templates/chart" "${gBuildPath}/wydevops/templates/" || true
+  fi
+
+  if [ -d "${gBuildPath}/src/main/resources/templates/docker" ];then
+    #将项目resources/templates目录下的docker目录复制到${gBuildPath}/wydevops/templates目录中
+    cp -rf "${gBuildPath}/src/main/resources/templates/docker" "${gBuildPath}/wydevops/templates/" || true
+  fi
+
 }
 
 function _initialCiCdConfigFileByParamMappingFiles_ex() {
