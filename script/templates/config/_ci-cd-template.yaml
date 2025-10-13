@@ -697,9 +697,7 @@ deploy:
     packageName: ${chartName}
     #发布类型：k8s或docker
     deployType: ${deployType}
-    #是否处于k8s服务删除模式，本参数仅当deployType为k8s时有效。
-    uninstall: false
-    #安装模式：install或upgrade
+    #安装模式：install、upgrade、uninstall
     installMode: install
     #部署的目标环境。
     activeProfile: ${activeProfile}
