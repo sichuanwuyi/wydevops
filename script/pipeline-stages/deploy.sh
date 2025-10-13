@@ -23,7 +23,6 @@ function executePackageStage() {
   local l_remoteBaseDir
   local l_localBaseDir
   local l_deployType
-  local l_uninstallMode
   local l_installMode
   local l_deployDockerRepo
 
@@ -89,13 +88,6 @@ function executePackageStage() {
     readParam "${gCiCdYamlFile}" "deploy[${l_i}].deployType"
     l_deployType="${gDefaultRetVal}"
 
-    readParam "${gCiCdYamlFile}" "deploy[${l_i}].uninstall"
-    if [ "${gDefaultRetVal}" != "null" ];then
-      l_uninstallMode="${gDefaultRetVal}"
-    else
-      l_uninstallMode="false"
-    fi
-
     readParam "${gCiCdYamlFile}" "deploy[${l_i}].installMode"
     l_installMode="${gDefaultRetVal}"
     if [[ ! "${l_installMode}" || "${l_installMode}" == "null" ]];then
@@ -121,7 +113,7 @@ function executePackageStage() {
     l_remoteInstallProxyShell="${l_array[1]}"
     #发布服务安装包
     invokeExtendPointFunc "deployServicePackage" "服务安装包部署扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
-      "${l_deployType}" "${l_uninstallMode}" "${l_images}" "${l_remoteDir}" "${l_localBaseDir}" "${l_shellOrYamlFile}" "${l_remoteInstallProxyShell}"
+      "${l_deployType}" "${l_installMode}" "${l_images}" "${l_remoteDir}" "${l_localBaseDir}" "${l_shellOrYamlFile}" "${l_remoteInstallProxyShell}"
     #服务安装包部署后扩展
     invokeExtendPointFunc "onAfterDeployingServicePackage" "服务安装包部署后扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
       "${l_images}" "${l_remoteDir}" "${l_localBaseDir}"

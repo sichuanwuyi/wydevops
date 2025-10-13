@@ -159,7 +159,11 @@ function _onLoadMatchedAdditionalConfigFiles_ex() {
     do
       readParam "${l_ymalFile}" "spring.profiles.active"
       if [ "${gDefaultRetVal}" != "null" ];then
-        gActiveProfile="${gDefaultRetVal}"
+        #去掉注释部分
+        gActiveProfile="${gDefaultRetVal%%#*}"
+        #去掉左右空格
+        gActiveProfile="${gActiveProfile#"${gActiveProfile%%[![:space:]]*}"}"
+        warn "spring.profiles.active参数的值为${gActiveProfile}"
         l_configFileName="application-${gActiveProfile}.yml"
         l_configFile="${l_ymalFile%/*}/${l_configFileName}"
         if [ -f "${l_configFile}" ];then

@@ -221,7 +221,7 @@ function deployServicePackage_ex() {
   local l_chartName=$2
   local l_chartVersion=$3
   local l_deployType=$4
-  local l_uninstallMode=$5
+  local l_installMode=$5
   local l_images=$6
   local l_remoteDir=$7
   local l_localBaseDir=$8
@@ -231,10 +231,10 @@ function deployServicePackage_ex() {
   if [ "${l_deployType}" == "docker" ];then
     #调用标准发布流程
     _deployServiceByDocker "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_shellOrYamlFile}" \
-      "${l_remoteInstallProxyShell}" "${l_localBaseDir}" "${l_remoteDir}" "${l_uninstallMode}"
+      "${l_remoteInstallProxyShell}" "${l_localBaseDir}" "${l_remoteDir}" "${l_installMode}"
   else
     #调用标准发布流程
-    _deployServiceInK8S "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_localBaseDir}" "${l_uninstallMode}"
+    _deployServiceInK8S "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_localBaseDir}" "${l_installMode}"
   fi
   gCurrentStageResult="INFO|${l_packageName}安装包部署成功"
 }
@@ -589,7 +589,7 @@ function _deployServiceInK8S() {
   local l_chartName=$2
   local l_chartVersion=$3
   local l_localBaseDir=$4
-  local l_uninstallMode=$5
+  local l_installMode=$5
 
   local l_activeProfile
   local l_apiServers
@@ -627,7 +627,6 @@ function _deployServiceInK8S() {
   local l_paramName
   local l_paramValue
 
-  local l_installMode
   local l_content
 
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].activeProfile"
@@ -760,8 +759,8 @@ function _deployServiceInK8S() {
       ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
     fi
 
-    l_installMode="install"
-    if [ "${l_installMode}" == "install" || "${l_uninstallMode}" == "true" ];then
+
+    if [[ "${l_installMode}" == "install" || "${l_installMode}" == "uninstall" ]];then
       info "卸载${l_namespace}命名空间中正在运行的${l_chartName}服务..." "-n"
       l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
       l_errorLog=$(grep -oE "^(.*)Error:(.*)$" <<< "${l_content}")
@@ -771,10 +770,14 @@ function _deployServiceInK8S() {
       else
         info "成功" "*"
       fi
-      if [ "${l_uninstallMode}" == "true" ];then
+      if [ "${l_installMode}" == "uninstall" ];then
         info "检测到处于卸载服务模式，直接退出。"
         exit
       fi
+    fi
+
+    if [ "${l_installMode}" == "upgrade" ];then
+      l_installMode="upgrade --install"
     fi
 
     #等待3秒
@@ -786,11 +789,11 @@ function _deployServiceInK8S() {
 
     if [ "${l_settingParams}" ];then
       [[ "${l_settingParams}" =~ ^(,) ]] && l_settingParams="${l_settingParams:1}"
-      info "再重新安装${l_chartName}服务:\nhelm upgrade --install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
-      l_content=$(helm upgrade --install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" 2>&1)
+      info "再重新安装${l_chartName}服务:\nhelm ${l_installMode} ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
+      l_content=$(helm ${l_installMode} "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" 2>&1)
     else
-      info "再重新安装${l_chartName}服务:\nhelm upgrade --install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config"
-      l_content=$(helm upgrade --install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
+      info "再重新安装${l_chartName}服务:\nhelm ${l_installMode} ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config"
+      l_content=$(helm ${l_installMode} "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
     fi
 
     l_errorLog=$(grep -oE "^(.*)Error:(.*)$" <<< "${l_content}")
