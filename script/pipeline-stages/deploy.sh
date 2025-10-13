@@ -24,6 +24,7 @@ function executePackageStage() {
   local l_localBaseDir
   local l_deployType
   local l_uninstallMode
+  local l_installMode
   local l_deployDockerRepo
 
   local l_deployTempDirName
@@ -93,6 +94,13 @@ function executePackageStage() {
       l_uninstallMode="${gDefaultRetVal}"
     else
       l_uninstallMode="false"
+    fi
+
+    readParam "${gCiCdYamlFile}" "deploy[${l_i}].installMode"
+    l_installMode="${gDefaultRetVal}"
+    if [[ ! "${l_installMode}" || "${l_installMode}" == "null" ]];then
+      #设置默认值
+      l_installMode="install"
     fi
 
     readParam "${gCiCdYamlFile}" "deploy[${l_i}].k8s.dockerRepo"

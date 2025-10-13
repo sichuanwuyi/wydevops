@@ -627,6 +627,7 @@ function _deployServiceInK8S() {
   local l_paramName
   local l_paramValue
 
+  local l_installMode
   local l_content
 
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].activeProfile"
@@ -759,19 +760,21 @@ function _deployServiceInK8S() {
       ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
     fi
 
-    info "卸载${l_namespace}命名空间中正在运行的${l_chartName}服务..." "-n"
-    l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
-    l_errorLog=$(grep -oE "^(.*)Error:(.*)$" <<< "${l_content}")
-    if [ "${l_errorLog}" ];then
-      warn "失败" "*"
-      warn "未找到正在运行的${l_chartName}服务:${l_errorLog}"
-    else
-      info "成功" "*"
-    fi
-
-    if [ "${l_uninstallMode}" == "true" ];then
-      info "检测到处于卸载服务模式，直接退出。"
-      exit
+    l_installMode="install"
+    if [ "${l_installMode}" == "install" || "${l_uninstallMode}" == "true" ];then
+      info "卸载${l_namespace}命名空间中正在运行的${l_chartName}服务..." "-n"
+      l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
+      l_errorLog=$(grep -oE "^(.*)Error:(.*)$" <<< "${l_content}")
+      if [ "${l_errorLog}" ];then
+        warn "失败" "*"
+        warn "未找到正在运行的${l_chartName}服务:${l_errorLog}"
+      else
+        info "成功" "*"
+      fi
+      if [ "${l_uninstallMode}" == "true" ];then
+        info "检测到处于卸载服务模式，直接退出。"
+        exit
+      fi
     fi
 
     #等待3秒
@@ -783,11 +786,11 @@ function _deployServiceInK8S() {
 
     if [ "${l_settingParams}" ];then
       [[ "${l_settingParams}" =~ ^(,) ]] && l_settingParams="${l_settingParams:1}"
-      info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
-      l_content=$(helm install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" 2>&1)
+      info "再重新安装${l_chartName}服务:\nhelm upgrade --install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
+      l_content=$(helm upgrade --install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" 2>&1)
     else
-      info "再重新安装${l_chartName}服务:\nhelm install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config"
-      l_content=$(helm install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
+      info "再重新安装${l_chartName}服务:\nhelm upgrade --install ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config"
+      l_content=$(helm upgrade --install "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
     fi
 
     l_errorLog=$(grep -oE "^(.*)Error:(.*)$" <<< "${l_content}")
