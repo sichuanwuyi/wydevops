@@ -622,8 +622,8 @@ chart:
               #  simple: ROUND_ROBIN
               connectionPool:
                 tcp:
-                  maxConnections: 100  # 最大连接数
-                  connectTimeout: 30s # 连接超时
+                  maxConnections: 1000  # 最大连接数
+                  connectTimeout: 3s # 连接超时
                 http:
                   http1MaxPendingRequests: 1024
                   maxRequestsPerConnection: 0  # 0表示不限制，适用于WebSocket
