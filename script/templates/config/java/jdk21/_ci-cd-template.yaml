@@ -144,8 +144,8 @@ globalParams:
   httpGetScheme: HTTP
 
   #K8S服务CPU和内存资源配置相关参数
-  cpuLimits: 4000m
-  memoryLimits: 4Gi
+  cpuLimits: 2000m
+  memoryLimits: 1Gi
   cpuRequests: 1000m
   memoryRequests: 1Gi
 

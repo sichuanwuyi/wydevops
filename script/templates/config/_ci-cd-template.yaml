@@ -135,10 +135,10 @@ globalParams:
   httpGetScheme: HTTP
 
   #K8S服务CPU和内存资源配置相关参数
-  cpuLimits: 500m
-  memoryLimits: 500Mi
-  cpuRequests: 500m
-  memoryRequests: 500Mi
+  cpuLimits: 1000m
+  memoryLimits: 1Gi
+  cpuRequests: 1000m
+  memoryRequests: 1Gi
 
   #需要放到项目默认ConfigMap中的文本文件的相对路径列表，文件间使用英文逗号分隔
   configMapFiles:
