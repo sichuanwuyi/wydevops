@@ -165,6 +165,13 @@ function _onLoadMatchedAdditionalConfigFiles_ex() {
         gActiveProfile="${gActiveProfile#"${gActiveProfile%%[![:space:]]*}"}"
         gActiveProfile="${gActiveProfile%"${gActiveProfile##*[^[:space:]]}"}"
         warn "spring.profiles.active参数的值为:${gActiveProfile}"
+
+        if [ "${gActiveProfile}" == "dev" ];then
+          warn "强制更新spring.profiles.active参数的值为:prod"
+          updateParam "${l_ymalFile}" "spring.profiles.active" "prod"
+          gActiveProfile="prod"
+        fi
+
         l_configFileName="application-${gActiveProfile}.yml"
         l_configFile="${l_ymalFile%/*}/${l_configFileName}"
         if [ -f "${l_configFile}" ];then
