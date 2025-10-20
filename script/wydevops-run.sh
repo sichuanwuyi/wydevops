@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#todo: 使用本文件需要定义环境变量：WYDEVOPS_HOME， 该变量指向本项目script目录所在的磁盘路径
 
 # 将 Windows 路径转为 Linux 风格路径
 # 用法: linux_path=$(win2linux "$PWD")
@@ -32,6 +33,9 @@ function win2linux() {
 
 #定义wydevops脚本中script目录的路径
 _SCRIPT_ROOT_DIR=$(win2linux ${3:-$WYDEVOPS_HOME})
+if [ ! "${_SCRIPT_ROOT_DIR}" ];then
+  _SCRIPT_ROOT_DIR=${PWD}
+fi
 
 #定义当前项目主模块目录路径:
 #如果是单模块项目，则路径以工程目录结尾，最后面必须有"/"
