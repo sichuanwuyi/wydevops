@@ -6,6 +6,8 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR _WORK-DIR-IN-CONTAINER_
 
+RUN npm config set registry https://registry.npmmirror.com/
+
 COPY .env* *.ts *.mjs *.json ./
 RUN corepack enable npm && npm i -f
 

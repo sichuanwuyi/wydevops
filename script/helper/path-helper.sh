@@ -6,11 +6,11 @@ function win2linux() {
   local p="${1:-$PWD}"
 
   if command -v wslpath >/dev/null 2>&1; then
-    # WSL 最可靠
-    wslpath -u "$p"
+    # 若传入已是类 Unix 路径，wslpath -u 会报错到 stderr
+    # 丢弃 stderr，并在失败时回显原值
+    wslpath -u "$p" 2>/dev/null || printf '%s\n' "$p"
   elif command -v cygpath >/dev/null 2>&1; then
-    # Cygwin / Git Bash / MSYS2
-    cygpath -u "$p"
+    cygpath -u "$p" 2>/dev/null || printf '%s\n' "$p"
   else
     # 朴素回退：C:\Users\me -> /mnt/c/Users/me（若没有 /mnt，则输出 /c/...）
     local has_mnt=0; [ -d /mnt ] && has_mnt=1
