@@ -590,7 +590,8 @@ chart:
             gateways:
               - ${istioGlobalGatewayName}
             http:
-              - match:
+              - name: base
+                match:
                   - uri:
                       prefix: "${gatewayPath}/"
                 #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。

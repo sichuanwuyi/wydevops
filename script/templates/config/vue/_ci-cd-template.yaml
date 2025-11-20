@@ -588,7 +588,8 @@ chart:
             gateways:
               - ${serviceName}-gateway
             http:
-              - match:
+              - name: base
+                match:
                   - uri:
                       #注意下列prefix值应以“/”结尾，此时rewrite.uri才可以设置为“/”
                       #如果下列prefix值未以“/”结尾，则rewrite.uri应设置为“ ”
