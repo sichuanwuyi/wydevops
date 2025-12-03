@@ -363,6 +363,11 @@ chart:
               defaultMode: 493
               name: ${serviceName}-${versionSuffix}-configmap
               optional: false
+          - name: public-configs
+            configMap:
+              defaultMode: 493
+              name: public-configs-configmap
+              optional: true
           #挂载公共配置信息
           #- name: public-params
           #  configMap:
@@ -403,6 +408,14 @@ chart:
                 nodePort: ${nodePorts}
             #定义环境变量
             env:
+              - name: NODE_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: spec.nodeName
+              - name: NODE_IP
+                valueFrom:
+                  fieldRef:
+                    fieldPath: status.hostIP
             envFrom:
             volumeMounts:
               - name: ${serviceName}-workdir
@@ -411,8 +424,8 @@ chart:
                 #mountPath参数的前缀必须与docker.workDir参数一致。
                 mountPath: ${workDirInContainer}/wydevops-config
               #挂载公共配置信息
-              #- name: public-params
-              #  mountPath: /var/params
+              - name: public-configs
+                mountPath: /var/public-configs
               #挂载pvc的例子
               #- name: public-storage
               #  mountPath: ${workDirInContainer}/data

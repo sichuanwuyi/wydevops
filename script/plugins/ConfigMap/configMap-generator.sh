@@ -55,6 +55,8 @@ function configMapGenerator_default() {
       info "正在将${l_configFile##*/}文件写入ConfigMap配置文件中..."
       [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
+      [[ ! -f "${l_configFile}" ]] && error "目标配置文件不存在：${l_configFile}"
+
       #将文件内容插入ConfigMap配置文件中。
       l_configFileContent=$(cat "${l_configFile}")
       l_fileKey="FILE_KEY_${RANDOM}"
