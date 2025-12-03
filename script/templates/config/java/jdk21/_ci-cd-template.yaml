@@ -642,7 +642,7 @@ chart:
                     weight: 100
                 #默认启用websocket升级
                 #websocketUpgrade: true
-                ##避免长连接被 Istio 默认超时切断
+                #避免长连接被 Istio 默认超时切断
                 #timeout: 0s
           destinationRule:
             name: ${serviceName}-dr
