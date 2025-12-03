@@ -39,7 +39,8 @@ USER root
 
 WORKDIR _APP-DIR-IN-CONTAINER_
 
-COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/_OUTPUT_/node_modules/ ./node_modules/
+#COPY --from=builder --chown=nextjs:nodejs _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/_OUTPUT_/node_modules/ ./node_modules/
+COPY --from=builder _WORK-DIR-IN-CONTAINER_/_DOT-NEXT_/_OUTPUT_/node_modules/ ./node_modules/
 
 EXPOSE _EXPOSE_
 
