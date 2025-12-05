@@ -641,9 +641,9 @@ chart:
                     #默认所有流量都导流到${serviceName}-clusterip
                     weight: 100
                 #默认启用websocket升级
-                #websocketUpgrade: true
-                #避免长连接被 Istio 默认超时切断
-                #timeout: 0s
+                websocketUpgrade: true
+                #为避免长连接被 Istio 默认超时切断，此值应大于Websocket心跳超时时间。0表示永不不超时。
+                timeout: 30s
           destinationRule:
             name: ${serviceName}-dr
             host: ${serviceName}-clusterip
