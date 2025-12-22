@@ -2667,6 +2667,7 @@ function _combine(){
     if [ "${gDefaultRetVal}" == "array" ];then
       #是数组，则直接整体替换。
       info "检测到数组型列表参数${l_targetParamPath}，执行整体替换 ..."
+      deleteParam "${l_targetYamlFile}" "${l_targetParamPath}"
       if [[ "${l_allowInsertNewListItem}" == "true" ]];then
         insertParam "${l_targetYamlFile}" "${l_targetParamPath}" "${l_srcContent}"
       else

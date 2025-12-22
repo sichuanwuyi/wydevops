@@ -12,10 +12,12 @@ source "${_selfRootDir}/helper/yaml-helper.sh"
 export gDefaultRetVal
 
 #定义测试文件名称。
-tmpFile="./my-test.yaml"
+tmpFile="./ci-cd.yaml"
+tmpFile1="./ci-cd1.yaml"
 
-readParam "${tmpFile}" "params.TaosdbConfig.hosts[0]"
-echo "-------gDefaultRetVal-----|${gDefaultRetVal}|"
+deleteParam "${tmpFile1}" "params.items"
+combine "${tmpFile}" "${tmpFile1}" "params.items" "params.items" "true"
+echo "---1----gDefaultRetVal-----|${gDefaultRetVal}|"
 
 #fileContent=$(cat "${tmpFile}")
 
