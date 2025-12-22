@@ -2668,6 +2668,7 @@ function _combine(){
       #是数组，则直接整体替换。
       info "检测到数组型列表参数${l_targetParamPath}，执行整体替换 ..."
       if [[ "${l_allowInsertNewListItem}" == "true" ]];then
+        echo "-----${gFileContentMap[${l_targetYamlFile}]}"
         insertParam "${l_targetYamlFile}" "${l_targetParamPath}" "${l_srcContent}"
       else
         updateParam "${l_targetYamlFile}" "${l_targetParamPath}" "${l_srcContent}"
@@ -2680,6 +2681,8 @@ function _combine(){
         fi
       else
         info "整体替换成功"
+        echo "-----${gFileContentMap[${l_targetYamlFile}]}"
+        exit 0
       fi
       return
     fi
@@ -2793,6 +2796,7 @@ function _combine(){
           fi
         else
           info "列表项参数整体插入成功"
+          l_paramName="${l_targetParamPath}[${l_targetParamItemCount}]"
           _targetParamNameIndexMap["${l_paramName}"]="${l_targetParamItemCount}"
         fi
       else
