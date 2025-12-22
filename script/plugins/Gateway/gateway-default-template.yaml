@@ -16,6 +16,9 @@ spec:
     #选中istio-ingressgateway相关Pod。
     istio: ingressgateway
   servers:
+  {{- if .istioRoute.gateway.servers }}
+  {{- toYaml .istioRoute.gateway.servers | nindent 4 }}
+  {{- else }}
     {{- if .istioRoute.gateway.credentialName }}
     - port:
         number: 443
@@ -45,4 +48,6 @@ spec:
         - {{ . | quote }}
         {{- end }}
         {{- end }}
+  {{- end }}
+
 {{- end }}

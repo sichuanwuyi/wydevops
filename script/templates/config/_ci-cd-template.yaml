@@ -576,6 +576,9 @@ chart:
           apiVersion: ${istioApiVersion}
           gateway:
             name: ${istioGlobalGatewayName}
+            #完整的istio网关配置，优先于简略配置。
+            servers:
+            #如下为简略的istio网关配置。与servers配置互斥。
             #https的证书所在的Secret对象名称
             credentialName: ${ingressSecretName}
             #这个端口号是由istio-ingressgateway服务决定。
