@@ -603,7 +603,8 @@ chart:
                 #如果需要重写路由，则打开下面的配置项，并正确设置uri参数。
                 rewrite:
                   #如果上述prefix字段不以“/”结尾，则设置为" "表示删除上述prefix参数指定的前缀。
-                  uri: "${gatewayPath}/"
+                  #如果不设置则表示不启用路由重写功能
+                  uri:
                 route:
                   - destination:
                       port:
