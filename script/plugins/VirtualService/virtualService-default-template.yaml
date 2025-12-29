@@ -21,7 +21,7 @@ spec:
     - match:
       {{- range .match }}
         - uri:
-            prefix: {{ .uri.prefix | quote }}
+          {{- toYaml .uri | nindent 10 }}
       {{- end }}
       {{- if and (eq $.Values.gatewayRoute.enableRewrite "true") .rewrite .rewrite.uri }}
       rewrite:
