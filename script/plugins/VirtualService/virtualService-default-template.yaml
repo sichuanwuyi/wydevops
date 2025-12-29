@@ -23,7 +23,7 @@ spec:
         - uri:
             prefix: {{ .uri.prefix | quote }}
       {{- end }}
-      {{- if and (eq $.Values.gatewayRoute.enableRewrite "true") .rewrite.uri }}
+      {{- if and (eq $.Values.gatewayRoute.enableRewrite "true") .rewrite .rewrite.uri }}
       rewrite:
         uri: {{ .rewrite.uri | quote }}
       {{- end }}
