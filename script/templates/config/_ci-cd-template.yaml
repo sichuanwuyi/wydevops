@@ -97,7 +97,6 @@ globalParams:
   gatewayHost: *
   #istio全局网关名称
   istioGlobalGatewayName: wydevops-gateway
-  istioVirtualServiceGatewayName: ${targetNamespace}/${istioGlobalGatewayName}
   #todo enableRewrite参数的值会自动根据gatewayPath的值更新。
   #是否启用网关路由重写机制，默认为true, 会根据gatewayPath的值自动更新设置：
   #当gatewayPath值为空或"/"时，会自动设置为false。
@@ -167,6 +166,8 @@ globalParams:
   #参数不为空时即表示需要挂载PVC，参数值即为PVC资源名称。
   #挂载路径默认为${serviceName}-workdir
   persistentVolumeClaimName:
+  #istio VirtualService资源绑定的网关名称
+  istioVirtualServiceGatewayName: ${targetNamespace}/${istioGlobalGatewayName}
 
 #------以下配置为高级配置，在未充分理解的情况下不要轻易改动------#
 
