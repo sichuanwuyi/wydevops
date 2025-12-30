@@ -97,6 +97,7 @@ globalParams:
   gatewayHost: *
   #istio全局网关名称
   istioGlobalGatewayName: wydevops-gateway
+  istioVirtualServiceGatewayName: ${targetNamespace}/${istioGlobalGatewayName}
   #todo enableRewrite参数的值会自动根据gatewayPath的值更新。
   #是否启用网关路由重写机制，默认为true, 会根据gatewayPath的值自动更新设置：
   #当gatewayPath值为空或"/"时，会自动设置为false。
@@ -592,7 +593,7 @@ chart:
             hosts:
               - "${istioVirtualServiceHost}"
             gateways:
-              - ${istioGlobalGatewayName}
+              - ${istioVirtualServiceGatewayName}
             http:
               - name: base
                 match:
