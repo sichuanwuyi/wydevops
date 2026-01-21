@@ -10,10 +10,12 @@ import (
 )
 
 func main() {
+
+	gin.SetMode(gin.DebugMode)
+
 	//初始化配置
 	bootstrap.InitializeConfig()
 
-	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
 	//测试路由

@@ -22,3 +22,4 @@ bash "${_SCRIPT_ROOT_DIR}/wydevops.sh" -e -f -m \
 #-C "harbor,chartmuseum,192.168.31.218:8088,admin,Harbor12345,8088" \
 #-D "harbor,wydevops,192.168.31.218:8088,admin,Harbor12345,8088" \
 #-N "http://192.168.100.236:8000/cicd/notify" \
+#-S build,docker,chart,package,deploy \
