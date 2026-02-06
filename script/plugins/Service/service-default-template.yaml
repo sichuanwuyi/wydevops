@@ -16,6 +16,12 @@ metadata:
     app.kubernetes.io/instance: {{ \$.Release.Name }}
 spec:
   type: ClusterIP
+  {{- if and .headless (equal .headless "true") }}
+  # 核心：无头服务，解析带序号的Pod DNS
+  clusterIP: None
+  # StatefulSet必备：解析未就绪Pod（主从选举/初始化必备）
+  publishNotReadyAddresses: true
+  {{- end }}
   ports:
     {{- toYaml .ports | nindent 4 }}
   selector:

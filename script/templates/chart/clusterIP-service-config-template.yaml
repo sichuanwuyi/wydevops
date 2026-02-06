@@ -1,6 +1,7 @@
 clusterIP:
   name:
   version:
+  headless: "false"
   ports:
     - name: http
       protocol: TCP

@@ -304,6 +304,8 @@ chart:
         refExternalContainers:
         #配置chart镜像中需要发布的服务的类型：Deployment、DaemonSet、StatefulSet。
         kind: Deployment
+        #如果kind配置为StatefulSet，则headless配置为true,表示创建Headless-Service
+        headless: false
         replicaCount: 1
         priorityClassName: ${priorityClassName}
         imagePullSecrets:
