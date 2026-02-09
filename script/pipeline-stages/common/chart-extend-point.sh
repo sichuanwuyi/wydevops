@@ -272,9 +272,13 @@ function onModifyingValuesYaml_ex(){
   local l_kind
   local l_generatorName
   local l_configPath
+  local l_gatewayRoute
 
   l_packageYaml="${l_chartPath}/package.yaml"
   l_valuesYaml="${l_chartPath}/values.yaml"
+
+  l_gatewayRoute="${gTargetGatewayHosts}"
+  [[ "${l_gatewayRoute}" == "*" ]] && l_gatewayRoute="\"*\""
 
   #覆盖l_valuesYaml文件内容。
   echo "#定义容器内的Docker镜像仓库地址，用于容器内镜像的拉取" > "${l_valuesYaml}"
@@ -282,7 +286,7 @@ function onModifyingValuesYaml_ex(){
   #在values.yaml文件中定义image.registry参数
   insertParam "${l_valuesYaml}" "image.registry" "${gDockerRepoName}"
   #在values.yaml文件中定义gatewayRoute.host参数
-  insertParam "${l_valuesYaml}" "gatewayRoute.host" "${gTargetGatewayHosts}"
+  insertParam "${l_valuesYaml}" "gatewayRoute.host" "${l_gatewayRoute}"
 
   if [[ ! "${gGatewayPath}" || "${gGatewayPath}" == "/" ]];then
     #标识禁用网关路径重写功能。
