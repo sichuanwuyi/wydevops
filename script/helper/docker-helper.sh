@@ -24,7 +24,7 @@ function dockerLogin(){
     unregisterTempFile "${l_tmpFile}"
     # shellcheck disable=SC2015
     if [[ "${l_errorLog}" ]];then
-      error "失败：请检查网络并确保docker配置文件(daemon.json)中insecure-registries数组参数中已经添加了${l_repoName}\n${l_tmpFileContent}" "*"
+      error "失败：\n1.首先确保镜像仓库服务已经启动; \n2.然后请检查网络并确保docker配置文件(daemon.json)中insecure-registries数组参数中已经添加了${l_repoName}\n${l_tmpFileContent}" "*"
     else
       info "成功" "*"
     fi
@@ -173,11 +173,13 @@ function pushImage() {
     info "--->成功执行命令(docker tag ${l_image} ${l_tmpImage})"
   fi
 
-  docker push "${l_tmpImage}" 2>&1
+  info "执行命令：docker push -q ${l_tmpImage}"
+
+  docker push -q "${l_tmpImage}" 2>&1
   if [ "$?" -ne 0 ];then
     #报错前删除刚定义的镜像。
     docker rmi -f "${l_tmpImage}"
-    error "--->执行命令(docker push ${l_tmpImage})失败"
+    error "--->失败:\n1.确保镜像仓库服务已经启动;\n2.推送到本地镜像仓库时不应该启用代理(docker desktop->settings->resources->proxies->Bypass proxy settings...中添加镜像仓库IP地址)"
   else
     info "--->成功执行命令(docker push ${l_tmpImage})"
   fi
