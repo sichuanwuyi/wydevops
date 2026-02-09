@@ -20,7 +20,7 @@ globalParams:
   #部署的命名空间
   targetNamespace: default
   #K8s集群内部拉取镜像的仓库信息
-  targetDockerRepo: nexus,wydevops,192.168.31.218:8001,admin,Wpl118124,8081
+  targetDockerRepo: nexus,wydevops,192.168.3.244:8001,admin,Wpl118124,8081
 
 chart:
   - name: ${chartName}
@@ -119,11 +119,15 @@ chart:
               description: "内置的管理页面访问端口号|Port number of built-in admin page"
 deploy:
   - name: ${chartName}
+    #配置chart镜像中需要发布的服务的类型：Deployment、DaemonSet、StatefulSet。
+    kind: StatefulSet
+    #如果kind配置为StatefulSet，则headless配置为true,表示创建Headless-Service
+    headless: true
     params:
       - name: .Values.params.myName
         value: wydevops
       - name: .Values.params.mysql.host
-        value: 192.168.31.218
+        value: 192.168.3.244
       - name: .Values.params.mysql.password
         value: 123456
       - name: .Values.params.mysql.port

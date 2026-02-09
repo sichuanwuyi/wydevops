@@ -318,10 +318,14 @@ function _loadImageFromDir() {
     l_fileName="${l_image//\//_}"
     l_fileName="${l_fileName//:/-}-${l_archType//\//-}.tar"
 
+    info "在${l_cacheDir}目录中查找${l_fileName}文件..."
+
     l_targetFiles=$(find "${l_cacheDir}" -maxdepth 1 -type f -name "${l_fileName}")
     if [ "${l_targetFiles}" ];then
       l_targetFile=${l_targetFiles[0]}
+      info "找到${l_fileName}文件，路径为:${l_targetFile}"
       l_errorLog=$(docker load -i "${l_targetFile}" 2>&1 | grep -oE "^.*(Loaded image: ${l_image}).*$")
+      info "执行命令(docker load -i ${l_targetFile})...${l_errorLog}"
       [[ "${l_errorLog}" ]] && gDefaultRetVal="true"
     fi
   fi

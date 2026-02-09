@@ -90,11 +90,16 @@ globalParams:
   #默认范围：30000-32767
   nodePorts:
 
+  #服务类型，默认是Deployment。
+  serviceKind: Deployment
+  #是否启用无头服务，默认是false。
+  isHeadlessService: false
+
   #应用设置的路由前缀参数。
   #当gatewayPath="/"或空时，表示不启用重写机制。
   gatewayPath: /${serviceName}
   #应用设置的路由Host名称，*表示任意Host。
-  gatewayHost: *
+  gatewayHost: "*"
   #istio全局网关名称
   istioGlobalGatewayName: ${serviceName}-gateway
   #todo enableRewrite参数的值会自动根据gatewayPath的值更新。
@@ -107,7 +112,7 @@ globalParams:
   apisixIngressTargetRegex: ^${gatewayPath}(?:/|$)(.*)
 
   #使用istio时VirtualService资源绑定的Host名称，*表示任意Host。
-  istioVirtualServiceHost: *
+  istioVirtualServiceHost: "*"
   #启用指定的DestinationRule资源名称。
   istioSubset: ${serviceName}-subset
   #使用apisixRoute时，是否为当前服务启用网关的websocket功能
@@ -304,9 +309,7 @@ chart:
         #默认情况下应设置为空。
         refExternalContainers:
         #配置chart镜像中需要发布的服务的类型：Deployment、DaemonSet、StatefulSet。
-        kind: Deployment
-        #如果kind配置为StatefulSet，则headless配置为true,表示创建Headless-Service
-        headless: false
+        kind: ${serviceKind}
         replicaCount: 1
         priorityClassName: ${priorityClassName}
         imagePullSecrets:
@@ -593,7 +596,7 @@ chart:
           virtualService:
             name: ${serviceName}-vs
             hosts:
-              - "${istioVirtualServiceHost}"
+              - ${istioVirtualServiceHost}
             gateways:
               - ${istioVirtualServiceGatewayName}
             http:

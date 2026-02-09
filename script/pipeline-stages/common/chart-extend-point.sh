@@ -771,7 +771,6 @@ function _processContainerPorts(){
   local l_loopIndex
   local l_layerLevel
   local l_paramPath
-  local l_deploymentPath
 
   #子方法中回使用。
   declare -A _portAndServiceNameMap
@@ -779,8 +778,7 @@ function _processContainerPorts(){
   l_loopIndex=(0 0 0)
   ((l_layerLevel = 3))
   while true;do
-    l_deploymentPath="chart[${l_loopIndex[0]}].deployments[${l_loopIndex[1]}]"
-    l_paramPath="${l_deploymentPath}.containers[${l_loopIndex[2]}]"
+    l_paramPath="chart[${l_loopIndex[0]}].deployments[${l_loopIndex[1]}].containers[${l_loopIndex[2]}]"
     readParam "${l_cicdYaml}" "${l_paramPath}.name"
     if [[ "${gDefaultRetVal}" == "null" ]];then
       if [ "${l_layerLevel}" -eq 3 ];then
@@ -800,7 +798,7 @@ function _processContainerPorts(){
     ((l_layerLevel = 3))
 
     info "检查并生成项目Service配置信息..."
-    _createServiceConfig "${l_cicdYaml}" "${l_deploymentPath}" "${l_paramPath}" "${gDefaultRetVal}"
+    _createServiceConfig "${l_cicdYaml}" "${l_paramPath}" "${gDefaultRetVal}"
 
     info "检查并处理项目开放了多个容器端口的情况..."
     _processMultiplePorts "${l_cicdYaml}" "${l_paramPath}"
@@ -821,9 +819,8 @@ function _createServiceConfig() {
   export _portAndServiceNameMap
 
   local l_cicdYaml=$1
-  local l_deploymentPath=$2
-  local l_paramPath=$3
-  local l_containerName=$4
+  local l_paramPath=$2
+  local l_containerName=$3
 
   local l_configTemplate
   local l_tmpFile
@@ -852,10 +849,10 @@ function _createServiceConfig() {
   local l_kind
   local l_headless
 
-  readParam "${l_cicdYaml}" "${l_deploymentPath}.kind"
+  readParam "${l_cicdYaml}" "globalParams.serviceKind"
   l_kind="${gDefaultRetVal}"
 
-  readParam "${l_cicdYaml}" "${l_deploymentPath}.headless"
+  readParam "${l_cicdYaml}" "globalParams.isHeadlessService"
   l_headless="${gDefaultRetVal}"
 
   readParam "${l_cicdYaml}" "${l_paramPath}.service"
@@ -951,8 +948,8 @@ function _createServiceConfig() {
               insertParam "${l_tmpFile}" "service.${l_subPath}" "${gDefaultRetVal}"
               updateParam "${l_tmpFile}" "service.${l_subPath}.name" "${l_containerName}"
               updateParam "${l_tmpFile}" "service.${l_subPath}.version" "${l_version}"
-              if [[ "${l_kind}" == "StatefulSet" && "${l_headless}" == "true" ]];then
-                updateParam "${l_tmpFile}" "service.${l_subPath}.headless" "true"
+              if [[ "${l_kind}" == "StatefulSet" && "${l_headless}" == true ]];then
+                updateParam "${l_tmpFile}" "service.${l_subPath}.headless" true
               fi
             else
               #读取Port项配置模板
