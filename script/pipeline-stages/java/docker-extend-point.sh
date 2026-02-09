@@ -27,7 +27,7 @@ function _onBeforeCreatingDockerImage_ex() {
   local l_command
   local l_jdkVersion
 
-  l_jdkVersion=$(grep -oE "[0-9]+" <<< "gRuntimeVersion")
+  l_jdkVersion=$(grep -oE "[0-9]+" <<< "${gRuntimeVersion}")
 
   l_jarFiles=$(find "${gProjectBuildOutDir}" -maxdepth 1 -type f -name "${gServiceName}*.jar")
   [[ ! "${l_jarFiles[0]}" ]] &&  error "${gProjectBuildOutDir##*/}目录中不存在${gServiceName}*.jar文件"
@@ -37,9 +37,14 @@ function _onBeforeCreatingDockerImage_ex() {
   # shellcheck disable=SC2164
   cd "${gDockerBuildDir}"
 
+  info "项目jdk版本: ${l_jdkVersion}"
+
   if [[ "${l_jdkVersion}" -ge 21 ]];then
-    l_command="java -Djarmode=tools -jar ${l_jarFiles[0]} extract --destination ./extract --layers --launcher"
-    if ! java -Djarmode=tools -jar "${l_jarFiles[0]}" extract --destination ./extract --layers --launcher;then
+    #确保./extract目录存在，且为空目录
+    mkdir -p ./extract && rm -rf ./extract/*
+    l_command="java -Djarmode=tools -jar ${l_jarFiles[0]} extract --layers --launcher --destination ./extract"
+    info "执行命令: ${l_command}"
+    if ! java -Djarmode=tools -jar "${l_jarFiles[0]}" extract --layers --launcher --destination ./extract;then
       error "分层解压jar文件异常"
     fi
     #将./extract目录中的所有子目录复制到gDockerBuildDir目录下。
@@ -47,7 +52,8 @@ function _onBeforeCreatingDockerImage_ex() {
     #删除./extract目录
     rm -rf "./extract"
   else
-    l_command="java -Djarmode=layertools -jar ${l_jarFiles[0]} extract"
+    l_command="java -Djarmode=layertools -jar ${l_jarFiles[0]} extract --layers --launcher"
+    info "执行命令: ${l_command}"
     if ! java -Djarmode=layertools -jar "${l_jarFiles[0]}" extract; then
       error "分层解压jar文件异常"
     fi
