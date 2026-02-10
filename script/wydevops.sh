@@ -46,6 +46,7 @@ export gArchTypes
 export gPipelineScriptsDir
 export gLanguage
 export gCiCdYamlFileName
+export gHelmBuildOutDir
 
 parseOptions1 "${@}"
 
@@ -89,6 +90,9 @@ elif [[ "${gLanguage}" != "shell" ]];then
   info "将初始化好的全局变量的值写入${gGlobalParamCacheFileName}缓存文件中"
   cacheGlobalParamsToFile
 fi
+
+info "删除${gHelmBuildOutDir}/${gArchTypes//\//-}/pushed-images.yaml文件"
+rm -f "${gHelmBuildOutDir}/${gArchTypes//\//-}/pushed-images.yaml"
 
 info "二次解析命令选项和传入参数"
 parseOptions2 "${@}"

@@ -99,7 +99,7 @@ globalParams:
   #当gatewayPath="/"或空时，表示不启用重写机制。
   gatewayPath: /${serviceName}
   #istio全局网关名称
-  istioGlobalGatewayName: ${serviceName}-gateway
+  istioGlobalGatewayName: ${serviceName}-gw
   #应用设置的路由Host名称，*表示任意Host。
   gatewayHost: "*"
   #todo enableRewrite参数的值会自动根据gatewayPath的值更新。

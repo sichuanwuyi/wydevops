@@ -2,6 +2,8 @@
 
 #全局变量名称定义数组
 export gGlobalParamNames=(
+#构建唯一标识
+"gRunID=\"$(date +%Y%m%d%H%M%S)\""
 #----------------常量定义---------------#
 "gCiCdYamlFileName=\"ci-cd.yaml\"" \
 "gCiCdTemplateFileName=\"ci-cd-template.yaml\"" \

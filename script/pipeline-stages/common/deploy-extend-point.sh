@@ -990,6 +990,7 @@ function _pushDockerImageForDeployStage() {
   export gServiceName
   export gForceCoverage
   export gImageCacheDir
+  export gRunID
 
   local l_packageName=$1
   local l_dockerRepoInfo=$2
@@ -1013,6 +1014,8 @@ function _pushDockerImageForDeployStage() {
   local l_repoAccount
   local l_repoPassword
   local l_addPrefix
+  local l_pushedImageFile
+  local l_key
 
   #获取需要推送的镜像名称信息。
   _getDockerImageInChart "${l_packageName}" "${l_chartFile}"
@@ -1041,6 +1044,8 @@ function _pushDockerImageForDeployStage() {
   l_repoPassword="${l_array[4]}"
   l_dockerRepoWebPort="${l_array[5]}"
 
+  l_pushedImageFile="${gHelmBuildOutDir}/${l_archType//\//-}/pushed-images.yaml"
+
   # shellcheck disable=SC2068
   for l_image in ${l_images[@]};do
     #从docker构建输出目录中获取l_image镜像。
@@ -1061,6 +1066,18 @@ function _pushDockerImageForDeployStage() {
       error "加载docker镜像失败：${l_image}"
     fi
     warn "成功加载docker镜像：${l_image}"
+
+    if [ -f "${l_pushedImageFile}" ];then
+      info "从文件(${l_pushedImageFile})中读取上次推送镜像${l_image}的运行ID..."
+      l_key="${l_image//:/@}"
+      l_key="${l_key//./_}"
+      readParam "${l_pushedImageFile}" "images.${l_key}"
+      info "当前运行ID为${gRunID},上次推送镜像的运行ID为:${gDefaultRetVal}"
+      if [ "${gDefaultRetVal}" == "${gRunID}" ];then
+        warn "镜像${l_image}已在当前运行中推送，跳过..."
+        continue
+      fi
+    fi
 
     #完成docker仓库登录
     invokeExtendChain "onDockerLogin" "${l_repoType}" "${l_repoName}" "${l_repoAccount}" "${l_repoPassword}"

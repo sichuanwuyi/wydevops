@@ -2,7 +2,7 @@ clusterIP:
   name:
   version:
   #如果kind配置为StatefulSet，则headless配置为true,表示创建Headless-Service
-  headless: "false"
+  headless: false
   ports:
     - name: http
       protocol: TCP

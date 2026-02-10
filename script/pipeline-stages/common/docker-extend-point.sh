@@ -650,6 +650,7 @@ function _createDockerImage() {
   export gDockerRepoWebPort
   export gDockerRepoAccount
   export gDockerRepoPassword
+  export gRunID
 
   export gCurrentStageResult
   export gTempFileDir
@@ -662,6 +663,8 @@ function _createDockerImage() {
 
   local l_dockerBuildDir
   local l_errorLog
+  local l_pushedImageFile
+  local l_key
 
   l_dockerBuildDir="${l_dockerFile%/*}"
 
@@ -702,6 +705,14 @@ function _createDockerImage() {
     pushImage "${l_image}" "${l_archType}" "${gDockerRepoName}"
     # shellcheck disable=SC2015
     [[ "${gDefaultRetVal}" != "true" ]] && error "镜像推送失败" || info "镜像推送成功"
+
+    l_pushedImageFile="${gHelmBuildOutDir}/${l_archType//\//-}/pushed-images.yaml"
+    l_key="${l_image//:/@}"
+    l_key="${l_key//./_}"
+    info "在文件(${l_pushedImageFile})中记录本次运行推送的镜像信息(${l_key}: ${gRunID})"
+    echo "images:" > "${l_pushedImageFile}"
+    insertParam "${l_pushedImageFile}" "images.${l_key}" "${gRunID}"
+
   fi
 
   gCurrentStageResult="INFO|成功构建${l_archType}架构的${l_image}镜像"
