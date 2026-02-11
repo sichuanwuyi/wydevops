@@ -19,7 +19,6 @@ function apisixRouteGenerator_default() {
   local l_content
 
   #模板中需要的变量以“t_”开头
-  local t_gatewayVersion
   local t_deploymentName
   local t_moduleName
   local t_kindType
@@ -38,9 +37,9 @@ function apisixRouteGenerator_default() {
     return
   fi
 
-  readParam "${l_valuesYaml}" "${t_moduleName}.${l_configPath}.apiVersion"
-  #todo: t_gatewayVersion变量是模板需要的参数
-  t_gatewayVersion="${gDefaultRetVal}"
+  #最终确定采用的ApiVersion版本
+  [[ -z "${t_apiVersion}" ]] && t_apiVersion="apisix.apache.org/v2"
+  info "${l_resourceType}资源的采用的ApiVersion版本是：${t_apiVersion}"
 
   t_moduleName="deployment${l_deploymentIndex}"
   readParam "${l_valuesYaml}" "${t_moduleName}.name"

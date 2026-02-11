@@ -935,6 +935,7 @@ function _loadGlobalParamsFromCiCdYaml() {
 
   #以下4个配置参数以ci-cid.yaml文件中的内容为最高优先级的配置值。
   export gRollback
+  export gTargetApiServer
   export gTargetNamespace
   export gTargetGatewayHosts
   export gGatewayPath
@@ -1005,6 +1006,15 @@ function _loadGlobalParamsFromCiCdYaml() {
     gRollback="true"
   fi
   info "gRollback:从配置文件中读取配置值(${gRollback})"
+
+  #初始化gTargetApiServer参数。
+  readParam "${l_cicdYaml}" "globalParams.targetApiServer"
+  if [ "${gDefaultRetVal}" != "null" ];then
+    gTargetApiServer="${gDefaultRetVal}"
+  else
+    gTargetApiServer=""
+  fi
+  info "gTargetApiServer:从配置文件中读取配置值(${gTargetApiServer})"
 
   #初始化gTargetNamespace参数。
   readParam "${l_cicdYaml}" "globalParams.targetNamespace"

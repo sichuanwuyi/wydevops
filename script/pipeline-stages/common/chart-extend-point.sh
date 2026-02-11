@@ -256,6 +256,7 @@ function onModifyingValuesYaml_ex(){
   export gBuildPath
   export gTargetGatewayHosts
   export gGatewayPath
+  export gTargetApiServer
   export gTargetNamespace
   export gRollback
 
@@ -308,6 +309,13 @@ function onModifyingValuesYaml_ex(){
   #向l_valuesYaml文件中插入refExternalCharts的值
   readParam "${l_packageYaml}" "refExternalCharts"
   insertParam "${l_valuesYaml}" "refExternalCharts" "${gDefaultRetVal}"
+
+  if [ "${gTargetApiServer}" ];then
+    info "从ApiServer服务器读取各类资源的Api版本，将信息缓存到gApiResourcesInfo变量中。"
+    tryLoadApiResources "${gTargetApiServer}"
+  else
+    warn "未配置ApiServer服务器SSH相关参数，无法读取各类资源的Api版本。"
+  fi
 
   ((l_index = 0))
   while true;do

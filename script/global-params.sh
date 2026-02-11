@@ -53,6 +53,8 @@ export gGlobalParamNames=(
 "gOfflineArchTypes" \
 #当前版本是否支持回滚操作
 "gRollback" \
+#k8s集群SSH连接参数
+"gTargetApiServer" \
 #k8s部署时默认的命名空间
 "gTargetNamespace" \
 #K8s部署的网关Host参数

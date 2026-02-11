@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 function executeChartStage() {
   export gDefaultRetVal
+  export gBuildScriptRootDir
   export gPipelineScriptsDir
   export gCiCdYamlFile
   export gCurrentStage
@@ -16,6 +17,9 @@ function executeChartStage() {
   info "加载公共${gCurrentStage}阶段功能扩展文件：${gCurrentStage}-extend-point.sh"
   # shellcheck disable=SC1090
   source "${gPipelineScriptsDir}/common/${gCurrentStage}-extend-point.sh"
+
+  info "加载公共${gCurrentStage}阶段功能扩展文件：k8s-api-resources-reader.sh"
+  source "${gBuildScriptRootDir}/plugins/k8s-api-resources-reader.sh"
 
   invokeExtendPointFunc "onBeforeInitialingGlobalParamsForChartStage" "执行${gCurrentStage}阶段全局参数初始化前扩展..." "${gCiCdYamlFile}"
   invokeExtendPointFunc "initialGlobalParamsForChartStage" "执行${gCurrentStage}阶段全局参数初始化扩展..." "${gCiCdYamlFile}"
@@ -50,6 +54,7 @@ export gChartNames
 
 #当前版本是否支持回滚
 export gRollback
+export gTargetApiServer
 export gTargetNamespace
 export gCurrentChartName
 export gCurrentChartVersion

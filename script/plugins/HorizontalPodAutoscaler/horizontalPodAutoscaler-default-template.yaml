@@ -1,5 +1,5 @@
 {{- if \$.Values.${t_moduleName}.autoscaling.enabled }}
-apiVersion: autoscaling/v2beta1
+apiVersion: ${t_apiVersion}
 kind: HorizontalPodAutoscaler
 metadata:
   name: ${t_deploymentName}

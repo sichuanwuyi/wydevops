@@ -29,6 +29,18 @@ function invokeResourceGenerator() {
   local l_configFiles
   local l_configFile
 
+  #创建后续子函数中需要使用的模板参数，以“t_”开头
+  local t_apiVersion=""
+
+  if [ "${gApiResourcesInfo}" ];then
+    #获取当前资源类型的ApiVersion信息
+    getApiVersion "${l_resourceType}"
+    t_apiVersion="${gDefaultRetVal}"
+    if [ "${t_apiVersion}" ];then
+      info "目标服务器中${l_resourceType}资源的ApiVersion版本是：${t_apiVersion}"
+    fi
+  fi
+
   #构造生成器方法名称
   l_funcName="${l_resourceType,}Generator_${l_generatorName}"
 
@@ -44,9 +56,10 @@ function invokeResourceGenerator() {
     l_registerItem="${l_registerItem#*|}"
     l_result=$(echo -e "${l_registerItem}" | grep -oE "${l_funcName},")
     if [ "${l_result}" ];then
-      info "找到匹配的资源生成器方法：${l_funcName}"
-      "${l_funcName}" "${l_fileName}" "${@}"
+      info "找到匹配的资源生成器方法${l_funcName},立即调用之..."
+      "${l_funcName}" "${l_fileName}" "${@}" "${t_apiVersion}"
       l_found="true"
+      break
     fi
   done
 
@@ -159,7 +172,7 @@ function commonGenerator_default() {
   #设定目标配置文件
   l_targetFile="${l_valuesYaml%/*}/templates/${t_deploymentName}-${l_resourceType,,}.yaml"
 
- #读取模板文件内容。
+  #读取模板文件内容。
   l_content=$(cat "${l_templateFile}")
   #替换模板中的变量。
   eval "l_content=\$(echo -e \"${l_content}\")"

@@ -1,5 +1,5 @@
 {{- with \$.Values.${t_moduleName}.ingressRoute }}
-apiVersion: ${t_gatewayVersion}
+apiVersion: ${t_apiVersion}
 kind: Ingress
 metadata:
   namespace: {{ \$.Release.Namespace }}

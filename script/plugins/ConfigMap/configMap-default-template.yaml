@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: ${t_apiVersion}
 kind: ConfigMap
 metadata:
   namespace: {{ .Release.Namespace }}

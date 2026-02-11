@@ -22,6 +22,10 @@ function configMapGenerator_default() {
   local l_result
   local l_fileKey
 
+  #最终确定采用的ApiVersion版本
+  [[ -z "${t_apiVersion}" ]] && t_apiVersion="v1"
+  info "${l_resourceType}资源的采用的ApiVersion版本是：${t_apiVersion}"
+
   l_templateFile="${l_generatorFile%/*}/${l_resourceType,}-${l_generatorName}-template.yaml"
   [[ ! -f "${l_templateFile}" ]] && error "目标模板文件不存在：${l_templateFile}"
   # shellcheck disable=SC2145
@@ -46,7 +50,12 @@ function configMapGenerator_default() {
     info "正在生成ConfigMap文件：${l_configMapName}"
 
     l_targetFile="${l_valuesYaml%/*}/templates/${l_configMapName}.yaml"
-    cat "${l_templateFile}" > "${l_targetFile}"
+    #读取模板文件内容。
+    l_content=$(cat "${l_templateFile}")
+    #替换模板中的变量。
+    eval "l_content=\$(echo -e \"${l_content}\")"
+    #将替换后的内容写入配置文件中。
+    echo "${l_content}" > "${l_targetFile}"
 
     updateParam "${l_targetFile}" "metadata.name" "${l_configMapName}"
 

@@ -1,5 +1,5 @@
 {{- with \$.Values.${t_moduleName} }}
-apiVersion: apps/v1
+apiVersion: ${t_apiVersion}
 kind: ${t_kindType}
 metadata:
   name: {{ .name | trunc 63 | trimSuffix \"-\" }}

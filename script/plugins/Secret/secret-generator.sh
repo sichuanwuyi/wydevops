@@ -6,6 +6,7 @@ function secretGenerator_default() {
   export gDockerRepoAccount
   export gDockerRepoPassword
 
+  local l_resourceType=$2
   local l_valuesYaml=$4
   local l_deploymentIndex=$5
 
@@ -18,6 +19,10 @@ function secretGenerator_default() {
 
   #模板中需要的变量以“t_”开头
   local t_dockerConfigJson
+
+  #最终确定采用的ApiVersion版本
+  [[ -z "${t_apiVersion}" ]] && t_apiVersion="v1"
+  info "${l_resourceType}资源的采用的ApiVersion版本是：${t_apiVersion}"
 
   l_server="http://${gDockerRepoName}"
   l_email="11372349@qq.com"

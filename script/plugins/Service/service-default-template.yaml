@@ -3,7 +3,7 @@
   {{- if and .service .service.clusterIP }}
   {{- with .service.clusterIP }}
 ---
-apiVersion: v1
+apiVersion: ${t_apiVersion}
 kind: Service
 metadata:
   namespace: {{ \$.Release.Namespace }}
@@ -34,7 +34,7 @@ spec:
   {{- if and .service .service.nodePort }}
   {{- with .service.nodePort }}
 ---
-apiVersion: v1
+apiVersion: ${t_apiVersion}
 kind: Service
 metadata:
   namespace: {{ \$.Release.Namespace }}

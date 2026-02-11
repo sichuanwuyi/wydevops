@@ -123,10 +123,18 @@ globalParams:
   ingressSecretName: cloudlotus-secret
 
 
-  ingressApiVersion: networking.k8s.io/v1
-  apisixApiVersion: apisix.apache.org/v2
-  #istio各类资源的ApiVersion参数值
-  istioApiVersion: networking.istio.io/v1beta1
+  #ingressApiVersion默认配置为空，非空时优先采用之。
+  #如果配置了targetApiServer参数，脚本会到该服务器中查询当前资源类型的版本。
+  #ingressApiVersion非空时优先采用之，反之则使用查询到的版本；如果查询失败采用默认值：networking.k8s.io/v1
+  ingressApiVersion:
+  #apisixApiVersion默认配置为空，非空时优先采用之。
+  #如果配置了targetApiServer参数，脚本会到该服务器中查询当前资源类型的版本。
+  #apisixApiVersion非空时优先采用之，反之则使用查询到的版本；如果查询失败采用默认值：apisix.apache.org/v2
+  apisixApiVersion:
+  #istioApiVersion默认配置为空，非空时优先采用之。
+  #如果配置了targetApiServer参数，脚本会到该服务器中查询当前资源类型的版本。
+  #istioApiVersion非空时优先采用之，反之则使用查询到的版本；如果查询失败采用默认值：networking.istio.io/v1
+  istioApiVersion:
 
   #定义K8S集群内部拉取docker镜像时使用的secret资源的名称，默认设置为空
   imagePullSecret:
