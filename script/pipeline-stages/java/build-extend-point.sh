@@ -9,8 +9,16 @@ function _onBeforeProjectBuilding_ex() {
   cd "${gBuildPath}" || true
 
   if [ "${gMultipleModelProject}" == "true" ];then
-    info "项目是多模块目录，回退到主模块目录的上级目录中，再执行后续编译"
     cd ..
+    #如果pom.xml文件不存在，则回退到项目主模块目录，并设置gMultipleModelProject=false;
+    if [ ! -f "./pom.xml" ];then
+      gMultipleModelProject="false"
+      cd "${gBuildPath}" || true
+      info "项目是单模块项目，不需要调整编译目录，直接执行后续编译"
+    else
+      info "项目是多模块目录，回退到主模块目录的上级目录中，再执行后续编译"
+    fi
+
   fi
 
 }
