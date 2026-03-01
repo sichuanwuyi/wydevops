@@ -76,10 +76,8 @@ echo "${_SELF_SCRIPT_DIR}"
 #允许传入两个参数：第一个参数为项目目录，第二个参数为本地配置文件名称
 
 #定义当前项目主模块目录路径:
-#如果是单模块项目，则路径以工程目录结尾，最后面必须有"/"
-#如果是多模块项目，则路径以主模块目录结尾，最后面不能有"/"
-module_dir=$(win2linux "${1:-$_SELF_SCRIPT_DIR}")
-_PROJECT_MAIN_MODULE_DIR=$(realpath -m -- "${module_dir}")
+_MODULE_DIR=$(win2linux "${1:-$_SELF_SCRIPT_DIR}")
+_PROJECT_MAIN_MODULE_DIR=$(realpath -m -- "${_MODULE_DIR}")
 
 bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" -e -f -m -c \
 --localConfigFile "${2:-ci-cd-config.yaml}" \
