@@ -71,7 +71,7 @@ source "${_SCRIPTS_ROOT_DIR}/helper/path-helper.sh"
 
 # 获取当前脚本所在目录的绝对路径（解析符号链接）。实际就是目标项目的根目录。
 _SELF_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
-echo "${_SELF_SCRIPT_DIR}"
+echo -e "${BBlue}_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}${Color_Off}"
 
 #允许传入两个参数：第一个参数为项目目录，第二个参数为本地配置文件名称
 
