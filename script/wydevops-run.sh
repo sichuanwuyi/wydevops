@@ -81,11 +81,6 @@ echo "${_SELF_SCRIPT_DIR}"
 module_dir=$(win2linux "${1:-$_SELF_SCRIPT_DIR}")
 _PROJECT_MAIN_MODULE_DIR=$(realpath -m -- "${module_dir}")
 
-#如果module_dir是以"/"结尾，需要确保_PROJECT_MAIN_MODULE_DIR也以"/"结尾
-if [[ "$1" == */ && "${_PROJECT_MAIN_MODULE_DIR}" != */  ]]; then
-  _PROJECT_MAIN_MODULE_DIR="${_PROJECT_MAIN_MODULE_DIR}/"
-fi
-
 bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" -e -f -m -c \
 --localConfigFile "${2:-ci-cd-config.yaml}" \
 -A linux/amd64 \
@@ -97,7 +92,7 @@ bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" -e -f -m -c \
 -M local \
 -T true \
 -P "${_PROJECT_MAIN_MODULE_DIR}" \
--W "${_SCRIPTS_ROOT_DIR}" \
+-W "${_SCRIPTS_ROOT_DIR}"
 #-C "harbor,chartmuseum,192.168.1.214:80,admin,Harbor12345,80" \
 #-D "harbor,registry.docker.home,192.168.1.214:80,admin,Harbor12345,80"
 #-C "nexus,chartmuseum,192.168.1.214:8081,admin,Wpl118124,8081" \
