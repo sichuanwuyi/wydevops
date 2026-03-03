@@ -17,8 +17,6 @@ globalParams:
   gatewayPath: /gin
   #使用istio时Gateway资源绑定的Host名称。默认值为*，表示任意Host。
   gatewayHost: www.wydevops.com
-  #istio各类资源的ApiVersion参数值
-  istioApiVersion: networking.istio.io/v1beta1
 
   #是否启用K8S服务存活探针
   livenessProbeEnable: true
@@ -41,12 +39,4 @@ globalParams:
   #K8s集群内部拉取镜像的仓库信息：
   #格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},{仓库访问地址({IP}:{端口})},{登录账号},{登录密码}
   targetDockerRepo: registry,wydevops,192.168.1.218:30783,admin,admin123,30784
-deploy:
-  - name: ${chartName}
-    params:
-      - name: .Values.params.mysql.host
-        value: mysql:3306
-      - name: .Values.params.mysql.password
-        value: root123456
-      - name: .Values.params.mysql.username
-        value: root
+

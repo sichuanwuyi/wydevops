@@ -19,14 +19,14 @@ if [ ! "${_WYDEVOPS_HOME}" ];then
 fi
 
 if [ ! "${_SCRIPTS_PROJECT_DIR}" ];then
-# The shared local directory where the scripts will be cloned.
-_SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}/project"
-echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
+  # The shared local directory where the scripts will be cloned.
+  _SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}/project"
+  echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
 fi
 
 if [ ! "${_SCRIPTS_ROOT_DIR}" ];then
-_SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
-echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
+  _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
+  echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 fi
 
 # The local configuration file that specifies the git repo and branch.
@@ -66,10 +66,6 @@ if [ -d "$_SCRIPTS_PROJECT_DIR/.git" ]; then
     git checkout "$BRANCH" --quiet
     git pull origin "$BRANCH"
     cd - > /dev/null
-else
-    # If directory doesn't exist, clone the specific branch.
-    echo "Cloning scripts for the first time..."
-    git clone --branch "$BRANCH" "$REPO_URL" "$_SCRIPTS_PROJECT_DIR"
 fi
 
 echo -e "${BGreen}Scripts are up to date.${Color_Off}"
