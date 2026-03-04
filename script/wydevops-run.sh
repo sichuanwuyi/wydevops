@@ -8,7 +8,7 @@ BBlue='\033[1;34m'
 _WYDEVOPS_HOME="${WYDEVOPS_HOME:=$HOME/.wydevops}"
 echo -e "${BBlue}_WYDEVOPS_HOME=${_WYDEVOPS_HOME}${Color_Off}"
 # The shared local directory where the scripts will be cloned.
-_SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}/project"
+_SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}/wydevops"
 echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
 _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
 echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"

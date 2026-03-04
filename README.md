@@ -85,7 +85,7 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
     4) 变量名 输入 WYDEVOPS_HOME。
     5) 变量值 输入刚创建的那个目录。
     6) 点击确定保存。您需要重新打开一个新的终端窗口来使设置生效。
-2. 创建$WYDEVOPS_HOME/project子目录，并在project目录中打开git bash命令行，在命令行中执行下列命令下载本项目的源码。
+2. 在$WYDEVOPS_HOME目录下打开git bash命令行，在命令行中执行下列命令下载本项目的源码。
     git clone -b master https://github.com/sichuanwuyi/wydevops.git
     或
     git clone -b master https://gitee.com/tmt_china/wydevops.git
@@ -96,17 +96,17 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
    }
 4. 安装第三方的依赖库（安装方法详见前述）
 5. 安装成功验证
-   执行命令：bash $WYDEVOPS_HOME/project/script/wydevops.sh -h
+   执行命令：bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h
    如果没有报错，说明安装成功。
 
 ## 与需要打包部署的项目集成
-1. 将$WYDEVOPS_HOME/project/script/wydevops-run.sh文件复制到目标项目的根目录下。
+1. 将$WYDEVOPS_HOME/wydevops/script/wydevops-run.sh文件复制到目标项目的根目录下。
 2. 打开目标项目的根目录下wydevops-run.sh文件，在其末尾的执行wydevops.sh命令的参数行中做如下修改或确认：
    1) 指定本地的第三方docker镜像的缓存目录(-I参数)。默认值为~/.wydevops/cachedImage。
    2) 指定项目的语言类型(-L参数)，目前支持的值有：java、go、nextjs、vue。如果是其他项目类型需要自行扩展或联系wydevops运维团队。
    3) 确认本次打包的架构类型(-A参数)，可选值有：linux/amd64、linux/arm64。默认值为linux/amd64。
    4) 确认本次流程生成的离线安装包的架构类型(-O参数),可选值有：linux/amd64、linux/arm64。默认值为linux/amd64。
-   5) 其他参数保持不变即可，如需修改可执行命令：bash $WYDEVOPS_HOME/project/script/wydevops.sh -h，进行参数详情查询。 
+   5) 其他参数保持不变即可，如需修改可执行命令：bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h，进行参数详情查询。 
 3. 在目标项目的根目录下创建一个名为ci-cd-config.yaml的文件。 
    在该文件的globalParams配置节下必须添加的参数有：
    1) 微服务的名称(serviceName)  
@@ -128,7 +128,7 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
        例如：targetDockerRepo: registry,wydevops,192.168.1.218:30783,admin,admin123,30784
       
       上述参数是在执行后续流程前必须配置好的，否则会导致部署失败。除此之外还有很多其他配置参数，如需更全面的了解
-   请参考$WYDEVOPS_HOME/project/script/templates/config目录下各语言的配置模板文件_ci-cd-template.yaml。该文件中包含了所有的配置参数详情。
+   请参考$WYDEVOPS_HOME/wydevops/script/templates/config目录下各语言的配置模板文件_ci-cd-template.yaml。该文件中包含了所有的配置参数详情。
    
 ## 对部分项目类型的深度定制 
    对java项目和go项目，wydevops做了进一步的深度定制，通过params-mapping-in-yaml-file.config、params-mapping-in-xml-file.config配置文件
