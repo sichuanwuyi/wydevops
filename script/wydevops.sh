@@ -8,7 +8,10 @@ export PYTHONIOENCODING=UTF-8
 _selfRootDir=$(cd "$(dirname "$0")"; pwd)
 
 #2.导入yaml函数库文件。
-source "${_selfRootDir}/helper/yaml-helper.sh"
+if ! type -t "readParam" > /dev/null; then
+  warn "未检测到readParam函数，加载yaml-helper.sh文件..."
+  source "${_selfRootDir}/helper/yaml-helper.sh"
+fi
 source "${_selfRootDir}/helper/docker-helper.sh"
 source "${_selfRootDir}/helper/helm-helper.sh"
 source "${_selfRootDir}/helper/map-loader.sh"

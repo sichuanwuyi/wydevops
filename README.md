@@ -28,7 +28,9 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
 ## 依赖的第三方库
 1. git
    Ubuntu (Debian/Ubuntu 系列)下：
-   更新包索引并安装： sudo apt update sudo apt install -y git
+   更新包索引并安装： 
+     sudo apt update 
+     sudo apt install -y git
    验证： git --version
    基本配置： git config --global user.name "你的名字" git config --global user.email "you@example.com"
    
@@ -38,25 +40,20 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
    打开 PowerShell 或 cmd，验证： git --version
    基本配置（在 PowerShell 或 Git Bash 中）： git config --global user.name "你的名字" git config --global user.email "you@example.com"
 
-2. jp 
-   这是一个用于处理json文件的命令行工具。需要用户自行下载安装。可从[这里](https://github.com/jmespath/jp)下载。
-    ubuntu下的安装命令：apt install jq
-    windows下的安装命令： choco install jq
-
-3. libxml2
+2. libxml2
    这是一个用于处理xml文件的库。需要用户自行下载安装。
-    ubuntu下的安装命令：apt install libxml2-dev
+    ubuntu (Debian/Ubuntu 系列)下的安装命令：apt install libxml2-dev
     windows下的安装命令：choco install libxml2
 
-4. docker
+3. docker
    这是用于构建和管理docker镜像的工具。需要用户自行下载安装。
-   ubuntu下的安装命令：apt install docker-ce
+   ubuntu (Debian/Ubuntu 系列)下的安装命令：apt install docker-ce
    windows下可从这里下载安装：[docker desktop](https://www.docker.com/get-started)
 
-5. helm
+4. helm
    这是一个用于K8S微服务部署的工具。本项目会根据系统架构的不同自动安装/tools目录下对应的helm（内置的版本为v3.15.1）命令，无需用户安装。
 
-6. kubectl
+5. kubectl
    这是一个用于K8S资源管理的命令行工具。
    linux下本项目会根据系统架构的不同自动安装/tools目录下对应的kubectl命令，无需用户安装。
    在windows下用户可安装docker desktop工具并启动内置的K8S集群（便于本地调试），docker desktop中自带Kubectl命令；或者执行安装命令：choco install kubectl
@@ -68,7 +65,7 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
    5) 变量值 输入您的 kubeconfig 文件的完整路径，例如 C:\Users\YourUser\.kube\my-cluster-config。
    6) 点击确定保存。您需要重新打开一个新的终端窗口来使设置生效。
 
-7. K8S集群中需要安装好istio
+6. K8S集群中需要安装好istio
    默认配置下，wydevops会采用istio sidecar模式来部署微服务。
    因此要求K8S集群中已经安装了istio(安装方法详见[这里](https://istio.io/latest/docs/setup/getting-started/))。
    特别提醒：wydevops会连接目标集群(由目标参数targetApiServer指定)动态获取所有生成的K8S资源类型的apiVersion参数，
@@ -76,7 +73,7 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
 
 ## 安装步骤
 1. 创建一个目录作为wydevops的根目录，并定义环境变量WYDEVOPS_HOME指向这个目录。
-   ubuntu下：
+   ubuntu (Debian/Ubuntu 系列)下：
     1) vim ~/.bashrc
     2) 在文件末尾添加：export WYDEVOPS_HOME={新建的那个目录}, 并保存退出。
     3) 执行命令：source ~/.bashrc

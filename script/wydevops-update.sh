@@ -30,29 +30,26 @@ if [ ! "${_SCRIPTS_ROOT_DIR}" ];then
 fi
 
 # The local configuration file that specifies the git repo and branch.
-_CLIENT_CONFIG_FILE="${_WYDEVOPS_HOME}/client-config.json"
+_CLIENT_CONFIG_FILE="${_WYDEVOPS_HOME}/client-config.yaml"
 echo -e "${BBlue}_CLIENT_CONFIG_FILE=${_CLIENT_CONFIG_FILE}${Color_Off}"
 
 # --- Check for client configuration ---
 if [ ! -f "$_CLIENT_CONFIG_FILE" ]; then
     echo -e "${BRed}Error: Client configuration not found at '$_CLIENT_CONFIG_FILE'.${Color_Off}"
     echo "Please create it with your repository URL and branch name. Example:"
-    echo '{'
-    echo '  "repoUrl": "https://github.com/your-username/wydevops.git",'
-    echo '  "branch": "client-a-feature-branch"'
-    echo '}'
+    echo 'git:'
+    echo '  repoUrl: https://gitee.com/tmt_china/wydevops.git'
+    echo '  branch: master'
     exit 1
 fi
 
-# --- Read configuration using jq (a lightweight JSON processor) ---
-# Ensure jq is installed: sudo apt-get install jq / brew install jq
-if ! command -v jq &> /dev/null; then
-    echo -e "${BRed}Error: 'jq' is not installed. Please install it to parse the client configuration.${Color_Off}"
-    exit 1
-fi
+export gDefaultRetVal
 
-REPO_URL=$(jq -r '.repoUrl' "$_CLIENT_CONFIG_FILE")
-BRANCH=$(jq -r '.branch' "$_CLIENT_CONFIG_FILE")
+readParam "$_CLIENT_CONFIG_FILE" "git.repoUrl"
+REPO_URL="${gDefaultRetVal}"
+
+readParam "$_CLIENT_CONFIG_FILE" "git.branch"
+BRANCH="${gDefaultRetVal}"
 
 echo -e "${BBlue}Bootstrapper: Preparing to run wydevops...${Color_Off}"
 echo "  - Repository: $REPO_URL"
