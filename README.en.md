@@ -31,7 +31,11 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
 
 1.  **git**
     *   On Ubuntu (Debian/Ubuntu series):
-        Update package index and install: `sudo apt update && sudo apt install -y git`
+        Update package index and install:
+        ```
+        sudo apt update
+        sudo apt install -y git
+        ```
         Verify: `git --version`
         Basic configuration: `git config --global user.name "Your Name"` and `git config --global user.email "you@example.com"`
     *   On Windows using the official installer:
@@ -40,25 +44,20 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
         Open PowerShell or cmd, and verify: `git --version`
         Basic configuration (in PowerShell or Git Bash): `git config --global user.name "Your Name"` and `git config --global user.email "you@example.com"`
 
-2.  **jp**
-    This is a command-line tool for processing JSON files. Users need to download and install it themselves. It can be downloaded from [here](https://github.com/jmespath/jp).
-    *   Ubuntu installation command: `apt install jq`
-    *   Windows installation command: `choco install jq`
-
-3.  **libxml2**
+2.  **libxml2**
     This is a library for processing XML files. Users need to download and install it themselves.
-    *   Ubuntu installation command: `apt install libxml2-dev`
+    *   Ubuntu (Debian/Ubuntu series) installation command: `apt install libxml2-dev`
     *   Windows installation command: `choco install libxml2`
 
-4.  **docker**
+3.  **docker**
     This is a tool for building and managing Docker images. Users need to download and install it themselves.
-    *   Ubuntu installation command: `apt install docker-ce`
+    *   Ubuntu (Debian/Ubuntu series) installation command: `apt install docker-ce`
     *   For Windows, it can be downloaded and installed from here: [Docker Desktop](https://www.docker.com/get-started)
 
-5.  **helm**
+4.  **helm**
     This is a tool for K8S microservice deployment. This project will automatically install the corresponding `helm` command (the built-in version is v3.15.1) from the `/tools` directory based on the system architecture, so users do not need to install it.
 
-6.  **kubectl**
+5.  **kubectl**
     This is a command-line tool for K8S resource management.
     *   On Linux, this project will automatically install the corresponding `kubectl` command from the `/tools` directory based on the system architecture, so users do not need to install it.
     *   On Windows, users can install Docker Desktop and start its built-in K8S cluster (convenient for local debugging), as Docker Desktop comes with the `kubectl` command; alternatively, run the installation command: `choco install kubectl`.
@@ -70,7 +69,7 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
         5)  For `Variable value`, enter the full path to your kubeconfig file, e.g., `C:\Users\YourUser\.kube\my-cluster-config`.
         6)  Click OK to save. You will need to open a new terminal window for the settings to take effect.
 
-7.  **Istio must be installed in the K8S cluster**
+6.  **Istio must be installed in the K8S cluster**
     Under the default configuration, wydevops deploys microservices using the Istio sidecar model.
     Therefore, it is required that Istio is already installed in the K8S cluster (see [here](https://istio.io/latest/docs/setup/getting-started/) for installation instructions).
     **Special Reminder:** wydevops will connect to the target cluster (specified by the `targetApiServer` parameter) to dynamically fetch the `apiVersion` for all generated K8S resource types, ensuring that the version of the generated K8S resources is consistent with the target cluster.
@@ -78,7 +77,7 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
 ## Installation Steps
 
 1.  Create a directory to serve as the root for wydevops, and define the environment variable `WYDEVOPS_HOME` to point to this directory.
-    *   On Ubuntu:
+    *   On Ubuntu (Debian/Ubuntu series):
         1) `vim ~/.bashrc`
         2) At the end of the file, add: `export WYDEVOPS_HOME={path_to_the_new_directory}`, then save and exit.
         3) Execute the command: `source ~/.bashrc`
@@ -89,7 +88,7 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
         4) For `Variable name`, enter `WYDEVOPS_HOME`.
         5) For `Variable value`, enter the path to the newly created directory.
         6) Click OK to save. You will need to open a new terminal window for the settings to take effect.
-2.  Create the `$WYDEVOPS_HOME/project` subdirectory, open a Git Bash command line in the `project` directory, and execute the following command to download the project's source code.
+2.  Open a Git Bash command line in the `$WYDEVOPS_HOME` directory and execute the following command to download the project's source code.
     `git clone -b master https://github.com/sichuanwuyi/wydevops.git`
     or
     `git clone -b master https://gitee.com/tmt_china/wydevops.git`
@@ -102,18 +101,18 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
     ```
 4.  Install the third-party dependencies (see the methods described above).
 5.  Verify the installation.
-    Execute the command: `bash $WYDEVOPS_HOME/project/script/wydevops.sh -h`
+    Execute the command: `bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h`
     If there are no errors, the installation was successful.
 
 ## Integration with Projects to be Packaged and Deployed
 
-1.  Copy the `$WYDEVOPS_HOME/project/script/wydevops-run.sh` file to the root directory of the target project.
+1.  Copy the `$WYDEVOPS_HOME/wydevops/script/wydevops-run.sh` file to the root directory of the target project.
 2.  Open the `wydevops-run.sh` file in the target project's root directory and modify or confirm the following in the parameter line of the `wydevops.sh` execution command at the end of the file:
     1)  Specify the local cache directory for third-party Docker images (the `-I` parameter). The default value is `~/.wydevops/cachedImage`.
     2)  Specify the project's language type (the `-L` parameter). Currently supported values are: `java`, `go`, `nextjs`, `vue`. For other project types, you need to extend it yourself or contact the wydevops maintenance team.
     3)  Confirm the architecture type for this packaging run (the `-A` parameter). Optional values are: `linux/amd64`, `linux/arm64`. The default is `linux/amd64`.
     4)  Confirm the architecture type for the offline installation package generated by this process (the `-O` parameter). Optional values are: `linux/amd64`, `linux/arm64`. The default is `linux/amd64`.
-    5)  Other parameters can be left unchanged. If you need to modify them, you can execute the command `bash $WYDEVOPS_HOME/project/script/wydevops.sh -h` to query parameter details.
+    5)  Other parameters can be left unchanged. If you need to modify them, you can execute the command `bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h` to query parameter details.
 3.  Create a file named `ci-cd-config.yaml` in the root directory of the target project.
     The following parameters must be added under the `globalParams` configuration section in this file:
     1)  The name of the microservice (`serviceName`).
@@ -133,7 +132,7 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
         Format: `{repo_type(nexus or harbor)},{instance_name(nexus) or project_name(harbor)},{repo_access_address({IP}:{port})},{login_user},{login_password}`
         Example: `targetDockerRepo: registry,wydevops,192.168.1.218:30783,admin,admin123,30784`
 
-    The above parameters must be configured before executing subsequent processes, otherwise deployment will fail. There are many other configuration parameters. For a more comprehensive understanding, please refer to the `_ci-cd-template.yaml` configuration template files for each language in the `$WYDEVOPS_HOME/project/script/templates/config` directory. This file contains details of all configuration parameters.
+    The above parameters must be configured before executing subsequent processes, otherwise deployment will fail. There are many other configuration parameters. For a more comprehensive understanding, please refer to the `_ci-cd-template.yaml` configuration template files for each language in the `$WYDEVOPS_HOME/wydevops/script/templates/config` directory. This file contains details of all configuration parameters.
 
 ## Deep Customization for Specific Project Types
 
