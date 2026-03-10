@@ -80,7 +80,7 @@ export gGlobalParamNames=(
 "gDockerBuildDir" \
 "gChartBuildDir" \
 "gParamMappingDir" \
-"gTempFileDir=\"/c/temp\"" \
+"gTempFileDir=\"~/wydevops_temp\"" \
 
 #docker仓库相关参数
 #Docker仓库类型：nexus、harbor、registry、aws-ecr
