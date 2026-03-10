@@ -242,12 +242,12 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
       if [ "${l_paramMappingFiles}" ];then
         # shellcheck disable=SC2068
         for l_mappingFile in ${l_paramMappingFiles[@]};do
-          warn "====>处理参数映射文件:${l_mappingFile}"
+          warn "====处理参数映射文件:${l_mappingFile}"
           declare -A _paramMappingMap
           #将参数映射文件中的配置读取到_paramMappingMap变量中。
           initialMapFromConfigFile "${l_mappingFile}" "_paramMappingMap"
           warn "=============="
-          warn "====>gDefaultRetVal:${gDefaultRetVal}"
+          warn "====gDefaultRetVal:${gDefaultRetVal}"
           exit 1
 
           if [ "${#_paramMappingMap[@]}" -gt 0 ];then
