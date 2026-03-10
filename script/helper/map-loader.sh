@@ -29,7 +29,7 @@ function initialMapFromConfigFile() {
   # shellcheck disable=SC2154
   l_lineCount=${#l_lines[@]}
   for ((l_i = 0; l_i < l_lineCount; l_i++));do
-    info "====>处理配置文件第${l_i}行:${l_lines[${l_i}]}"
+    info "====处理配置文件第${l_i}行:${l_lines[${l_i}]}"
     l_rowNum="${l_lines[${l_i}]%%:*}"
     l_line=$(sed -n "${l_rowNum}p" "${l_configFile}")
     if [[ "${l_line}" =~ ^(.*)=(.*)$ ]];then
@@ -39,33 +39,33 @@ function initialMapFromConfigFile() {
         l_exitOnError="${l_value}"
       elif [[ "${l_key}" =~ ^(define\.bindingFiles) ]];then
         l_defineBindingFiles="${l_value}"
-        info "====>define.bindingFiles:${l_defineBindingFiles}"
+        info "====define.bindingFiles:${l_defineBindingFiles}"
         if [[ "${l_key}" =~ ^(.*)\|true(\|.*$|$) ]];then
           # shellcheck disable=SC2206
           l_array=(${l_key//|/ })
           if [ "${#l_array[@]}" -gt 2 ];then
             #带上configMapName一起输出。
             l_configMapFiles="${l_configMapFiles},${l_array[2]}=${l_value}"
-            info "1====>l_configMapFiles=${l_configMapFiles}"
+            info "1====l_configMapFiles=${l_configMapFiles}"
           else
             l_configMapFiles="${l_configMapFiles},${l_value}"
-            info "2====>l_configMapFiles=${l_configMapFiles}"
+            info "2====l_configMapFiles=${l_configMapFiles}"
           fi
         fi
       else
         l_value="${l_value//|/\|}"
         eval "${l_mapName}[\"${l_key}\"]=${l_value}"
-        info "3====>${l_mapName}[${l_key}]=${l_value}"
+        info "3====${l_mapName}[${l_key}]=${l_value}"
       fi
     fi
   done
 
   gDefaultRetVal="${l_exitOnError}|${l_defineBindingFiles}|${l_configMapFiles:1}"
   gDefaultRetVal="${gDefaultRetVal//|/\|}"
-
-  info "4====>gDefaultRetVal=${gDefaultRetVal}"
-  info "5====>gDefaultRetVal=${l_defineBindingFiles}"
-  info "6====>gDefaultRetVal=${l_configMapFiles:1}"
+  info "---------"
+  info "4===gDefaultRetVal=${gDefaultRetVal}"
+  info "5===gDefaultRetVal=${l_defineBindingFiles}"
+  info "6===gDefaultRetVal=${l_configMapFiles:1}"
 }
 
 function initialParamValueByMappingConfigFiles() {
