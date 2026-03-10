@@ -25,6 +25,8 @@ function _onBeforeProjectBuilding_ex() {
             "Please ensure JAVA_HOME is set correctly for the script's execution environment."
     fi
   fi
+
+  export JAVA_HOME
   export PATH="$JAVA_HOME/bin:$PATH"
   warn "Using JAVA_HOME=${JAVA_HOME}"
 
