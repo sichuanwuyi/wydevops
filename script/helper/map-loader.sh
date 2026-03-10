@@ -39,23 +39,28 @@ function initialMapFromConfigFile() {
         l_exitOnError="${l_value}"
       elif [[ "${l_key}" =~ ^(define\.bindingFiles) ]];then
         l_defineBindingFiles="${l_value}"
+        info "====>define.bindingFiles:${l_defineBindingFiles} >>"
         if [[ "${l_key}" =~ ^(.*)\|true(\|.*$|$) ]];then
           # shellcheck disable=SC2206
           l_array=(${l_key//|/ })
           if [ "${#l_array[@]}" -gt 2 ];then
             #带上configMapName一起输出。
             l_configMapFiles="${l_configMapFiles},${l_array[2]}=${l_value}"
+            info "1====>l_configMapFiles=${l_configMapFiles} >>"
           else
             l_configMapFiles="${l_configMapFiles},${l_value}"
+            info "2====>l_configMapFiles=${l_configMapFiles} >>"
           fi
         fi
       else
         eval "${l_mapName}[\"${l_key}\"]=${l_value}"
+        info "3====>${l_mapName}[${l_key}]=${l_value} >>"
       fi
     fi
   done
 
   gDefaultRetVal="${l_exitOnError}|${l_defineBindingFiles}|${l_configMapFiles:1}"
+  info "4====>gDefaultRetVal=${gDefaultRetVal} >>"
 }
 
 function initialParamValueByMappingConfigFiles() {
