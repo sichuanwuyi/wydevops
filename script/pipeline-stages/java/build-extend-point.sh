@@ -7,17 +7,11 @@ function _onBeforeProjectBuilding_ex() {
   info "进入项目主模块目录"
   cd "${gBuildPath}" || true
 
-  #先回退到上层目录
-  cd ..
-  #如果pom.xml文件不存在，则回退到项目主模块目录，并设置gMultipleModelProject=false;
-  if [ ! -f "./pom.xml" ];then
-    gMultipleModelProject="false"
-    cd "${gBuildPath}" || true
-    info "项目是单模块项目，不需要调整编译目录，直接执行后续编译"
-  else
-     gMultipleModelProject="true"
+  if [ "${gMultipleModelProject}" == "true" ];then
     info "项目是多模块目录，回退到主模块目录的上级目录中，再执行后续编译"
+    cd ..
   fi
+
 }
 
 #执行java项目的编译

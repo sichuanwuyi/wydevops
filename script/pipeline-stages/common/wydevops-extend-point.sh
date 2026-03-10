@@ -317,6 +317,38 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
 
 }
 
+function checkMultipleModelProjectInJenkins_ex(){
+  export gBuildPath
+  export gMultipleModelProject
+
+  #修正构建项目根路径。
+  if [[ "${gBuildPath}" =~ ^(\.\/[a-zA-Z]+) ]];then
+    #将gBuildPath赋值为绝对路径。
+    gBuildPath="${gWorkSpace}/${gGitProjectName}/${gBuildPath:2}"
+    #多模块工程在build时会回退到上级目录执行build。
+    gMultipleModelProject="true"
+  elif [[ "${gBuildPath}" =~ ^(\.\/) ]];then
+    #将gBuildPath赋值为绝对路径。
+    gBuildPath="${gWorkSpace}/${gGitProjectName}"
+    gMultipleModelProject="false"
+  fi
+}
+
+function checkMultipleModelProjectInLocal_ex(){
+  export gBuildPath
+  export gMultipleModelProject
+
+  if [[ "${gBuildPath}" =~ ^(.*)\/$ ]];then
+    #以/结尾，表示单模块工程。
+    gMultipleModelProject="false"
+    gBuildPath="${gBuildPath%/*}"
+  else
+    #不是以/结尾，表示多模块工程。
+    gMultipleModelProject="true"
+  fi
+
+}
+
 #------------------------私有方法--开始-------------------------#
 
 function _onBeforeInitGlobalParams() {
@@ -349,18 +381,11 @@ function _onBeforeInitGlobalParams() {
     fi
 
     info "检测项目是否是多模块项目,并确定项目的构建根目录"
-    #修正构建项目根路径。
-    if [[ "${gBuildPath}" =~ ^(\.\/[a-zA-Z]+) ]];then
-      #将gBuildPath赋值为绝对路径。
-      gBuildPath="${gWorkSpace}/${gGitProjectName}/${gBuildPath:2}"
-      #多模块工程在build时会回退到上级目录执行build。
-      gMultipleModelProject="true"
-      info "--->检测到当前项目为多模块项目"
-    elif [[ "${gBuildPath}" =~ ^(\.\/) ]];then
-      #将gBuildPath赋值为绝对路径。
-      gBuildPath="${gWorkSpace}/${gGitProjectName}"
-      gMultipleModelProject="false"
-      info "--->检测到当前项目为单模块项目"
+    invokeExtendPointFunc "checkMultipleModelProjectInJenkins" "Jenkins工作模式下的多模块检测扩展点"
+    if [ "${gMultipleModelProject}" == "true" ];then
+      info "--->当前项目是多模块项目"
+    else
+      info "--->当前项目是单模块项目"
     fi
 
     if [ "${gClearCachedParams}" == "true" ];then
@@ -374,15 +399,11 @@ function _onBeforeInitGlobalParams() {
     fi
 
     info "检测项目是否是多模块项目,并确定项目的构建根目录"
-    if [[ "${gBuildPath}" =~ ^(.*)\/$ ]];then
-      #以/结尾，表示单模块工程。
-      gMultipleModelProject="false"
-      gBuildPath="${gBuildPath%/*}"
-      info "--->当前项目是单模块项目"
-    else
-      #不是以/结尾，表示多模块工程。
-      gMultipleModelProject="true"
+    invokeExtendPointFunc "checkMultipleModelProjectInLocal" "本地模式下的多模块检测扩展点"
+    if [ "${gMultipleModelProject}" == "true" ];then
       info "--->当前项目是多模块项目"
+    else
+      info "--->当前项目是单模块项目"
     fi
 
     #本地模式下，读取git提交随机码

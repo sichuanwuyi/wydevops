@@ -46,12 +46,12 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
 
 2.  **libxml2**
     This is a library for processing XML files. Users need to download and install it themselves.
-    *   Ubuntu (Debian/Ubuntu series) installation command: `apt install libxml2-dev`
+    *   Ubuntu (Debian/Ubuntu series) installation command: `sudo apt install libxml2-utils`
     *   Windows installation command: `choco install libxml2`
 
 3.  **docker**
     This is a tool for building and managing Docker images. Users need to download and install it themselves.
-    *   Ubuntu (Debian/Ubuntu series) installation command: `apt install docker-ce`
+    *   Ubuntu (Debian/Ubuntu series) installation command: `sudo apt install docker-ce`
     *   For Windows, it can be downloaded and installed from here: [Docker Desktop](https://www.docker.com/get-started)
 
 4.  **helm**

@@ -42,12 +42,12 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
 
 2. libxml2
    这是一个用于处理xml文件的库。需要用户自行下载安装。
-    ubuntu (Debian/Ubuntu 系列)下的安装命令：apt install libxml2-dev
+    ubuntu (Debian/Ubuntu 系列)下的安装命令：sudo apt install libxml2-utils
     windows下的安装命令：choco install libxml2
 
 3. docker
    这是用于构建和管理docker镜像的工具。需要用户自行下载安装。
-   ubuntu (Debian/Ubuntu 系列)下的安装命令：apt install docker-ce
+   ubuntu (Debian/Ubuntu 系列)下的安装命令：sudo apt install docker-ce
    windows下可从这里下载安装：[docker desktop](https://www.docker.com/get-started)
 
 4. helm
