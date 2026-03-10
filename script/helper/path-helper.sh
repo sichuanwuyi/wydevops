@@ -17,13 +17,15 @@ function win2linux() {
     printf '%s\n' "$p" | awk -v usemnt="$has_mnt" '
       BEGIN{IGNORECASE=1}
       {
-        gsub("\\\\","/")                 # 反斜杠 -> 斜杠
+        gsub("\\\\","/")
         if ($0 ~ /^[A-Za-z]:\//) {
           d=tolower(substr($0,1,1))
-          rest=substr($0,3)              # 去掉 "C:"
+          rest=substr($0,3)
           if (usemnt) printf "/mnt/%s%s\n", d, rest;
           else         printf "/%s%s\n",    d, rest;
-        } else print                     # 已是类 Unix 路径则原样返回
+        } else {
+          print
+        }
       }'
   fi
 }

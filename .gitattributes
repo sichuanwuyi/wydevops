@@ -8,6 +8,8 @@
 *.yml text
 *.json text
 *.xml text
+*.java text
+*.go text
 
 # 关键规则：明确指定 .sh 文件在任何系统上检出时，都必须使用 LF 换行符
 *.sh text eol=lf
