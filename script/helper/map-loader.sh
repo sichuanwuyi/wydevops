@@ -29,6 +29,7 @@ function initialMapFromConfigFile() {
   # shellcheck disable=SC2154
   l_lineCount=${#l_lines[@]}
   for ((l_i = 0; l_i < l_lineCount; l_i++));do
+    info "====>处理配置文件第${l_i}行:${l_lines[${l_i}]} >>"
     l_rowNum="${l_lines[${l_i}]%%:*}"
     l_line=$(sed -n "${l_rowNum}p" "${l_configFile}")
     if [[ "${l_line}" =~ ^(.*)=(.*)$ ]];then
