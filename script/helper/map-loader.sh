@@ -61,7 +61,9 @@ function initialMapFromConfigFile() {
   done
 
   gDefaultRetVal="${l_exitOnError}|${l_defineBindingFiles}|${l_configMapFiles:1}"
-  echo "4====>gDefaultRetVal=${l_exitOnError}|${l_defineBindingFiles}|${l_configMapFiles:1} >>"
+  echo "4====>gDefaultRetVal=${l_exitOnError} >>"
+  echo "5====>gDefaultRetVal=${l_defineBindingFiles} >>"
+  echo "6====>gDefaultRetVal=${l_configMapFiles:1} >>"
 }
 
 function initialParamValueByMappingConfigFiles() {
