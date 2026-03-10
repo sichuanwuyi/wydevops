@@ -242,11 +242,13 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
       if [ "${l_paramMappingFiles}" ];then
         # shellcheck disable=SC2068
         for l_mappingFile in ${l_paramMappingFiles[@]};do
+          warn "====>处理参数映射文件:${l_mappingFile}"
           declare -A _paramMappingMap
           #将参数映射文件中的配置读取到_paramMappingMap变量中。
           initialMapFromConfigFile "${l_mappingFile}" "_paramMappingMap"
 
           if [ "${#_paramMappingMap[@]}" -gt 0 ];then
+            warn "====>gDefaultRetVal:${gDefaultRetVal}"
             # shellcheck disable=SC2206
             l_array=(${gDefaultRetVal//|/ })
             #收集部署时需要打包到ConfigMap中的配置文件
@@ -269,6 +271,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
               #根据参数映射文件初始化l_cicdTargetFile文件中的参数。
               initialParamValueByMappingConfigFiles "${gBuildPath}" "${l_cicdTargetFile}" \
                 "_paramMappingMap|${l_array[0]}" "${l_array[1]}" "_alreadyProcessedParamMap"
+              warn "_paramMappingMap|${l_array[0]}=>${l_array[1]}"
               l_loadOk="true"
             fi
           fi
