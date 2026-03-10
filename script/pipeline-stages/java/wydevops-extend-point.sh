@@ -12,14 +12,15 @@ function _checkMultipleModelProjectInLocal_ex(){
   export gMultipleModelProject
 
   #获取 ${gBuildPath} 的父目录
+  info "当前项目的构建目录为${gBuildPath}"
   parent_dir=$(dirname "${gBuildPath}")
 
   # 使用 [ -f ] 判断 pom.xml 文件是否存在于父目录中
   if [ -f "${parent_dir}/pom.xml" ]; then
-    echo "父目录(${parent_dir})包含pom.xml文件，据此修正当前项目为多模块项目"
+    info "父目录(${parent_dir})包含pom.xml文件，据此修正当前项目为多模块项目"
     gMultipleModelProject="true"
   else
-    echo "父目录(${parent_dir})未包含pom.xml文件，据此修正当前项目为单模块项目"
+    info "父目录(${parent_dir})未包含pom.xml文件，据此修正当前项目为单模块项目"
     gMultipleModelProject="false"
   fi
 
