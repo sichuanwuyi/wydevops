@@ -40,6 +40,8 @@ function initialMapFromConfigFile() {
         l_defineBindingFiles="${l_value}"
         if [[ "${l_key}" =~ ^(.*)\|true(\|.*$|$) ]];then
           # shellcheck disable=SC2206
+
+
           l_array=(${l_key//|/ })
           if [ "${#l_array[@]}" -gt 2 ];then
             #带上configMapName一起输出。

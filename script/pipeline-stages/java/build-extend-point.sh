@@ -12,6 +12,22 @@ function _onBeforeProjectBuilding_ex() {
     cd ..
   fi
 
+  # --- Check and set JAVA_HOME if not defined ---
+  if [ -z "$JAVA_HOME" ] || [ ! -d "$JAVA_HOME" ]; then
+    warn "JAVA_HOME not set or invalid, attempting to find a default..."
+    # Use the path provided by the user as the primary default
+    if [ -d "/usr/lib/jvm/jdk-21" ]; then
+      export JAVA_HOME="/usr/lib/jvm/jdk-21"
+      warn "Found and set JAVA_HOME=${JAVA_HOME}"
+    else
+      # A more generic search could be added here if needed
+      error "Error: Could not find a valid JDK installation at /usr/lib/jvm/jdk-21. " \
+            "Please ensure JAVA_HOME is set correctly for the script's execution environment."
+    fi
+  fi
+  export PATH="$JAVA_HOME/bin:$PATH"
+  warn "Using JAVA_HOME=${JAVA_HOME}"
+
 }
 
 #执行java项目的编译
