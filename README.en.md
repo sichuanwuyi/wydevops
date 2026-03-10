@@ -165,7 +165,7 @@ The `/sample` directory in the project source code contains sample projects for 
 Based on the offline installation packages for microservices packaged by wydevops, the team has developed a microservice management platform for managing microservice deployment, monitoring, logging, etc.
 This platform is not yet open-sourced and will be further improved and optimized within the team. The main core interfaces are shown below:
 
-1.  Login Interface ![](docs/images/登录.jpg)
+1.  Login Interface ![](docs/images/登录.png)
 2.  Cluster Overview Interface ![](docs/images/集群总览.jpg)
 3.  Cluster Node Interface ![](docs/images/集群节点详情1.jpg) ![](docs/images/集群节点详情2.jpg)
 4.  Application List Interface ![](docs/images/应用列表.jpg)
