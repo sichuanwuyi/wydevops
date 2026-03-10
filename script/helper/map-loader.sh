@@ -60,7 +60,8 @@ function initialMapFromConfigFile() {
     fi
   done
 
-  gDefaultRetVal="${l_exitOnError}\|${l_defineBindingFiles}\|${l_configMapFiles:1}"
+  gDefaultRetVal="${l_exitOnError}|${l_defineBindingFiles}|${l_configMapFiles:1}"
+  gDefaultRetVal="${gDefaultRetVal//|/\|}"
 
   info "4====>gDefaultRetVal=${gDefaultRetVal}"
   info "5====>gDefaultRetVal=${l_defineBindingFiles}"
