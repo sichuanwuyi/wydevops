@@ -1,0 +1,13 @@
+# 默认行为：让 Git 自动判断文件类型并处理换行符
+* text=auto
+
+# 明确指定这些文本文件应使用原生换行符（在Windows上是CRLF，在Linux上是LF）
+*.txt text
+*.md text
+*.yaml text
+*.yml text
+*.json text
+*.xml text
+
+# 关键规则：明确指定 .sh 文件在任何系统上检出时，都必须使用 LF 换行符
+*.sh text eol=lf
