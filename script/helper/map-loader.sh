@@ -53,6 +53,7 @@ function initialMapFromConfigFile() {
           fi
         fi
       else
+        l_value="${l_value//|/\|}"
         eval "${l_mapName}[\"${l_key}\"]=${l_value}"
         info "3====>${l_mapName}[${l_key}]=${l_value} >>"
       fi

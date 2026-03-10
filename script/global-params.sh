@@ -383,6 +383,7 @@ function loadGlobalParamsFromCacheFile() {
       readParam "${gBuildPath}/${gGlobalParamCacheFileName}" "${l_paramName}"
       l_paramValue="${gDefaultRetVal}"
     fi
+
     eval "${l_paramName}=\"${l_paramValue}\""
   done
 
