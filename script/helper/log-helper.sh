@@ -111,6 +111,7 @@ function info() {
   fi
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.info"]}"
+  echo "-----------l_infoPrefix=${l_infoPrefix}"
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[32m"
