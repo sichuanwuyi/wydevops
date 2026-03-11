@@ -7,6 +7,50 @@
 # 4. 函数内部定义的私有变量集中在函数入口处集中定义，在函数末尾集中取消(unset)。
 # 5. 本文件中以下划线"_"开头的函数为内部私有函数。
 
+function logout(){
+  local l_type=$1
+  local l_message=$2
+
+  local l_paramCount
+  local l_index
+  local l_param_val
+
+  l_paramCount=$#
+  ((l_paramCount = l_paramCount - 2))
+
+  # 循环l_paramCount次，将l_message字符串中的"{index}"依次替换为传入的对应位置上的参数。
+  for ((l_index=0; l_index<l_paramCount; l_index++)); do
+    # 参数的起始位置是3，所以需要加上3
+    # shellcheck disable=SC2301
+    l_param_val=${!((l_index + 3))}
+    # 使用字符串替换功能，将{index}替换为实际的参数值
+    l_message=${l_message//\{$l_index\}/$l_param_val}
+  done
+
+  # 根据日志类型调用相应的日志函数
+  case "${l_type}" in
+    "info")
+      info "${l_message}"
+      ;;
+    "warn")
+      warn "${l_message}"
+      ;;
+    "error")
+      error "${l_message}"
+      ;;
+    "debug")
+      debug "${l_message}"
+      ;;
+    "extendLog")
+      extendLog "${l_message}"
+      ;;
+    *)
+      # 如果类型未知，默认为info
+      info "${l_message}"
+      ;;
+  esac
+}
+
 function partLog() {
   #需要输出的信息
   local l_info=$1
