@@ -119,7 +119,6 @@ function info() {
     l_end="\e[0m"
   fi
 
-  echo "-----------l_infoPrefix=${l_infoPrefix}, l_options=${l_options}, log=${l_start}${l_infoPrefix}${l_info}${l_end}"
   if [ "${l_options}" ];then
     if [[ "${l_options}" =~ ^(\-) ]];then
       log "${l_start}${l_infoPrefix}${l_info}${l_end}" "info" "${l_options}" "${l_outFileName}"
@@ -200,6 +199,7 @@ function registerTempFile(){
   if [[ "${l_content}" ]];then
     [[ "${l_content}" == "${l_tmpFile}" ]] && return
     rm -f "${l_content}"
+    # shellcheck disable=SC2184
     unset gFileContentMap["${l_tmpFile}"]
   fi
 
@@ -213,7 +213,9 @@ function unregisterTempFile(){
   if [ -f "${l_tmpFile}" ];then
     info "log.helper.delete.tmp.file" "${l_tmpFile##*/}"
     rm -f "${l_tmpFile}"
+    # shellcheck disable=SC2184
     unset gTempFileRegTables["${l_tmpFile##*/}"]
+    # shellcheck disable=SC2184
     unset gFileContentMap["${l_tmpFile}"]
   fi
 }
