@@ -14,9 +14,22 @@ function logout(){
 
   local l_index=0
   local l_param_val
+  local l_endChar=""
+  local -a params=("$@")
+  local l_param_count=${#params[@]}
+
+  if [ "$l_param_count" -gt 0 ]; then
+    local l_last_index=$((l_param_count - 1))
+    local l_last_param="${params[$l_last_index]}"
+    if [[ "${l_last_param}" == "-n" || "${l_last_param}" == "*" ]]; then
+     l_endChar="${l_last_param}"
+     # shellcheck disable=SC2184
+     unset params[$l_last_index]
+    fi
+  fi
 
   # 循环遍历剩下的参数
-  for l_param_val in "$@"; do
+  for l_param_val in "${params[@]}"; do
     # 将 {index} 替换为实际的参数值
     # shellcheck disable=SC1083
     l_message=${l_message//\\{$l_index\\}/$l_param_val}
@@ -26,23 +39,23 @@ function logout(){
   # 根据日志类型调用相应的日志函数
   case "${l_type}" in
     "info")
-      info "${l_message}"
+      info "${l_message}" "${l_endChar}"
       ;;
     "warn")
-      warn "${l_message}"
+      warn "${l_message}" "${l_endChar}"
       ;;
     "error")
-      error "${l_message}"
+      error "${l_message}" "${l_endChar}"
       ;;
     "debug")
-      debug "${l_message}"
+      debug "${l_message}" "${l_endChar}"
       ;;
     "extendLog")
-      extendLog "${l_message}"
+      extendLog "${l_message}" "${l_endChar}"
       ;;
     *)
       # 如果类型未知，默认为info
-      info "${l_message}"
+      info "${l_message}" "${l_endChar}"
       ;;
   esac
 }
