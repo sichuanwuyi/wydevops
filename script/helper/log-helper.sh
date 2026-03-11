@@ -93,6 +93,8 @@ function extendLog() {
 
 #调用log函数输出信息
 function info() {
+  export gMessagePropertiesMap
+
   #需要输出的信息
   local l_info=$1
   #echo语句的可选项。
@@ -131,6 +133,7 @@ function info() {
 
 function error() {
   export gTempFileRegTables
+  export gMessagePropertiesMap
 
   #需要输出的信息
   local l_info=$1
@@ -217,6 +220,8 @@ function unregisterTempFile(){
 
 #调用log函数输出调试信息
 function debug() {
+  export gMessagePropertiesMap
+
   #需要输出的信息
   local l_info=$1
   #echo语句的可选项。
@@ -253,6 +258,8 @@ function debug() {
 }
 
 function warn() {
+  export gMessagePropertiesMap
+
   #需要输出的信息
   local l_info=$1
   #echo语句的可选项。
