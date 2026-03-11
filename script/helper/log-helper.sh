@@ -121,7 +121,6 @@ function info() {
 
   if [ "${l_options}" ];then
     if [[ "${l_options}" =~ ^(\-) ]];then
-      echo "--------l_options=|${l_options}|"
       log "${l_start}${l_infoPrefix}${l_info}${l_end}" "info" "${l_options}" "${l_outFileName}"
     else
       log "${l_start}${l_info}${l_end}" "info" "" "${l_outFileName}"
