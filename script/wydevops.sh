@@ -52,7 +52,7 @@ export gHelmBuildOutDir
 
 parseOptions1 "${@}"
 
-partLog "第一部分 初始化全局参数"
+logout "partLog" "第一部分 初始化全局参数"
 
 info "首次解析命令选项和传入参数"
 #读取Jenkins环境变量BUILD_SCRIPT_ROOT。
