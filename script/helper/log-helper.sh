@@ -105,7 +105,7 @@ function info() {
   local l_infoPrefix
 
   #使用国际化资源替换l_info
-  l_tmpInfo=gMessagePropertiesMap["${l_info}"]
+  l_tmpInfo="${gMessagePropertiesMap[${l_info}]}"
   if [ "${l_tmpInfo}" ];then
     l_info="${l_tmpInfo}"
   fi
@@ -428,12 +428,10 @@ function loadMessageProperties(){
   fi
 
   local l_file_path="${_selfRootDir}/i18n/message_${l_language}.properties"
-  echo "-------------l_file_path=${l_file_path}"
   if [ -f "${l_file_path}" ]; then
     while IFS='=' read -r key value || [ -n "${key}" ]; do
       # 忽略空行和注释
       if [[ -n "${key}" && ! "${key}" =~ ^\s*# ]]; then
-        echo "-------------${key}=${value}"
         if [ "${key}" ];then
           gMessagePropertiesMap["${key}"]="${value}"
         fi
