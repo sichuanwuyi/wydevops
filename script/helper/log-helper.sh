@@ -460,3 +460,6 @@ export gTempFileDir
 #引入yaml-helper.yaml文件中的文件内存缓存变量
 #在删除文件时需要同步清除缓存中的内容。
 export gFileContentMap
+
+#加载国际化资源
+loadMessageProperties
