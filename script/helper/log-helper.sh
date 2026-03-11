@@ -7,6 +7,7 @@
 # 4. 函数内部定义的私有变量集中在函数入口处集中定义，在函数末尾集中取消(unset)。
 # 5. 本文件中以下划线"_"开头的函数为内部私有函数。
 
+#deprecated
 function logout(){
   local l_type=$1
   local l_message=$2
@@ -101,6 +102,15 @@ function info() {
 
   local l_start
   local l_end
+  local l_infoPrefix
+
+  #使用国际化资源替换l_info
+  l_tmpInfo=gMessagePropertiesMap["${l_info}"]
+  if [ "${l_tmpInfo}" ];then
+    l_info="${l_tmpInfo}"
+  fi
+
+  l_infoPrefix=gMessagePropertiesMap["log.helper.info"]
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[32m"
@@ -109,12 +119,12 @@ function info() {
 
   if [ "${l_options}" ];then
     if [[ "${l_options}" =~ ^(\-) ]];then
-      log "${l_start}【信息】${l_info}${l_end}" "info" "${l_options}" "${l_outFileName}"
+      log "${l_start}${l_infoPrefix}${l_info}${l_end}" "info" "${l_options}" "${l_outFileName}"
     else
       log "${l_start}${l_info}${l_end}" "info" "" "${l_outFileName}"
     fi
   else
-    log "${l_start}【信息】${l_info}${l_end}" "info" "" "${l_outFileName}"
+    log "${l_start}${l_infoPrefix}${l_info}${l_end}" "info" "" "${l_outFileName}"
   fi
 }
 
@@ -132,32 +142,42 @@ function error() {
 
   local l_start
   local l_end
+  local l_infoPrefix
+
+  #使用国际化资源替换l_info
+  l_tmpInfo=gMessagePropertiesMap["${l_info}"]
+  if [ "${l_tmpInfo}" ];then
+    l_info="${l_tmpInfo}"
+  fi
+
+  l_infoPrefix=gMessagePropertiesMap["log.helper.error"]
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[5;31m"
     l_end="\e[0m"
   fi
 
+
   if [ "${l_options}" ];then
     if [[ "${l_options}" =~ ^(\-) ]];then
-      log "${l_start}【错误】${l_info}${l_end}" "error" "${l_options}" "${l_outFileName}"
+      log "${l_start}${l_infoPrefix}${l_info}${l_end}" "error" "${l_options}" "${l_outFileName}"
     else
       log "${l_start}${l_info}${l_end}" "error" "" "${l_outFileName}"
     fi
   else
-    log "${l_start}【错误】${l_info}${l_end}" "error" "" "${l_outFileName}"
+    log "${l_start}${l_infoPrefix}${l_info}${l_end}" "error" "" "${l_outFileName}"
   fi
 
   #清除注册的临时文件。
   # shellcheck disable=SC2068
   for l_tempFile in ${gTempFileRegTables[@]};do
-    info "退出前清除已注册的临时文件:${l_tempFile##*/}"
+    info "log.helper.hint.delete.tmp.file.before.exit", "${l_tempFile##*/}"
     rm -f "${l_tempFile}"
   done
 
   if type -t "invokeExtendPointFunc" > /dev/null; then
     #调用外部接口发送通知消息
-    invokeExtendPointFunc "sendNotify" "调用通知接口发送执行异常结果" "ERROR|${l_info}"
+    invokeExtendPointFunc "sendNotify" "log.helper.send.notify.before.exit" "ERROR|${l_info}"
   fi
   exit 1
 }
@@ -179,7 +199,7 @@ function registerTempFile(){
     unset gFileContentMap["${l_tmpFile}"]
   fi
 
-  info "注册退出前需要删除的临时文件:${l_tmpFile##*/}"
+  info "log.helper.register.tmp.file" "${l_tmpFile##*/}"
   gTempFileRegTables["${l_tmpFile##*/}"]="${l_tmpFile}"
 }
 
@@ -187,7 +207,7 @@ function unregisterTempFile(){
   export gTempFileRegTables
   local l_tmpFile=$1
   if [ -f "${l_tmpFile}" ];then
-    info "删除注册的临时文件${l_tmpFile##*/}"
+    info "log.helper.delete.tmp.file" "${l_tmpFile##*/}"
     rm -f "${l_tmpFile}"
     unset gTempFileRegTables["${l_tmpFile##*/}"]
     unset gFileContentMap["${l_tmpFile}"]
@@ -205,6 +225,15 @@ function debug() {
 
   local l_start
   local l_end
+  local l_infoPrefix
+
+  #使用国际化资源替换l_info
+  l_tmpInfo=gMessagePropertiesMap["${l_info}"]
+  if [ "${l_tmpInfo}" ];then
+    l_info="${l_tmpInfo}"
+  fi
+
+  l_infoPrefix=gMessagePropertiesMap["log.helper.debug"]
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[33m"
@@ -213,12 +242,12 @@ function debug() {
 
   if [ "${l_options}" ];then
     if [[ "${l_options}" =~ ^(\-) ]];then
-      log "${l_start}【调试】${l_end} ${l_info}" "debug" "${l_options}" "${l_outFileName}"
+      log "${l_start}${l_infoPrefix}${l_info}${l_end} " "debug" "${l_options}" "${l_outFileName}"
     else
       log "${l_start}${l_info}${l_end}" "debug" "" "${l_outFileName}"
     fi
   else
-    log "${l_start}【调试】${l_end}${l_info}" "debug" "" "${l_outFileName}"
+    log "${l_start}${l_infoPrefix}${l_info}${l_end}" "debug" "" "${l_outFileName}"
   fi
 }
 
@@ -232,6 +261,16 @@ function warn() {
 
   local l_start
   local l_end
+  local l_tmpInfo
+  local l_infoPrefix
+
+  #使用国际化资源替换l_info
+  l_tmpInfo=gMessagePropertiesMap["${l_info}"]
+  if [ "${l_tmpInfo}" ];then
+    l_info="${l_tmpInfo}"
+  fi
+
+  l_infoPrefix=gMessagePropertiesMap["log.helper.warn"]
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[33m"
@@ -240,12 +279,12 @@ function warn() {
 
   if [ "${l_options}" ];then
     if [[ "${l_options}" =~ ^(\-) ]];then
-      log "${l_start}【警告】${l_info}${l_end}" "warn" "${l_options}" "${l_outFileName}"
+      log "${l_start}${l_infoPrefix}${l_info}${l_end}" "warn" "${l_options}" "${l_outFileName}"
     else
       log "${l_start}${l_info}${l_end}" "warn" "" "${l_outFileName}"
     fi
   else
-    log "${l_start}【警告】${l_info}${l_end}" "warn" "" "${l_outFileName}"
+    log "${l_start}${l_infoPrefix}${l_info}${l_end}" "warn" "" "${l_outFileName}"
   fi
 }
 
@@ -258,6 +297,10 @@ function warn() {
 #      如果gDebugMode==true,则默认设置输出文件名称为debug.txt，并把调试信息追加写入到输出文件中。
 #   如果设置了输出文件名称，则将调试信息追加写入输出文件中。
 function log() {
+  export gMessagePropertiesMap
+  #引用全局变量
+  export gDebugMode
+
   #需要输出的信息
   local l_info=$1
   #信息类型：debug、info、warn、error
@@ -268,9 +311,6 @@ function log() {
   local l_outFileName=$4
 
   local l_outFile
-
-  #引用全局变量
-  export gDebugMode
 
   #如果l_type!=debug, 或者gDebugMode=true, 则直接在控制台输出l_info。
   if [ "${l_type}" != "debug" ] || [ "${gDebugMode}" == "true" ];then
@@ -373,6 +413,41 @@ function _getStringLen() {
     echo "${l_infoLen}"
   fi
 }
+
+function loadMessageProperties(){
+  export gMessagePropertiesMap
+  export gBuildScriptRootDir
+  export gLanguageInLog
+
+  local l_language
+
+  if [ "${gLanguageInLog}" ];then
+    l_language="${gLanguageInLog}"
+  else
+    l_language="zh"
+  fi
+
+  local l_file_path="${gBuildScriptRootDir}/i18n/message_${l_language}.properties"
+  if [ -f "${l_file_path}" ]; then
+    while IFS='=' read -r key value || [ -n "${key}" ]; do
+      # 忽略空行和注释
+      if [[ -n "${key}" && ! "${key}" =~ ^\s*# ]]; then
+        gMessagePropertiesMap["${key}"]="${value}"
+      fi
+    done < "${l_file_path}"
+  fi
+
+}
+
+#i18n国际化资源Map。
+declare -A gMessagePropertiesMap
+export gMessagePropertiesMap
+
+#构建脚本所在的根目录
+export gBuildScriptRootDir
+
+#日志输出的语言，默认值为zh。
+export gLanguageInLog
 
 #引入工作模式全局变量,jenkins模式下输出的日志不设置颜色。
 export gWorkMode

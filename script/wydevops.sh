@@ -17,18 +17,18 @@ source "${_selfRootDir}/helper/map-loader.sh"
 #3.引入全局变量及其默认值定义文件。
 source "${_selfRootDir}/global-params.sh"
 
-logout "info" "检测helm是否已安装..." "-n"
+info "wydevops.sh.detecting.helm" "-n"
 if command -v helm &> /dev/null; then
-  logout "info" "已安装" "*"
+  info "wydevops.sh.helm.installed" "*"
 elif [[ ! "${PATH}" =~ ^(.*)(:${HOME}/helm)(:|$) ]];then
-  logout "info" "未安装" "*"
-  logout "warn" "稍后wydevops会将helm安装到${HOME}/helm目录中，请将${HOME}/helm路径添加到系统环境变量PATH中"
+  info "wydevops.sh.helm.not.installed" "*"
+  warn "wydevops.sh.helm.install.later" "${HOME}"
   export PATH=${PATH}:${HOME}/helm
-  logout "info" "重新加载当前脚本文件"
+  info "wydevops.sh.reloading.script"
   #shellcheck disable=SC1090
   source "$0"
 else
-  logout "info" "暂未安装，稍后会自动安装" "*"
+  info "wydevops.sh.helm.auto.install.later" "*"
 fi
 
 # 临时文件注册表, error方法中要负责清除这些文件。
@@ -52,18 +52,18 @@ export gHelmBuildOutDir
 
 parseOptions1 "${@}"
 
-logout "partLog" "第一部分 初始化全局参数"
+partLog "wydevops.sh.part1.init.global.params"
 
-info "首次解析命令选项和传入参数"
+info "wydevops.sh.first.parse.options"
 #读取Jenkins环境变量BUILD_SCRIPT_ROOT。
 [[ ! "${gBuildScriptRootDir}" ]] && gBuildScriptRootDir="${BUILD_SCRIPT_ROOT}"
-info "gBuildScriptRootDir参数初始化：${gBuildScriptRootDir}"
+info "wydevops.sh.gBuildScriptRootDir.value" "${gBuildScriptRootDir}"
 
 source "${_selfRootDir}/plugins/plugin-manager.sh"
 
 #流水线脚本所在的目录名称
 gPipelineScriptsDir="${gBuildScriptRootDir}/pipeline-stages"
-info "gPipelineScriptsDir参数初始化：${gPipelineScriptsDir}"
+info "wydevops.sh.gPipelineScriptsDir.value" "${gPipelineScriptsDir}"
 
 source "${gPipelineScriptsDir}/common/wydevops-extend-point.sh"
 source "${gPipelineScriptsDir}/common/notify-extend-point.sh"
@@ -71,7 +71,7 @@ source "${gPipelineScriptsDir}/chain/dockerDeployParamReader.sh"
 source "${gPipelineScriptsDir}/chain/extend-chain-manager.sh"
 
 #全局参数初始化前扩展点：检查必须设置的全局参数。
-invokeExtendPointFunc "onBeforeInitGlobalParams" "全局参数初始化前扩展点"
+invokeExtendPointFunc "onBeforeInitGlobalParams" "wydevops.sh.before.init.global.params.extend.point"
 
 #删除_global_params.yaml文件
 if [[ "${gClearCachedParams}" == "true" || "${gWorkMode}" == "jenkins"  ]];then
@@ -80,28 +80,28 @@ if [[ "${gClearCachedParams}" == "true" || "${gWorkMode}" == "jenkins"  ]];then
 fi
 
 if [[ -f "${gBuildPath}/${gGlobalParamCacheFileName}" && -f "${gBuildPath}/${gCiCdYamlFileName}" ]];then
-  warn "从缓存文件中加载全局参数..."
+  warn "wydevops.sh.loading.global.params.from.cache"
   #从文件中加载缓存的全局参数的值
   loadGlobalParamsFromCacheFile
   #检查并创建缺失的全局目录
   _checkGlobalDirectory
 elif [[ "${gLanguage}" != "shell" ]];then
-  warn "完整执行全局参数初始化过程..."
-  invokeExtendPointFunc "initGlobalParams" "全局参数初始化功能扩展点"
-  invokeExtendPointFunc "onAfterInitGlobalParams" "全局参数初始化后扩展点"
-  info "将初始化好的全局变量的值写入${gGlobalParamCacheFileName}缓存文件中"
+  warn "wydevops.sh.full.init.global.params"
+  invokeExtendPointFunc "initGlobalParams" "wydevops.sh.init.global.params.extend.point"
+  invokeExtendPointFunc "onAfterInitGlobalParams" "wydevops.sh.after.init.global.params.extend.point"
+  info "wydevops.sh.caching.global.params" "${gGlobalParamCacheFileName}"
   cacheGlobalParamsToFile
 fi
 
-info "删除${gHelmBuildOutDir}/${gArchTypes//\//-}/pushed-images.yaml文件"
+info "wydevops.sh.delete.pushed.images.file" "${gHelmBuildOutDir}" "${gArchTypes//\//-}"
 rm -f "${gHelmBuildOutDir}/${gArchTypes//\//-}/pushed-images.yaml"
 
-info "二次解析命令选项和传入参数"
+info "wydevops.sh.second.parse.options"
 parseOptions2 "${@}"
 
-invokeExtendPointFunc "onValidateGlobalParams" "全局参数有效性检查扩展点"
+invokeExtendPointFunc "onValidateGlobalParams" "wydevops.sh.validate.global.params.extend.point"
 
-info "执行CI/CD标准流程..."
+info "wydevops.sh.executing.cicd.standard.flow"
 source "${_selfRootDir}/cicd-entry.sh"
 
 exit 0
