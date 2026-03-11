@@ -428,6 +428,7 @@ function loadMessageProperties(){
   fi
 
   local l_file_path="${_selfRootDir}/i18n/message_${l_language}.properties"
+  echo "-------------l_file_path=${l_file_path}"
   if [ -f "${l_file_path}" ]; then
     while IFS='=' read -r key value || [ -n "${key}" ]; do
       # 忽略空行和注释
