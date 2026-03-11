@@ -84,7 +84,7 @@ function extendLog() {
     l_end="\e[0m"
   fi
 
-  log "${l_start} ${l_info}${l_end}" "info" "${l_outFileName}"
+  log "${l_start}${l_info}${l_end}" "info" "${l_outFileName}"
 }
 
 #调用log函数输出信息
@@ -108,7 +108,7 @@ function info() {
     if [[ "${l_options}" =~ ^(\-) ]];then
       log "${l_start}【信息】${l_info}${l_end}" "info" "${l_options}" "${l_outFileName}"
     else
-      log "${l_start} ${l_info}${l_end}" "info" "" "${l_outFileName}"
+      log "${l_start}${l_info}${l_end}" "info" "" "${l_outFileName}"
     fi
   else
     log "${l_start}【信息】${l_info}${l_end}" "info" "" "${l_outFileName}"
@@ -139,7 +139,7 @@ function error() {
     if [[ "${l_options}" =~ ^(\-) ]];then
       log "${l_start}【错误】${l_info}${l_end}" "error" "${l_options}" "${l_outFileName}"
     else
-      log "${l_start} ${l_info}${l_end}" "error" "" "${l_outFileName}"
+      log "${l_start}${l_info}${l_end}" "error" "" "${l_outFileName}"
     fi
   else
     log "${l_start}【错误】${l_info}${l_end}" "error" "" "${l_outFileName}"
@@ -212,7 +212,7 @@ function debug() {
     if [[ "${l_options}" =~ ^(\-) ]];then
       log "${l_start}【调试】${l_end} ${l_info}" "debug" "${l_options}" "${l_outFileName}"
     else
-      log "${l_start} ${l_end}${l_info}" "debug" "" "${l_outFileName}"
+      log "${l_start}${l_info}${l_end}" "debug" "" "${l_outFileName}"
     fi
   else
     log "${l_start}【调试】${l_end}${l_info}" "debug" "" "${l_outFileName}"
@@ -239,7 +239,7 @@ function warn() {
     if [[ "${l_options}" =~ ^(\-) ]];then
       log "${l_start}【警告】${l_info}${l_end}" "warn" "${l_options}" "${l_outFileName}"
     else
-      log "${l_start} ${l_info}${l_end}" "warn" "" "${l_outFileName}"
+      log "${l_start}${l_info}${l_end}" "warn" "" "${l_outFileName}"
     fi
   else
     log "${l_start}【警告】${l_info}${l_end}" "warn" "" "${l_outFileName}"
