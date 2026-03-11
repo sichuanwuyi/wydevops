@@ -111,13 +111,13 @@ function info() {
   fi
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.info"]}"
-  echo "-----------l_infoPrefix=${l_infoPrefix}"
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[32m"
     l_end="\e[0m"
   fi
 
+  echo "-----------l_infoPrefix=${l_infoPrefix}, l_options=${l_options}, log=${l_start}${l_infoPrefix}${l_info}${l_end}"
   if [ "${l_options}" ];then
     if [[ "${l_options}" =~ ^(\-) ]];then
       log "${l_start}${l_infoPrefix}${l_info}${l_end}" "info" "${l_options}" "${l_outFileName}"
