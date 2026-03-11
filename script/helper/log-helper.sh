@@ -433,6 +433,7 @@ function loadMessageProperties(){
     while IFS='=' read -r key value || [ -n "${key}" ]; do
       # 忽略空行和注释
       if [[ -n "${key}" && ! "${key}" =~ ^\s*# ]]; then
+        echo "-------------${key}=${value}"
         gMessagePropertiesMap["${key}"]="${value}"
       fi
     done < "${l_file_path}"
