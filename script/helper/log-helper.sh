@@ -50,6 +50,9 @@ function logout(){
     "debug")
       debug "${l_message}" "${l_endChar}"
       ;;
+    "partLog")
+      partLog "${l_message}" "${l_endChar}"
+      ;;
     "extendLog")
       extendLog "${l_message}" "${l_endChar}"
       ;;
