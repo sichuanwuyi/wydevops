@@ -10,21 +10,17 @@
 function logout(){
   local l_type=$1
   local l_message=$2
+  shift 2 # 丢弃类型和消息参数，剩下的是消息的参数
 
-  local l_paramCount
-  local l_index
+  local l_index=0
   local l_param_val
 
-  l_paramCount=$#
-  ((l_paramCount = l_paramCount - 2))
-
-  # 循环l_paramCount次，将l_message字符串中的"{index}"依次替换为传入的对应位置上的参数。
-  for ((l_index=0; l_index<l_paramCount; l_index++)); do
-    # 参数的起始位置是3，所以需要加上3
-    # shellcheck disable=SC2301
-    l_param_val=${!((l_index + 3))}
-    # 使用字符串替换功能，将{index}替换为实际的参数值
-    l_message=${l_message//\{$l_index\}/$l_param_val}
+  # 循环遍历剩下的参数
+  for l_param_val in "$@"; do
+    # 将 {index} 替换为实际的参数值
+    # shellcheck disable=SC1083
+    l_message=${l_message//\\{$l_index\\}/$l_param_val}
+    ((l_index++))
   done
 
   # 根据日志类型调用相应的日志函数
