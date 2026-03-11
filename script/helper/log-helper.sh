@@ -434,7 +434,9 @@ function loadMessageProperties(){
       # 忽略空行和注释
       if [[ -n "${key}" && ! "${key}" =~ ^\s*# ]]; then
         echo "-------------${key}=${value}"
-        gMessagePropertiesMap["${key}"]="${value}"
+        if [ "${key}" ];then
+          gMessagePropertiesMap["${key}"]="${value}"
+        fi
       fi
     done < "${l_file_path}"
   fi
