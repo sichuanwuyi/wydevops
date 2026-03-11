@@ -145,12 +145,12 @@ function error() {
   local l_infoPrefix
 
   #使用国际化资源替换l_info
-  l_tmpInfo=gMessagePropertiesMap["${l_info}"]
+  l_tmpInfo="${gMessagePropertiesMap[${l_info}]}"
   if [ "${l_tmpInfo}" ];then
     l_info="${l_tmpInfo}"
   fi
 
-  l_infoPrefix=gMessagePropertiesMap["log.helper.error"]
+  l_infoPrefix="${gMessagePropertiesMap["log.helper.error"]}"
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[5;31m"
@@ -228,12 +228,12 @@ function debug() {
   local l_infoPrefix
 
   #使用国际化资源替换l_info
-  l_tmpInfo=gMessagePropertiesMap["${l_info}"]
+  l_tmpInfo="${gMessagePropertiesMap[${l_info}]}"
   if [ "${l_tmpInfo}" ];then
     l_info="${l_tmpInfo}"
   fi
 
-  l_infoPrefix=gMessagePropertiesMap["log.helper.debug"]
+  l_infoPrefix="${gMessagePropertiesMap["log.helper.debug"]}"
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[33m"
@@ -265,12 +265,12 @@ function warn() {
   local l_infoPrefix
 
   #使用国际化资源替换l_info
-  l_tmpInfo=gMessagePropertiesMap["${l_info}"]
+  l_tmpInfo="${gMessagePropertiesMap[${l_info}]}"
   if [ "${l_tmpInfo}" ];then
     l_info="${l_tmpInfo}"
   fi
 
-  l_infoPrefix=gMessagePropertiesMap["log.helper.warn"]
+  l_infoPrefix="${gMessagePropertiesMap["log.helper.warn"]}"
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[33m"
