@@ -110,7 +110,7 @@ function info() {
     l_info="${l_tmpInfo}"
   fi
 
-  l_infoPrefix=gMessagePropertiesMap["log.helper.info"]
+  l_infoPrefix="${gMessagePropertiesMap["log.helper.info"]}"
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[32m"
