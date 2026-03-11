@@ -324,7 +324,11 @@ function log() {
 
   #如果l_type!=debug, 或者gDebugMode=true, 则直接在控制台输出l_info。
   if [ "${l_type}" != "debug" ] || [ "${gDebugMode}" == "true" ];then
-     echo -e "${l_options}" "${l_info}"
+     if [ "${l_options}" ];then
+       echo -e "${l_options}" "${l_info}"
+     else
+       echo -e "${l_info}"
+     fi
   fi
 
   if [ ! "${l_outFileName}" ];then
@@ -344,7 +348,12 @@ function log() {
     else
       l_outFile="./${l_outFileName}"
     fi
-    echo -e "${l_options}" "${l_info}" >> "${l_outFile}"
+
+    if [ "${l_options}" ];then
+      echo -e "${l_options}" "${l_info}" >> "${l_outFile}"
+    else
+      echo -e "${l_info}" >> "${l_outFile}"
+    fi
   fi
 }
 
