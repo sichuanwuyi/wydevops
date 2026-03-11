@@ -416,7 +416,7 @@ function _getStringLen() {
 
 function loadMessageProperties(){
   export gMessagePropertiesMap
-  export gBuildScriptRootDir
+  export _selfRootDir
   export gLanguageInLog
 
   local l_language
@@ -427,7 +427,7 @@ function loadMessageProperties(){
     l_language="zh"
   fi
 
-  local l_file_path="${gBuildScriptRootDir}/i18n/message_${l_language}.properties"
+  local l_file_path="${_selfRootDir}/i18n/message_${l_language}.properties"
   if [ -f "${l_file_path}" ]; then
     while IFS='=' read -r key value || [ -n "${key}" ]; do
       # 忽略空行和注释
@@ -444,7 +444,7 @@ declare -A gMessagePropertiesMap
 export gMessagePropertiesMap
 
 #构建脚本所在的根目录
-export gBuildScriptRootDir
+export _selfRootDir
 
 #日志输出的语言，默认值为zh。
 export gLanguageInLog
