@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-echo "wydevops部署成功"
+echo "shell.deploy.wydevops.deployment.successful" ""
 
