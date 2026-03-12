@@ -154,8 +154,9 @@ function usage() {
   local l_forceCoverageParam="${gMessagePropertiesMap['global.params.sh.usage.forceCoverage']}"
   local l_helpParam="${gMessagePropertiesMap['global.params.sh.usage.help']}"
   local l_multipleModelParam="${gMessagePropertiesMap['global.params.sh.usage.multipleModel']}"
+  local l_removeImageParam="${gMessagePropertiesMap['global.params.sh.usage.removeImage']}"
   local l_templateParam="${gMessagePropertiesMap['global.params.sh.usage.template']}"
-  local l_removeImageParam="${gMessagePropertiesMap['global.params.sh.usage.version']}"
+  local l_versionParam="${gMessagePropertiesMap['global.params.sh.usage.version']}"
 
   local l_optionsParams="${gMessagePropertiesMap['global.params.sh.usage.options']}"
   local l_archTypesParam="${gMessagePropertiesMap['global.params.sh.usage.archTypes']}"
@@ -177,7 +178,7 @@ function usage() {
   echo "
     ${l_title}:
     [${l_switches}]
-    -c, --clearCachedParams  ${l_clearCachedParams}
+    -c, --clearCachedParams  ${l_clearCachedParam}
     -d, --debug              ${l_debugParam}
     -e, --enableNotify       ${l_enableNotifyParam}
     -f, --forceCoverage      ${l_forceCoverageParam}

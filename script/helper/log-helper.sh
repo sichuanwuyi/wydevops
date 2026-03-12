@@ -7,63 +7,6 @@
 # 4. 函数内部定义的私有变量集中在函数入口处集中定义，在函数末尾集中取消(unset)。
 # 5. 本文件中以下划线"_"开头的函数为内部私有函数。
 
-#deprecated
-function logout(){
-  local l_type=$1
-  local l_message=$2
-  shift 2 # 丢弃类型和消息参数，剩下的是消息的参数
-
-  local l_index=0
-  local l_param_val
-  local l_endChar=""
-  local -a params=("$@")
-  local l_param_count=${#params[@]}
-
-  if [ "$l_param_count" -gt 0 ]; then
-    local l_last_index=$((l_param_count - 1))
-    local l_last_param="${params[$l_last_index]}"
-    if [[ "${l_last_param}" == "-n" || "${l_last_param}" == "*" ]]; then
-     l_endChar="${l_last_param}"
-     # shellcheck disable=SC2184
-     unset params[$l_last_index]
-    fi
-  fi
-
-  # 循环遍历剩下的参数
-  for l_param_val in "${params[@]}"; do
-    # 将 {index} 替换为实际的参数值
-    # shellcheck disable=SC1083
-    l_message=${l_message//\\{$l_index\\}/$l_param_val}
-    ((l_index++))
-  done
-
-  # 根据日志类型调用相应的日志函数
-  case "${l_type}" in
-    "info")
-      info "${l_message}" "${l_endChar}"
-      ;;
-    "warn")
-      warn "${l_message}" "${l_endChar}"
-      ;;
-    "error")
-      error "${l_message}" "${l_endChar}"
-      ;;
-    "debug")
-      debug "${l_message}" "${l_endChar}"
-      ;;
-    "partLog")
-      partLog "${l_message}" "${l_endChar}"
-      ;;
-    "extendLog")
-      extendLog "${l_message}" "${l_endChar}"
-      ;;
-    *)
-      # 如果类型未知，默认为info
-      info "${l_message}" "${l_endChar}"
-      ;;
-  esac
-}
-
 function partLog() {
   #需要输出的信息
   local l_info=$1
@@ -75,6 +18,8 @@ function partLog() {
 
 #扩展点日志
 function extendLog() {
+  export gDefaultRetVal
+
   #需要输出的信息
   local l_info=$1
   #内容输出文件名称
@@ -82,6 +27,10 @@ function extendLog() {
 
   local l_start
   local l_end
+
+  #使用国际化资源替换l_info
+  convertI18NText "${l_info}"
+  l_info="${gDefaultRetVal}"
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[32m"
@@ -94,6 +43,7 @@ function extendLog() {
 #调用log函数输出信息
 function info() {
   export gMessagePropertiesMap
+  export gDefaultRetVal
 
   #需要输出的信息
   local l_info=$1
@@ -107,10 +57,8 @@ function info() {
   local l_infoPrefix
 
   #使用国际化资源替换l_info
-  l_tmpInfo="${gMessagePropertiesMap[${l_info}]}"
-  if [ "${l_tmpInfo}" ];then
-    l_info="${l_tmpInfo}"
-  fi
+  convertI18NText "${l_info}"
+  l_info="${gDefaultRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.info"]}"
 
@@ -133,6 +81,7 @@ function info() {
 function error() {
   export gTempFileRegTables
   export gMessagePropertiesMap
+  export gDefaultRetVal
 
   #需要输出的信息
   local l_info=$1
@@ -148,10 +97,8 @@ function error() {
   local l_infoPrefix
 
   #使用国际化资源替换l_info
-  l_tmpInfo="${gMessagePropertiesMap[${l_info}]}"
-  if [ "${l_tmpInfo}" ];then
-    l_info="${l_tmpInfo}"
-  fi
+  convertI18NText "${l_info}"
+  l_info="${gDefaultRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.error"]}"
 
@@ -223,6 +170,7 @@ function unregisterTempFile(){
 #调用log函数输出调试信息
 function debug() {
   export gMessagePropertiesMap
+  export gDefaultRetVal
 
   #需要输出的信息
   local l_info=$1
@@ -236,10 +184,8 @@ function debug() {
   local l_infoPrefix
 
   #使用国际化资源替换l_info
-  l_tmpInfo="${gMessagePropertiesMap[${l_info}]}"
-  if [ "${l_tmpInfo}" ];then
-    l_info="${l_tmpInfo}"
-  fi
+  convertI18NText "${l_info}"
+  l_info="${gDefaultRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.debug"]}"
 
@@ -261,6 +207,7 @@ function debug() {
 
 function warn() {
   export gMessagePropertiesMap
+  export gDefaultRetVal
 
   #需要输出的信息
   local l_info=$1
@@ -271,14 +218,11 @@ function warn() {
 
   local l_start
   local l_end
-  local l_tmpInfo
   local l_infoPrefix
 
   #使用国际化资源替换l_info
-  l_tmpInfo="${gMessagePropertiesMap[${l_info}]}"
-  if [ "${l_tmpInfo}" ];then
-    l_info="${l_tmpInfo}"
-  fi
+  convertI18NText "${l_info}"
+  l_info="${gDefaultRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.warn"]}"
 
@@ -357,7 +301,7 @@ function log() {
 }
 
 function part() {
-  export gMessagePropertiesMap
+  export gDefaultRetVal
 
   #需要输出的信息
   local l_info=$1
@@ -374,13 +318,10 @@ function part() {
   local l_content
   local l_head
   local l_tail
-  local l_tmpInfo
 
   #使用国际化资源替换l_info
-  l_tmpInfo="${gMessagePropertiesMap[${l_info}]}"
-  if [ "${l_tmpInfo}" ];then
-    l_info="${l_tmpInfo}"
-  fi
+  convertI18NText "${l_info}"
+  l_info="${gDefaultRetVal}"
 
   l_lineLen="50"
   #得到l_info的显示长度
@@ -414,6 +355,49 @@ function part() {
 }
 
 #*******************私有函数********************
+
+function convertI18NText(){
+  export gMessagePropertiesMap
+  export gDefaultRetVal
+
+  local l_message=$1
+  shift 1 #丢弃第一个参数
+
+  local l_index=0
+  local l_param_val
+  local -a params=("$@")
+  local l_param_count=${#params[@]}
+  local l_tmpInfo
+
+  if [ "$l_param_count" -gt 0 ]; then
+    local l_last_index=$((l_param_count - 1))
+    local l_last_param="${params[$l_last_index]}"
+    if [[ "${l_last_param}" == "-n" || "${l_last_param}" == "*" ]]; then
+     # shellcheck disable=SC2184
+     unset params[$l_last_index]
+    fi
+  fi
+
+  #使用国际化资源替换l_info
+  l_tmpInfo="${gMessagePropertiesMap[${l_message}]}"
+  if [ "${l_tmpInfo}" ];then
+    l_message="${l_tmpInfo}"
+  fi
+
+  l_param_count=${#params[@]}
+  if [ "$l_param_count" -gt 0 ]; then
+    # 循环遍历剩下的参数
+    for l_param_val in "${params[@]}"; do
+      # 将 {index} 替换为实际的参数值
+      # shellcheck disable=SC1083
+      l_message=${l_message//\\{$l_index\\}/$l_param_val}
+      ((l_index++))
+    done
+  fi
+
+  gDefaultRetVal="${l_message}"
+
+}
 
 #计算字符串的显示字节长度。
 function _getStringLen() {
