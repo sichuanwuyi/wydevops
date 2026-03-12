@@ -227,20 +227,28 @@ function invokeExtendPointFunc() {
 
   local l_funcName=$1
   local l_extentPointName=$2
+  local l_extentPointNameParams=$3
 
   local l_funcName1
   local l_param=("${@}")
+  local l_param_count=${#l_param[@]}
 
   #删除前两个参数
   # shellcheck disable=SC2184
   unset l_param[0]
   # shellcheck disable=SC2184
   unset l_param[1]
+
+  if [ "${l_param_count}" -ge 3 ];then
+    # shellcheck disable=SC2184
+    unset l_param[2]
+  fi
+
   # shellcheck disable=SC2206
   l_param=(${l_param[*]})
 
   #调用公共功能扩展
-  extendLog "\n--->> ${l_extentPointName}(${l_funcName}) <<---"
+  extendLog "${l_funcName}" "${l_extentPointName}" "${l_extentPointNameParams}"
 
   gDefaultRetVal="null"
   gShellExecuteResult="false"

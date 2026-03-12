@@ -14,16 +14,16 @@ function executeChartStage() {
   local l_chartPath
   local l_curDir
 
-  info "加载公共${gCurrentStage}阶段功能扩展文件：${gCurrentStage}-extend-point.sh"
+  info "chart.sh.loading.common.extend.file" "${gCurrentStage}#${gCurrentStage}"
   # shellcheck disable=SC1090
   source "${gPipelineScriptsDir}/common/${gCurrentStage}-extend-point.sh"
 
-  info "加载公共${gCurrentStage}阶段功能扩展文件：k8s-api-resources-reader.sh"
+  info "chart.sh.loading.k8s.api.reader" "${gCurrentStage}"
   source "${gBuildScriptRootDir}/plugins/k8s-api-resources-reader.sh"
 
-  invokeExtendPointFunc "onBeforeInitialingGlobalParamsForChartStage" "执行${gCurrentStage}阶段全局参数初始化前扩展..." "${gCiCdYamlFile}"
-  invokeExtendPointFunc "initialGlobalParamsForChartStage" "执行${gCurrentStage}阶段全局参数初始化扩展..." "${gCiCdYamlFile}"
-  invokeExtendPointFunc "onAfterInitialingGlobalParamsForChartStage" "执行${gCurrentStage}阶段全局参数初始化后扩展..." "${gCiCdYamlFile}"
+  invokeExtendPointFunc "onBeforeInitialingGlobalParamsForChartStage" "chart.sh.before.init.global.params" "${gCurrentStage}" "${gCiCdYamlFile}"
+  invokeExtendPointFunc "initialGlobalParamsForChartStage" "chart.sh.init.global.params" "${gCurrentStage}" "${gCiCdYamlFile}"
+  invokeExtendPointFunc "onAfterInitialingGlobalParamsForChartStage" "chart.sh.after.init.global.params" "${gCurrentStage}" "${gCiCdYamlFile}"
 
   l_curDir=$(pwd)
 
@@ -32,15 +32,15 @@ function executeChartStage() {
   # shellcheck disable=SC2068
   for l_chartName in ${l_chartNameList[@]};do
     l_chartPath="${gChartBuildDir}/${l_chartName}"
-    invokeExtendPointFunc "onBeforeCreatingChartImage" "创建Chart镜像前扩展" "${l_chartPath}"
+    invokeExtendPointFunc "onBeforeCreatingChartImage" "chart.sh.before.creating.chart.image" "" "${l_chartPath}"
 
     #获取当前chart镜像实际构建目录（可能会遇到自定义chart构建目录）
     l_chartPath="${gDefaultRetVal}"
-    invokeExtendPointFunc "createChartImage" "创建Chart镜像扩展" "${l_chartPath}"
+    invokeExtendPointFunc "createChartImage" "chart.sh.create.chart.imag" "" "${l_chartPath}"
 
-    invokeExtendPointFunc "onAfterCreatingChartImage" "创建Chart镜像后扩展" "${l_chartPath}"
+    invokeExtendPointFunc "onAfterCreatingChartImage" "chart.sh.after.creating.chart.image" "" "${l_chartPath}"
     #向外部管理平台发送通知
-    invokeExtendPointFunc "sendNotify" "调用通知接口发送Chart镜像构建结果" "${gCurrentStageResult}"
+    invokeExtendPointFunc "sendNotify" "chart.sh.send.notify" "" "${gCurrentStageResult}"
   done
 
   # shellcheck disable=SC2164

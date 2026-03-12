@@ -33,13 +33,13 @@ function executePackageStage() {
   local l_shellOrYamlFile
   local l_remoteInstallProxyShell
 
-  info "加载公共${gCurrentStage}阶段功能扩展文件：${gCurrentStage}-extend-point.sh"
+  info "deploy.sh.loading.common.extend.file" "${gCurrentStage}#${gCurrentStage}"
   # shellcheck disable=SC1090
   source "${gPipelineScriptsDir}/common/${gCurrentStage}-extend-point.sh"
 
-  invokeExtendPointFunc "onBeforeInitialingGlobalParamsForDeployStage" "执行${gCurrentStage}阶段全局参数初始化前扩展..." "${gCiCdYamlFile}"
-  invokeExtendPointFunc "initialGlobalParamsForDeployStage" "执行${gCurrentStage}阶段全局参数初始化扩展..." "${gCiCdYamlFile}"
-  invokeExtendPointFunc "onAfterInitialingGlobalParamsForDeployStage" "执行${gCurrentStage}阶段全局参数初始化后扩展..." "${gCiCdYamlFile}"
+  invokeExtendPointFunc "onBeforeInitialingGlobalParamsForDeployStage" "deploy.sh.before.init.global.params" "${gCurrentStage}" "${gCiCdYamlFile}"
+  invokeExtendPointFunc "initialGlobalParamsForDeployStage" "deploy.sh.init.global.params" "${gCurrentStage}" "${gCiCdYamlFile}"
+  invokeExtendPointFunc "onAfterInitialingGlobalParamsForDeployStage" "deploy.sh.after.init.global.params" "${gCurrentStage}" "${gCiCdYamlFile}"
 
   ((l_i = 0))
   while true; do
@@ -47,7 +47,7 @@ function executePackageStage() {
     readParam "${gCiCdYamlFile}" "deploy[${l_i}].packageName"
     if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
       if [ "${l_i}" -eq 0 ];then
-        error "${gCiCdYamlFile##*/}文件中deploy[${l_i}].packageName参数是空的"
+        error "deploy.sh.package.name.empty" "${gCiCdYamlFile##*/}#${l_i}"
       else
         break
       fi
@@ -99,29 +99,29 @@ function executePackageStage() {
     l_deployDockerRepo="${gDefaultRetVal}"
 
     if [[ "${l_deployType}" == "k8s" && ! "${gDockerRepoName}" && ! "${l_deployDockerRepo}" ]];then
-      error "未设置docker镜像仓库(-D参数)并且目标K8S集群也未配置docker镜像仓库(deploy[${l_i}].k8s.dockerRepo)的情况下，k8s部署方式无效"
+      error "deploy.sh.k8s.repo.not.set" "${l_i}"
     fi
 
     [[ "${l_deployType}" == "docker" && ${gBuildType} != "single" ]] && \
-      error "使用${gBuildType}构建类型打包的服务不能使用${l_deployType}方式部署(该方式仅适用于single构建类型打包的服务)"
+      error "deploy.sh.invalid.build.type" "${gBuildType}#${l_deployType}"
 
     #服务安装包部署前扩展
-    invokeExtendPointFunc "onBeforeDeployingServicePackage" "服务安装包部署前扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
+    invokeExtendPointFunc "onBeforeDeployingServicePackage" "deploy.sh.before.deploying.service.package" "" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
       "${l_deployType}" "${l_images}" "${l_remoteDir}" "${l_localBaseDir}"
     l_array=("${gDefaultRetVal}")
     l_shellOrYamlFile="${l_array[0]}"
     l_remoteInstallProxyShell="${l_array[1]}"
     #发布服务安装包
-    invokeExtendPointFunc "deployServicePackage" "服务安装包部署扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
+    invokeExtendPointFunc "deployServicePackage" "deploy.sh.deploy.service.package" "" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
       "${l_deployType}" "${l_installMode}" "${l_images}" "${l_remoteDir}" "${l_localBaseDir}" "${l_shellOrYamlFile}" "${l_remoteInstallProxyShell}"
     #服务安装包部署后扩展
-    invokeExtendPointFunc "onAfterDeployingServicePackage" "服务安装包部署后扩展" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
+    invokeExtendPointFunc "onAfterDeployingServicePackage" "deploy.sh.after.deploying.service.package" "" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
       "${l_images}" "${l_remoteDir}" "${l_localBaseDir}"
     #向外部管理平台发送通知
-    invokeExtendPointFunc "sendNotify" "向外部接口发送${gServiceName}服务安装包部署结果通知" "${gCurrentStageResult}"
+    invokeExtendPointFunc "sendNotify" "deploy.sh.send.notify" "${gServiceName}" "${gCurrentStageResult}"
 
     if [ "${l_deleteTempDirAfterDeployed}" == "true" ];then
-      info "删除部署时使用的临时目录：${l_localBaseDir}"
+      info "deploy.sh.delete.temp.dir" "${l_localBaseDir}"
       rm -rf "${l_localBaseDir:?}"
     fi
 
@@ -149,7 +149,7 @@ function _getChartVersion() {
     readParam "${gCiCdYamlFile}" "package[${l_i}].name"
     if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
       if [ "${l_i}" -eq 0 ];then
-        error "${gCiCdYamlFile##*/}文件中package[${l_i}].name参数是空的"
+        error "deploy.sh.package.name.empty.in.file" "${gCiCdYamlFile##*/}#${l_i}"
       else
         break
       fi

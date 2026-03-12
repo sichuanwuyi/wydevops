@@ -22,19 +22,21 @@ function partLog() {
 function extendLog() {
   export gDefaultRetVal
 
-  #需要输出的信息
-  local l_info=$1
-  #l_info中的占位符参数值
-  local l_infoParams=$2
+  #扩展点函数方法名
+  local l_funcName=$1
+  #扩展点名称
+  local l_info=$2
+  #扩展点名称中的占位参数值
+  local l_infoParams=$3
   #内容输出文件名称
-  local l_outFileName=$3
+  local l_outFileName=$4
 
   local l_start
   local l_end
 
   #使用国际化资源替换l_info
   convertI18NText "${l_info}" "${l_infoParams}"
-  l_info="${gDefaultRetVal}"
+  l_info="\n--->> ${gDefaultRetVal}(${l_funcName}) <<---"
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[32m"

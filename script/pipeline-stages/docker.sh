@@ -10,13 +10,13 @@ function executeDockerStage() {
   export gValidBuildStages
   export gDockerBuildDir
 
-  info "加载公共${gCurrentStage}阶段功能扩展文件：${gCurrentStage}-extend-point.sh"
+  info "docker.sh.loading.common.extend.file" "${gCurrentStage}#${gCurrentStage}"
   # shellcheck disable=SC1090
   source "${gPipelineScriptsDir}/common/${gCurrentStage}-extend-point.sh"
 
-  invokeExtendPointFunc "onBeforeInitialingGlobalParamsForDockerStage" "执行${gCurrentStage}阶段全局参数初始化前扩展..." "${gCiCdYamlFile}"
-  invokeExtendPointFunc "initialGlobalParamsForDockerStage" "执行${gCurrentStage}阶段全局参数初始化扩展..." "${gCiCdYamlFile}"
-  invokeExtendPointFunc "onAfterInitialingGlobalParamsForDockerStage" "执行${gCurrentStage}阶段全局参数初始化后扩展..." "${gCiCdYamlFile}"
+  invokeExtendPointFunc "onBeforeInitialingGlobalParamsForDockerStage" "docker.sh.before.init.global.params" "${gCurrentStage}" "${gCiCdYamlFile}"
+  invokeExtendPointFunc "initialGlobalParamsForDockerStage" "docker.sh.init.global.params" "${gCurrentStage}" "${gCiCdYamlFile}"
+  invokeExtendPointFunc "onAfterInitialingGlobalParamsForDockerStage" "docker.sh.after.init.global.params" "${gCurrentStage}" "${gCiCdYamlFile}"
 
   if [ "${gBuildType}" == "thirdParty" ];then
     #处理第三方镜像
@@ -56,7 +56,7 @@ function _processThirdPartyImage(){
 
   readParam "${gCiCdYamlFile}" "docker.thirdParties"
   if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
-    error "docker.thirdParties参数为空"
+    error "docker.sh.thirdparties.empty"
   fi
   #l_itemCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\- )" | wc -l)
   l_itemCount=$(grep -cE "^- " <<< "${gDefaultRetVal}")
@@ -69,7 +69,7 @@ function _processThirdPartyImage(){
       readParam "${gCiCdYamlFile}" "docker.thirdParties[${l_i}].images"
       l_image="${gDefaultRetVal}"
       if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
-        error "docker.thirdParties[${l_i}].images参数为空"
+        error "docker.sh.thirdparties.images.empty" "${l_i}"
       fi
       readParam "${gCiCdYamlFile}" "docker.thirdParties[${l_i}].location"
       l_location="${gDefaultRetVal}"
@@ -79,26 +79,26 @@ function _processThirdPartyImage(){
           l_location="${gBuildPath}/${l_location:1}"
         fi
         if [ ! -d "${l_location}" ];then
-          error "第三方镜像${l_image}导出文件目录${l_location}不存在"
+          error "docker.sh.thirdparty.image.dir.not.exist" "${l_image}#${l_location}"
         fi
         l_exportFile="${l_image}-${l_archType}"
         l_exportFile="${l_exportFile//\//-}"
         l_exportFile="${l_exportFile//:/-}"
         if [ ! -f "${l_location}/${l_exportFile}" ];then
-          error "${l_location}目录中不存在第三方镜像的导出文件${l_exportFile}文件"
+          error "docker.sh.thirdparty.image.file.not.exist" "${l_location}#${l_exportFile}"
         fi
       fi
 
-      invokeExtendPointFunc "onBeforeCreatingThirdPartyImage" "处理第三方Docker镜像前扩展" "${l_image}" "${l_archType}" "${l_exportFile}"
-      invokeExtendPointFunc "createThirdPartyImage" "处理第三方Docker镜像" "${l_image}" "${l_archType}" "${l_exportFile}"
-      invokeExtendPointFunc "onAfterCreatingThirdPartyImage" "处理第三方Docker镜像后扩展" "${l_image}" "${l_archType}" "${l_exportFile}"
+      invokeExtendPointFunc "onBeforeCreatingThirdPartyImage" "docker.sh.before.creating.thirdparty.image" "" "${l_image}" "${l_archType}" "${l_exportFile}"
+      invokeExtendPointFunc "createThirdPartyImage" "docker.sh.creating.thirdparty.image" "" "${l_image}" "${l_archType}" "${l_exportFile}"
+      invokeExtendPointFunc "onAfterCreatingThirdPartyImage" "docker.sh.after.creating.thirdparty.image" "" "${l_image}" "${l_archType}" "${l_exportFile}"
       #调用外部接口发送通知消息
-      invokeExtendPointFunc "sendNotify" "调用通知接口发送Docker镜像构建结果..." "${gCurrentStageResult}"
+      invokeExtendPointFunc "sendNotify" "docker.sh.send.notify" "" "${gCurrentStageResult}"
     done
   done
 
   if [ "${gDeleteImageAfterBuilding}" == "true" ];then
-    info "清除无用的镜像：docker system prune -f"
+    info "docker.sh.prune.system"
     docker system prune -f
   fi
 
@@ -122,7 +122,7 @@ function _createDockerImageByCustomizeDir(){
 
   readParam "${gCiCdYamlFile}" "docker.customizes"
   if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
-    error "docker.customizes参数为空"
+    error "docker.sh.customizes.empty"
   fi
   #l_itemCount=$(echo -e "${gDefaultRetVal}" | grep -oP "^(\- )" | wc -l)
   l_itemCount=$(grep -cE "^- " <<< "${gDefaultRetVal}")
@@ -131,21 +131,21 @@ function _createDockerImageByCustomizeDir(){
     readParam "${gCiCdYamlFile}" "docker.customizes[${l_i}].name"
     l_image="${gDefaultRetVal}"
     if [[ ! "${l_image}" || "${l_image}" == "null" ]];then
-      error "docker.customizes[${l_i}].name参数为空"
+      error "docker.sh.customizes.name.empty" "${l_i}"
     fi
 
     #读取目标架构类型
     readParam "${gCiCdYamlFile}" "docker.customizes[${l_i}].archType"
     l_archType="${gDefaultRetVal}"
     if [[ ! "${l_archType}" || "${l_archType}" == "null" ]];then
-      error "docker.customizes[${l_i}].archType参数为空"
+      error "docker.sh.customizes.archtype.empty" "${l_i}"
     fi
 
     #读取目标Dockerfile文件。
     readParam "${gCiCdYamlFile}" "docker.customizes[${l_i}].dockerfile"
     l_dockerFile="${gDefaultRetVal}"
     if [[ ! "${l_dockerFile}" || "${l_dockerFile}" == "null" ]];then
-      error "docker.customizes[${l_i}].dockerfile参数为空"
+      error "docker.sh.customizes.dockerfile.empty" "${l_i}"
     fi
 
     if [ "${l_dockerFile}" ];then
@@ -153,20 +153,20 @@ function _createDockerImageByCustomizeDir(){
         l_dockerFile="${gBuildPath}/${l_dockerFile:1}"
       fi
       if [ ! -f "${l_dockerFile}" ];then
-        error "自定义dockerfile文件不存在:${l_dockerFile}"
+        error "docker.sh.customized.dockerfile.not.exist" "${l_dockerFile}"
       fi
     fi
 
-    invokeExtendPointFunc "onBeforeCreatingCustomizedImage" "从自定义构建目录中创建Docker镜像前扩展" "${l_image}" "${l_archType}" "${l_dockerFile}"
-    invokeExtendPointFunc "creatingCustomizedImage" "从自定义构建目录中创建Docker镜像" "${l_image}" "${l_archType}" "${l_dockerFile}"
-    invokeExtendPointFunc "onAfterCreatingCustomizedImage" "从自定义构建目录中创建Docker镜像后扩展" "${l_image}" "${l_archType}" "${l_dockerFile}"
+    invokeExtendPointFunc "onBeforeCreatingCustomizedImage" "docker.sh.before.creating.customized.image" "" "${l_image}" "${l_archType}" "${l_dockerFile}"
+    invokeExtendPointFunc "creatingCustomizedImage" "docker.sh.creating.customized.image" "" "${l_image}" "${l_archType}" "${l_dockerFile}"
+    invokeExtendPointFunc "onAfterCreatingCustomizedImage" "docker.sh.after.creating.customized.image" "" "${l_image}" "${l_archType}" "${l_dockerFile}"
     #调用外部接口发送通知消息
-    invokeExtendPointFunc "sendNotify" "调用通知接口发送Docker镜像构建结果..." "${gCurrentStageResult}"
+    invokeExtendPointFunc "sendNotify" "docker.sh.send.notify" "" "${gCurrentStageResult}"
   done
 
 
   if [ "${gDeleteImageAfterBuilding}" == "true" ];then
-    info "清除无用的镜像：docker system prune -f"
+    info "docker.sh.prune.system"
     docker system prune -f
   fi
 }
@@ -252,19 +252,19 @@ function _createDockerImageByDockerfile() {
       gDockerFileTemplateParamMap["_ARCH-TYPE_"]="${l_archType##*/}"
       gDockerFileTemplateParamMap["_ARCH_"]="${l_archType//\//-}"
       #根据模板文件生成目标Dockerfile文件，并完成初始化(除架构参数外)
-      invokeExtendPointFunc "initialDockerFile" "生成并初始化${l_dockerFileTemplate##*/}文件" "${gCiCdYamlFile}" "${l_dockerFileTemplate}"
+      invokeExtendPointFunc "initialDockerFile" "docker.sh.generating.and.initializing.dockerfile" "${l_dockerFileTemplate##*/}" "${gCiCdYamlFile}" "${l_dockerFileTemplate}"
 
       l_targetDockerFile="${gDefaultRetVal}"
       #docker镜像构建前扩展：执行构建需要的文件拷贝等操作。
-      invokeExtendPointFunc "onBeforeCreatingDockerImage" "docker镜像构建前扩展" "${gCiCdYamlFile}" "${l_archType}" "${l_targetDockerFile}"
-      invokeExtendPointFunc "createDockerImage" "构建docker镜像扩展" "${gCiCdYamlFile}" "${l_archType}" "${l_targetDockerFile}"
+      invokeExtendPointFunc "onBeforeCreatingDockerImage" "docker.sh.before.creating.docker.image.extend" "" "${gCiCdYamlFile}" "${l_archType}" "${l_targetDockerFile}"
+      invokeExtendPointFunc "createDockerImage" "docker.sh.creating.docker.image.extend" "" "${gCiCdYamlFile}" "${l_archType}" "${l_targetDockerFile}"
       l_image="${gDefaultRetVal}"
-      invokeExtendPointFunc "onAfterCreatingDockerImage" "docker镜像构建后扩展" "${l_image}" "${l_archType}"
+      invokeExtendPointFunc "onAfterCreatingDockerImage" "docker.sh.after.creating.docker.image.extend" "" "${l_image}" "${l_archType}"
       #调用外部接口发送通知消息
-      invokeExtendPointFunc "sendNotify" "调用通知接口发送Docker镜像构建结果..." "${gCurrentStageResult}"
+      invokeExtendPointFunc "sendNotify" "docker.sh.send.notify" "${gCurrentStageResult}"
 
       if [ "${gDeleteImageAfterBuilding}" == "true" ];then
-        info "删除生成的本地镜像：${l_image}"
+        info "docker.sh.deleting.local.image" "${l_image}"
         docker rmi -f "${l_image}"
 
         ((l_index = 0))
@@ -273,7 +273,7 @@ function _createDockerImageByDockerfile() {
           if [ ! "${l_image}" ];then
             break
           fi
-          info "删除使用的基础镜像：${l_image}"
+          info "docker.sh.deleting.base.image" "${l_image}"
           docker rmi "${l_image}"
           ((l_index = l_index + 1))
         done
@@ -283,7 +283,7 @@ function _createDockerImageByDockerfile() {
   done
 
   if [ "${gDeleteImageAfterBuilding}" == "true" ];then
-    info "清除无用的镜像：docker system prune -f"
+    info "docker.sh.prune.system"
     docker system prune -f
   fi
 }
@@ -322,7 +322,7 @@ function _setFromImage() {
     done
   else
     #报错退出
-    error "没有找到${l_dockerFileTemplate##*/}文件中的_FROM-IMAGE0_占位符的实际值"
+    error "docker.sh.from.image.placeholder.not.found" "${l_dockerFileTemplate##*/}"
   fi
 }
 

@@ -13,13 +13,13 @@ function executePackageStage() {
   local l_chartName
   local l_maxIndex
 
-  info "加载公共${gCurrentStage}阶段功能扩展文件：${gCurrentStage}-extend-point.sh"
+  info "package.sh.loading.common.extend.file" "${gCurrentStage}#${gCurrentStage}"
   # shellcheck disable=SC1090
   source "${gPipelineScriptsDir}/common/${gCurrentStage}-extend-point.sh"
 
-  invokeExtendPointFunc "onBeforeInitialingGlobalParamsForPackageStage" "执行${gCurrentStage}阶段全局参数初始化前扩展..." "${gCiCdYamlFile}"
-  invokeExtendPointFunc "initialGlobalParamsForPackageStage" "执行${gCurrentStage}阶段全局参数初始化扩展..." "${gCiCdYamlFile}"
-  invokeExtendPointFunc "onAfterInitialingGlobalParamsForPackageStage" "执行${gCurrentStage}阶段全局参数初始化后扩展..." "${gCiCdYamlFile}"
+  invokeExtendPointFunc "onBeforeInitialingGlobalParamsForPackageStage" "package.sh.before.init.global.params" "${gCurrentStage}" "${gCiCdYamlFile}"
+  invokeExtendPointFunc "initialGlobalParamsForPackageStage" "package.sh.init.global.params" "${gCurrentStage}" "${gCiCdYamlFile}"
+  invokeExtendPointFunc "onAfterInitialingGlobalParamsForPackageStage" "package.sh.after.init.global.params" "${gCurrentStage}" "${gCiCdYamlFile}"
 
   #确定最大索引值。
   getListSize "${gCiCdYamlFile}" "package"
@@ -34,12 +34,12 @@ function executePackageStage() {
     fi
     l_chartName="${gDefaultRetVal}"
 
-    invokeExtendPointFunc "onBeforeCreatingOfflinePackage" "离线安装包打包前扩展" "${l_i}" "${l_chartName}"
+    invokeExtendPointFunc "onBeforeCreatingOfflinePackage" "package.sh.before.creating.offline.package" "" "${l_i}" "${l_chartName}"
     #安装离线安装包打包规则制作离线安装包
-    invokeExtendPointFunc "createOfflinePackage" "离线安装包打包扩展" "${l_i}" "${l_chartName}" "${l_maxIndex}"
-    invokeExtendPointFunc "onAfterCreatingOfflinePackage" "离线安装包打包后扩展" "${l_i}" "${l_chartName}"
+    invokeExtendPointFunc "createOfflinePackage" "package.sh.create.offline.package" "" "${l_i}" "${l_chartName}" "${l_maxIndex}"
+    invokeExtendPointFunc "onAfterCreatingOfflinePackage" "package.sh.after.creating.offline.package" "" "${l_i}" "${l_chartName}"
     #向外部管理平台发送通知
-    invokeExtendPointFunc "sendNotify" "向外部接口发送${gServiceName}项目离线安装包打包结果通知" "${gCurrentStageResult}"
+    invokeExtendPointFunc "sendNotify" "package.sh.send.notify" "${gServiceName}" "${gCurrentStageResult}"
    done
 }
 
