@@ -13,7 +13,7 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
 6.  Supports offline building of microservice deployment packages, caching all third-party images pulled from the public network locally, which greatly facilitates microservice development in private network environments.
 7.  Supports deploying multiple microservices with a single Helm chart, making it easy to uniformly release and uninstall closely coupled business modules.
 8.  Supports deploying multiple microservices within a single container, minimizing the use of valuable Pod resources.
-9.  Supports Nexus 3 and Harbor (2.10+) as Docker and Helm chart repositories, eliminating the need for the `helm-push` plugin.
+9.  Supports nexus3、harbor(2.10+)、registry、aws-ecr(AWS ECR repository) as Docker and Helm chart repositories, eliminating the need for the `helm-push` plugin.
 10. Supports integration with Jenkins, allowing consolidation with Jenkins Pipelines using just a single entry script.
 11. All code is developed in Shell, providing maximum flexibility and user adaptability, with the lowest learning curve for developers of various languages.
 12. The project includes powerful, originally developed tools for reading and writing YAML files, offering great convenience for users to custom-extend functionalities.
