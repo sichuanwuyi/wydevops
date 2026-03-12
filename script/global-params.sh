@@ -144,49 +144,64 @@ export gErrorDetail
 export gShellExecuteResult
 
 function usage() {
-  # shellcheck disable=SC1073
-  echo "
-    参数说明:
-    [开关量]
-    -c, --clearCachedParams  清除本地全局参数缓存文件。
-    -d, --debug              启用DEBUG模式输出测试信息。
-    -e, --enableNotify       使能向外部接口发送CICD过程通知（需要配置-N参数）。
-    -f, --forceCoverage      部署阶段强制覆盖目标仓库中同名同版本的Docker镜像。
-    -h, --help               显示帮助信息。
-    -m, --multipleModel      指明要构建的目标项目是多模块项目。
-    -r, --removeImage        构建结束后删除使用过的Docker镜像。
-    -t, --template           忽略项目根目录下的Dockerfile系列文件，强制使用匹配的docker模板文件；等同 -T ture。
-    -v, --version            显示本脚本的版本。
+  export gMessagePropertiesMap
 
-    [可选项]
-    -A, --archTypes       string    要构建的Docker镜像的架构类型，默认值=undefine,
-                                    可选值有：\"linux/amd64,linux/arm64\",\"linux/amd64\",\"linux/arm64\",\"undefine\"
-    -B, --buildType       string    构建类型:
-                                    single：单镜像模式，构建应用镜像
-                                    double：双镜像模式，构建应用基础镜像和应用业务镜像
-                                    base：仅构建应用基础镜像
-                                    business：仅构建应用业务镜像
-                                    thirdParty: 打包第三方镜像：拉取第三方镜像，缓存到本地镜像缓存目录中，
-                                                然后推送到私库中，最后导出到gDockerBuildOutDir目录中。
-                                    customize: 自定义模式：指定docker构建目录，脚本框架自动完成docker镜像构建和推送。
-    -C, --chartRepo       string    Chart镜像仓库信息, 格式：{仓库类型(nexus或harbor)},{仓库实例名称(nexus)或项目名称(harbor)},
-                                    {仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)}
-    -D, --dockerRepo      string    Docker镜像仓库信息, 格式：{仓库类型(nexus、harbor或registry)},{仓库实例名称(nexus)、项目名称(harbor)或组织代码(registry)},
-                                    {仓库访问地址({IP}:{端口})},{登录账号},{登录密码},{Web管理端口(RestfulAPI接口使用的端口)},{镜像名称是否带仓库实例名前缀(仅对nexus类型仓库有效)},
-                                    {服务名称(仅对registry类型仓库有效)},{配置文件全路径名称(仅对registry类型仓库有效)}
-    -I, --imageCacheDir   string    当workMode=local时，用于缓存Dockerfile文件中From行指定的Image镜像的本地目录。
-    -L, --language        string    项目语言类型或架构类型; 目前支持的有效值有：java、go、vue、nextjs、other等，依据具体实现而定。
-        --localConfigFile string  当workMode=local时，指定本地配置文件的名称, 默认值=\"ci-cd-config.yaml\"。
-    -M, --workMode        string    工作模式：jenkins、local
-    -N, --notify          string    外部通知接口的地址
-    -O, --outArchTypes    string    要导出的离线安装包的架构类型，默认值=\"linux/amd64,linux/arm64\"
-    -P, --buildPath       string    构建目录，一般为目标工程的根目录或主模块目录（例如：Java多模块项目）
-    -S, --buildStages     string    执行的构建阶段，有效值包括：build、docker、chart、package、deploy、all，
-                                    有效值为前五个阶段的有序组合,阶段间用英文逗号隔开；或直接设置为all；为空时等同于all。
-                                    例如：build,docker,chart——表示依次执行指定的构建阶段。
-    -T, --template        string    是否忽略项目根目录下的Dockerfile系列文件,与开关量-t作用相同。有效取值：false或true
-    -W, --workDir         string    仅当workMode=local时，用于指定本脚本所在的目录；
-                                    当workMode=jenkins时，脚本所在的目录由全局变量BUILD_SCRIPT_ROOT指定
+  local l_title="${gMessagePropertiesMap['global.params.sh.usage.title']}"
+  local l_switches="${gMessagePropertiesMap['global.params.sh.usage.switches']}"
+  local l_clearCachedParam="${gMessagePropertiesMap['global.params.sh.usage.clearCachedParams']}"
+  local l_debugParam="${gMessagePropertiesMap['global.params.sh.usage.debug']}"
+  local l_enableNotifyParam="${gMessagePropertiesMap['global.params.sh.usage.enableNotify']}"
+  local l_forceCoverageParam="${gMessagePropertiesMap['global.params.sh.usage.forceCoverage']}"
+  local l_helpParam="${gMessagePropertiesMap['global.params.sh.usage.help']}"
+  local l_multipleModelParam="${gMessagePropertiesMap['global.params.sh.usage.multipleModel']}"
+  local l_templateParam="${gMessagePropertiesMap['global.params.sh.usage.template']}"
+  local l_removeImageParam="${gMessagePropertiesMap['global.params.sh.usage.version']}"
+
+  local l_optionsParams="${gMessagePropertiesMap['global.params.sh.usage.options']}"
+  local l_archTypesParam="${gMessagePropertiesMap['global.params.sh.usage.archTypes']}"
+  local l_buildTypeParam="${gMessagePropertiesMap['global.params.sh.usage.buildType']}"
+  local l_chartRepoParam="${gMessagePropertiesMap['global.params.sh.usage.chartRepo']}"
+  local l_dockerRepoParam="${gMessagePropertiesMap['global.params.sh.usage.dockerRepo']}"
+  local l_imageCacheDirParam="${gMessagePropertiesMap['global.params.sh.usage.imageCacheDir']}"
+
+  local l_languageParam="${gMessagePropertiesMap['global.params.sh.usage.language']}"
+  local l_localConfigFileParam="${gMessagePropertiesMap['global.params.sh.usage.localConfigFile']}"
+  local l_workModeParam="${gMessagePropertiesMap['global.params.sh.usage.workMode']}"
+  local l_notifyParam="${gMessagePropertiesMap['global.params.sh.usage.notify']}"
+  local l_outArchTypesParam="${gMessagePropertiesMap['global.params.sh.usage.outArchTypes']}"
+  local l_buildPathParam="${gMessagePropertiesMap['global.params.sh.usage.buildPath']}"
+  local l_buildStagesParam="${gMessagePropertiesMap['global.params.sh.usage.buildStages']}"
+  local l_templateStringParam="${gMessagePropertiesMap['global.params.sh.usage.template.string']}"
+  local l_workDirParam="${gMessagePropertiesMap['global.params.sh.usage.workDir']}"
+
+  echo "
+    ${l_title}:
+    [${l_switches}]
+    -c, --clearCachedParams  ${l_clearCachedParams}
+    -d, --debug              ${l_debugParam}
+    -e, --enableNotify       ${l_enableNotifyParam}
+    -f, --forceCoverage      ${l_forceCoverageParam}
+    -h, --help               ${l_helpParam}
+    -m, --multipleModel      ${l_multipleModelParam}
+    -r, --removeImage        ${l_removeImageParam}
+    -t, --template           ${l_templateParam}
+    -v, --version            ${l_versionParam}
+
+    [${l_optionsParams}]
+    -A, --archTypes       string    ${l_archTypesParam}
+    -B, --buildType       string    ${l_buildTypeParam}
+    -C, --chartRepo       string    ${l_chartRepoParam}
+    -D, --dockerRepo      string    ${l_dockerRepoParam}
+    -I, --imageCacheDir   string    ${l_imageCacheDirParam}
+    -L, --language        string    ${l_languageParam}
+        --localConfigFile string    ${l_localConfigFileParam}
+    -M, --workMode        string    ${l_workModeParam}
+    -N, --notify          string    ${l_notifyParam}
+    -O, --outArchTypes    string    ${l_outArchTypesParam}
+    -P, --buildPath       string    ${l_buildPathParam}
+    -S, --buildStages     string    ${l_buildStagesParam}
+    -T, --template        string    ${l_templateStringParam}
+    -W, --workDir         string    ${l_workDirParam}
   "
   exit 0
 }
@@ -230,23 +245,23 @@ function invokeExtendPointFunc() {
   gShellExecuteResult="false"
 
   if type -t "${l_funcName}_ex" > /dev/null; then
-    info "调用公共功能扩展点:${l_funcName}_ex..."
+    info "global.params.sh.invoke.common.extend.point" "${l_funcName}"
     gShellExecuteResult="true"
     # shellcheck disable=SC2068
     "${l_funcName}_ex" "${l_param[@]}"
   else
-    info "未检测到公共功能扩展点:${l_funcName}_ex..."
+    info "global.params.sh.no.common.extend.point" "${l_funcName}"
   fi
 
   #调用语言级功能扩展
   l_funcName1="_${l_funcName}_ex"
   if type -t "${l_funcName1}" > /dev/null; then
-    info "调用${gLanguage}语言级功能扩展点:${l_funcName1}..."
+    info "global.params.sh.invoke.language.extend.point" "${gLanguage}" "${l_funcName1}"
     gShellExecuteResult="true"
     # shellcheck disable=SC2068
     "${l_funcName1}" ${l_param[@]}
   else
-    info "未检测到${gLanguage}语言级功能扩展点:${l_funcName1}..."
+    info "global.params.sh.no.language.extend.point" "${gLanguage}" "${l_funcName1}"
   fi
 
   #如果存在项目级扩展，则调用之
@@ -282,9 +297,9 @@ function executeShellScript() {
     gShellExecuteResult="true"
     # shellcheck disable=SC1090
     source "${l_localScriptFile}" "${l_param[@]}"
-    info "调用项目级功能扩展${l_scriptFile}...成功"
+    info "global.params.sh.invoke.project.extend.point.success" "${l_scriptFile}"
   else
-    info "未发现项目级功能扩展文件：${l_scriptFile}"
+    info "global.params.sh.no.project.extend.point.file" "${l_scriptFile}"
   fi
 }
 
@@ -308,7 +323,7 @@ function parseDockerRepoInfo() {
   # shellcheck disable=SC2206
   l_array=(${l_repoInfo//,/ })
   l_size=${#l_array[@]}
-  [[ "${l_size}" -lt 6 ]] && error "docker仓库配置参数不足：需要六个参数，只配置了${l_size}个参数。"
+  [[ "${l_size}" -lt 6 ]] && error "global.params.sh.docker.repo.config.not.enough" "${l_size}"
 
   gDockerRepoType="${l_array[0]}"
   gDockerRepoInstanceName="${l_array[1]}"
@@ -342,7 +357,7 @@ function parseChartRepoInfo() {
   # shellcheck disable=SC2206
   l_array=(${l_repoInfo//,/ })
   l_size=${#l_array[@]}
-  [[ "${l_size}" -lt 6 ]] && error "chart仓库配置参数不足：需要六个参数，只配置了${l_size}个参数。"
+  [[ "${l_size}" -lt 6 ]] && error "global.params.sh.chart.repo.config.not.enough" "${l_size}"
 
   gChartRepoType="${l_array[0]}"
   gChartRepoInstanceName="${l_array[1]}"
@@ -367,7 +382,7 @@ function loadGlobalParamsFromCacheFile() {
   local l_paramName
   local l_paramValue
 
-  info "从文件中加载缓存的全局参数的值..." "-n"
+  info "global.params.sh.loading.global.params.from.cache" "-n"
 
   #读取文件中全部的有效行。
   l_content=$(awk "NR==1,NR==-1" "${gBuildPath}/${gGlobalParamCacheFileName}" \
@@ -387,7 +402,7 @@ function loadGlobalParamsFromCacheFile() {
     eval "${l_paramName}=\"${l_paramValue}\""
   done
 
-  info "成功" "*"
+  info "global.params.sh.loading.global.params.from.cache.success" "*"
 }
 
 #将全局参数写入文件中
@@ -424,7 +439,7 @@ function loadExtendScriptFileForLanguage() {
 
   #是否存在语言级功能扩展,如果存在则加载之
   if [ -f "${gPipelineScriptsDir}/${gLanguage}/${l_currentStage}-extend-point.sh" ];then
-    info "加载语言级功能扩展文件：${gLanguage}/${l_currentStage}-extend-point.sh"
+    info "global.params.sh.loading.language.extend.file" "${gLanguage}" "${l_currentStage}"
     # shellcheck disable=SC1090
     source "${gPipelineScriptsDir}/${gLanguage}/${l_currentStage}-extend-point.sh"
   fi
@@ -457,7 +472,7 @@ function parseOptions1() {
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
-    error "获取脚本传入参数异常：$?"
+    error "global.params.sh.get.script.params.exception" "$?"
   fi
   eval set -- "${getOpt_cmd}"
 
@@ -496,7 +511,7 @@ function parseOptions1() {
           # shellcheck disable=SC2206
           gArchTypes="${l_param}"
           [[ ! "${gOfflineArchTypes}" ]] && gOfflineArchTypes="${l_param}"
-          debug "从命令行读取的目标架构类型(gArchTypes)参数值为：${gArchTypes}"
+          debug "global.params.sh.arch.types.from.cmd" "${gArchTypes}"
         fi
         shift 2
         ;;
@@ -504,7 +519,7 @@ function parseOptions1() {
         l_param="${2}"
         if [[ "${l_param}" &&  "${l_param}" != "undefine" ]];then
           gBuildType="${l_param}"
-          debug "从命令行读取的构建类型(gBuildType)参数值为: ${gBuildType}"
+          debug "global.params.sh.build.type.from.cmd" "${gBuildType}"
         fi
         shift 2
         ;;
@@ -536,7 +551,7 @@ function parseOptions1() {
         l_param="${2}"
         if [ "${l_param}" ];then
           gCiCdConfigYamlFileName="${l_param}"
-          warn "从命令行读取的本地配置文件(gCiCdConfigYamlFileName)参数值为: ${gCiCdConfigYamlFileName}"
+          warn "global.params.sh.local.config.file.from.cmd" "${gCiCdConfigYamlFileName}"
         fi
         shift 2
         ;;
@@ -555,7 +570,7 @@ function parseOptions1() {
          if [[ "${l_param}" && "${l_param}" != "undefine" ]];then
           # shellcheck disable=SC2206
           gOfflineArchTypes="${l_param}"
-          debug "从命令行读取的离线安装包构建类型(gOfflineArchTypes)参数值为: ${gOfflineArchTypes}"
+          debug "global.params.sh.offline.package.build.type.from.cmd" "${gOfflineArchTypes}"
         fi
         shift 2
         ;;
@@ -584,7 +599,7 @@ function parseOptions1() {
         shift
         break ;;
       *)
-        error "${1} 不是一个有效选项"
+        error "global.params.sh.invalid.option" "${1}"
         ;;
     esac
   done

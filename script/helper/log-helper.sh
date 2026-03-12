@@ -358,6 +358,8 @@ function log() {
 }
 
 function part() {
+  export gMessagePropertiesMap
+
   #需要输出的信息
   local l_info=$1
   #内容输出文件名称
@@ -373,6 +375,13 @@ function part() {
   local l_content
   local l_head
   local l_tail
+  local l_tmpInfo
+
+  #使用国际化资源替换l_info
+  l_tmpInfo="${gMessagePropertiesMap[${l_info}]}"
+  if [ "${l_tmpInfo}" ];then
+    l_info="${l_tmpInfo}"
+  fi
 
   l_lineLen="50"
   #得到l_info的显示长度
