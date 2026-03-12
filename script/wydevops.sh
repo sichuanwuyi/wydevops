@@ -57,6 +57,7 @@ partLog "wydevops.sh.part1.init.global.params"
 
 info "ddddd-----" "" "-n"
 warn "sss" "*"
+exit 1
 
 info "wydevops.sh.first.parse.options"
 #读取Jenkins环境变量BUILD_SCRIPT_ROOT。
