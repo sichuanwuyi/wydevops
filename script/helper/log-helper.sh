@@ -307,7 +307,6 @@ function warn() {
 #      如果gDebugMode==true,则默认设置输出文件名称为debug.txt，并把调试信息追加写入到输出文件中。
 #   如果设置了输出文件名称，则将调试信息追加写入输出文件中。
 function log() {
-  export gMessagePropertiesMap
   #引用全局变量
   export gDebugMode
 
