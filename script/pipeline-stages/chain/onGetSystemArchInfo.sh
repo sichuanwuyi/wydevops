@@ -16,28 +16,29 @@ function onGetSystemArchInfo_ubuntu() {
 
   #先判断是否是linux系统
   if [ "${l_ip}" ];then
+    #使用*.pem文件登录，例如登录AWS EC2服务器
     if [[ "${l_password}" =~ ^(.*).pem$ ]];then
-      info "执行命令: ssh -i \"${l_password}\" -p ${l_port} ${l_account}@${l_ip} uname -sm"
+      info "on.get.system.arch.info.executing.command.with.pem.file" "${l_password}#${l_port}#${l_account}#${l_ip}"
       #登录AWS EC2服务器后执行uname -sm命令
       l_result=$(ssh -i "${l_password}" -p "${l_port}" "${l_account}@${l_ip}" "uname -sm")
     else
-      info "执行命令: ssh -o \"StrictHostKeyChecking no\" -p ${l_port} ${l_account}@${l_ip} uname -sm"
+      info "on.get.system.arch.info.executing.command" "${l_port}#${l_account}#${l_ip}"
       #3秒超时
       l_result=$(ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "uname -sm")
     fi
   else
-    info "执行命令: uname -sm"
+    info "on.get.system.arch.info.executing.local.command" ""
     #本地执行uname命令
     l_result=$(uname -sm)
   fi
   if [ ! "${l_result}" ];then
-    error "SSH连接${l_ip}服务失败, 请确保SSH服务已开启。"
+    error "on.get.system.arch.info.ssh.connection.failed" "${l_ip}"
   fi
-  info "返回结果：${l_result}"
+  info "on.get.system.arch.info.command.result" "${l_result}"
 
   #连接被拒绝或超时
   l_errorLog=$(grep -io "(refused|timed[ ]*out)" <<< "${l_result}")
-  [[ "${l_errorLog}" ]] && error "SSH连接${l_ip}服务失败：\n${l_result}"
+  [[ "${l_errorLog}" ]] && error "on.get.system.arch.info.ssh.connection.failed.with.reason" "${l_ip}#${l_result}"
 
   #uname命令不存在，肯定不是linux系统，直接返回。
   l_errorLog=$(grep -io "not[ ]*found" <<< "${l_result}")

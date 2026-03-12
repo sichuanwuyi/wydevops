@@ -78,7 +78,7 @@ function onDockerLogin_aws-ecr() {
   l_arrayLen=${#l_array[@]}
 
   if [ "${l_arrayLen}" -lt 3 ];then
-    error "错误：aws-ecr仓库地址格式错误，必须包含区域信息，例如：749059848629.dkr.ecr.us-east-2.amazonaws.com, 其中区域信息为us-east-2"
+    error "on.docker.login.aws.ecr.repo.address.format.error" ""
   fi
 
   l_region="${l_array[${l_arrayLen}-3]}"
@@ -86,7 +86,7 @@ function onDockerLogin_aws-ecr() {
   info "aws ecr get-login-password --region ${l_region} | docker login --username ${l_repoAccount} --password-stdin ${l_repoHostAndPort}"
   aws ecr get-login-password --region "${l_region}" | docker login --username "${l_repoAccount}" --password-stdin "${l_repoHostAndPort}"
   if [ $? -ne 0 ];then
-    error "aws-ecr类型的镜像仓库登录失败，请确保已安装了aws-cli工具"
+    error "on.docker.login.aws.ecr.login.failed" ""
     return
   fi
 

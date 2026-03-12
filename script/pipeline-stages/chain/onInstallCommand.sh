@@ -10,7 +10,7 @@ function onInstallCommand_windows() {
 
   gDefaultRetVal="false"
   if command -v winget >/dev/null 2>&1; then
-    info "-------windows系统下安装${l_command}命令--------"
+    info "on.install.command.installing.on.windows" "${l_command}"
 
     if command -v "${l_command}" >/dev/null 2>&1; then
         gDefaultRetVal="true"
@@ -27,7 +27,7 @@ function onInstallCommand_ubuntu() {
 
   gDefaultRetVal="false"
   if command -v apt &>/dev/null; then
-    info "-------ubuntu系统下安装${l_command}命令--------"
+    info "on.install.command.installing.on.ubuntu" "${l_command}"
 
     sudo apt install -y "${l_command}" 2>&1
 
@@ -41,7 +41,7 @@ function onInstallCommand_ubuntu() {
 function onInstallCommand_centos() {
   export gDefaultRetVal
   local l_command=$1
-  info "-------centos系统下安装${l_command}命令--------"
+  info "on.install.command.installing.on.centos" "${l_command}"
   gDefaultRetVal="false"
 
   gDefaultRetVal="true|${gDefaultRetVal}"

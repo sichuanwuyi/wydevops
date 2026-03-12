@@ -58,14 +58,15 @@ function onBeforePushChartImage_nexus() {
   local l_repoHostAndPort=$4
   local l_repoInstanceName=$5
 
-  info "在${l_chartRepoType}类型的chart仓库中查找现存的${l_imageName}(${l_imageVersion})镜像..."
+  info "on.before.push.chart.image.finding.existing.image.in.nexus" "${l_chartRepoType}#${l_imageName}#${l_imageVersion}" "-n"
   queryNexusComponentId "${l_repoHostAndPort%%:*}" "${l_repoHostAndPort##*:}" "${l_repoInstanceName}" "${l_imageName}" "${l_imageVersion}"
   if [ "${gDefaultRetVal}" ];then
-    info "找到了目标镜像，开始清除..."
+    info "on.before.push.chart.image.target.image.exist" "" "*"
+    info "on.before.push.chart.image.target.image.found.start.clearing" "" "-n"
     deleteNexusComponentById "${l_repoHostAndPort%%:*}" "${l_repoHostAndPort##*:}" "${gDefaultRetVal}"
-    info "目标镜像清除成功"
+    info "on.before.push.chart.image.target.image.cleared.successfully" "" "*"
   else
-    warn "目标镜像不存在"
+    warn "on.before.push.chart.image.target.image.not.found" "" "*"
   fi
 
   gDefaultRetVal="true|true"

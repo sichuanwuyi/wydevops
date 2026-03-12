@@ -16,7 +16,7 @@ function onGenerateDockerComposeYamlFile_default() {
 
   if [ "${l_generatorFile##*/}" != "docker-compose.yaml" ];then
     if [[ "${l_buildType}" == "thirdParty" || "${l_buildType]}" == "customize" ]];then
-      error "gBuildType参数为thirdParty或customize时，不支持自动生成docker-compose.yaml文件。\n请自行编写docker-compose.yaml文件，并将其配置给package[${l_index}].docker.dockerComposeYamlGenerator参数"
+      error "on.generate.docker.compose.yaml.file.not.supported" "${l_index}"
     fi
     #在gBuildPath目录下生成docker-compose.yaml文件。
     # shellcheck disable=SC1090

@@ -41,24 +41,25 @@ function onBeforePushDockerImage_harbor() {
   # shellcheck disable=SC2068
   for l_versionItem in ${l_versionList[@]};do
 
-    info "在${l_dockerRepoType}类型的docker仓库中查找现存的${l_imageName}:${l_versionItem}镜像..."
+    info "on.before.push.docker.image.finding.existing.image" "${l_dockerRepoType}#${l_imageName}#${l_versionItem}" "-n"
     existRepositoryInHarborProject "${l_dockerRepoHostAndPort}" "${l_dockerRepoInstanceName}" "${l_imageName}" "${l_versionItem}"
     if [ "${gDefaultRetVal}" == "true" ];then
+      info "on.before.push.docker.image.target.image.exist" "" "*"
       if [ "${l_forceCoverage}" == "true" ];then
-        info "目标镜像存在，且当前是强制覆盖模式，则开始清除仓库中现有版本..."
+        info "on.before.push.docker.image.target.image.exists.force.coverage.clearing" "" "-n"
         deleteRepositoryInHarborProject "${l_dockerRepoHostAndPort}" "${l_dockerRepoInstanceName}" "${l_imageName}" "${l_versionItem}" \
           "${l_dockerRepoAccount}" "${l_dockerRepoPassword}"
-        info "目标镜像清除成功"
-        #返回: 否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
+        info "on.before.push.docker.image.target.image.cleared.successfully" "" "*"
+        #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
         [[ ! "${l_result}" ]] && l_result="true|true|true"
       else
-        warn "目标镜像存在，且当前不是强制覆盖模式，则跳过仓库中现有版本的清除过程"
-        #返回: 否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
+        warn "on.before.push.docker.image.target.image.exists.not.force.coverage.skipping" ""
+        #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
         [[ ! "${l_result}" ]] && l_result="true|true|false"
       fi
     else
-      warn "仓库中目标镜像不存在"
-      #返回: 否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
+      warn "on.before.push.docker.image.target.image.not.found" "" "*"
+      #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
       [[ ! "${l_result}" ]] && l_result="true|false|false"
     fi
   done
@@ -104,22 +105,23 @@ function onBeforePushDockerImage_nexus() {
   l_result=""
   # shellcheck disable=SC2068
   for l_versionItem in ${l_versionList[@]};do
-    info "在${l_dockerRepoType}类型的docker仓库中查找现存的${l_imageName}:${l_versionItem}镜像..."
+    info "on.before.push.docker.image.finding.existing.image" "${l_dockerRepoType}#${l_imageName}#${l_versionItem}" "-n"
     queryNexusComponentId "${l_dockerRepoName%%:*}" "${l_dockerRepoWebPort}" "${l_dockerRepoInstanceName}" "${l_imageName}" "${l_versionItem}"
     if [ "${gDefaultRetVal}" ];then
+      info "on.before.push.docker.image.target.image.exist" "" "*"
       if [ "${l_forceCoverage}" == "true" ];then
-        info "目标镜像存在，且当前是强制覆盖模式，则开始清除仓库中现有版本..."
+        info "on.before.push.docker.image.target.image.exists.force.coverage.clearing" "" "-n"
         deleteNexusComponentById "${l_dockerRepoName%%:*}" "${l_dockerRepoWebPort}" "${gDefaultRetVal}"
-        info "目标镜像清除成功"
-        #返回: 否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
+        info "on.before.push.docker.image.target.image.cleared.successfully" "" "*"
+        #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
         [[ ! "${l_result}" ]] && l_result="true|true|true"
       else
-        warn "目标镜像存在，且当前不是强制覆盖模式，则跳过仓库中现有版本的清除过程"
-        #返回: 否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
+        warn "on.before.push.docker.image.target.image.exists.not.force.coverage.skipping" ""
+        #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
         [[ ! "${l_result}" ]] && l_result="true|true|false"
       fi
     else
-      warn "仓库中目标镜像不存在"
+      warn "on.before.push.docker.image.target.image.not.found" "" "*"
       #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
       [[ ! "${l_result}" ]] && l_result="true|false|false"
     fi
@@ -168,25 +170,25 @@ function onBeforePushDockerImage_registry() {
   l_result=""
   # shellcheck disable=SC2068
   for l_versionItem in ${l_versionList[@]};do
-
-    info "在${l_dockerRepoType}类型的docker仓库中查找现存的${l_imageName}:${l_versionItem}镜像..."
+    info "on.before.push.docker.image.finding.existing.image" "${l_dockerRepoType}#${l_imageName}#${l_versionItem}" "-n"
     queryDigestCodeOfImage "${l_dockerRepoHostAndPort}" "${l_dockerPath}" "${l_imageName}" "${l_versionItem}"
     if [ "${gDefaultRetVal}" ];then
+      info "on.before.push.docker.image.target.image.exist" "" "*"
       if [ "${l_forceCoverage}" == "true" ];then
-        info "目标镜像存在，且当前是强制覆盖模式，则开始清除仓库中现有版本..."
+        info "on.before.push.docker.image.target.image.exists.force.coverage.clearing" "" "-n"
         deleteImageByDigestCode "${l_dockerRepoHostAndPort}" "${l_dockerPath}" "${l_imageName}" "${l_versionItem}" \
           "${l_dockerRepoAccount}" "${l_dockerRepoPassword}" "${gDefaultRetVal}"
-        info "目标镜像清除成功"
-        #返回: 否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
+        info "on.before.push.docker.image.target.image.cleared.successfully" "" "*"
+        #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
         [[ ! "${l_result}" ]] && l_result="true|true|true"
       else
-        warn "目标镜像存在，且当前不是强制覆盖模式，则跳过仓库中现有版本的清除过程"
-        #返回: 否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
+        warn "on.before.push.docker.image.target.image.exists.not.force.coverage.skipping" ""
+        #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
         [[ ! "${l_result}" ]] && l_result="true|true|false"
       fi
     else
-      warn "仓库中目标镜像不存在"
-      #返回: 否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
+      warn "on.before.push.docker.image.target.image.not.found" "" "*"
+      #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
       [[ ! "${l_result}" ]] && l_result="true|false|false"
     fi
   done

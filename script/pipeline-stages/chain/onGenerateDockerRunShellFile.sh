@@ -17,9 +17,9 @@ function onGenerateDockerRunShellFile_default() {
 
   if [ "${l_generatorFile##*/}" != "docker-run.sh" ];then
     if [[ "${l_buildType}" == "thirdParty" || "${l_buildType}" == "customize" ]];then
-      error "gBuildType参数为thirdParty或customize时，不支持自动生成docker-run.sh文件。\n请自行编写docker-run.sh文件，并将其配置给package[${l_index}].docker.dockerRunShellGenerator参数"
+      error "on.generate.docker.run.shell.file.not.supported" "${l_index}"
     fi
-    info "调用${l_generatorFile##*/}脚本，在项目主模块目录下生成docker-run.sh文件 ..."
+    info "on.generate.docker.run.shell.file.generating" "${l_generatorFile##*/}"
     #删除传入的前两个参数
     local l_params=("${@}")
     # shellcheck disable=SC2184
