@@ -257,12 +257,12 @@ function invokeExtendPointFunc() {
   #调用语言级功能扩展
   l_funcName1="_${l_funcName}_ex"
   if type -t "${l_funcName1}" > /dev/null; then
-    info "global.params.sh.invoke.language.extend.point" "${gLanguage}" "${l_funcName1}"
+    info "global.params.sh.invoke.language.extend.point" "${gLanguage}#${l_funcName1}"
     gShellExecuteResult="true"
     # shellcheck disable=SC2068
     "${l_funcName1}" ${l_param[@]}
   else
-    info "global.params.sh.no.language.extend.point" "${gLanguage}" "${l_funcName1}"
+    info "global.params.sh.no.language.extend.point" "${gLanguage}#${l_funcName1}"
   fi
 
   #如果存在项目级扩展，则调用之
@@ -383,7 +383,7 @@ function loadGlobalParamsFromCacheFile() {
   local l_paramName
   local l_paramValue
 
-  info "global.params.sh.loading.global.params.from.cache" "-n"
+  info "global.params.sh.loading.global.params.from.cache" "" "-n"
 
   #读取文件中全部的有效行。
   l_content=$(awk "NR==1,NR==-1" "${gBuildPath}/${gGlobalParamCacheFileName}" \
@@ -403,7 +403,7 @@ function loadGlobalParamsFromCacheFile() {
     eval "${l_paramName}=\"${l_paramValue}\""
   done
 
-  info "global.params.sh.loading.global.params.from.cache.success" "*"
+  info "global.params.sh.loading.global.params.from.cache.success" "" "*"
 }
 
 #将全局参数写入文件中
@@ -440,7 +440,7 @@ function loadExtendScriptFileForLanguage() {
 
   #是否存在语言级功能扩展,如果存在则加载之
   if [ -f "${gPipelineScriptsDir}/${gLanguage}/${l_currentStage}-extend-point.sh" ];then
-    info "global.params.sh.loading.language.extend.file" "${gLanguage}" "${l_currentStage}"
+    info "global.params.sh.loading.language.extend.file" "${gLanguage}#${l_currentStage}"
     # shellcheck disable=SC1090
     source "${gPipelineScriptsDir}/${gLanguage}/${l_currentStage}-extend-point.sh"
   fi
@@ -768,7 +768,7 @@ function getParamValueInJsonConfigFile() {
       #如果参数值为空，则判断是否需要强行用默认值替换。
       else
         if [ "${l_insertOnNotExist}" == "true" ];then
-          warn "检测到项目配置文件中${l_paramName}参数的值为空，强制更新为默认值：${l_defaultValue}"
+          warn "global.params.sh.param.value.is.empty" "${l_paramName}#${l_defaultValue}"
           #替换l_rowNumber行的内容。
           sed -i "${l_rowNumber}c\\${l_rowContent%%:*}: '${l_defaultValue}'," "${l_configFile}"
         fi
@@ -777,7 +777,7 @@ function getParamValueInJsonConfigFile() {
     #如果参数值为空，则判断是否需要强行插入默认值。
     else
       if [ "${l_insertOnNotExist}" == "true" ];then
-        warn "检测到项目配置文件中不存在${l_paramName}参数，强制插入该参数并设置默认值为：${l_defaultValue}"
+        warn "global.params.sh.param.not.exists" "${l_paramName}#${l_defaultValue}"
         #在l_rowNumber行的下一行插入参数。
         sed -i "${l_rowNumber}a\\    ${l_paramName}: '${l_defaultValue}'," "${l_configFile}"
       fi

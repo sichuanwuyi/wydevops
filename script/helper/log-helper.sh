@@ -10,10 +10,12 @@
 function partLog() {
   #需要输出的信息
   local l_info=$1
+  #l_info中的占位符参数值
+  local l_infoParams=$2
   #内容输出文件名称
-  local l_outFileName=$2
+  local l_outFileName=$3
 
-  part "${l_info}" "${l_outFileName}" "32"
+  part "${l_info}" "${l_infoParams}" "${l_outFileName}" "32"
 }
 
 #扩展点日志
@@ -22,14 +24,16 @@ function extendLog() {
 
   #需要输出的信息
   local l_info=$1
+  #l_info中的占位符参数值
+  local l_infoParams=$2
   #内容输出文件名称
-  local l_outFileName=$2
+  local l_outFileName=$3
 
   local l_start
   local l_end
 
   #使用国际化资源替换l_info
-  convertI18NText "${l_info}"
+  convertI18NText "${l_info}" "${l_infoParams}"
   l_info="${gDefaultRetVal}"
 
   if [ "${gWorkMode}" == "local" ];then
@@ -47,17 +51,19 @@ function info() {
 
   #需要输出的信息
   local l_info=$1
+  #l_info中的占位符参数值
+  local l_infoParams=$2
   #echo语句的可选项。
-  local l_options=$2
+  local l_options=$3
   #内容输出文件名称
-  local l_outFileName=$3
+  local l_outFileName=$4
 
   local l_start
   local l_end
   local l_infoPrefix
 
   #使用国际化资源替换l_info
-  convertI18NText "${l_info}"
+  convertI18NText "${l_info}" "${l_infoParams}"
   l_info="${gDefaultRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.info"]}"
@@ -85,10 +91,12 @@ function error() {
 
   #需要输出的信息
   local l_info=$1
+  #l_info中的占位符参数值
+  local l_infoParams=$2
   #echo语句的可选项。
-  local l_options=$2
+  local l_options=$3
   #内容输出文件名称
-  local l_outFileName=$3
+  local l_outFileName=$4
 
   local l_tempFile
 
@@ -97,7 +105,7 @@ function error() {
   local l_infoPrefix
 
   #使用国际化资源替换l_info
-  convertI18NText "${l_info}"
+  convertI18NText "${l_info}" "${l_infoParams}"
   l_info="${gDefaultRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.error"]}"
@@ -174,17 +182,19 @@ function debug() {
 
   #需要输出的信息
   local l_info=$1
+  #l_info中的占位符参数值
+  local l_infoParams=$2
   #echo语句的可选项。
-  local l_options=$2
+  local l_options=$3
   #内容输出文件名称
-  local l_outFileName=$3
+  local l_outFileName=$4
 
   local l_start
   local l_end
   local l_infoPrefix
 
   #使用国际化资源替换l_info
-  convertI18NText "${l_info}"
+  convertI18NText "${l_info}" "${l_infoParams}"
   l_info="${gDefaultRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.debug"]}"
@@ -211,17 +221,19 @@ function warn() {
 
   #需要输出的信息
   local l_info=$1
+  #l_info中的占位符参数值
+  local l_infoParams=$2
   #echo语句的可选项。
-  local l_options=$2
+  local l_options=$3
   #内容输出文件名称
-  local l_outFileName=$3
+  local l_outFileName=$4
 
   local l_start
   local l_end
   local l_infoPrefix
 
   #使用国际化资源替换l_info
-  convertI18NText "${l_info}"
+  convertI18NText "${l_info}" "${l_infoParams}"
   l_info="${gDefaultRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.warn"]}"
@@ -305,10 +317,12 @@ function part() {
 
   #需要输出的信息
   local l_info=$1
+  #l_info中的占位符参数值
+  local l_infoParams=$2
   #内容输出文件名称
-  local l_outFileName=$2
+  local l_outFileName=$3
   #字体的颜色
-  local l_color=$3
+  local l_color=$4
 
   local l_lineLen
   local l_infoLen
@@ -320,7 +334,7 @@ function part() {
   local l_tail
 
   #使用国际化资源替换l_info
-  convertI18NText "${l_info}"
+  convertI18NText "${l_info}" "${l_infoParams}"
   l_info="${gDefaultRetVal}"
 
   l_lineLen="50"
@@ -361,22 +375,13 @@ function convertI18NText(){
   export gDefaultRetVal
 
   local l_message=$1
-  shift 1 #丢弃第一个参数
+  local l_msgParams=$2
 
-  local l_index=0
+  local l_index
   local l_param_val
-  local -a params=("$@")
-  local l_param_count=${#params[@]}
   local l_tmpInfo
-
-  if [ "$l_param_count" -gt 0 ]; then
-    local l_last_index=$((l_param_count - 1))
-    local l_last_param="${params[$l_last_index]}"
-    if [[ "${l_last_param}" == "-n" || "${l_last_param}" == "*" ]]; then
-     # shellcheck disable=SC2184
-     unset params[$l_last_index]
-    fi
-  fi
+  local l_params
+  local l_param_count
 
   #使用国际化资源替换l_info
   l_tmpInfo="${gMessagePropertiesMap[${l_message}]}"
@@ -384,15 +389,23 @@ function convertI18NText(){
     l_message="${l_tmpInfo}"
   fi
 
-  l_param_count=${#params[@]}
-  if [ "$l_param_count" -gt 0 ]; then
-    # 循环遍历剩下的参数
-    for l_param_val in "${params[@]}"; do
-      # 将 {index} 替换为实际的参数值
-      # shellcheck disable=SC1083
-      l_message=${l_message//\\{$l_index\\}/$l_param_val}
-      ((l_index++))
-    done
+  if [ "${l_msgParams}" ];then
+    #将l_options参数中的#替换为空格，然后转换为数组。
+    l_params=("${l_msgParams//#/ }")
+    l_param_count=${#l_params[@]}
+    l_index=0
+    if [ "$l_param_count" -gt 0 ]; then
+      # 循环遍历剩下的参数
+      for l_param_val in "${l_params[@]}"; do
+        if [[ "$l_message" != *"{${l_index}}"* ]]; then
+          break
+        fi
+        # 将 {index} 替换为实际的参数值
+        # shellcheck disable=SC1083
+        l_message="${l_message//\{$l_index\}/$l_param_val}"
+        ((l_index++))
+      done
+    fi
   fi
 
   gDefaultRetVal="${l_message}"

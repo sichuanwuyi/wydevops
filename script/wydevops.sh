@@ -18,18 +18,18 @@ source "${_selfRootDir}/helper/map-loader.sh"
 #3.引入全局变量及其默认值定义文件。
 source "${_selfRootDir}/global-params.sh"
 
-info "wydevops.sh.detecting.helm" "-n"
+info "wydevops.sh.detecting.helm" "" "-n"
 if command -v helm &> /dev/null; then
-  info "wydevops.sh.helm.installed" "*"
+  info "wydevops.sh.helm.installed" "" "*"
 elif [[ ! "${PATH}" =~ ^(.*)(:${HOME}/helm)(:|$) ]];then
-  info "wydevops.sh.helm.not.installed" "*"
+  info "wydevops.sh.helm.not.installed" "" "*"
   warn "wydevops.sh.helm.install.later" "${HOME}"
   export PATH=${PATH}:${HOME}/helm
   info "wydevops.sh.reloading.script"
   #shellcheck disable=SC1090
   source "$0"
 else
-  info "wydevops.sh.helm.auto.install.later" "*"
+  info "wydevops.sh.helm.auto.install.later" "" "*"
 fi
 
 # 临时文件注册表, error方法中要负责清除这些文件。

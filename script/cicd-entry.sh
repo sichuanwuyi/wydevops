@@ -27,13 +27,13 @@ function standardCICD(){
     #如果来自配置文件中参数validBuildStages的值为空，或其值包含l_stage，则：
     if [[ ! "${gValidBuildStages}" || "${gValidBuildStages}" =~ ^(.*)${l_stage}.*$ ]];then
 
-      info "cicd.entry.sh.try.language.script" "${gLanguage}" "${l_stage}"
+      info "cicd.entry.sh.try.language.script" "${gLanguage}#${l_stage}"
       l_targetScript="${gPipelineScriptsDir}/${gLanguage}/${l_stage}.sh"
       if [ ! -f "${l_targetScript}" ];then
-        info "cicd.entry.sh.language.script.not.exists" "${gLanguage}" "${l_stage}"
+        info "cicd.entry.sh.language.script.not.exists" "${gLanguage}#${l_stage}"
         l_targetScript="${gPipelineScriptsDir}/${l_stage}.sh"
       else
-        info "cicd.entry.sh.language.script.found" "${gLanguage}" "${l_stage}"
+        info "cicd.entry.sh.language.script.found" "${gLanguage}#${l_stage}"
       fi
 
       #更新当前构建阶段参数
