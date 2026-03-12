@@ -394,7 +394,8 @@ function convertI18NText(){
   if [ "${l_msgParams}" ];then
     echo "-----l_msgParams=|${l_msgParams}|--------"
     #将l_options参数中的#替换为空格，然后转换为数组。
-    l_params=("${l_msgParams//#/ }")
+    # shellcheck disable=SC2206
+    l_params=(${l_msgParams//#/ })
     echo "-----l_params=|${l_params}|--------"
     l_param_count=${#l_params[@]}
     echo "-----l_param_count=|${l_param_count}|--------"
