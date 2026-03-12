@@ -392,13 +392,10 @@ function convertI18NText(){
   fi
 
   if [ "${l_msgParams}" ];then
-    echo "-----l_msgParams=|${l_msgParams}|--------"
     #将l_options参数中的#替换为空格，然后转换为数组。
     # shellcheck disable=SC2206
     l_params=(${l_msgParams//#/ })
-    echo "-----l_params=|${l_params}|--------"
     l_param_count=${#l_params[@]}
-    echo "-----l_param_count=|${l_param_count}|--------"
     l_index=0
     if [ "$l_param_count" -gt 0 ]; then
       # 循环遍历剩下的参数
