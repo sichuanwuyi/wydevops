@@ -19,24 +19,24 @@ function readDockerDeployParam() {
     readParam "${gCiCdYamlFile}" "deploy[${l_index}].docker.${l_configParamName}"
     l_shellFile="${gDefaultRetVal}"
     if [[ ! "${l_shellFile}" ]];then
-      warn "${gCiCdYamlFile##*/}文件中deploy[${l_index}].docker.${l_configParamName}参数配置无效：未设置"
+      warn "docker.deploy.param.reader.config.invalid.not.set" "${gCiCdYamlFile##*/}#${l_index}#${l_configParamName}"
       l_shellFile=""
     else
       [[ "${l_shellFile}" =~ ^(\./) ]] && l_shellFile="${gBuildPath}/${l_shellFile:2}"
       if [[ ! -f "${l_shellFile}" ]];then
-        warn "${gCiCdYamlFile##*/}文件中deploy[${l_index}].docker.${l_configParamName}参数配置无效：指定的文件不存在"
+        warn "docker.deploy.param.reader.config.invalid.not.exist" "${gCiCdYamlFile##*/}#${l_index}#${l_configParamName}"
         l_shellFile=""
       fi
     fi
 
     if [ ! "${l_shellFile}" ];then
-      info "继续检查${gBuildPath}目录下是否存在docker-run.sh文件 ..."
+      info "docker.deploy.param.reader.checking.docker.run.sh" "${gBuildPath}"
       l_shellFile="${gBuildPath}/${l_targetScriptFileDefaultName}"
       if [[ ! -f "${l_shellFile}" ]];then
-        warn "${gCiCdYamlFile##*/}文件中deploy[${l_index}].docker.${l_configParamName}参数配置无效：未设置"
+        warn "docker.deploy.param.reader.config.invalid.not.set" "${gCiCdYamlFile##*/}#${l_index}#${l_configParamName}"
         l_shellFile=""
       else
-        info "${gBuildPath}目录下检测到docker-run.sh文件"
+        info "docker.deploy.param.reader.docker.run.sh.found" "${gBuildPath}"
       fi
     fi
   fi
@@ -45,19 +45,19 @@ function readDockerDeployParam() {
     #如果不存在，则读取语言级\${l_targetScriptFileDefaultName}生成脚本。
     l_shellFile="${gBuildScriptRootDir}/templates/deploy/${gLanguage}/${l_targetScriptFileDefaultName}"
     if [[ ! "${l_shellFile}" || ! -f "${l_shellFile}" ]];then
-      warn "${gLanguage}语言级${l_targetScriptFileDefaultName}文件配置无效：未设置"
+      warn "docker.deploy.param.reader.language.level.config.invalid" "${gLanguage}#${l_targetScriptFileDefaultName}"
       #如果仍不存在，则读取公共docker-run.sh生成脚本。
       l_shellFile="${gBuildScriptRootDir}/templates/deploy/${l_targetScriptFileDefaultName}"
       if [[ ! "${l_shellFile}" || ! -f "${l_shellFile}" ]];then
-        error "${gBuildScriptRootDir}/shell目录下缺少公共的${l_targetScriptFileDefaultName}文件"
+        error "docker.deploy.param.reader.common.file.missing" "${gBuildScriptRootDir}#${l_targetScriptFileDefaultName}"
       else
-        info "检测到公共的${l_targetScriptFileDefaultName}文件"
+        info "docker.deploy.param.reader.common.file.found" "${l_targetScriptFileDefaultName}"
       fi
     else
-      info "检测到${gLanguage}语言级${l_targetScriptFileDefaultName}文件"
+      info "docker.deploy.param.reader.language.level.file.found" "${gLanguage}#${l_targetScriptFileDefaultName}"
     fi
   else
-    info "检测到项目级${l_targetScriptFileDefaultName}文件"
+    info "docker.deploy.param.reader.project.level.file.found" "${l_targetScriptFileDefaultName}"
   fi
 
   gDefaultRetVal="${l_shellFile}"

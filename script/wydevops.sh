@@ -55,6 +55,9 @@ parseOptions1 "${@}"
 
 partLog "wydevops.sh.part1.init.global.params"
 
+info "ddddd-----" "" "-n"
+warn "sss" "*"
+
 info "wydevops.sh.first.parse.options"
 #读取Jenkins环境变量BUILD_SCRIPT_ROOT。
 [[ ! "${gBuildScriptRootDir}" ]] && gBuildScriptRootDir="${BUILD_SCRIPT_ROOT}"

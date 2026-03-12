@@ -451,6 +451,7 @@ function loadMessageProperties(){
     l_language="${gLanguageInLog}"
   else
     l_language="zh"
+    gLanguageInLog="${l_language}"
   fi
 
   local l_file_path="${_selfRootDir}/i18n/message_${l_language}.properties"

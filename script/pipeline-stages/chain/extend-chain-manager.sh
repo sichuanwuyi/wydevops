@@ -39,7 +39,7 @@ function invokeExtendChain() {
         # shellcheck disable=SC1090
         source "${l_shellFile}"
         if ! type -t "${l_funcName}" > /dev/null; then
-          error "调用链${l_chainName}异常:${l_shellFile}脚本文件中不存在${l_funcName}方法"
+          error "extend.chain.manager.chain.exception" "${l_chainName}#${l_shellFile}#${l_funcName}"
         fi
       fi
       #依次调用调用链上的方法，直至返回”true“为止。
@@ -58,7 +58,7 @@ function invokeExtendChain() {
   #如果gDefaultRetVal已false开头，则说明没有找到匹配的方法处理传入的参数。
   #直接报错退出。
   if [[ "${gDefaultRetVal}" =~ ^(false\|) ]];then
-    error "调用链${l_chainName}执行失败：未找到与传入参数匹配的方法"
+    error "extend.chain.manager.chain.execution.failed" "${l_chainName}"
   fi
 
   gDefaultRetVal="${gDefaultRetVal#*|}"
@@ -136,7 +136,7 @@ function loadExtendChain() {
     done
 
     #注册调用链。
-    info "注册${l_chainName}调用链:${l_shellFile##*/}|${l_funcNameStr:1}"
+    info "extend.chain.manager.registering.chain" "${l_chainName}#${l_shellFile##*/}#${l_funcNameStr:1}"
     registerChain "${l_chainName}" "${l_shellFile}|${l_funcNameStr:1}"
     # shellcheck disable=SC1090
     source "${l_shellFile}"
