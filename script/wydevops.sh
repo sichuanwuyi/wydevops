@@ -56,7 +56,7 @@ parseOptions1 "${@}"
 partLog "wydevops.sh.part1.init.global.params"
 
 info "ddddd-----" "" "-n"
-warn "sss" "*"
+warn "sss" "" "*"
 exit 1
 
 info "wydevops.sh.first.parse.options"
