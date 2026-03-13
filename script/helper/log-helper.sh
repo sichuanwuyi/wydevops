@@ -384,7 +384,6 @@ function convertI18NText(){
   local l_param_count
 
   #使用国际化资源替换l_info
-  echo "-------------l_message=|${l_message}|----------------"
   l_tmpInfo="${gMessagePropertiesMap[${l_message}]}"
   if [ "${l_tmpInfo}" ];then
     l_message="${l_tmpInfo}"
