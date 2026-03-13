@@ -27,7 +27,7 @@ function initialGlobalParamsForBuildStage_ex() {
         readParam "${gCiCdYamlFile}" "${l_paramName}"
         l_content="${gDefaultRetVal}"
         gBuildStageParamMap["${l_subParamName^}_${l_archType}"]="${l_content}"
-        debug "设置${l_subParamName^}_${l_archType}=${l_content}"
+        debug "common.build.extend.point.setting.param" "${l_subParamName^}_${l_archType}#${l_content}"
       done
     done
   fi
@@ -42,8 +42,10 @@ function initialGlobalParamsForBuildStage_ex() {
 function buildProject_ex() {
   export gCurrentStageResult
   export gServiceName
+  export gDefaultRetVal
 
-  gCurrentStageResult="INFO|项目${gServiceName}编译成功"
+  convertI18NText "common.build.extend.point.build.success" "${gServiceName}"
+  gCurrentStageResult="INFO|${gDefaultRetVal}"
 }
 
 #加载build阶段脚本库文件

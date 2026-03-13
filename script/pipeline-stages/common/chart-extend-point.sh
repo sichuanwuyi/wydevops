@@ -25,20 +25,22 @@ function onBeforeInitialingGlobalParamsForChartStage_ex() {
     #检查当前操作系统类型
     invokeExtendChain "onGetSystemArchInfo"
     # shellcheck disable=SC2015
-    [[ "${gDefaultRetVal}" == "false" ]] && error "读取本地系统架构信息失败" || info "读取到当前系统架构为:${gDefaultRetVal}"
+    [[ "${gDefaultRetVal}" == "false" ]] \
+      && error "common.chart.extend.point.read.local.system.arch.info.failed" \
+      || info "common.chart.extend.point.read.local.system.arch.info.success" "${gDefaultRetVal}"
     #将生成的Chart镜像推送到gChartRepoName仓库中。
-    invokeExtendPointFunc "installHelm" "在本地系统中安装helm工具" "${gDefaultRetVal%%/*}" "${gDefaultRetVal#*/}"
+    invokeExtendPointFunc "installHelm" "common.chart.extend.point.installing.helm" "" "${gDefaultRetVal%%/*}" "${gDefaultRetVal#*/}"
   fi
 
   if [ "${gChartRepoInstanceName}" ];then
-    l_info="在本地系统中注册helm仓库"
-    [[ "${gChartRepoType}" == "harbor" ]] && l_info="登录harbor仓库"
-    invokeExtendPointFunc "addHelmRepo" "${l_info}"
+    l_info="common.chart.extend.point.registering.helm.repo"
+    [[ "${gChartRepoType}" == "harbor" ]] && l_info="common.chart.extend.point.logging.into.harbor"
+    invokeExtendPointFunc "addHelmRepo" "${l_info}" ""
   fi
 
   if [[ "${gBuildType}" == "single" || "${gBuildType}" == "thirdParty" ]];then
     #制作单镜像时，对ci-cd.yaml文件进行特殊处理。
-    invokeExtendPointFunc "handleBuildingSingleImageForChart" "chart阶段单镜像构建模式下对ci-cd.yaml文件中参数的特殊调整" "${gCiCdYamlFile}"
+    invokeExtendPointFunc "handleBuildingSingleImageForChart" "common.chart.extend.point.handling.single.image.build" "" "${gCiCdYamlFile}"
   fi
 
   #处理ci-cd.yaml文件中的container[].ports，生成service配置，并展开containerPort配置项。
@@ -70,15 +72,15 @@ function onBeforeCreatingChartImage_ex() {
   l_packageFile="${l_chartPath}/package.yaml"
 
   readParam "${l_packageFile}" "name"
-  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && error "name参数值不能为空"
+  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && error "common.chart.extend.point.name.cannot.be.empty"
   gCurrentChartName="${gDefaultRetVal}"
 
   readParam "${l_packageFile}" "version"
-  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && error "version参数值不能为空"
+  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && error "common.chart.extend.point.version.cannot.be.empty"
   gCurrentChartVersion="${gDefaultRetVal}"
 
   readParam "${l_packageFile}" "appVersion"
-  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && error "appVersion参数值不能为空"
+  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && error "common.chart.extend.point.appversion.cannot.be.empty"
   gCurrentAppVersion="${gDefaultRetVal}"
 
   gCurrentAppDescription=""
@@ -101,9 +103,9 @@ function onBeforeCreatingChartImage_ex() {
     l_content=$(helm create "${l_chartPath}" 2>&1)
     if [[ $? -ne 0 ]]; then
         l_content=$(grep -E 'Error|failed' <<< "${l_content}")
-        error "执行命令(helm create ${l_chartPath})失败: ${l_content}"
+        error "common.chart.extend.point.helm.create.failed" "${l_chartPath}#${l_content}"
     fi
-    info "执行命令(helm create ${l_chartPath})成功"
+    info "common.chart.extend.point.helm.create.success" "${l_chartPath}"
 
     #删除的无效的文件或目录。
     l_abortedFiles=("tests" "NOTES.txt" "ingress.yaml" "_helpers.tpl" \
@@ -114,13 +116,13 @@ function onBeforeCreatingChartImage_ex() {
         if [ -f "${l_chartPath}/templates/${l_file}" ];then
           rm -f "${l_chartPath}/templates/${l_file}"
         else
-          warn "helm打包目录(${l_chartPath})中不存在需要删除的${l_file}文件"
+          warn "common.chart.extend.point.file.not.exist" "${l_chartPath}#${l_file}"
         fi
       else
         if [ -d "${l_chartPath}/templates/${l_file}" ];then
           rm -rf "${l_chartPath}/templates/${l_file}"
         else
-          warn "helm打包目录(${l_chartPath})中不存在需要删除的${l_file}子目录"
+          warn "common.chart.extend.point.dir.not.exist" "${l_chartPath}#${l_file}"
         fi
       fi
     done
@@ -132,7 +134,7 @@ function onBeforeCreatingChartImage_ex() {
     # shellcheck disable=SC2068
     for l_file in ${l_mustExistFiles[@]};do
       if [ ! -f "${l_chartPath}/${l_file}" ];then
-        error "自定义的helm打包目录(${l_chartPath})中不存在${l_file}文件"
+        error "common.chart.extend.point.custom.helm.dir.file.not.exist" "${l_chartPath}#${l_file}"
       fi
     done
 
@@ -140,12 +142,12 @@ function onBeforeCreatingChartImage_ex() {
 
     readParam "${l_chartYaml}" "name"
     if [ "${gDefaultRetVal}" != "${gCurrentChartName}" ];then
-      error "自定义的helm打包目录中Chart.yaml文件name参数值不等于package.yaml文件中的name参数值"
+      error "common.chart.extend.point.custom.helm.dir.name.not.equal"
     fi
 
     readParam "${l_chartYaml}" "version"
     if [ "${gDefaultRetVal}" != "${gCurrentChartVersion}" ];then
-      error "自定义的helm打包目录中Chart.yaml文件version参数值不等于package.yaml文件中的version参数值"
+      error "common.chart.extend.point.custom.helm.dir.version.not.equal"
     fi
 
   fi
@@ -158,6 +160,7 @@ function createChartImage_ex() {
   export gCustomizedHelm
   export gHelmBuildOutDir
   export gCurrentStageResult
+  export gDefaultRetVal
 
   local l_chartPath=$1
 
@@ -166,11 +169,12 @@ function createChartImage_ex() {
 
   if [ "${gCustomizedHelm}" == "false" ];then
     #编辑自动生成的Chart.yaml文件
-    invokeExtendPointFunc "onModifyingChartYaml" "编辑自动生成的Chart.yaml文件..." "${l_chartPath}"
+    invokeExtendPointFunc "onModifyingChartYaml" "common.chart.extend.point.modifying.chart.yaml" "" "${l_chartPath}"
     #编辑自动生成的values.yaml文件
-    invokeExtendPointFunc "onModifyingValuesYaml" "编辑自动生成的values.yaml文件..." "${l_chartPath}"
+    invokeExtendPointFunc "onModifyingValuesYaml" "common.chart.extend.point.modifying.values.yaml" "" "${l_chartPath}"
     #设置要发送的通知消息。
-    gCurrentStageResult="INFO|成功打包项目${l_chartPath##*/}的chart镜像"
+    convertI18NText "common.chart.extend.point.package.success" "${l_chartPath##*/}"
+    gCurrentStageResult="INFO|${gDefaultRetVal}"
   fi
 }
 
@@ -195,27 +199,28 @@ function onAfterCreatingChartImage_ex() {
   mkdir -p "${l_chartTgzOutDir}"
 
   #调用helm package执行前扩展。
-  invokeExtendPointFunc "onBeforeHelmPackage" "HelmPackage执行前扩展" "${l_chartTgzOutDir}" "${gCurrentChartName}" "${gCurrentChartVersion}"
+  invokeExtendPointFunc "onBeforeHelmPackage" "common.chart.extend.point.before.helm.package.extend" "" "${l_chartTgzOutDir}" "${gCurrentChartName}" "${gCurrentChartVersion}"
 
   #执行helm的打包命令
   l_output=$(helm package . -d "${l_chartTgzOutDir}" 2>&1)
   if [[ $? -ne 0 ]]; then
     l_output=$(grep -E 'Error|failed' <<< "${l_output}")
-    error "执行命令(helm package . -d ${l_chartTgzOutDir})失败: ${l_output}"
+    error "common.chart.extend.point.helm.package.failed" "${l_chartTgzOutDir}#${l_output}"
   fi
-  info "执行命令(helm package . -d ${l_chartTgzOutDir})成功"
+  info "common.chart.extend.point.helm.package.success" "${l_chartTgzOutDir}"
 
   #测试chart镜像是否正确。
   if ! l_errorFlag=$(helm template test "${l_chartTgzOutDir}/${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz" -n test.com 2>&1); then
       # 使用更高效的正则匹配和错误信息截断
       l_errorFlag=$(grep -Em1 'Error|failed' <<< "${l_errorFlag}")
-      error "chart镜像(${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz)正确性检测未通过: ${l_errorFlag:-未知错误}"
+      convertI18NText "common.chart.extend.point.unknown.error"
+      error "common.chart.extend.point.chart.template.check.failed" "${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz#${l_errorFlag:-${gDefaultRetVal}}"
   fi
-  info "chart镜像(${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz)正确性检测已通过"
+  info "common.chart.extend.point.chart.template.check.passed" "${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz"
 
   if [ "${gChartRepoInstanceName}" ];then
     #将生成的Chart镜像推送到chart仓库中。不同的仓库类型chart镜像推送方式是不同的。
-    invokeExtendPointFunc "helmPushChartImage" "Chart镜像推送扩展" "${l_chartTgzOutDir}/${gCurrentChartName}-${gCurrentChartVersion}.tgz"
+    invokeExtendPointFunc "helmPushChartImage" "common.chart.extend.point.helm.push.chart.image.extend" "" "${l_chartTgzOutDir}/${gCurrentChartName}-${gCurrentChartVersion}.tgz"
   fi
 }
 
@@ -282,7 +287,8 @@ function onModifyingValuesYaml_ex(){
   [[ "${l_gatewayRoute}" == "*" ]] && l_gatewayRoute="\"*\""
 
   #覆盖l_valuesYaml文件内容。
-  echo "#定义容器内的Docker镜像仓库地址，用于容器内镜像的拉取" > "${l_valuesYaml}"
+  convertI18NText "common.chart.extend.point.docker.image.registry.comment"
+  echo "#${gDefaultRetVal}" > "${l_valuesYaml}"
   echo "image:" >> "${l_valuesYaml}"
   #在values.yaml文件中定义image.registry参数
   insertParam "${l_valuesYaml}" "image.registry" "${gDockerRepoName}"
@@ -304,17 +310,17 @@ function onModifyingValuesYaml_ex(){
 
   #将l_packageYaml文件中的params参数配置节添加到values.yaml文件中。
   #并将l_packageYaml文件中configMaps[?].files参数中所有文件中配置的变量(”{{ .Values.* }}“)写入values.yaml的params配置节中。
-  invokeExtendPointFunc "addParamsToValuesYaml" "为values.yaml文件添加params配置节扩展" "${l_packageYaml}" "params" "${l_valuesYaml}"
+  invokeExtendPointFunc "addParamsToValuesYaml" "common.chart.extend.point.add.params.to.values.yaml.extend" "" "${l_packageYaml}" "params" "${l_valuesYaml}"
 
   #向l_valuesYaml文件中插入refExternalCharts的值
   readParam "${l_packageYaml}" "refExternalCharts"
   insertParam "${l_valuesYaml}" "refExternalCharts" "${gDefaultRetVal}"
 
   if [ "${gTargetApiServer}" ];then
-    info "从ApiServer服务器读取各类资源的Api版本，将信息缓存到gApiResourcesInfo变量中。"
+    info "common.chart.extend.point.loading.api.versions.from.apiserver"
     tryLoadApiResources "${gTargetApiServer}"
   else
-    warn "未配置ApiServer服务器SSH相关参数，无法读取各类资源的Api版本。"
+    warn "common.chart.extend.point.apiserver.not.configured"
   fi
 
   ((l_index = 0))
@@ -333,7 +339,7 @@ function onModifyingValuesYaml_ex(){
     #将读取的l_deploymentItem插入到l_valuesYaml文件中。
     insertParam "${l_valuesYaml}" "${l_moduleName}" "${l_deploymentItem}"
 
-    invokeExtendPointFunc "onBeforeGeneratingExternalContainer" "处理引入外部Chart镜像中容器前扩展" "ExternalContainer" "default" \
+    invokeExtendPointFunc "onBeforeGeneratingExternalContainer" "common.chart.extend.point.before.generating.external.container.extend" "" "ExternalContainer" "default" \
     "${l_valuesYaml}" "${l_index}" "${l_moduleName}.refExternalContainers"
 
     #先处理引用的外部容器，这会改变l_valuesYaml文件中deployment${l_index}项中的内容。
@@ -341,7 +347,7 @@ function onModifyingValuesYaml_ex(){
     invokeResourceGenerator "ExternalContainer" "default" "${l_valuesYaml}" "${l_index}" \
       "${l_moduleName}.refExternalContainers" "${l_packageYaml}"
 
-    invokeExtendPointFunc "onAfterGeneratingExternalContainer" "处理引入外部Chart镜像中容器后扩展" "ExternalContainer" "default" \
+    invokeExtendPointFunc "onAfterGeneratingExternalContainer" "common.chart.extend.point.after.generating.external.container.extend" "" "ExternalContainer" "default" \
       "${l_valuesYaml}" "${l_index}" "${l_moduleName}.refExternalContainers"
 
     ((l_pluginIndex = 0))
@@ -373,7 +379,7 @@ function onModifyingValuesYaml_ex(){
       [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && l_configPath="${gDefaultRetVal}"
 
       #调用扩展点方法，为三级管理层人员提供干预机会。
-      invokeExtendPointFunc "generateResourceByPlugin" "通过插件生成${l_kind}类型的资源配置文件" "${l_kind}" \
+      invokeExtendPointFunc "generateResourceByPlugin" "common.chart.extend.point.generate.resource.by.plugin.extend" "${l_kind}" "${l_kind}" \
         "${l_generatorName}" "${l_valuesYaml}" "${l_index}" "${l_configPath}" "${l_packageYaml}"
 
       ((l_pluginIndex = l_pluginIndex + 1))
@@ -383,20 +389,20 @@ function onModifyingValuesYaml_ex(){
     deleteParam "${l_valuesYaml}" "${l_moduleName}.resourcePlugins"
 
     #根据persistentVolumeClaimName参数的值，对volumes列表项进行修正。
-    invokeExtendPointFunc "onEnablePersistentVolumeClaim" "挂载PersistentVolumeClaim资源扩展" \
+    invokeExtendPointFunc "onEnablePersistentVolumeClaim" "common.chart.extend.point.enable.persistent.volume.claim.extend" "" \
       "${l_valuesYaml}" "${l_moduleName}" "persistentVolumeClaimName"
 
     ((l_index = l_index + 1))
   done
 
-  invokeExtendPointFunc "onBeforeGeneratingExternalChart" "处理引入的外部Chart镜像前扩展" "ExternalChart" "default" \
+  invokeExtendPointFunc "onBeforeGeneratingExternalChart" "common.chart.extend.point.before.generating.external.chart.extend" "" "ExternalChart" "default" \
     "${l_valuesYaml}" "${l_index}" "refExternalCharts"
 
   #最后处理引用的外部服务，这会为l_valuesYaml文件中增加deployment${l_index}配置项。
   #直接调用资源生成器。
   invokeResourceGenerator "ExternalChart" "default" "${l_valuesYaml}" "${l_index}" "refExternalCharts" "${l_packageYaml}"
 
-  invokeExtendPointFunc "onAfterGeneratingExternalChart" "处理引入的外部Chart镜像后扩展" "ExternalChart" "default" \
+  invokeExtendPointFunc "onAfterGeneratingExternalChart" "common.chart.extend.point.after.generating.external.chart" "" "ExternalChart" "default" \
     "${l_valuesYaml}" "${l_index}" "refExternalCharts"
 
   #删除已经无用的l_packageYaml文件。
@@ -463,13 +469,13 @@ function onBeforeHelmPackage_ex() {
   local l_ymalFile
 
   if [[ "${gCustomizedHelm}" == "false" && -d "${gProjectChartTemplatesDir}" ]];then
-    info "尝试将主模块目录下wydevops/templates/chart/templates子目录中的yaml文件和子目录复制到./templates目录中 ..."
+    info "common.chart.extend.point.copy.templates"
     #为项目自定义部分特殊配置提供了扩展。
     l_yamlList=$(find "${gProjectChartTemplatesDir}" -maxdepth 1 -type f -name "*.yaml")
     if [ "${l_yamlList}" ];then
       # shellcheck disable=SC2068
       for l_ymalFile in ${l_yamlList[@]};do
-        info "将项目配置的额外的${l_ymalFile##*/}文件复制到chart镜像的templates目录中"
+        info "common.chart.extend.point.copy.extra.file" "${l_ymalFile##*/}"
         cp -f "${l_ymalFile}" "./templates/"
       done
     fi
@@ -479,7 +485,7 @@ function onBeforeHelmPackage_ex() {
       # shellcheck disable=SC2068
       for l_ymalFile in ${l_yamlList[@]};do
         if [ "${l_ymalFile}" != "${gProjectChartTemplatesDir}" ];then
-          info "将项目配置的额外的${l_ymalFile##*/}目录复制到chart镜像的templates目录中"
+          info "common.chart.extend.point.copy.extra.dir" "${l_ymalFile##*/}"
           cp -rf "${l_ymalFile}" "./templates/"
         fi
       done
@@ -522,7 +528,7 @@ function addParamsToValuesYaml_ex(){
       readParam "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items"
       [[ "${gDefaultRetVal}" == "null" ]] && break
       [[  ! "${gDefaultRetVal}" ]] && \
-        error "${l_valuesYaml##*/}文件中${l_paramPath}.configurable[${l_i}].items配置节异常：值为空"
+        error "common.chart.extend.point.config.items.empty" "${l_valuesYaml##*/}#${l_paramPath}#${l_i}"
       #递归读取所有的参数及其默认值
       _addParamsToValuesYaml "${l_valuesYaml}" "${l_paramPath}.configurable[${l_i}].items"
       ((l_i = l_i + 1))
@@ -531,15 +537,15 @@ function addParamsToValuesYaml_ex(){
     #删除params.configurable配置节
     deleteParam "${l_valuesYaml}" "${l_paramPath}.configurable"
     if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-      warn "删除${l_valuesYaml##*/}文件中${l_paramPath}.configurable参数失败：参数不存在"
+      warn "common.chart.extend.point.delete.param.failed" "${l_valuesYaml##*/}#${l_paramPath}.configurable"
     else
-      info "删除${l_valuesYaml##*/}文件中${l_paramPath}.configurable参数成功"
+      info "common.chart.extend.point.delete.param.success" "${l_valuesYaml##*/}#${l_paramPath}.configurable"
     fi
 
   fi
 
   #将l_paramNameList中的params参数配置到values.yaml文件的params配置节中。
-  invokeExtendPointFunc "combineParamsToValuesYaml" "向values.yaml文件中params配置追加业务参数扩展" "${l_packageYaml}" "${l_valuesYaml}"
+  invokeExtendPointFunc "combineParamsToValuesYaml" "common.chart.extend.point.combine.params.to.values" "" "${l_packageYaml}" "${l_valuesYaml}"
 
 }
 
@@ -593,7 +599,7 @@ function combineParamsToValuesYaml_ex() {
     l_configMapFiles=(${gDefaultRetVal//,/ })
     # shellcheck disable=SC2068
     for l_configFile in ${l_configMapFiles[@]};do
-      info "正在检测${l_configFile##*/}文件中的变量..."
+      info "common.chart.extend.point.detecting.vars.in.file" "${l_configFile##*/}"
       [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
       # shellcheck disable=SC2002
@@ -640,15 +646,22 @@ function combineParamsToValuesYaml_ex() {
 
           #向l_valuesYaml文件中插入参数。
           insertParam "${l_valuesYaml}" "${l_paramName}" "${l_paramValue}"
-          l_info="向${l_valuesYaml##*/}文件中插入${l_paramName}参数"
+          convertI18NText "common.chart.extend.point.insert.param.into.file" "${l_valuesYaml##*/}#${l_paramName}"
+          l_info="${gDefaultRetVal}"
           if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-            [[ "${l_paramValue}" ]] && l_info="${l_info}失败：${l_paramValue}"
-            [[ ! "${l_paramValue}" ]] && l_info="${l_info}失败：(值为空)"
-            error "${l_info}"
+            if [ "${l_paramValue}" ];then
+              convertI18NText "common.chart.extend.point.failed.with.value" "${l_paramValue}"
+            else
+              convertI18NText "common.chart.extend.point.failed.empty.value"
+            fi
+            error "${l_info}${gDefaultRetVal}"
           else
-            [[ "${l_paramValue}" ]] && l_info="${l_info}成功：${l_paramValue}"
-            [[ ! "${l_paramValue}" ]] && l_info="${l_info}成功：(值为空)"
-            info "${l_info}"
+            if [ "${l_paramValue}" ];then
+              convertI18NText "common.chart.extend.point.success.with.value" "${l_paramValue}"
+            else
+              convertI18NText "common.chart.extend.point.success.empty.value"
+            fi
+            info "${l_info}${gDefaultRetVal}"
           fi
 
         done
@@ -710,9 +723,9 @@ function handleBuildingSingleImageForChart_ex() {
             l_param="chart[${l_i}].deployments[${l_j}].volumes[${l_k}]"
             deleteParam "${gCiCdYamlFile}" "${l_param}"
             if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-              error "删除${gCiCdYamlFile##*/}文件中${l_param}配置项失败"
+              error "common.chart.extend.point.delete.config.failed" "${gCiCdYamlFile##*/}#${l_param}"
             else
-              info "成功删除${gCiCdYamlFile##*/}文件中${l_param}配置项"
+              info "common.chart.extend.point.delete.config.success" "${gCiCdYamlFile##*/}#${l_param}"
             fi
           fi
 
@@ -722,9 +735,9 @@ function handleBuildingSingleImageForChart_ex() {
             l_param="chart[${l_i}].deployments[${l_j}].initContainers[${gDefaultRetVal}]"
             deleteParam "${gCiCdYamlFile}" "${l_param}"
             if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-              error "删除${gCiCdYamlFile##*/}文件中${l_param}配置项失败"
+              error "common.chart.extend.point.delete.config.failed" "${gCiCdYamlFile##*/}#${l_param}"
             else
-              info "成功删除${gCiCdYamlFile##*/}文件中${l_param}配置项"
+              info "common.chart.extend.point.delete.config.success" "${gCiCdYamlFile##*/}#${l_param}"
             fi
           fi
 
@@ -743,9 +756,9 @@ function handleBuildingSingleImageForChart_ex() {
               l_paramName="${l_param}.${l_paramName}"
               updateParam "${gCiCdYamlFile}" "${l_paramName}" "${l_paramValue}"
               if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-                error "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数失败"
+                error "common.chart.extend.point.update.param.failed" "${gCiCdYamlFile##*/}#${l_paramName}"
               else
-                info "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数值为：${l_paramValue}"
+                info "common.chart.extend.point.update.param.success" "${gCiCdYamlFile##*/}#${l_paramName}#${l_paramValue}"
               fi
             done
 
@@ -755,9 +768,9 @@ function handleBuildingSingleImageForChart_ex() {
               l_k="${gDefaultRetVal}"
               deleteParam "${gCiCdYamlFile}" "${l_param}.volumeMounts[${gDefaultRetVal}]"
               if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-                error "删除${gCiCdYamlFile##*/}文件中${l_param}.volumeMounts[${l_k}]配置项失败"
+                error "common.chart.extend.point.delete.config.failed" "${gCiCdYamlFile##*/}#${l_param}.volumeMounts[${l_k}]"
               else
-                info "成功删除${gCiCdYamlFile##*/}文件中${l_param}.volumeMounts[${l_k}]配置项"
+                info "common.chart.extend.point.delete.config.success" "${gCiCdYamlFile##*/}#${l_param}.volumeMounts[${l_k}]"
               fi
             fi
           fi
@@ -809,13 +822,13 @@ function _processContainerPorts(){
     #恢复层级数。
     ((l_layerLevel = 3))
 
-    info "检查并生成项目Service配置信息..."
+    info "common.chart.extend.point.generating.service.config"
     _createServiceConfig "${l_cicdYaml}" "${l_paramPath}" "${gDefaultRetVal}"
 
-    info "检查并处理项目开放了多个容器端口的情况..."
+    info "common.chart.extend.point.processing.multiple.ports"
     _processMultiplePorts "${l_cicdYaml}" "${l_paramPath}"
 
-    info "更新路由配置信息中后端服务的名称"
+    info "common.chart.extend.point.updating.backend.service.name"
     _updateServiceNameOfBackendInGatewayRoute "${l_cicdYaml}" "chart[${l_loopIndex[0]}].deployments[${l_loopIndex[1]}]"
 
     ((l_loopIndex[2] = l_loopIndex[2] + 1))
@@ -934,8 +947,8 @@ function _createServiceConfig() {
           fi
 
           if [ "${l_subPath}" ];then
-            info "生成${l_subPath^}类型的Service(服务端口:${l_servicePortList[${l_j}]})配置..."
-            [[ "${l_containerPortList[${l_j}]}" -le 0 ]] && error "${l_paramPath}.ports[${l_i}].containerPort参数中第${l_j}个端口号必须大于0"
+            info "common.chart.extend.point.generating.service.config.with.type" "${l_subPath^}#${l_servicePortList[${l_j}]}"
+            [[ "${l_containerPortList[${l_j}]}" -le 0 ]] && error "common.chart.extend.point.invalid.port" "${l_paramPath}.ports[${l_i}].containerPort#${l_j}"
 
             l_configTemplate=""
             if [ "${l_tmpIndex}" -lt 0 ];then
@@ -953,9 +966,9 @@ function _createServiceConfig() {
             if [ "${l_configTemplate}" ];then
               readParam "${l_configTemplate}" "${l_subPath}"
               if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
-                error "读取模板文件内容失败：${l_subPath}-service-config-template.yaml"
+                error "common.chart.extend.point.read.template.failed" "${l_subPath}-service-config-template.yaml"
               else
-                info "成功读取模板文件内容：${l_subPath}-service-config-template.yaml"
+                info "common.chart.extend.point.read.template.success" "${l_subPath}-service-config-template.yaml"
               fi
               insertParam "${l_tmpFile}" "service.${l_subPath}" "${gDefaultRetVal}"
               updateParam "${l_tmpFile}" "service.${l_subPath}.name" "${l_containerName}"
@@ -1001,7 +1014,7 @@ function _createServiceConfig() {
     #回写ports参数
     insertParam "${l_cicdYaml}" "${l_paramPath}.service" "${gDefaultRetVal}"
     if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-      error "多Service配置错误：回写${l_paramPath}.service参数失败"
+      error "common.chart.extend.point.write.back.service.param.failed" "${l_paramPath}.service"
     fi
 
   fi
@@ -1034,7 +1047,7 @@ function _processMultiplePorts() {
   #读取ports配置节的内容，并写入临时文件中。
   readParam "${l_cicdYaml}" "${l_paramPath}.ports"
   if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
-    warn "${l_cicdYaml##*/}文件中${l_paramPath}.ports配置节是空的"
+    warn "common.chart.extend.point.ports.config.empty" "${l_cicdYaml##*/}#${l_paramPath}.ports"
     return
   fi
 
@@ -1052,7 +1065,7 @@ function _processMultiplePorts() {
   readParam "${l_cicdYaml}" "${l_paramPath}.ports[0].name"
   l_portName="${gDefaultRetVal}"
   if [[ "${l_portName}" == "null" ]];then
-    error "读取ports[0].name参数失败"
+    error "common.chart.extend.point.read.param.failed" "ports[0].name"
   fi
 
   disableSaveBackImmediately
@@ -1071,7 +1084,7 @@ function _processMultiplePorts() {
     l_containerPortCount="${#l_containerPorts[@]}"
 
     if [ "${l_containerPortCount}" -eq 1 ];then
-      info "正在添加开放${l_containerPorts[0]}端口的配置..."
+      info "common.chart.extend.point.adding.port.config" "${l_containerPorts[0]}"
       readParam "${l_cicdYaml}" "${l_paramPath}.ports[${l_i}]"
       #插入端口配置节。
       ((l_index = l_index + 1))
@@ -1084,28 +1097,28 @@ function _processMultiplePorts() {
       for (( l_j=0; l_j < l_containerPortCount; l_j++ )); do
         l_containerPort=$(grep -oE "^([ ]*)([0-9]+)([ ]*)$" <<< "${l_containerPorts[${l_j}]}")
         if [ ! "${l_containerPort}" ];then
-          error "多端口配置错误：containerPort端口必须是整数，端口间以逗号隔开"
+          error "common.chart.extend.point.multiple.ports.config.error"
         fi
 
-        info "正在添加开放${l_containerPort}端口的配置..."
+        info "common.chart.extend.point.adding.port.config" "${l_containerPort}"
 
         ((l_index = l_index + 1))
         #插入端口配置节。
         insertParam "${l_tmpFile}" "ports[${l_index}]" "${l_templateContent}"
         if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-          error "多端口配置错误：向临时文件中插入ports[${l_index}]失败"
+          error "common.chart.extend.point.multiple.ports.config.insert" "ports[${l_index}]"
         fi
 
         #更新端口名称
         updateParam "${l_tmpFile}" "ports[${l_index}].name" "${l_portName}-${l_containerPort}"
         if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-          error "多端口配置错误：更新ports[${l_index}].name参数失败"
+          error "common.chart.extend.point.multiple.ports.config.update" "ports[${l_index}].name"
         fi
 
         #更新容器端口
         updateParam "${l_tmpFile}" "ports[${l_index}].containerPort" "${l_containerPort}"
         if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-          error "多端口配置错误：更新ports[${l_index}].containerPort参数失败"
+          error "common.chart.extend.point.multiple.ports.config.update" "ports[${l_index}].containerPort"
         fi
         #清除servicePort和nodePort属性
         deleteParam "${l_tmpFile}" "ports[${l_index}].servicePort"
@@ -1126,7 +1139,7 @@ function _processMultiplePorts() {
   #回写ports参数
   updateParam "${l_cicdYaml}" "${l_paramPath}.ports" "${gDefaultRetVal}"
   if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-    error "多端口配置错误：回写ports参数失败"
+    error "common.chart.extend.point.multiple.ports.config.error.writeback" "ports"
   fi
 
 }
@@ -1176,12 +1189,12 @@ function _updateServiceNameOfBackendInGatewayRoute() {
 
       if [[ "${l_portList}" =~ ^(.*)${gDefaultRetVal}( |$) ]];then
         l_name="${_portAndServiceNameMap[${gDefaultRetVal}]}"
-        info "更新${l_cicdYaml##*/}文件中${l_array[0]##.*}配置中${gDefaultRetVal}端口对应的后端服务的名称为${l_name}..." "-n"
+        info "common.chart.extend.point.update.backend.service.name.with.port" "${l_cicdYaml##*/}#${l_array[0]##.*}#${gDefaultRetVal}#${l_name}" "-n"
         updateParam "${l_cicdYaml}" "${l_paramPath}.${l_array[0]}[${l_loopIndex[0]}].${l_array[1]}[${l_loopIndex[1]}].serviceName" "${l_name}"
         if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-          error "失败"
+          error "common.chart.extend.point.failed" "" "*"
         else
-          info "成功" "*"
+          info "common.chart.extend.point.success" "" "*"
         fi
       fi
 
@@ -1201,12 +1214,12 @@ function _updateServiceNameOfBackendInGatewayRoute() {
 
       if [[ "${l_portList}" =~ ^(.*)${gDefaultRetVal}( |$) ]];then
         l_name="${_portAndServiceNameMap[${gDefaultRetVal}]}"
-        info "更新${l_cicdYaml##*/}文件中istioRoute.virtualService配置中${gDefaultRetVal}端口对应的后端服务的名称为${l_name}..." "-n"
+        info "common.chart.extend.point.update.backend.service.name.in.istio" "${l_cicdYaml##*/}#${gDefaultRetVal}#${l_name}" "-n"
         updateParam "${l_cicdYaml}" "${l_paramPath}.istioRoute.virtualService.http[${l_loopIndex0}].route[${l_loopIndex1}].destination.host" "${l_name}"
         if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-          error "失败"
+          error "common.chart.extend.point.failed" "" "*"
         else
-          info "成功" "*"
+          info "common.chart.extend.point.success" "" "*"
         fi
       fi
       ((l_loopIndex1 = l_loopIndex1 + 1))
@@ -1219,7 +1232,7 @@ function _updateServiceNameOfBackendInGatewayRoute() {
   done
 
   if [ ${l_name} ];then
-    info "直接将istioRoute.destinationRule.host名称赋值为:${l_name}"
+    info "common.chart.extend.point.set.istio.host.name" "${l_name}"
     updateParam "${l_cicdYaml}" "${l_paramPath}.istioRoute.destinationRule.host" "${l_name}"
   fi
 
@@ -1238,7 +1251,7 @@ function _initialPackageYamlFile() {
   local l_chartNames
 
   if [ "${gChartBuildDir}" ];then
-    info "清空${gChartBuildDir##*/}目录"
+    info "common.chart.extend.point.clear.dir" "${gChartBuildDir##*/}"
     rm -rf "${gChartBuildDir:?}/*" || true
   fi
 
@@ -1258,7 +1271,7 @@ function _initialPackageYamlFile() {
     if [[ "${l_content}" && "${l_content}" != "null" ]];then
       echo -e "${l_content}" > "${gChartBuildDir}/${l_chartName}/package.yaml"
     else
-      warn "读取${gCiCdYamlFile##*/}文件中chart[${l_i}]配置节失败"
+      warn "common.chart.extend.point.read.chart.config.failed" "${gCiCdYamlFile##*/}#${l_i}"
     fi
     l_chartNames="${l_chartNames} ${l_chartName}"
   done
@@ -1279,7 +1292,7 @@ function getDeployValueOfParam() {
   local l_packageName
 
   ((l_index = -1))
-  info "根据chart打包项的名称，获取该chart镜像对应的部署配置节的序号(用于后续读取参数的初始化值) ..." "-n"
+  info "common.chart.extend.point.getting.deploy.config.index" "" "-n"
   #根据l_chartName获取打包名。
   getListIndexByPropertyNameQuickly "${gCiCdYamlFile}" "package" "chartName" "${l_chartName}"
   if [ "${gDefaultRetVal}" -ge 0 ];then
@@ -1298,12 +1311,12 @@ function getDeployValueOfParam() {
   fi
 
   if [ "${l_index}" -lt 0 ];then
-    warn "获取序号失败" "*"
+    warn "common.chart.extend.point.get.index.failed" "" "*"
     return
   fi
 
-  info "成功获取序号：${l_index}" "*"
-  info "获取服务在部署阶段配置的参数及其值..."
+  info "common.chart.extend.point.get.index.success" "${l_index}" "*"
+  info "common.chart.extend.point.getting.service.params"
   ((l_i = 0))
   while true;do
     readParam "${gCiCdYamlFile}" "deploy[${l_index}].params[${l_i}]"
@@ -1326,9 +1339,9 @@ function getDeployValueOfParam() {
     # shellcheck disable=SC2034
     _paramDeployValueMap["${l_paramName}"]="${l_paramValue}"
     if [ "${l_paramValue}" ];then
-      info "加载参数默认值：${l_paramName}=>${l_paramValue}"
+      info "common.chart.extend.point.loading.param.default.value" "${l_paramName}#${l_paramValue}"
     else
-      warn "加载参数默认值：${l_paramName}=> (值为空)"
+      warn "common.chart.extend.point.loading.param.default.value.empty" "${l_paramName}"
     fi
     ((l_i = l_i + 1))
   done
@@ -1358,12 +1371,12 @@ function _addParamsToValuesYaml(){
     readParam "${l_valuesYaml}" "${l_paramPath}[${l_i}]"
     [[ "${gDefaultRetVal}" == "null" ]] && break
     [[  ! "${gDefaultRetVal}" ]] && \
-      error "${l_valuesYaml##*/}文件中${l_paramPath}[${l_i}]配置节异常：值为空"
+      error "common.chart.extend.point.params.exception" "${l_valuesYaml##*/}#${l_paramPath}[${l_i}]"
 
     readParam "${l_valuesYaml}" "${l_paramPath}[${l_i}].type"
     [[ "${gDefaultRetVal}" == "null" ]] && break
     [[ ! "${gDefaultRetVal}" ]] && \
-      error "${l_valuesYaml##*/}文件中${l_paramPath}[${l_i}].type参数异常：值为空"
+      error "common.chart.extend.point.param.type.empty" "${l_valuesYaml##*/}#${l_paramPath}[${l_i}].type"
     l_type="${gDefaultRetVal}"
 
     readParam "${l_valuesYaml}" "${l_paramPath}[${l_i}].key"
@@ -1371,18 +1384,18 @@ function _addParamsToValuesYaml(){
     if [ "${l_type}" != "\"group\"" ];then
 
       [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && \
-        error "${l_valuesYaml##*/}文件中${l_paramPath}[${l_i}].key参数异常：缺失或值为空"
+        error "common.chart.extend.point.param.key.missing" "${l_valuesYaml##*/}#${l_paramPath}[${l_i}].key"
       l_key="${gDefaultRetVal}"
 
       readParam "${l_valuesYaml}" "${l_paramPath}[${l_i}].value"
       [[ "${gDefaultRetVal}" == "null" ]] && \
-        error "${l_valuesYaml##*/}文件中缺失了${l_paramPath}[${l_i}].value参数"
+        error "common.chart.extend.point.param.value.missing" "${l_valuesYaml##*/}#${l_paramPath}[${l_i}].value"
       l_value="${gDefaultRetVal}"
 
       insertParam "${l_valuesYaml}" "params.${l_paramPrefix}${l_key//\"/}" "${l_value}"
       [[ "${gDefaultRetVal}" =~ ^(\-1) ]] && \
-          error "向${l_valuesYaml##*/}文件中插入params.${l_paramPrefix}${l_key//\"/}参数失败"
-      info "向${l_valuesYaml##*/}文件中插入params.${l_paramPrefix}${l_key//\"/}参数成功，值为：${l_value}"
+          error "common.chart.extend.point.insert.param.failed.with.prefix" "${l_valuesYaml##*/}#params.${l_paramPrefix}${l_key//\"/}"
+      info "common.chart.extend.point.insert.param.success.with.prefix" "${l_valuesYaml##*/}#params.${l_paramPrefix}${l_key//\"/}#${l_value}"
     else
       if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
         l_key="${gDefaultRetVal}"
@@ -1391,7 +1404,7 @@ function _addParamsToValuesYaml(){
           #读取数组索引
           readParam "${l_valuesYaml}" "${l_paramPath}[${l_i}].groupIndex"
           [[ "${gDefaultRetVal}" == "null" ]] && \
-            error "${l_valuesYaml##*/}文件中${l_paramPath}[${l_i}].groupIndex参数异常：缺失或值为空"
+            error "common.chart.extend.point.param.group.index.missing" "${l_valuesYaml##*/}#${l_paramPath}[${l_i}].groupIndex"
           l_key="${l_key//\"/}[${gDefaultRetVal}]"
         fi
         l_paramPrefix="${l_key//\"/}."

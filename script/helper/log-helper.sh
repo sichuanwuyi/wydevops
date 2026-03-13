@@ -370,8 +370,6 @@ function part() {
   log "${l_content}" "info" "${l_outFileName}"
 }
 
-#*******************私有函数********************
-
 function convertI18NText(){
   export gMessagePropertiesMap
   export gDefaultRetVal
@@ -415,6 +413,8 @@ function convertI18NText(){
   gDefaultRetVal="${l_message}"
 
 }
+
+#*******************私有函数********************
 
 #计算字符串的显示字节长度。
 function _getStringLen() {

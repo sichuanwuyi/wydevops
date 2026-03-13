@@ -33,14 +33,14 @@ function initialGlobalParamsForDeployStage_ex() {
   #如果有则提取这些参数及其默认值，回写到项目中的ci-cd-config.yaml文件中。
   #如果ci-cd-config.yaml文件不存在，则创建之。并在其中添加deploy相关配置(包括参数列表)。
 
-  info "检测部署服务需要配置的业务参数..."
+  info "common.deploy.extend.point.detecting.business.params"
 
   disableSaveBackImmediately
   l_saveBackStatus="${gDefaultRetVal}"
 
   l_cicdConfigFile="${gBuildPath}/${gCiCdConfigYamlFileName}"
   if [ ! -f "${l_cicdConfigFile}" ];then
-    info "创建${l_cicdConfigFile##*/}项目配置文件"
+    info "common.deploy.extend.point.creating.config.file" "${l_cicdConfigFile##*/}"
     touch "${l_cicdConfigFile}"
   fi
 
@@ -87,7 +87,7 @@ function initialGlobalParamsForDeployStage_ex() {
     readParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params"
     l_paramContentBlock="${gDefaultRetVal}"
 
-    info "读取${l_cicdConfigFile##*/}文件中deploy[${l_targetIndex}].params列表中所有的name的值。"
+    info "common.deploy.extend.point.reading.param.names" "${l_cicdConfigFile##*/}#deploy[${l_targetIndex}].params#name"
     _readValueOfListItemNames "${l_paramContentBlock}"
     if [[ "${l_businessParamNames}" && "${l_businessParamNames}" != "null" ]];then
       l_businessParamNames="${l_businessParamNames},"
@@ -96,7 +96,7 @@ function initialGlobalParamsForDeployStage_ex() {
 
     # shellcheck disable=SC2068
     for l_configFile in ${l_configMapFiles[@]};do
-      info "正在检测${l_configFile##*/}文件中的变量..."
+      info "common.deploy.extend.point.detecting.vars.in.file" "${l_configFile##*/}"
       [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
       # shellcheck disable=SC2002
@@ -140,11 +140,11 @@ function initialGlobalParamsForDeployStage_ex() {
             # shellcheck disable=SC2206
             l_array=(${gDefaultRetVal})
             l_paramIndex="${l_array[1]}"
-            info "--->向${l_cicdConfigFile##*/}文件添加新参数：deploy[${l_targetIndex}].params[${l_paramIndex}]"
+            info "common.deploy.extend.point.adding.new.param" "${l_cicdConfigFile##*/}#deploy[${l_targetIndex}].params[${l_paramIndex}]"
             l_itemValue="name: ${l_paramName}\nvalue: ${l_paramValue}"
             insertParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].params[${l_paramIndex}]" "${l_itemValue}"
           else
-            info "--->检测到业务参数:${l_paramName}=" "-n"
+            info "common.deploy.extend.point.detected.business.param" "${l_paramName}" "-n"
             # shellcheck disable=SC2206
             l_array=(${gDefaultRetVal})
             l_paramIndex="${l_array[0]}"
@@ -153,7 +153,7 @@ function initialGlobalParamsForDeployStage_ex() {
             if [ "${l_paramValue}" ];then
               info "${l_paramValue}" "*"
             else
-              warn " (没有配置值)" "*"
+              warn "common.deploy.extend.point.no.config.value" "*"
             fi
           fi
 
@@ -167,12 +167,12 @@ function initialGlobalParamsForDeployStage_ex() {
     done
 
     if [ "${l_businessParamNames//,/}" ];then
-      warn "清除${l_cicdConfigFile##*/}文件deploy[${l_businessParamIndex}].params列表中未用到的参数项..."
+      warn "common.deploy.extend.point.clearing.unused.params" "${l_cicdConfigFile##*/}#deploy[${l_businessParamIndex}].params"
       # shellcheck disable=SC2206
       l_array=(${l_businessParamNames//,/ })
       # shellcheck disable=SC2068
       for l_paramName in ${l_array[@]};do
-        warn "清除未用到的参数项:${l_paramName}"
+        warn "common.deploy.extend.point.clearing.unused.param" "${l_paramName}"
         getListIndexByPropertyNameQuickly "${l_cicdConfigFile}" "deploy[${l_businessParamIndex}].params" \
           "name" "${l_paramName}" "false" "${l_paramContentBlock}" "-1" "${gCiCdYamlFile}"
         deleteParam "${l_cicdConfigFile}" "deploy[${l_businessParamIndex}].params[${gDefaultRetVal}]"
@@ -202,13 +202,13 @@ function onBeforeDeployingServicePackage_ex() {
 
   if [ "${l_deployType}" == "docker" ];then
     #检查项目配置文件中需要配置的参数，并为其赋初始值。
-    invokeExtendPointFunc "onCheckAndInitialParamInConfigFile" "docker部署前先检查并初始化项目配置文件中的参数" \
+    invokeExtendPointFunc "onCheckAndInitialParamInConfigFile" "common.deploy.extend.point.check.and.init.params" "" \
       "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_localBaseDir}"
     #采用docker方式部署服务安装包前扩展
-    invokeExtendPointFunc "onBeforeDeployingServicePackageByDockerMode" "采用docker方式部署服务安装包前扩展" "${l_index}" "${l_chartName}" \
+    invokeExtendPointFunc "onBeforeDeployingServicePackageByDockerMode" "common.deploy.extend.point.before.deploy.by.docker" "" "${l_index}" "${l_chartName}" \
       "${l_chartVersion}" "${l_images}" "${l_remoteDir}"
   elif [ "${l_deployType}" == "k8s" ];then
-    invokeExtendPointFunc "onBeforeDeployingServicePackageByK8sMode" "采用K8s方式部署服务安装包前扩展" "${l_index}" "${l_chartName}" \
+    invokeExtendPointFunc "onBeforeDeployingServicePackageByK8sMode" "common.deploy.extend.point.before.deploy.by.k8s" "" "${l_index}" "${l_chartName}" \
       "${l_chartVersion}" "${l_images}" "${l_remoteDir}"
   fi
 
@@ -216,6 +216,7 @@ function onBeforeDeployingServicePackage_ex() {
 
 function deployServicePackage_ex() {
   export gCurrentStageResult
+  export gDefaultRetVal
 
   local l_index=$1
   local l_chartName=$2
@@ -236,7 +237,8 @@ function deployServicePackage_ex() {
     #调用标准发布流程
     _deployServiceInK8S "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_localBaseDir}" "${l_installMode}"
   fi
-  gCurrentStageResult="INFO|${l_packageName}安装包部署成功"
+  convertI18NText "common.deploy.extend.point.package.deployed.successfully" "${l_packageName}"
+  gCurrentStageResult="INFO|${gDefaultRetVal}"
 }
 
 function onBeforeDeployingServicePackageByDockerMode_ex() {
@@ -289,9 +291,10 @@ function onBeforeDeployingServicePackageByK8sMode_ex() {
     #检查当前操作系统类型
     invokeExtendChain "onGetSystemArchInfo"
     # shellcheck disable=SC2015
-    [[ "${gDefaultRetVal}" == "false" ]] && error "读取本地系统架构信息失败" || info "读取到当前系统架构为:${gDefaultRetVal}"
+    [[ "${gDefaultRetVal}" == "false" ]] && error "common.deploy.extend.point.read.arch.failed" \
+      || info "common.deploy.extend.point.read.arch.success" "${gDefaultRetVal}"
     #在本地系统中安装helm工具
-    invokeExtendPointFunc "installHelm" "在本地系统中安装helm工具" "${gDefaultRetVal%%/*}" "${gDefaultRetVal#*/}"
+    invokeExtendPointFunc "installHelm" "common.deploy.extend.point.install.helm" "" "${gDefaultRetVal%%/*}" "${gDefaultRetVal#*/}"
   fi
 
 }
@@ -334,7 +337,7 @@ function onCheckAndInitialParamInConfigFile_ex(){
   mkdir -p "${l_localBaseDir}"
 
   getListIndexByPropertyNameQuickly "${gCiCdYamlFile}" "chart" "name" "${l_chartName}"
-  [[  "${gDefaultRetVal}" =~ ^(\-1) ]] && error "${gCiCdYamlFile##*/}文件中未找到name=${l_chartName}的chart列表项"
+  [[  "${gDefaultRetVal}" =~ ^(\-1) ]] && error "common.deploy.extend.point.chart.not.found" "${gCiCdYamlFile##*/}#name=${l_chartName}#chart"
   l_chartIndex="${gDefaultRetVal}"
 
   # shellcheck disable=SC2124
@@ -361,7 +364,7 @@ function onCheckAndInitialParamInConfigFile_ex(){
     l_configMapFiles=(${gDefaultRetVal//,/ })
     # shellcheck disable=SC2068
     for l_configFile in ${l_configMapFiles[@]};do
-      info "检测并处理${l_configFile##*/}文件中的变量 ..."
+      info "common.deploy.extend.point.detect.and.process.vars.in.file" "${l_configFile##*/}"
       [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
       #拷贝配置文件到临时目录中。
@@ -391,14 +394,14 @@ function onCheckAndInitialParamInConfigFile_ex(){
           if [ ! "${l_result}" ];then
             #如果参数的值未定义，则告警输出。
             l_hasUndefineParam="true"
-            warn "${l_configFile##*/}配置文件中存在未定义的变量：${l_paramName}"
+            warn "common.deploy.extend.point.undefined.variable" "${l_configFile##*/}#${l_paramName}"
           fi
 
           l_paramValue="${gParamDeployedValueMap[${l_paramName}]}"
           #替换配置文件中的变量。
           l_paramItem="{${l_paramItem#*\{}"
           l_paramItem="${l_paramItem%\}*}"
-          info "将临时目录中的${l_configFile##*/}文件中的变量${l_paramItem}替换为${l_paramValue}"
+          info "common.deploy.extend.point.replace.variable" "${l_configFile##*/}#${l_paramItem}#${l_paramValue}"
           sed -i "s/${l_paramItem}/${l_paramValue}/g" "${l_configFile}"
 
         done
@@ -409,7 +412,7 @@ function onCheckAndInitialParamInConfigFile_ex(){
   done
 
   if [ "${l_hasUndefineParam}" == "true" ];then
-    error "项目配置文件中存在上述未定义的变量，请明确定义这些变量后再次尝试。"
+    error "common.deploy.extend.point.undefined.variables.exist"
   fi
 }
 
@@ -472,7 +475,7 @@ function _deployServiceByDocker(){
   while true; do
     readParam "${gCiCdYamlFile}" "deploy[${l_index}].docker.${l_activeProfile}.nodeIPs[${l_i}]"
     [[ "${gDefaultRetVal}" == "null" ]] && break
-    [[ ! "${gDefaultRetVal}" ]] && error "${gCiCdYamlFile##*/}文件中deploy[${l_index}].docker.${l_activeProfile}.nodeIPs参数是空的"
+    [[ ! "${gDefaultRetVal}" ]] && error "common.deploy.extend.point.node.ips.empty" "${gCiCdYamlFile##*/}#deploy[${l_index}].docker.${l_activeProfile}.nodeIPs"
 
     l_nodeItem="${gDefaultRetVal}"
     # shellcheck disable=SC2206
@@ -482,11 +485,11 @@ function _deployServiceByDocker(){
     l_account="${l_array[2]}"
     l_password="${l_array[3]}"
 
-    info "检查服务器${l_ip}的硬件架构 ..."
+    info "common.deploy.extend.point.checking.server.arch" "${l_ip}" "-n"
     invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
     # shellcheck disable=SC2015
-    [[ "${gDefaultRetVal}" == "false" ]] && error "读取${l_ip}服务器系统架构信息失败"
-    info "读取到${l_ip}服务器的系统架构为:${gDefaultRetVal}"
+    [[ "${gDefaultRetVal}" == "false" ]] && error "common.deploy.extend.point.read.server.arch.failed" "" "*"
+    info "common.deploy.extend.point.read.server.arch.success" "${gDefaultRetVal}" "*"
     l_archType="${gDefaultRetVal}"
 
     l_nodeItem="${l_archTypeMap[${l_archType}]},${l_nodeItem}"
@@ -518,34 +521,34 @@ function _deployServiceByDocker(){
       l_offlinePackage="${l_chartName}-${l_chartVersion}-${l_archType//\//-}.tar.gz"
       if [ ! -f "${gHelmBuildOutDir}/${l_offlinePackage}" ];then
         if [ "${gDockerRepoName}" ];then
-          warn "未在${gHelmBuildOutDir}目录中找到离线安装包文件：${l_offlinePackage}, 后续将尝试从${gDockerRepoName}仓库中拉取镜像"
+          warn "common.deploy.extend.point.offline.package.not.found.pull" "${gHelmBuildOutDir}#${l_offlinePackage}#${gDockerRepoName}"
         else
-          error "未在${gHelmBuildOutDir}目录中找到离线安装包文件：${l_offlinePackage}, 请先执行docker构造过程，或者通过配置参数指定能拉取到目标镜像的docker仓库"
+          error "common.deploy.extend.point.offline.package.not.found.error" "${gHelmBuildOutDir}#${l_offlinePackage}"
         fi
       else
-        info "将离线安装包复制到本地deploy目录中"
+        info "common.deploy.extend.point.copying.offline.package"
         cp -f "${gHelmBuildOutDir}/${l_offlinePackage}" "${l_localDir}/${l_offlinePackage}"
       fi
 
-      info "检测服务器${l_ip}是否已安装docker ..." "-n"
+      info "common.deploy.extend.point.checking.docker.installed" "${l_ip}" "-n"
       l_content=$(timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "docker -v")
       #连接被拒绝或超时
       l_errorLog=$(grep -oE "(refused|timed[ ]*out)" <<< "${l_content}")
-      [[ "${l_errorLog}" ]] && error "SSH连接${l_ip}服务失败：\n${l_content}"
+      [[ "${l_errorLog}" ]] && error "common.deploy.extend.point.ssh.connection.failed" "${l_ip}#${l_content}" "*"
       #命令不存在则报错退出。
       l_errorLog=$(grep -oE "not[ ]*found" <<< "${l_content}")
-      [[ "${l_errorLog}" ]] && error "服务器${l_ip}上未安装docker，请正确安装后再试。"
-      info "已安装" "*"
+      [[ "${l_errorLog}" ]] && error "common.deploy.extend.point.docker.not.installed" "${l_ip}" "*"
+      info "common.deploy.extend.point.installed" "" "*"
 
       if [ "${l_mode}" == "docker-compose" ];then
-        info "检测服务器${l_ip}是否已安装docker compose ..." "-n"
+        info "common.deploy.extend.point.checking.docker-compose.installed" "${l_ip}" "-n"
         l_content=$(timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "docker compose version")
         #连接被拒绝或超时
         l_errorLog=$(grep -oE "(refused|timed[ ]*out)" <<< "${l_content}")
-        [[ "${l_errorLog}" ]] && error "SSH连接${l_ip}服务失败：\n${l_content}"
+        [[ "${l_errorLog}" ]] && error "common.deploy.extend.point.ssh.connection.failed" "${l_ip}#${l_content}" "*"
         #命令不存在则报错退出。
         l_errorLog=$(grep -oE "not[ ]*found" <<< "${l_content}")
-        [[ "${l_errorLog}" ]] && error "服务器${l_ip}上未安装docker compose，请正确安装后再试。"
+        [[ "${l_errorLog}" ]] && error "common.deploy.extend.point.docker-compose.not.installed" "${l_ip}" "*"
         info "已安装" "*"
       fi
 
