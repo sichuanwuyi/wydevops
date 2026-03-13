@@ -16,12 +16,12 @@ function initialGlobalParamsForPackageStage_ex() {
 
   if [[ "${gBuildType}" == "single" || "${gBuildType}" == "thirdParty" ]];then
     #制作单镜像时，对ci-cd.yaml文件进行特殊处理。
-    invokeExtendPointFunc "handleBuildingSingleImageForPackage" "package阶段single构建模式下对ci-cd.yaml文件中参数的特殊调整" "${gCiCdYamlFile}"
+    invokeExtendPointFunc "handleBuildingSingleImageForPackage" "common.package.extend.point.handling.single.image.build" "" "${gCiCdYamlFile}"
   fi
 
   if [[ "${gBuildType}" == "base" || "${gBuildType}" == "business" ]];then
     #制作单镜像时，对ci-cd.yaml文件进行特殊处理。
-    invokeExtendPointFunc "handleBuildingOneImageForPackage" "package阶段${gBuildType}构建模式下对ci-cd.yaml文件中参数的特殊调整" "${gCiCdYamlFile}"
+    invokeExtendPointFunc "handleBuildingOneImageForPackage" "common.package.extend.point.handling.one.image.build" "${gBuildType}" "${gCiCdYamlFile}"
   fi
 
   if [[ "${gChartRepoInstanceName}" ]];then
@@ -51,17 +51,17 @@ function createOfflinePackage_ex() {
   #读取对应的chart版本
   readParam "${gCiCdYamlFile}" "package[${l_index}].chartVersion"
   if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
-    error "${gCiCdYamlFile##*/}文件中的package[${l_index}].chartVersion参数不能为空"
+    error "common.package.extend.point.chart.version.cannot.be.empty" "${gCiCdYamlFile##*/}#package[${l_index}].chartVersion"
   fi
   l_chartVersion="${gDefaultRetVal}"
 
   #得到离线包打包路径。
   l_targetDir="${gHelmBuildOutDir}/${l_chartName//\//_}-${l_chartVersion}"
 
-  invokeExtendPointFunc "copyChartImage" "获取${l_chartName}离线安装包中Chart镜像扩展" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}/chart"
-  invokeExtendPointFunc "createConfigFile" "创建${l_chartName}离线安装包中的配置文件扩展" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}"
-  #invokeExtendPointFunc "createUIJsonFile" "创建${l_chartName}离线安装包中的UI配置文件扩展" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}" "${l_maxIndex}"
-  invokeExtendPointFunc "createUIYamlFile" "创建${l_chartName}离线安装包中的UI配置文件扩展" "${l_index}" "${l_chartName}" "${l_targetDir}"
+  invokeExtendPointFunc "copyChartImage" "common.package.extend.point.getting.chart.image" "${l_chartName}" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}/chart"
+  invokeExtendPointFunc "createConfigFile" "common.package.extend.point.creating.config.file" "${l_chartName}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}"
+  #invokeExtendPointFunc "createUIJsonFile" "common.package.extend.point.creating.ui.config.file" "${l_chartName}" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}" "${l_maxIndex}"
+  invokeExtendPointFunc "createUIYamlFile" "common.package.extend.point.creating.ui.config.file" "${l_chartName}" "${l_index}" "${l_chartName}" "${l_targetDir}"
 
   #读取离线打包的架构类型。
   readParam "${gCiCdYamlFile}" "package[${l_index}].archTypes"
@@ -81,11 +81,12 @@ function createOfflinePackage_ex() {
     if [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]];then
       break
     fi
-    invokeExtendPointFunc "copyDockerImage" "获取${l_chartName}离线安装包中${l_archType}架构的Docker镜像扩展" "${l_index}" "${l_archType}" "${l_targetDir}/docker"
-    invokeExtendPointFunc "zipOfflinePackage" "创建${l_archType}架构的${l_chartName}离线安装包压缩文件扩展" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}" "${l_archType}"
+    invokeExtendPointFunc "copyDockerImage" "common.package.extend.point.getting.docker.image" "${l_chartName}#${l_archType}" "${l_index}" "${l_archType}" "${l_targetDir}/docker"
+    invokeExtendPointFunc "zipOfflinePackage" "common.package.extend.point.creating.offline.package" "${l_chartName}#${l_archType}" "${l_chartName}" "${l_chartVersion}" "${l_targetDir}" "${l_archType}"
   done
 
-  gCurrentStageResult="INFO|${l_chartName}项目离线安装包打包成功"
+  convertI18NText "common.package.extend.point.package.success" "${l_chartName}"
+  gCurrentStageResult="INFO|${gDefaultRetVal}"
 
 }
 
@@ -98,8 +99,13 @@ function copyChartImage_ex() {
   local l_targetDir=$4
 
   if [ ! -f "${l_targetDir}/${l_chartName}-${l_chartVersion}.tgz" ];then
-    info "从Chart镜像仓库中拉取目标镜像：${l_targetDir}/${l_chartName}-${l_chartVersion}.tgz ..."
+    info "common.package.extend.point.pulling.chart.image" "${l_targetDir}/${l_chartName}-${l_chartVersion}.tgz" "-n"
     helm pull "${gChartRepoInstanceName}/${l_chartName}" --destination "${l_targetDir}" --version "${l_chartVersion}"
+    if [ -f "${l_targetDir}/${l_chartName}-${l_chartVersion}.tgz" ];then
+      info "common.package.extend.point.success" "" "*"
+    else
+      warn "common.package.extend.point.failed" "" "*"
+    fi
   fi
 
   if [ -f "${l_targetDir}/${l_chartName}-${l_chartVersion}.tgz" ];then
@@ -110,7 +116,7 @@ function copyChartImage_ex() {
     #更新需要打包到安装包中的docker镜像参数。
     updateParam "${gCiCdYamlFile}" "package[${l_index}].images" "${gDefaultRetVal}"
   else
-    warn "未找到目标chart镜像：${l_targetDir}/${l_chartName}-${l_chartVersion}.tgz"
+    warn "common.package.extend.point.chart.image.not.found" "${l_targetDir}/${l_chartName}-${l_chartVersion}.tgz"
   fi
 
 }
@@ -319,9 +325,9 @@ function copyDockerImage_ex() {
       if [ ! -f "${l_savedFile}" ];then
         l_exportedFile="${gImageCacheDir}/${l_tmpImage//:/-}-${l_archType//\//-}.tar"
         if [ ! -f  "${l_exportedFile}" ];then
-          info "拉取${l_image}镜像，并导出到目录${l_savedFile%/*}中"
+          info "common.package.extend.point.pulling.and.exporting.image" "${l_image}#${l_savedFile%/*}"
           pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}" "${l_savedFile}"
-          info "删除拉取的镜像"
+          info "common.package.extend.point.deleting.pulled.image" "${l_image}"
           docker rmi -f "${l_image}"
         else
           #将l_savedFile变量指向本地缓存中的镜像导出文件。
@@ -330,14 +336,14 @@ function copyDockerImage_ex() {
       fi
 
       if [ -f "${l_savedFile}" ];then
-        info "成功获取离线安装包中Docker镜像导出文件：${l_tmpImage//:/-}-${l_archType//\//-}.tar"
+        info "common.package.extend.point.get.offline.package.success" "${l_tmpImage//:/-}-${l_archType//\//-}.tar"
         cp -f "${l_savedFile}" "${l_targetDir}/"
         # shellcheck disable=SC2181
         if [ "$?" != 0 ];then
-          error "复制镜像导出文件到目标失败"
+          error "common.package.extend.point.copy.export.file.failed"
         fi
       else
-        error "获取离线安装包中Docker镜像导出文件失败：${l_tmpImage//:/-}-${l_archType//\//-}.tar"
+        error "common.package.extend.point.get.offline.package.failed" "${l_tmpImage//:/-}-${l_archType//\//-}.tar"
       fi
 
     done
@@ -363,12 +369,13 @@ function zipOfflinePackage_ex() {
   cd "${l_targetDir}"
 
   l_zipFile="${l_chartName//\//_}-${l_chartVersion}-${l_archType//\//-}.tar.gz"
-  info "将${l_targetDir##*/}目录压缩为${l_zipFile}"
+  info "common.package.extend.point.compressing.dir" "${l_targetDir##*/}#${l_zipFile}" "-n"
   tar -zcf "../${l_zipFile}" "."
   # shellcheck disable=SC2181
   if [ "$?" != 0 ];then
-    error "压缩${l_targetDir##*/}目录失败"
+    error "common.package.extend.point.failed" "" "*"
   fi
+  info "common.package.extend.point.success" "" "*"
 
   # shellcheck disable=SC2164
   cd "${l_curDir}"
@@ -419,7 +426,7 @@ function handleBuildingSingleImageForPackage_ex() {
       if [ "${gBuildType}" == "single" ];then
         l_flag=$(grep -oE "^(.*)${l_serviceName//-/\-}(\-base|\-business):" <<< "${l_images[${l_j}]}")
         if [ "${l_flag}" ];then
-          debug "从package[${l_i}].images参数值中移除${l_images[${l_j}]}镜像"
+          info "common.package.extend.point.removing.image.from.param" "package[${l_i}].images#${l_images[${l_j}]}"
           #是基础镜像，则直接跳过。
           continue
         fi
@@ -439,7 +446,7 @@ function handleBuildingSingleImageForPackage_ex() {
       l_serviceName="${gDockerRepoInstanceName}/${l_serviceName}"
     fi
 
-    debug "添加单镜像名:${l_serviceName}:${l_businessVersion}"
+    info "common.package.extend.point.adding.single.image.name" "${l_serviceName}:${l_businessVersion}"
     if [ "${l_paramValue}" ];then
       l_flag=$(grep -oE "^(.*)${l_serviceName}:${l_businessVersion}(.*)$" <<< "${l_paramValue}")
       [[ ! "${l_flag}" ]] && l_paramValue="${l_serviceName}:${l_businessVersion},${l_paramValue}"
@@ -447,10 +454,10 @@ function handleBuildingSingleImageForPackage_ex() {
       l_paramValue="${l_serviceName}:${l_businessVersion}"
     fi
 
-    debug "更新globalParams.packageImages${l_i}参数的值为：${l_paramValue}"
+    info "common.package.extend.point.updating.param.value" "globalParams.packageImages${l_i}#${l_paramValue}"
     updateParam "${l_ciCdYamlFile}" "globalParams.packageImages${l_i}" "${l_paramValue}"
 
-    debug "更新package[${l_i}].images参数的值为：${l_paramValue}"
+    info "common.package.extend.point.updating.param.value" "package[${l_i}].images#${l_paramValue}"
     updateParam "${l_ciCdYamlFile}" "package[${l_i}].images" "${l_paramValue}"
 
     ((l_i = l_i + 1))
@@ -503,7 +510,7 @@ function handleBuildingOneImageForPackage_ex() {
       #如果是单镜像打包模式，则需要移除可能存在的业务镜像和基础镜像。
       l_flag=$(grep -oE "^(.*)${l_serviceName//-/\-}\-${l_suffix}:" <<< "${l_images[${l_j}]}")
       if [ "${l_flag}" ];then
-        debug "从package[${l_i}].images参数值中移除${l_images[${l_j}]}镜像"
+        info "common.package.extend.point.removing.image.from.param" "package[${l_i}].images#${l_images[${l_j}]}"
         #直接跳过。
         continue
       fi
@@ -515,10 +522,10 @@ function handleBuildingOneImageForPackage_ex() {
       fi
     done
 
-    debug "更新globalParams.packageImages${l_i}参数的值为：${l_paramValue:1}"
+    info "common.package.extend.point.updating.param.value" "globalParams.packageImages${l_i}#${l_paramValue:1}"
     updateParam "${l_ciCdYamlFile}" "globalParams.packageImages${l_i}" "${l_paramValue:1}"
 
-    debug "更新package[${l_i}].images参数的值为：${l_paramValue:1}"
+    info "common.package.extend.point.updating.param.value" "package[${l_i}].images#${l_paramValue:1}"
     updateParam "${l_ciCdYamlFile}" "package[${l_i}].images" "${l_paramValue:1}"
 
     ((l_i = l_i + 1))
@@ -557,7 +564,7 @@ function _scanAllDockerImages() {
 
   l_content=$(helm template test "${l_chartImage}" -n test.com --set image.registry=)
   if [ "$?" != 0 ];then
-    error "执行helm template命令失败"
+    error "common.package.extend.point.helm.template.failed"
   fi
 
   l_imageArray=","
@@ -672,30 +679,30 @@ function _filterValidDockerImages() {
     l_images[1]="${l_singleImage%:*}-base:${l_singleImage##*:}"
     #检查必须要的镜像是否存在。
     if [[ ! "${l_imageArray}" =~ ^(.*)${l_singleImage}(.*)$ ]];then
-      error "chart镜像中未使用docker镜像:${l_singleImage},请检查并修正配置文件。"
+      error "common.package.extend.point.image.not.used.in.chart" "${l_singleImage}"
     fi
   elif [ "${gBuildType}" == "double" ];then
     l_images[0]="${l_singleImage}"
     #检查必须要的镜像是否存在。
     if [[ ! "${l_imageArray}" =~ ^(.*)${l_baseImage}(.*)$ ]];then
-      error "chart镜像中未使用docker镜像:${l_baseImage},请检查并修正配置文件。"
+      error "common.package.extend.point.image.not.used.in.chart" "${l_baseImage}"
     fi
     if [[ ! "${l_imageArray}" =~ ^(.*)${l_businessImage}(.*)$ ]];then
-      error "chart镜像中未使用docker镜像:${l_businessImage},请检查并修正配置文件。"
+      error "common.package.extend.point.image.not.used.in.chart" "${l_businessImage}"
     fi
   elif [ "${gBuildType}" == "base" ];then
     l_images[0]="${l_singleImage}"
     l_images[1]="${l_singleImage%-*}-business:${l_singleImage##*:}"
     #检查必须要的镜像是否存在。
     if [[ ! "${l_imageArray}" =~ ^(.*)${l_baseImage}(.*)$ ]];then
-      error "chart镜像中未使用docker镜像:${l_baseImage},请检查并修正配置文件。"
+      error "common.package.extend.point.image.not.used.in.chart" "${l_baseImage}"
     fi
   elif [ "${gBuildType}" == "business" ];then
     l_images[0]="${l_singleImage}"
     l_images[1]="${l_singleImage%-*}-base:${l_singleImage##*:}"
     #检查必须要的镜像是否存在。
     if [[ ! "${l_imageArray}" =~ ^(.*)${l_businessImage}(.*)$ ]];then
-      error "chart镜像中未使用docker镜像:${l_businessImage},请检查并修正配置文件。"
+      error "common.package.extend.point.image.not.used.in.chart" "${l_businessImage}"
     fi
   fi
 
@@ -703,7 +710,7 @@ function _filterValidDockerImages() {
   # shellcheck disable=SC2068
   for l_image in ${l_images[@]};do
     if [[ "${l_imageArray}" =~ ^(.*)${l_image}(.*)$ ]];then
-      warn "从打包的docker镜像列表中移除了不需要的镜像：${l_image}"
+      warn "common.package.extend.point.removing.unwanted.image" "${l_image}"
       l_imageArray="${l_imageArray//${l_image}/}"
       l_imageArray="${l_imageArray//,,/,}"
     fi

@@ -4,16 +4,16 @@ function _onBeforeProjectBuilding_ex() {
   export gBuildPath
   export gMultipleModelProject
 
-  info "进入项目主模块目录：${gBuildPath}"
+  info "vue.build.extend.point.entering.project.main.module.dir" "${gBuildPath}"
   cd "${gBuildPath}" || true
 
-  info "强行设置gMultipleModelProject变量为false"
+  info "vue.build.extend.point.setting.gmultiplemodelproject.to.false"
   gMultipleModelProject="false"
 }
 
 #执行项目的编译
 function _buildProject_ex() {
-  info "开始编译项目..."
+  info "vue.build.extend.point.compiling.project"
   _buildSubModule
 }
 
@@ -22,27 +22,34 @@ function _buildProject_ex() {
 function _buildSubModule() {
   export gServiceName
   export gCurrentStageResult
+  export gDefaultRetVal
 
   local l_errorLog
   local l_info
 
-  info "检查pnpm的版本..."
+  info "vue.build.extend.point.checking.pnpm.version" "" "-n"
   pnpm -v
   if [ "$?" -ne 0 ];then
-    info "开始安装pnpm..."
+    warn "vue.build.extend.point.failed" "" "*"
+    info "vue.build.extend.point.installing.pnpm" "" "-n"
     npm install -g pnpm
     pnpm -v
     if [ "$?" -ne 0 ];then
-      error "安装pnpm失败"
+      error "vue.build.extend.point.failed" "" "*"
+    else
+      info "vue.build.extend.point.success" "" "*"
     fi
+  else
+    info "vue.build.extend.point.success" "" "*"
   fi
 
-  info "开始构建项目(pnpm run build)..."
+  info "vue.build.extend.point.building.project"
   if ! pnpm run build 2>&1 ;then
-    error "项目${gServiceName}编译失败"
+    error "vue.build.extend.point.project.compilation.failed"
   fi
 
-  l_info="项目${gServiceName}编译成功：pnpm_run_build"
+  convertI18NText "vue.build.extend.point.project.compilation.succeeded" "${gServiceName}"
+  l_info="${gDefaultRetVal}"
   gCurrentStageResult="INFO|${l_info}"
 }
 

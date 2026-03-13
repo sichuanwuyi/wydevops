@@ -4,21 +4,22 @@ function _onBeforeProjectBuilding_ex() {
   export gBuildPath
   export gMultipleModelProject
 
-  info "进入项目主模块目录"
+  info "java.build.extend.point.entering.project.main.module.dir"
   cd "${gBuildPath}" || true
 
   if [ "${gMultipleModelProject}" == "true" ];then
-    info "项目是多模块目录，回退到主模块目录的上级目录中，再执行后续编译"
+    info "java.build.extend.point.multi.module.project.fallback"
     cd ..
   fi
 
   # --- Check and set JAVA_HOME if not defined ---
   if [ -z "$JAVA_HOME" ] || [ ! -d "$JAVA_HOME" ]; then
     # A more generic search could be added here if needed
-    error "Error: Could not find a valid JDK installation. " \
-          "Please ensure JAVA_HOME is set correctly for the script's execution environment."
+    #error "Could not find a valid JDK installation. \n" \
+    #      "Please ensure JAVA_HOME is set correctly for the script's execution environment."
+    error "java.build.extend.point.jdk.not.found"
   fi
-  warn "Using JAVA_HOME=${JAVA_HOME}"
+  warn "java.build.extend.point.using.java.home" "${JAVA_HOME}"
 }
 
 #执行java项目的编译
@@ -51,7 +52,7 @@ function _buildProject_ex() {
 #      fi
 #    done
 #  fi
-  info "构建整个项目..."
+  info "java.build.extend.point.building.entire.project"
   _buildSubModule "package"
 }
 
@@ -60,15 +61,17 @@ function _buildProject_ex() {
 function _buildSubModule() {
   export gServiceName
   export gCurrentStageResult
+  export gDefaultRetVal
 
   local l_cmd=$1
   local l_info
 
   if ! mvn clean ${l_cmd} -Dmaven.test.skip=true ;then
-    error "项目${gServiceName}编译失败"
+    error "java.build.extend.point.project.compilation.failed" "${gServiceName}"
   fi
 
-  l_info="项目${gServiceName}编译成功：mvn clean ${l_cmd} -Dmaven.test.skip=true"
+  convertI18NText "java.build.extend.point.project.compilation.succeeded" "${gServiceName}#mvn clean ${l_cmd} -Dmaven.test.skip=true"
+  l_info="${gDefaultRetVal}"
   info "${l_info}"
   gCurrentStageResult="INFO|${l_info}"
 }

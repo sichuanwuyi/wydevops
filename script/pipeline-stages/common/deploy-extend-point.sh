@@ -549,26 +549,26 @@ function _deployServiceByDocker(){
         #命令不存在则报错退出。
         l_errorLog=$(grep -oE "not[ ]*found" <<< "${l_content}")
         [[ "${l_errorLog}" ]] && error "common.deploy.extend.point.docker-compose.not.installed" "${l_ip}" "*"
-        info "已安装" "*"
+        info "common.deploy.extend.point.installed" "" "*"
       fi
 
-      info "将${l_shellOrYamlFile##*/}文件复制到本地${l_localDir##*/}目录中"
+      info "common.deploy.extend.point.copying.file.to.local.dir" "${l_shellOrYamlFile##*/}#${l_localDir##*/}"
       timeout 60s scp "${l_shellOrYamlFile}" "${l_localDir}/${l_shellOrYamlFile##*/}"
 
-      info "将${l_remoteInstallProxyShell##*/}文件复制到本地${l_localDir##*/}目录下"
+      info "common.deploy.extend.point.copying.file.to.local.dir" "${l_remoteInstallProxyShell##*/}#${l_localDir##*/}"
       timeout 60s scp "${l_remoteInstallProxyShell}" "${l_localDir}/${l_remoteInstallProxyShell##*/}"
 
-      info "在本地${l_localBaseDir##*/}目录下创建install.sh"
+      info "common.deploy.extend.point.creating.install.sh" "${l_localBaseDir##*/}#install.sh"
       l_nodeIps="${l_archTypeMap[${l_archType}]//,${l_proxyNode}/}"
       echo -e "#!/usr/bin/env bash\n source ${l_remoteDir}/${l_remoteInstallProxyShell##*/} \"${l_chartName}\" \"${l_chartVersion}\" \"${l_offlinePackage}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \"${gDockerRepoPassword}\" \"${l_nodeIps}\"" > "${l_localDir}/install.sh"
 
-      info "在服务器(${l_ip})上创建${l_remoteDir}目录"
+      info "common.deploy.extend.point.creating.remote.dir" "${l_ip}#${l_remoteDir}"
       timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "rm -rf ${l_remoteDir} && mkdir -p ${l_remoteDir}"
 
-      info "将本地${l_localBaseDir##*/}目录中的文件和子目录复制到服务器${l_ip}上的${l_remoteDir}目录中"
+      info "common.deploy.extend.point.copying.local.to.remote" "${l_localBaseDir##*/}#${l_ip}#${l_remoteDir}"
       timeout 60s scp -o \"StrictHostKeyChecking no\" -P "${l_port}" -r "${l_localDir}/" "${l_account}@${l_ip}:${l_remoteDir%/*}/"
 
-      info "远程执行服务器${l_ip}上的脚本：${l_remoteDir}/install.sh"
+      info "common.deploy.extend.point.executing.remote.script" "${l_ip}#${l_remoteDir}/install.sh"
       # shellcheck disable=SC2088
       timeout 30s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "bash ${l_remoteDir}/install.sh"
 
@@ -637,7 +637,7 @@ function _deployServiceInK8S() {
 
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.namespace"
   [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == null ]] \
-    && error "${gCiCdYamlFile##*/}文件中deploy[${l_index}].k8s.${l_activeProfile}.namespace参数缺失或未配置值"
+    && error "common.deploy.extend.point.param.missing" "${gCiCdYamlFile##*/}#deploy[${l_index}].k8s.${l_activeProfile}.namespace"
   # shellcheck disable=SC2206
   l_namespaces=(${gDefaultRetVal})
   l_namespaceCount="${#l_namespaces[@]}"
@@ -645,7 +645,7 @@ function _deployServiceInK8S() {
 
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.apiServer"
   [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == null ]] \
-    && error "${gCiCdYamlFile##*/}文件中deploy[${l_index}].k8s.${l_activeProfile}.apiServer参数缺失或未配置值"
+    && error "common.deploy.extend.point.param.missing" "${gCiCdYamlFile##*/}#deploy[${l_index}].k8s.${l_activeProfile}.apiServer"
   # shellcheck disable=SC2206
   l_apiServers=(${gDefaultRetVal})
   ((l_apiServerIndex = 0))
@@ -662,9 +662,10 @@ function _deployServiceInK8S() {
     l_account="${l_array[2]}"
     l_password="${l_array[3]}"
 
-    info "查找Chart镜像文件和其对应的settings.yaml文件..."
+    info "common.deploy.extend.point.finding.chart.image.and.settings" "" "-n"
     _findChartImage "${l_chartName}" "${l_chartVersion}"
-    [[ ! "${gDefaultRetVal}" ]] && error "失败"
+    [[ ! "${gDefaultRetVal}" ]] && error "common.deploy.extend.point.failed" "" "*"
+    info "common.deploy.extend.point.success" "" "*"
     # shellcheck disable=SC2206
     l_array=(${gDefaultRetVal})
     l_chartFile="${l_array[0]}"
@@ -677,7 +678,7 @@ function _deployServiceInK8S() {
       #l_settingParams=$(echo "${l_settingParams}" | tr -d '\n' | sed 's/,[[:space:]]*/,/g')
       l_settingParams=$(sed -e ':a;N;$!ba;s/\n//g' -e 's/,[[:space:]]\+/,/g' <<< "${l_settingParams}")
     fi
-    info "从ci-cd.yaml文件中读取deploy[${l_index}].params下的参数值覆盖l_settingParams变量中的参数值"
+    info "common.deploy.extend.point.reading.params.from.cicd" "${gCiCdYamlFile##*/}#deploy[${l_index}].params"
 
     readParam "${gCiCdYamlFile}" "deploy[${l_index}].params"
     l_content="${gDefaultRetVal}"
@@ -715,9 +716,9 @@ function _deployServiceInK8S() {
     if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
       # shellcheck disable=SC2206
       l_array=(${gDefaultRetVal//,/ })
-      warn "更新集群内拉取docker镜像使用的仓库地址为: ${l_array[2]}"
+      warn "common.deploy.extend.point.updating.image.repo.address" "${l_array[2]}"
 
-      info "尝试将离线包中的镜像推送到K8S集群使用的Docker仓库中..."
+      info "common.deploy.extend.point.pushing.images.to.k8s.repo"
       l_repoInfos="${gDefaultRetVal}"
       readParam "${gCiCdYamlFile}" "deploy[${l_index}].packageName"
       _pushDockerImageForDeployStage "${gDefaultRetVal}" "${l_repoInfos}" "${l_chartFile}" "${l_ip}" "${l_port}" \
@@ -734,13 +735,13 @@ function _deployServiceInK8S() {
     if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
       # shellcheck disable=SC2206
       l_array=(${gDefaultRetVal//,/ })
-      warn "更新网关配置中的绑定域名为: ${l_array[0]}"
+      warn "common.deploy.extend.point.updating.gateway.domain" "${l_array[0]}"
       l_settingParams=$(echo "$l_settingParams" | sed "s/\(gatewayRoute\.host\)=[^,]*\(,\|\\n\|$\)/\1=${l_array[0]//\//\\\/}\2/g")
       [[ "$l_settingParams" == *"gatewayRoute.host="* ]] || l_settingParams="${l_settingParams},gatewayRoute.host=${l_array[0]}"
     fi
 
     #自定义Helm命令行中set参数扩展
-    invokeExtendPointFunc "onCustomizedSetParamsBeforeHelmInstall" "自定义Helm命令行中set参数扩展" \
+    invokeExtendPointFunc "onCustomizedSetParamsBeforeHelmInstall" "common.deploy.extend.point.custom.set.params" "" \
       "${gCiCdYamlFile}" "${l_index}" "${l_activeProfile}"
     if [[ "${gShellExecuteResult}" == "true" && ${gDefaultRetVal} != "null" ]];then
       l_customizedSetParams="${gDefaultRetVal}"
@@ -750,11 +751,11 @@ function _deployServiceInK8S() {
       l_settingParams="${l_settingParams},${l_customizedSetParams}"
     fi
 
-    info "获取服务器上~/.kube/config文件的内容"
+    info "common.deploy.extend.point.getting.kube.config"
     if [[ "${l_password}" =~ ^(.*).pem$ ]];then
       ssh -i "${l_password}" -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
       if [ "$?" -ne "0" ];then
-        warn "获取${l_ip}上~/.kube/config文件的内容失败, 使用本地~/.kube/config文件..."
+        warn "common.deploy.extend.point.get.kube.config.failed" "${l_ip}"
         cat ~/.kube/config > "${l_localBaseDir}/kube-config"
       fi
     else
@@ -764,18 +765,17 @@ function _deployServiceInK8S() {
 
 
     if [[ "${l_installMode}" == "install" || "${l_installMode}" == "uninstall" ]];then
-      info "卸载${l_namespace}命名空间中正在运行的${l_chartName}服务..." "-n"
+      info "common.deploy.extend.point.uninstalling.service" "${l_namespace}#${l_chartName}" "-n"
       l_content=$(helm uninstall "${l_chartName}" -n "${l_namespace}" --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
       l_errorLog=$(grep -oE "^(.*)Error:(.*)$" <<< "${l_content}")
       if [ "${l_errorLog}" ];then
-        warn "失败" "*"
-        warn "未找到正在运行的${l_chartName}服务:${l_errorLog}"
+        warn "common.deploy.extend.point.service.not.found" "${l_chartName}#${l_errorLog}" "*"
       else
-        info "成功" "*"
+        info "common.deploy.extend.point.success" "" "*"
       fi
       if [ "${l_installMode}" == "uninstall" ];then
-        info "检测到处于卸载服务模式，直接退出。"
-        exit
+        info "common.deploy.extend.point.uninstall.mode.exit"
+        exit 0
       fi
     fi
 
@@ -792,18 +792,18 @@ function _deployServiceInK8S() {
 
     if [ "${l_settingParams}" ];then
       [[ "${l_settingParams}" =~ ^(,) ]] && l_settingParams="${l_settingParams:1}"
-      info "再重新安装${l_chartName}服务:\nhelm ${l_installMode} ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
+      info "common.deploy.extend.point.reinstalling.service.with.params" "${l_chartName}#helm ${l_installMode} ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
       l_content=$(helm ${l_installMode} "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" 2>&1)
     else
-      info "再重新安装${l_chartName}服务:\nhelm ${l_installMode} ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config"
+      info "common.deploy.extend.point.reinstalling.service.with.params" "${l_chartName}#helm ${l_installMode} ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config"
       l_content=$(helm ${l_installMode} "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
     fi
 
     l_errorLog=$(grep -oE "^(.*)Error:(.*)$" <<< "${l_content}")
     if [ "${l_errorLog}" ];then
-      error "${l_chartName}服务安装失败:\n${l_content}"
+      error "common.deploy.extend.point.service.install.failed" "${l_chartName}#${l_content}"
     else
-      info "${l_chartName}服务安装成功:\n${l_content}"
+      info "common.deploy.extend.point.service.install.success" "${l_chartName}#${l_content}"
     fi
 
     ((l_apiServerIndex = l_apiServerIndex + 1))
@@ -830,36 +830,41 @@ function _findChartImage() {
   gDefaultRetVal=""
 
   l_chartFile="${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/chart/${l_chartName}-${l_chartVersion}.tgz"
-  info "优先从本地构建输出目录中查找chart镜像文件..." "-n"
+  info "common.deploy.extend.point.finding.chart.image.locally" "" "-n"
   if [ ! -f "${l_chartFile}" ];then
+    info "common.deploy.extend.point.not.found" "" "*"
+    info "common.deploy.extend.point.finding.offline.package" "${gHelmBuildOutDir}#${l_chartName}-${l_chartVersion}-*.tar.gz" "-n"
     l_fileList=$(find "${gHelmBuildOutDir}" -maxdepth 1 -type f -name "${l_chartName}-${l_chartVersion}-*.tar.gz")
     if [ ! "${l_fileList}" ];then
-      info "未找到" "*"
+      info "common.deploy.extend.point.not.found" "" "*"
       if [ "${gChartRepoInstanceName}" ];then
-        info "从Chart镜像仓库中拉取版本为${l_chartVersion}的${l_chartName}镜像..." "-n"
+        info "common.deploy.extend.point.pulling.from.repo" "${l_chartVersion}#${l_chartName}" "-n"
         pullChartImage "${l_chartName}" "${l_chartVersion}" "${gChartRepoType}" "${gChartRepoName}" \
           "${gChartRepoInstanceName}" "${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/chart" \
           "${gChartRepoAccount}" "${gChartRepoPassword}"
-        [[ ! -f "${l_chartFile}" ]] && error "拉取失败"
-        info "拉取成功" "*"
+        [[ ! -f "${l_chartFile}" ]] && error "common.deploy.extend.point.failed" "" "*"
+        info "common.deploy.extend.point.success" "" "*"
       fi
     else
+      info "common.deploy.extend.point.found.success" "" "*"
+      info "common.deploy.extend.point.unzip.offline.package" "${l_offlinePackage}#${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}" "-n"
       l_offlinePackage="${l_fileList[0]}"
       mkdir -p "${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}"
       tar -zxf "${l_offlinePackage}" -C "${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}"
       # shellcheck disable=SC2181
       if [ "$?" -ne 0 ];then
-        error "解压找到的服务离线安装包文件${l_offlinePackage##*/}失败"
+        error "common.deploy.extend.point.failed" "" "*"
       fi
+      info "common.deploy.extend.point.success" "" "*"
     fi
   else
-    info "查找成功" "*"
+    info "common.deploy.extend.point.found.success" "" "*"
   fi
 
   if [ -f "${l_chartFile}" ];then
     l_settingFile="${gHelmBuildOutDir}/${l_chartName}-${l_chartVersion}/settings.yaml"
     if [ ! -f "${l_settingFile}" ];then
-      warn "未找到Chart镜像的settings.yaml文件"
+      warn "common.deploy.extend.point.settings.yaml.not.found"
       gDefaultRetVal="${l_chartFile}"
       return
     fi
@@ -915,17 +920,17 @@ function _createDeployItem(){
 
   _getDeployIndexByChartIndex "${l_cicdYamlFile}" "${l_chartIndex}"
   l_deployIndex="${gDefaultRetVal}"
-  [[ "${l_deployIndex}" -eq -1 ]] && error "${l_cicdYamlFile}文件中缺少对应chart[${l_chartIndex}]的deploy列表项"
+  [[ "${l_deployIndex}" -eq -1 ]] && error "common.deploy.extend.point.deploy.item.missing" "${l_cicdYamlFile}#chart[${l_chartIndex}]"
 
   readParam "${l_cicdYamlFile}" "deploy[${l_deployIndex}].name"
-  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && error "${l_cicdYamlFile}文件中deploy[${l_deployIndex}].name异常：不存在或为空"
+  [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == "null" ]] && error "common.deploy.extend.point.deploy.name.missing" "${l_cicdYamlFile}#deploy[${l_deployIndex}].name"
 
   #获取l_cicdConfigFile文件中对应的deploy项的序号
   getListIndexByPropertyNameQuickly "${l_cicdConfigFile}" "deploy" "name" "${gDefaultRetVal}" "false" "" "-1" "${gCiCdYamlFile}"
   l_targetIndex="${gDefaultRetVal}"
 
   if [ "${l_targetIndex}" -eq -1 ];then
-    info "向${l_cicdConfigFile##*/}文件中插入deploy[${l_deployIndex}]配置项"
+    info "common.deploy.extend.point.inserting.deploy.item" "${l_cicdConfigFile##*/}#deploy[${l_deployIndex}]"
     getListSize "${l_cicdConfigFile}" "deploy"
     l_targetIndex="${gDefaultRetVal}"
     insertParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].name" ""
@@ -936,9 +941,9 @@ function _createDeployItem(){
     l_templateFile="${gBuildPath}/${gHelmBuildDirName}/templates/config/${gLanguage}/_${gCiCdTemplateFileName}"
     [[ ! -f "${l_templateFile}" ]] && l_templateFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/_${gCiCdTemplateFileName}"
     [[ ! -f "${l_templateFile}" ]] && l_templateFile="${gBuildScriptRootDir}/templates/config/_${gCiCdTemplateFileName}"
-    [[ ! -f "${l_templateFile}" ]] && error "未找到_${gCiCdTemplateFileName}模板文件"
+    [[ ! -f "${l_templateFile}" ]] && error "common.deploy.extend.point.template.not.found" "_${gCiCdTemplateFileName}"
     readParam "${l_templateFile}" "deploy[${l_deployIndex}].name"
-    info "更新deploy[${l_targetIndex}]配置项的name属性为：${gDefaultRetVal}"
+    info "common.deploy.extend.point.updating.deploy.name" "deploy[${l_targetIndex}]#${gDefaultRetVal}"
     updateParam "${l_cicdConfigFile}" "deploy[${l_targetIndex}].name" "${gDefaultRetVal}"
 
   fi
@@ -1023,17 +1028,17 @@ function _pushDockerImageForDeployStage() {
   #获取需要推送的镜像名称信息。
   _getDockerImageInChart "${l_packageName}" "${l_chartFile}"
   if [ ! "${gDefaultRetVal}" ];then
-    warn "未找到需要推送的docker镜像"
+    warn "common.deploy.extend.point.docker.image.not.found"
   fi
 
   # shellcheck disable=SC2206
   l_images=(${gDefaultRetVal//,/ })
 
-  info "检查服务器${l_ip}的硬件架构..."
+  info "common.deploy.extend.point.checking.server.arch" "${l_ip}" "-n"
   invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
   # shellcheck disable=SC2015
-  [[ "${gDefaultRetVal}" == "false" ]] && error "读取${l_ip}服务器系统架构信息失败: ${l_content}"
-  info "读取到${l_ip}服务器的系统架构为:${gDefaultRetVal}"
+  [[ "${gDefaultRetVal}" == "false" ]] && error "common.deploy.extend.point.read.server.arch.failed" "" "*"
+  info "common.deploy.extend.point.read.server.arch.success" "${gDefaultRetVal}" "*"
   l_archType="${gDefaultRetVal}"
 
   #获取到需要推送的镜像
@@ -1055,29 +1060,31 @@ function _pushDockerImageForDeployStage() {
     l_dockerOutDir="${l_image//\//_}"
     l_dockerOutDir="${l_dockerOutDir//:/-}"
     l_tmpFile="${gHelmBuildOutDir}/${l_archType//\//-}/${l_dockerOutDir}-${l_archType//\//-}.tar"
-    info "尝试从${l_tmpFile##*/}文件中加载docker镜像:${l_image}"
+    info "common.deploy.extend.point.finding.docker.image.export.file" "${l_tmpFile##*/}" "-n"
     if [ ! -f "${l_tmpFile}" ];then
-      warn "目标文件不存在:${l_tmpFile}"
+      warn "common.deploy.extend.point.failed" "" "*"
       l_tmpFile="${gImageCacheDir}/${l_dockerOutDir}-${l_archType//\//-}.tar"
-      info "继续尝试从本地镜像缓存目录中查找镜像导出文件:${l_tmpFile}"
+      warn "common.deploy.extend.point.finding.docker.image.export.file.in.cache" "${l_tmpFile}" "-n"
       if [ ! -f "${l_tmpFile}" ];then
-        error "找不到${l_image}镜像的导出文件"
+        error "common.deploy.extend.point.failed" "" "*"
       fi
     fi
+    warn "common.deploy.extend.point.success" "" "*"
 
+    info "common.deploy.extend.point.loading.docker.image.from.file" "${l_tmpFile##*/}#${l_image}" "-n"
     if ! docker load -i "${l_tmpFile}" >/dev/null;then
-      error "加载docker镜像失败：${l_image}"
+      error "common.deploy.extend.point.failed" "" "*"
     fi
-    warn "成功加载docker镜像：${l_image}"
+    warn "common.deploy.extend.point.success" "" "*"
 
     if [ -f "${l_pushedImageFile}" ];then
-      info "从文件(${l_pushedImageFile})中读取上次推送镜像${l_image}的运行ID..."
+      info "common.deploy.extend.point.reading.runid.from.file" "${l_pushedImageFile}#${l_image}" "-n"
       l_key="${l_image//:/@}"
       l_key="${l_key//./_}"
       readParam "${l_pushedImageFile}" "images.${l_key}"
-      info "当前运行ID为${gRunID},上次推送镜像的运行ID为:${gDefaultRetVal}"
+      info "common.deploy.extend.point.current.runid" "${gDefaultRetVal}" "*"
       if [ "${gDefaultRetVal}" == "${gRunID}" ];then
-        warn "镜像${l_image}已在当前运行中推送，跳过..."
+        warn "common.deploy.extend.point.image.already.pushed"
         continue
       fi
     fi
@@ -1089,17 +1096,19 @@ function _pushDockerImageForDeployStage() {
     invokeExtendChain "onBeforePushDockerImage" "${l_repoType}" "${l_image}" "${l_archType}" "${gForceCoverage}" "${l_repoName}" \
                 "${l_instanceName}" "${l_dockerRepoWebPort}" "${l_repoAccount}" "${l_repoPassword}"
     if [ "${gDefaultRetVal}" == "true|false" ];then
-      warn "目标镜像存在，且当前不是强制覆盖模式，则跳过镜像推送过程"
+      warn "common.deploy.extend.point.image.exists.skipping"
       continue
     fi
 
-    info "将${l_image}镜像推送到${l_repoName}仓库中..."
+    info "common.deploy.extend.point.pushing.image.to.repo" "${l_image}#${l_repoName}"
     invokeExtendChain "onPushDockerImage" "${l_repoType}" "${l_image}" "${l_archType}" "${l_repoName}" "${l_instanceName}"
-
-    warn "删除之前加载的docker镜像:${l_image}"
+    #删除之前加载的docker镜像
     docker rmi -f "${l_image}"
-    # shellcheck disable=SC2015
-    [[ "${gDefaultRetVal}" != "true" ]] && error "镜像推送失败" || info "镜像推送成功"
+    if [ "${gDefaultRetVal}" != "true" ];then
+      error "common.deploy.extend.point.image.push.failed" "${l_image}" "*"
+    else
+      info "common.deploy.extend.point.image.push.success" "${l_image}" "*"
+    fi
 
   done
 }
@@ -1131,14 +1140,14 @@ function _getDockerImageInChart() {
 
   getListIndexByPropertyNameQuickly "${gCiCdYamlFile}" "package" "name" "${l_packageName}"
   if [[ "${gDefaultRetVal}" -eq -1 ]];then
-    warn "${gCiCdYamlFile##*/}文件中不存在name参数值为${l_packageName}的package项, 尝试从chart镜像中获取..."
+    warn "common.deploy.extend.point.package.item.not.found" "${gCiCdYamlFile##*/}#${l_packageName}"
   else
     l_packageIndex="${gDefaultRetVal}"
     readParam "${gCiCdYamlFile}" "package[${l_packageIndex}].images"
     if [[ "${gDefaultRetVal}" ]];then
       l_images="${gDefaultRetVal}"
     else
-      warn "${gCiCdYamlFile##*/}文件中package[${l_packageIndex}].images参数是空的"
+      warn "common.deploy.extend.point.package.images.empty" "${gCiCdYamlFile##*/}#package[${l_packageIndex}].images"
     fi
   fi
 
@@ -1196,7 +1205,7 @@ function _getDockerImageInChart() {
   l_result=$(helm template "${l_chartFile}" -n test --set image.registry=${l_registryKey} 2>&1)
   if [ "$?" != 0 ];then
     l_result=$(grep -E "^.*(Error|failed).*$" <<< "${l_result}")
-    error "执行helm template命令失败: ${l_result}"
+    error "common.deploy.extend.point.helm.template.failed" "${l_result}"
   fi
 
   l_result=$(grep -oE "^([ ]*)image: ${l_registryKey}/.*$" <<< "${l_result}")

@@ -12,15 +12,15 @@ function _checkMultipleModelProjectInLocal_ex(){
   export gMultipleModelProject
 
   #获取 ${gBuildPath} 的父目录
-  info "当前项目的构建目录为${gBuildPath}"
+  info "java.wydevops.extend.point.current.project.build.dir" "${gBuildPath}"
   parent_dir=$(dirname "${gBuildPath}")
 
   # 使用 [ -f ] 判断 pom.xml 文件是否存在于父目录中
   if [ -f "${parent_dir}/pom.xml" ]; then
-    info "父目录(${parent_dir})包含pom.xml文件，据此修正当前项目为多模块项目"
+    info "java.wydevops.extend.point.pom.exists.in.parent.dir" "${parent_dir}"
     gMultipleModelProject="true"
   else
-    info "父目录(${parent_dir})未包含pom.xml文件，据此修正当前项目为单模块项目"
+    info "java.wydevops.extend.point.pom.not.exists.in.parent.dir" "${parent_dir}"
     gMultipleModelProject="false"
   fi
 
@@ -35,12 +35,12 @@ function _onBeforeInitGlobalParams_ex() {
 
   #xmllint命令检查
   if ! command -v xmllint &> /dev/null; then
-    error "xmllint命令未找到，请先安装libxml2工具包"
+    error "java.wydevops.extend.point.xmllint.not.found"
   fi
 
   l_pomXmlFile="${gBuildPath}/pom.xml"
   if [ ! -f "${l_pomXmlFile}" ];then
-      error "未找到Java项目的pom.xml文件"
+      error "java.wydevops.extend.point.pom.not.found"
   fi
 
   #读取JDK的版本
@@ -54,7 +54,7 @@ function _onBeforeInitGlobalParams_ex() {
     l_pomXmlFile=$(dirname "${gBuildPath%/}")
     l_pomXmlFile="${l_pomXmlFile}/pom.xml"
     if [ ! -f "${l_pomXmlFile}" ];then
-      error "未找到Java项目的pom.xml文件"
+      error "java.wydevops.extend.point.pom.not.found"
     fi
 
     #再次读取JDK的版本
@@ -65,7 +65,7 @@ function _onBeforeInitGlobalParams_ex() {
   fi
 
   if ! [[ "${l_tmpVersion}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-    error "未找到Java项目的pom.xml文件中的maven.compiler.target或maven.compiler.source参数:${l_tmpVersion}"
+    error "java.wydevops.extend.point.maven.compiler.param.not.found" "${l_tmpVersion}"
   fi
 
   gRuntimeVersion="jdk${l_tmpVersion}"
@@ -90,7 +90,7 @@ function _initialCiCdConfigFileByParamMappingFiles_ex() {
 
     local l_version
 
-    debug "针对${gLanguage}语言项目，处理从映射文件中加载的参数值..."
+    info "java.wydevops.extend.point.processing.params.from.mapping.files" "${gLanguage}"
 
     #读取globalParams.businessVersion参数的值。
 #    readParam "${l_templateFile}" "globalParams.businessVersion"
@@ -105,13 +105,13 @@ function _initialCiCdConfigFileByParamMappingFiles_ex() {
 
 function _initGlobalParams_ex() {
   export gLanguage
-  debug "针对${gLanguage}语言项目，修改或新增全局参数..."
+  info "java.wydevops.extend.point.modifying.or.adding.global.params" "${gLanguage}"
 
   export gBuildPath
   export gReleaseNoteFileName
   export gReleaseNotePath
 
-  debug "1.设置項目更新历史文件(${gReleaseNoteFileName})所在的目录"
+  debug "java.wydevops.extend.point.setting.release.note.dir" "${gReleaseNoteFileName}"
   gReleaseNotePath="${gBuildPath}/src/main/resources"
 
 }
@@ -127,8 +127,8 @@ function _createCiCdConfigFile_ex() {
   l_tmpFile="${l_tmpCiCdConfigFile}"
   [[ ! -f "${l_tmpCiCdConfigFile}" ]] && l_tmpFile="${l_templateFile}"
 
-  invokeExtendPointFunc "loadParamMappingConfigFiles" "加载${gLanguage}语言级参数映射配置文件"
-  invokeExtendPointFunc "initParamValueByMappingConfigFiles" "根据参数映射配置文件初始化${l_tmpFile##*/}文件中的参数" "${l_tmpFile}"
+  invokeExtendPointFunc "loadParamMappingConfigFiles" "java.wydevops.extend.point.loading.param.mapping.config.files" "${gLanguage}"
+  invokeExtendPointFunc "initParamValueByMappingConfigFiles" "java.wydevops.extend.point.initializing.params.by.mapping.config.files" "${l_tmpFile##*/}" "${l_tmpFile}"
 
 }
 
@@ -143,13 +143,13 @@ function _onBeforeReplaceParamPlaceholder_ex() {
 
   l_pomXmlFile="${gBuildPath}/pom.xml"
   if [ ! -f "${l_pomXmlFile}" ];then
-    error "未找到Java项目的pom.xml文件"
+    error "java.wydevops.extend.point.pom.not.found"
   fi
 
-  debug "多模块项目符合性检测..."
+  debug "java.wydevops.extend.point.multi.module.project.compliance.check"
   l_module=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="modules"]/*[local-name()="module"]/text()' "${l_pomXmlFile}" 2>&1)
   if [[ ${l_module} && ${l_module} != "XPath set is empty" && ${gBuildPath} == './' ]];then
-    error "多模块项目符合性检测失败：实际是多模块的项目，配置的gBuildPath参数不能以\"/\"结尾"
+    error "java.wydevops.extend.point.multi.module.project.compliance.check.failed"
   fi
 
 }
@@ -175,7 +175,7 @@ function _onLoadMatchedAdditionalConfigFiles_ex() {
 
   l_targetFile=""
   l_resourcesDir="${gBuildPath}/src/main/resources"
-  info "读取spring.profiles.active参数的值"
+  info "java.wydevops.extend.point.reading.spring.profiles.active" "spring.profiles.active"
   l_yamlList=$(find "${l_resourcesDir}" -maxdepth 2 -type f  -name "application*.yml")
   if [ "${l_yamlList}" ];then
     # shellcheck disable=SC2068
@@ -188,10 +188,10 @@ function _onLoadMatchedAdditionalConfigFiles_ex() {
         #去掉左右空格
         gActiveProfile="${gActiveProfile#"${gActiveProfile%%[![:space:]]*}"}"
         gActiveProfile="${gActiveProfile%"${gActiveProfile##*[^[:space:]]}"}"
-        warn "spring.profiles.active参数的值为:${gActiveProfile}"
+        warn "java.wydevops.extend.point.spring.profiles.active.value" "spring.profiles.active#${gActiveProfile}"
 
         if [ "${gActiveProfile}" == "dev" ];then
-          warn "强制更新spring.profiles.active参数的值为:prod"
+          warn "java.wydevops.extend.point.force.update.spring.profiles.active" "spring.profiles.active#prod"
           updateParam "${l_ymalFile}" "spring.profiles.active" "prod"
           gActiveProfile="prod"
         fi
@@ -212,7 +212,7 @@ function _onLoadMatchedAdditionalConfigFiles_ex() {
 
 function _onFailToLoadingParamMappingFiles_ex(){
   export gLanguage
-  error "缺少${gLanguage}语言级的参数映射配置文件，该配置文件定义了如何从项目配置文件中读取wyDevops需要的参数。"
+  error "java.wydevops.extend.point.missing.param.mapping.config.files" "${gLanguage}"
 }
 
 export gActiveProfile

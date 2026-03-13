@@ -4,6 +4,7 @@ function createThirdPartyImage_ex(){
   export gDockerRepoName
   export gImageCacheDir
   export gCurrentStageResult
+  export gDefaultRetVal
 
   local l_image=$1
   local l_archType=$2
@@ -15,7 +16,8 @@ function createThirdPartyImage_ex(){
     #打包第三方镜像：拉取第三方镜像，缓存到本地镜像缓存目录中，
     #然后推送到私库中，最后导出到gDockerBuildOutDir目录中。
     pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}"
-    gCurrentStageResult="INFO|成功拉取${l_archType}架构的${l_image}镜像"
+    convertI18NText "common.docker.extend.point.pull.third.party.image.success" "${l_archType}#${l_image}"
+    gCurrentStageResult="INFO|${gDefaultRetVal}"
     gDefaultRetVal="${l_image}"
   fi
 }
@@ -30,18 +32,18 @@ function onAfterCreatingThirdPartyImage_ex() {
   local l_exportFile=$3
 
   if [ "${l_exportFile}" ];then
-    info "直接将第三方镜像导出文件复制到${gHelmBuildOutDir}/${l_archType//\//-}目录中"
+    info "common.docker.extend.point.copying.third.party.image" "${gHelmBuildOutDir}/${l_archType//\//-}"
     cp -f "${l_exportFile}" "${gHelmBuildOutDir}/${l_archType//\//-}"
   else
-    info "将第三方镜像导出到${gHelmBuildOutDir}/${l_archType//\//-}目录的文件中"
+    info "common.docker.extend.point.exporting.third.party.image" "${gHelmBuildOutDir}/${l_archType//\//-}"
     saveImage "${l_image}" "${l_archType}" "${gHelmBuildOutDir}/${l_archType//\//-}"
     if [ "${gDeleteImageAfterBuilding}" == "true" ];then
-      info "删除本地第三方镜像：${l_image}"
+      info "common.docker.extend.point.deleting.local.third.party.image" "${l_image}"
       docker rmi "${l_image}"
     fi
   fi
 
-  gDefaultRetVal="成功处理${l_archType}架构的第三方镜像：${l_image}"
+  gDefaultRetVal="common.docker.extend.point.handle.third.party.image.success" "${l_archType}#${l_image}"
 }
 
 function onBeforeCreatingCustomizedImage_ex() {
@@ -65,7 +67,7 @@ function onBeforeCreatingCustomizedImage_ex() {
   # shellcheck disable=SC2002
   l_content=$(grep -ioE "^([ ]*)FROM([ ]+).*$" "${l_dockerFile}")
   if [ ! "${l_content}" ];then
-    error "自定义的${l_dockerFile}文件中未找到From语句"
+    error "common.docker.extend.point.from.statement.not.found" "${l_dockerFile}"
   fi
 
   stringToArray "${l_content}" "l_lines"
@@ -77,7 +79,7 @@ function onBeforeCreatingCustomizedImage_ex() {
     l_fromLine="${l_lines[${l_i}]}"
     l_fromLine=$(grep -inoE "^.*(--platform=${l_archType//\//\\\/}).*$" <<< "${l_fromLine}")
     if [[ ! "${l_fromLine}" ]];then
-      error "自定义的${l_dockerFile}文件中From语句中未定义\"--platform\"参数或该参数的值不为${l_archType}"
+      error "common.docker.extend.point.platform.not.defined" "${l_dockerFile}#${l_archType}"
     fi
     #拉取from语句中定义的基础镜像
     # shellcheck disable=SC2206
@@ -110,7 +112,7 @@ function onBeforeInitialingGlobalParamsForDockerStage_ex(){
 
   if [ "${gBuildType}" == "single" ];then
     #制作单镜像时，对ci-cd.yaml文件进行特殊处理。
-    invokeExtendPointFunc "handleBuildingSingleImageForDocker" "docker阶段单镜像构建模式下对ci-cd.yaml文件中参数的特殊调整" "${gCiCdYamlFile}"
+    invokeExtendPointFunc "handleBuildingSingleImageForDocker" "common.docker.extend.point.handling.single.image.build" "" "${gCiCdYamlFile}"
   fi
 }
 
@@ -161,56 +163,56 @@ function initialGlobalParamsForDockerStage_ex(){
     readParam "${l_cicdYaml}" "docker.buildType"
     gBuildType="${gDefaultRetVal}"
   fi
-  info "读取参数docker.buildType的值:${gBuildType}"
+  info "common.docker.extend.point.reading.param.buildtype" "${gBuildType}"
 
   if [ ! "${gEnableNoCacheOnDockerBuild}" ];then
     readParam "${l_cicdYaml}" "docker.enableNoCache"
     gEnableNoCacheOnDockerBuild="${gDefaultRetVal}"
   fi
-  info "读取参数docker.enableNoCache的值:${gEnableNoCacheOnDockerBuild}"
+  info "common.docker.extend.point.reading.param.enablenocache" "${gEnableNoCacheOnDockerBuild}"
 
   #如果gArchTypes尚未赋值，择从ci-cd.yaml文件中读取。
   if [ ! "${gArchTypes}" ];then
     readParam "${l_cicdYaml}" "docker.archTypes"
     gArchTypes="${gDefaultRetVal}"
-    warn "检测到gArchTypes全局变量尚未赋值,则从ci-cd.yaml文件中读取参数docker.archTypes的值:${gArchTypes}"
+    warn "common.docker.extend.point.reading.param.archtypes" "${gArchTypes}"
   fi
 
   if [ "${gBuildType}" != "thirdParty" ];then
     #是否强制使用Docker模板文件。
     readParam "${l_cicdYaml}" "docker.useTemplate"
     gUseTemplate="${gDefaultRetVal}"
-    info "读取参数docker.useTemplate的值:${gUseTemplate}"
+    info "common.docker.extend.point.reading.param.usetemplate" "${gUseTemplate}"
 
     #应用基础容器中应用工作路径，
     readParam "${l_cicdYaml}" "docker.workDir"
     gWorkDirInDocker="${gDefaultRetVal}"
-    info "读取参数docker.workDir的值:${gWorkDirInDocker}"
+    info "common.docker.extend.point.reading.param.workdir" "${gWorkDirInDocker}"
 
     #应用业务镜像中应用文件的存储路径，注意要与挂载的ConfigMap目录保持一致。
     readParam "${l_cicdYaml}" "docker.appDir"
     gAppDirInDocker="${gDefaultRetVal}"
-    info "读取参数docker.appDir的值:${gAppDirInDocker}"
+    info "common.docker.extend.point.reading.param.appdir" "${gAppDirInDocker}"
 
     #应用业务镜像中应用文件的存储路径，注意要与挂载的ConfigMap目录保持一致。
     readParam "${l_cicdYaml}" "docker.exposePorts"
     gExposePorts="${gDefaultRetVal//,/ }"
-    info "读取参数docker.exposePorts的值:${gExposePorts}"
+    info "common.docker.extend.point.reading.param.exposeports" "${gExposePorts}"
 
     #docker容器内的时区配置
     readParam "${l_cicdYaml}" "docker.timeZone"
     gTimeZone="${gDefaultRetVal}"
-    info "读取参数docker.timeZone的值:${gTimeZone}"
+    info "common.docker.extend.point.reading.param.timezone" "${gTimeZone}"
 
     #读取JvmOpts参数
     readParam "${l_cicdYaml}" "docker.jvmOpts"
     gJvmOpts="${gDefaultRetVal}"
-    info "读取参数docker.gJvmOpts的值:${gJvmOpts}"
+    info "common.docker.extend.point.reading.param.jvmopts" "${gJvmOpts}"
 
     #读取JavaOpts参数
     readParam "${l_cicdYaml}" "docker.javaOpts"
     gJavaOpts="${gDefaultRetVal}"
-    info "读取参数docker.javaOpts的值:${gJavaOpts}"
+    info "common.docker.extend.point.reading.param.javaopts" "${gJavaOpts}"
 
     # shellcheck disable=SC2028
     l_typeNames=("business" "base")
@@ -220,7 +222,8 @@ function initialGlobalParamsForDockerStage_ex(){
       for l_param in ${l_params[@]};do
         readParam "${l_cicdYaml}" "docker.${l_typeName}.${l_param}"
         eval "export gTargetDocker${l_param^}_${l_typeName}=\"${gDefaultRetVal}\""
-        eval "info \"读取参数docker.${l_typeName}.${l_param}的值(gTargetDocker${l_param^}_${l_typeName}):\${gTargetDocker${l_param^}_${l_typeName}}\""
+        convertI18NText "common.docker.extend.point.reading.param.value" "docker.${l_typeName}.${l_param}#gTargetDocker${l_param^}_${l_typeName}#${gDefaultRetVal}"
+        eval "info \"${gDefaultRetVal}\""
       done
     done
 
@@ -249,7 +252,7 @@ function initialGlobalParamsForDockerStage_ex(){
         l_dockerFiles=""
         ;;
       *)
-        error "不存在的构建类型参数：${gBuildType}"
+        error "common.docker.extend.point.invalid.build.type" "${gBuildType}"
         ;;
     esac
 
@@ -290,17 +293,17 @@ function initialGlobalParamsForDockerStage_ex(){
           #使用公共级Dockerfile文件
           gDockerfileTemplates="${gDockerfileTemplates} ${l_dockerFilePath}/${l_dockerFile}"
         else
-          error "指定的模板文件不存在:${l_dockerFile}"
+          error "common.docker.extend.point.template.file.not.found" "${l_dockerFile}"
         fi
       done
 
-      warn "启用的Dockerfile文件包括:${gDockerfileTemplates}"
+      warn "common.docker.extend.point.enabled.dockerfiles" "${gDockerfileTemplates}"
 
       #定义项目默认的编译输出目录，各语言项目可在语言级扩展中重新定义各个变量。
       gProjectBuildOutDir="${gBuildPath}/out"
 
       if [ "${gDockerBuildDir}" ];then
-        info "清空${gDockerBuildDir##*/}目录"
+        info "common.docker.extend.point.clearing.dir" "${gDockerBuildDir##*/}"
         rm -rf "${gDockerBuildDir:?}/*" || true
       fi
 
@@ -346,10 +349,10 @@ function onAfterInitialingGlobalParamsForDockerStage_ex() {
   gDockerFileTemplateParamMap["_ARCH-TYPE_"]=""
   gDockerFileTemplateParamMap["_ARCH_"]=""
 
-  info "处理docker.copyFiles参数"
+  info "common.docker.extend.point.processing.copyfiles"
   _copyFilesIntoDockerBuildDir "${l_ciCdYamlFile}"
 
-  info "复制需要放置到ConfigMap中的配置文件"
+  info "common.docker.extend.point.copying.configmap.files"
   _copyConfigMapFiles "${l_ciCdYamlFile}"
 
   if [[ "${gDockerRepoName}" && "${gDockerRepoAccount}" && "${gDockerRepoPassword}" ]];then
@@ -403,7 +406,7 @@ function initialDockerFile_ex() {
         l_value="${l_value//\//\\\/}"
         sed -i "s/${l_placeholder}/${l_value}/g" "${l_targetDockerFile}"
       else
-        warn "未配置${l_targetDockerFile##*/}文件中占位符${l_placeholder}的值,默认设置为空串"
+        warn "common.docker.extend.point.placeholder.not.configured" "${l_targetDockerFile##*/}#${l_placeholder}"
         sed -i "s/${l_placeholder}//g" "${l_targetDockerFile}"
       fi
     fi
@@ -445,7 +448,7 @@ function onBeforeCreatingDockerImage_ex() {
     #删除空格符
     l_image="${l_image// /}"
     [[ "${l_image}" =~ ^scratch(:|$).* ]] && continue
-    info "提前拉取镜像:${l_image}"
+    info "common.docker.extend.point.pulling.image" "${l_image}"
     pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}"
   done
 }
@@ -507,7 +510,7 @@ function handleBuildingSingleImageForDocker_ex() {
 
     if [[ "${l_paramName1}" =~ ^(globalParams\.) ]];then
       readParam "${gCiCdYamlFile}" "${l_paramName1}"
-      [[ "${gDefaultRetVal}" == "null" ]] && error "读取${gCiCdYamlFile##*/}文件中${l_paramName1}参数失败"
+      [[ "${gDefaultRetVal}" == "null" ]] && error "common.docker.extend.point.read.param.failed" "${gCiCdYamlFile##*/}#${l_paramName1}"
       l_paramValue="${gDefaultRetVal}"
       if [ "${l_paramName1}" == "globalParams.businessImage" ];then
         #删除业务镜像的后缀"-business"
@@ -520,9 +523,9 @@ function handleBuildingSingleImageForDocker_ex() {
 
     updateParam "${gCiCdYamlFile}" "${l_paramName}" "${l_paramValue}"
     if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-      error "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数失败"
+      error "common.docker.extend.point.update.param.failed" "${gCiCdYamlFile##*/}#${l_paramName}"
     else
-      warn "更新${gCiCdYamlFile##*/}文件中${l_paramName}参数的值为:${l_paramValue}"
+      warn "common.docker.extend.point.update.param.success" "${gCiCdYamlFile##*/}#${l_paramName}#${l_paramValue}"
     fi
   done
 
@@ -585,10 +588,10 @@ function _copyFilesIntoDockerBuildDir() {
           if [ ! -d "${gDockerBuildDir}/${l_arrays[1]}" ];then
             mkdir -p "${gDockerBuildDir}/${l_arrays[1]}"
           fi
-          info "复制${l_targetFile}文件到Docker构建目录中${l_arrays[1]}子目录中"
+          info "common.docker.extend.point.copying.file.to.subdir" "${l_targetFile}#${l_arrays[1]}"
           cp -f "${l_targetFile}" "${gDockerBuildDir}/${l_arrays[1]}"
         else
-          info "复制${l_targetFile}文件到Docker构建目录中"
+          info "common.docker.extend.point.copying.file.to.build.dir" "${l_targetFile}"
           cp -f "${l_targetFile}" "${gDockerBuildDir}"
         fi
       done
@@ -628,12 +631,12 @@ function _copyDirsIntoDockerBuildDir() {
         if [ ! -d "${gDockerBuildDir}/${l_copyDir##*/}/${l_archType//\//-}" ];then
           mkdir -p "${gDockerBuildDir}/${l_copyDir##*/}/${l_archType//\//-}"
         fi
-        info "复制${l_copyDir##*/}/${l_archType//\//-}目录中的文件到Docker构建目录中"
+        info "common.docker.extend.point.copying.files.from.arch.dir" "${l_copyDir##*/}/${l_archType//\//-}"
         cp -rf "${l_copyDir}/${l_archType//\//-}/" "${gDockerBuildDir}/${l_copyDir##*/}"
       else
         #先删除存在的目标目录。
         rm -rf "${gDockerBuildDir:?}/${l_copyDir##*/}" 2>&1
-        info "复制${l_copyDir##*/}目录中的文件到Docker构建目录中"
+        info "common.docker.extend.point.copying.files.from.arch.dir" "${l_copyDir##*/}"
         cp -rf "${l_copyDir}/" "${gDockerBuildDir}/${l_copyDir##*/}"
       fi
 
@@ -670,21 +673,21 @@ function _createDockerImage() {
 
   existDockerImage "${l_image}"
   if [ "${gDefaultRetVal}" == "${l_image}" ];then
-    info "创建docker镜像前,先删除现有的同名Docker镜像: ${l_image}..." "-n"
+    info "common.docker.extend.point.deleting.existing.image" "${l_image}" "-n"
     docker rmi "${l_image}"
-    info "成功" "*"
+    info "common.docker.extend.point.success" "" "*"
   fi
 
   # shellcheck disable=SC2088
   l_tmpFile="${gTempFileDir}/docker-build-${RANDOM}.tmp"
   registerTempFile "${l_tmpFile}"
-  info "构建docker镜像:${l_image} ..."
+  info "common.docker.extend.point.building.image" "${l_image}"
 
   if [ "${gEnableNoCacheOnDockerBuild}" == "true" ];then
-    info "执行命令:docker build --no-cache --platform ${l_archType} --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir} ..."
+    info "common.docker.extend.point.executing.command" "docker build --no-cache --platform ${l_archType} --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir}"
     docker build --no-cache --platform "${l_archType}" --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
   else
-    info "执行命令:docker build --platform ${l_archType} --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir} ..."
+    info "common.docker.extend.point.executing.command" "docker build --platform ${l_archType} --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir}"
     docker build --platform "${l_archType}" --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
   fi
 
@@ -693,7 +696,7 @@ function _createDockerImage() {
   unregisterTempFile "${l_tmpFile}"
 
   if [ ! "${l_errorLog}" ];then
-    error "docker镜像构建失败:${l_errorLog}"
+    error "common.docker.extend.point.image.build.failed" "${l_errorLog}"
   fi
 
   #将生成的镜像推送到私有仓库（测试环境使用的仓库）中
@@ -701,21 +704,21 @@ function _createDockerImage() {
     #先删除已经存在的镜像。
     invokeExtendChain "onBeforePushDockerImage" "${gDockerRepoType}" "${l_image}" "${l_archType}" "true" "${gDockerRepoName}" \
       "${gDockerRepoInstanceName}" "${gDockerRepoWebPort}" "${gDockerRepoAccount}" "${gDockerRepoPassword}"
-    info "将${l_image}镜像推送到${gDockerRepoName}仓库中..."
+    info "common.docker.extend.point.pushing.image.to.repo" "${l_image}#${gDockerRepoName}" "-n"
     pushImage "${l_image}" "${l_archType}" "${gDockerRepoName}"
     # shellcheck disable=SC2015
-    [[ "${gDefaultRetVal}" != "true" ]] && error "镜像推送失败" || info "镜像推送成功"
+    [[ "${gDefaultRetVal}" != "true" ]] && error "common.docker.extend.point.failed" "" "*" || info "common.docker.extend.point.success" "" "*"
 
     l_pushedImageFile="${gHelmBuildOutDir}/${l_archType//\//-}/pushed-images.yaml"
     l_key="${l_image//:/@}"
     l_key="${l_key//./_}"
-    info "在文件(${l_pushedImageFile})中记录本次运行推送的镜像信息(${l_key}: ${gRunID})"
+    info "common.docker.extend.point.recording.pushed.image.info" "${l_pushedImageFile}#${l_key}#${gRunID}"
     echo "images:" > "${l_pushedImageFile}"
     insertParam "${l_pushedImageFile}" "images.${l_key}" "${gRunID}"
-
   fi
 
-  gCurrentStageResult="INFO|成功构建${l_archType}架构的${l_image}镜像"
+  convertI18NText "common.docker.extend.point.build.image.success.arch" "${l_archType}#${l_image}"
+  gCurrentStageResult="INFO|成功构建${gDefaultRetVal}"
   gDefaultRetVal="${l_image}"
 }
 
@@ -726,7 +729,7 @@ function _onAfterCreatingDockerImage(){
   local l_image=$1
   local l_archType=$2
 
-  info "将生成的镜像导出到${gHelmBuildOutDir}/${l_archType//\//-}目录的文件中"
+  info "common.docker.extend.point.exporting.image.to.dir" "${gHelmBuildOutDir}/${l_archType//\//-}"
   saveImage "${l_image}" "${l_archType}" "${gHelmBuildOutDir}/${l_archType//\//-}"
 
 }

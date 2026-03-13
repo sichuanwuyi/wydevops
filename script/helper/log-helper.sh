@@ -391,8 +391,9 @@ function convertI18NText(){
 
   if [ "${l_msgParams}" ];then
     #将l_options参数中的#替换为空格，然后转换为数组。
+    IFS='#' read -r -a l_params <<< "${l_msgParams}"
     # shellcheck disable=SC2206
-    l_params=(${l_msgParams//#/ })
+    #l_params=(${l_msgParams//#/ })
     l_param_count=${#l_params[@]}
     l_index=0
     if [ "$l_param_count" -gt 0 ]; then

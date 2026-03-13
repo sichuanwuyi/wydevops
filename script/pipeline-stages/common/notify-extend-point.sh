@@ -14,6 +14,7 @@ function sendNotify_ex() {
 
   local l_content
   local l_tmpFile
+  local l_errorContent
   local l_errorFlag
   local l_maxTryCount=3
   local l_i
@@ -21,34 +22,31 @@ function sendNotify_ex() {
   # shellcheck disable=SC2124
   l_content="${@}"
   if [ ! "${l_content}" ];then
-    error "发送的通知内容不能为空"
+    error "common.notify.extend.point.notify.content.cannot.be.empty"
   fi
 
-  invokeExtendPointFunc "useNotifyTemplate" "加载并使用模板来格式化通知消息" "${l_content}"
+  invokeExtendPointFunc "useNotifyTemplate" "common.notify.extend.point.loading.notify.template" "" "${l_content}"
 
   local l_tmpFile="${gHelmBuildDir}/notify-${RANDOM}.json"
   registerTempFile "${l_tmpFile}"
   echo "${gDefaultRetVal}" > "${l_tmpFile}"
 
-  info "发送的钉钉内容如下："
+  info "common.notify.extend.point.dingtalk.content.as.follows" "DingTalk"
   cat "${l_tmpFile}"
 
   for (( l_i = 0; l_i < l_maxTryCount; l_i++ )); do
-    info "尝试发送通知消息...${l_i}"
-    l_errorFlag=$(curl -s -X POST -H "Content-Type:application/json" --data "@${l_tmpFile}" "${gExternalNotifyUrl}" 2>&1)
-    l_errorFlag=$(grep -oP  "^.*(Error|bad\/illegal|failed|timed out).*$" <<< "${l_errorFlag}")
+    info "common.notify.extend.point.trying.to.send.notify.message" "${l_i}" "-n"
+    l_errorContent=$(curl -s -X POST -H "Content-Type:application/json" --data "@${l_tmpFile}" "${gExternalNotifyUrl}" 2>&1)
+    l_errorFlag=$(grep -oP  "^.*(Error|bad\/illegal|failed|timed out).*$" <<< "${l_errorContent}")
     if [ ! "${l_errorFlag}" ];then
+      info "common.notify.extend.point.send.external.notify.success" "" "*"
       break
     fi
-    warn "发送外部通知失败: ${l_errorFlag}"
+    warn "common.notify.extend.point.send.external.notify.failed" "${l_errorContent}" "*"
   done
 
   #删除临时文件
   unregisterTempFile "${l_tmpFile}"
-
-  if [ ! "${l_errorFlag}" ];then
-   info "成功发送外部通知"
-  fi
 
   unset l_content
   unset l_tmpFile

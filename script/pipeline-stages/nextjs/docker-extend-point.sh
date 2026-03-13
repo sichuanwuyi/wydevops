@@ -28,20 +28,20 @@ function _onBeforeCreatingDockerImage_ex() {
   local l_dockerfile=$3
   local l_ciCdConfigFile="${gBuildPath}/${gCiCdConfigYamlFileName}"
 
-  info "将项目根目录下的必要的文件和目录复制到Docker构建目录中..."
+  info "nextjs.docker.extend.point.copying.files.to.docker.build.dir"
   cp -rf "${gBuildPath}/app" "${gDockerBuildDir}/" || true
   cp -rf "${gBuildPath}/public" "${gDockerBuildDir}/" || true
   cp -f "${gBuildPath}"/.env* "${gDockerBuildDir}/" || true
   cp "${gBuildPath}"/*.ts "${gDockerBuildDir}/" || true
   cp "${gBuildPath}"/*.mjs "${gDockerBuildDir}/" || true
   cp "${gBuildPath}"/*.json "${gDockerBuildDir}/" || true
-  info "项目文件复制结束"
+  info "nextjs.docker.extend.point.copying.files.finished"
 
   readParam "${l_ciCdConfigFile}" "globalParams.envFile"
   if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
-    warn "删除${gDockerBuildDir}/.env.production文件"
+    warn "nextjs.docker.extend.point.deleting.env.production" "${gDockerBuildDir}"
     rm -f "${gDockerBuildDir}/.env.production" || true
-    warn "将${gDefaultRetVal}文件重命名为.env.production文件"
+    warn "nextjs.docker.extend.point.renaming.env.file" "${gDefaultRetVal}"
     mv -f "${gDockerBuildDir}/${gDefaultRetVal}" "${gDockerBuildDir}/.env.production" || true
   fi
 

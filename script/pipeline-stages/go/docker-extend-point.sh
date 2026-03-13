@@ -23,7 +23,7 @@ function _onBeforeCreatingDockerImage_ex() {
 
   readParam "${l_ciCdYamlFile}" "globalParams.enableOfflineBuild"
   if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" == "true" ]];then
-    info "将编译输出的可执行程序复制到docker构建目录下..."
+    info "go.docker.extend.point.copying.executable.to.docker.build.dir"
     cp -f "${gBuildPath}/${gServiceName}-${l_archType%%/*}-${l_archType##*/}.out" "${gDockerBuildDir}/"
 
     readParam "${l_ciCdYamlFile}" "globalParams.configMapFiles"
@@ -38,8 +38,8 @@ function _onBeforeCreatingDockerImage_ex() {
           cp -f "${l_configMapFile}" "${gDockerBuildDir}/"
         fi
         # shellcheck disable=SC2181
-        [[ "$?" -ne 0 ]] && error "复制${l_configMapFile}文件失败"
-        info "成功复制${l_configMapFile}文件到docker镜像构建目录中"
+        [[ "$?" -ne 0 ]] && error "go.docker.extend.point.copy.file.failed" "${l_configMapFile}"
+        info "go.docker.extend.point.copy.file.succeeded" "${l_configMapFile}"
       done
     fi
 
@@ -55,7 +55,7 @@ function _onBeforeCreatingDockerImage_ex() {
     l_ignoredFile=${l_file##*/}
     l_flag=$(grep -E " ${l_ignoredFile} " <<< "${l_ignoredFiles}")
     if [ "${l_flag}" ];then
-      warn "忽略${l_ignoredFile}文件"
+      warn "go.docker.extend.point.ignoring.file" "${l_ignoredFile}"
       continue
     fi
     cp -f "${l_file}" "${gDockerBuildDir}/"
@@ -71,7 +71,7 @@ function _onBeforeCreatingDockerImage_ex() {
     l_ignoredDir=${l_file##*/}
     l_flag=$(grep -E " ${l_ignoredDir} " <<< "${l_ignoredDirs}")
     if [ "${l_flag}" ];then
-      warn "忽略${l_ignoredDir}目录"
+      warn "go.docker.extend.point.ignoring.directory" "${l_ignoredDir}"
       continue
     fi
     cp -rf "${l_file}" "${gDockerBuildDir}/"

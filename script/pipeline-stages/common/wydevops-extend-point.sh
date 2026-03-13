@@ -42,61 +42,66 @@ function onBeforeReplaceParamPlaceholder_ex() {
     updateParam "${l_cicdYaml}" "globalParams.enableRewrite" "false"
     updateParam "${l_cicdYaml}" "globalParams.apisixRouteRegexUri" "[]"
     updateParam "${l_cicdYaml}" "globalParams.apisixIngressTargetRegex" ""
-    info "判定是否启用网关路径重写功能: 禁用"
+    info "common.wydevops.extend.point.gateway.rewrite.disabled"
   else
     updateParam "${l_cicdYaml}" "globalParams.enableRewrite" "true"
     updateParam "${l_cicdYaml}" "globalParams.apisixRouteRegexUri" "[ \"^\${gatewayPath}(?:/|$)(.*)\", \"/\$1\" ]"
     updateParam "${l_cicdYaml}" "globalParams.apisixIngressTargetRegex" "^\${gatewayPath}(?:/|$)/(.*)"
-    info "判定是否启用网关路径重写功能: 启用"
+    info "common.wydevops.extend.point.gateway.rewrite.enabled"
   fi
 
   #为业务镜像和基础镜像添加项目名称前缀。
   #if [[ "${gDockerRepoType}" == "harbor" || ("${gDockerRepoInstanceName}" && "${gDockerImageNameWithInstance}" == "true") ]];then
   if [[ "${gDockerRepoType}" == "harbor" ]];then
-    info "为业务镜像和基础镜像添加仓库名称（nexus）或项目名称(harbor)前缀..."
+    info "common.wydevops.extend.point.adding.repo.prefix"
     readParam "${l_cicdYaml}" "globalParams.businessImage"
-    info "更新globalParams.businessImage参数的值为:${gDockerRepoInstanceName}/${gDefaultRetVal}"
+    info "common.wydevops.extend.point.updating.param.value" "globalParams.businessImage#${gDockerRepoInstanceName}/${gDefaultRetVal}"
     updateParam "${l_cicdYaml}" "globalParams.businessImage" "${gDockerRepoInstanceName}/${gDefaultRetVal}"
 
     readParam "${l_cicdYaml}" "globalParams.baseImage"
-    info "更新globalParams.baseImage参数的值为:${gDockerRepoInstanceName}/${gDefaultRetVal}"
+    info "common.wydevops.extend.point.updating.param.value" "globalParams.baseImage#${gDockerRepoInstanceName}/${gDefaultRetVal}"
     updateParam "${l_cicdYaml}" "globalParams.baseImage" "${gDockerRepoInstanceName}/${gDefaultRetVal}"
   fi
 
-  info "根据构建类型对ci-cd.yaml文件中globalParams.baseWorkDir参数的值添加后缀"
+  info "common.wydevops.extend.point.adding.suffix.to.baseworkdir"
   l_paramName="globalParams.baseWorkDir"
   readParam "${l_cicdYaml}" "${l_paramName}"
-  [[ "${gDefaultRetVal}" == "null" ]] && error "${l_cicdYaml##*/}文件中缺少${l_paramName}参数"
+  [[ "${gDefaultRetVal}" == "null" ]] && error "common.wydevops.extend.point.param.missing" "${l_cicdYaml##*/}#${l_paramName}"
 
   l_paramValue="${gDefaultRetVal}-double"
   [[ "${gBuildType}" == "single" ]] && l_paramValue="${gDefaultRetVal}-single"
 
   insertParam "${l_cicdYaml}" "${l_paramName}" "${l_paramValue}"
   if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
-    error "更新${l_cicdYaml##*/}文件中${l_paramName}参数失败"
+    error "common.wydevops.extend.point.update.param.failed" "${l_cicdYaml##*/}#${l_paramName}"
   else
-    info "更新${l_cicdYaml##*/}文件中${l_paramName}参数的值为:${l_paramValue}"
+    info "common.wydevops.extend.point.update.param.success" "${l_cicdYaml##*/}#${l_paramName}#${l_paramValue}"
   fi
 
-  info "将命令行接收的全局参数值写入配置文件中..."
+  info "common.wydevops.extend.point.writing.cli.params.to.config"
   if [ "${gBuildType}" ];then
+    info "common.wydevops.extend.point.updating.param.value" "globalParams.buildType#${gBuildType}"
     #初始化gBuildType参数。
     updateParam "${l_cicdYaml}" "globalParams.buildType" "${gBuildType}"
   fi
 
   if [ "${gArchTypes}" ];then
+    info "common.wydevops.extend.point.updating.param.value" "globalParams.archTypes#${gArchTypes}"
     updateParam "${l_cicdYaml}" "globalParams.archTypes" "${gArchTypes}"
   fi
 
   if [ "${gOfflineArchTypes}" ];then
+    info "common.wydevops.extend.point.updating.param.value" "globalParams.offlineArchTypes#${gOfflineArchTypes}"
     updateParam "${l_cicdYaml}" "globalParams.offlineArchTypes" "${gOfflineArchTypes}"
   fi
 
   if [ "${gUseTemplate}" ];then
+    info "common.wydevops.extend.point.updating.param.value" "globalParams.useTemplate#${gUseTemplate}"
     updateParam "${l_cicdYaml}" "globalParams.useTemplate" "${gUseTemplate}"
   fi
 
   if [ "${gValidBuildStages}" ];then
+    info "common.wydevops.extend.point.updating.param.value" "globalParams.validBuildStages#${gValidBuildStages}"
     updateParam "${l_cicdYaml}" "globalParams.validBuildStages" "${gValidBuildStages}"
   fi
 
@@ -107,12 +112,12 @@ function onBeforeReplaceParamPlaceholder_ex() {
   # shellcheck disable=SC2068
   for l_placeholder in ${l_placeholders[@]};do
     if [[ "${l_placeholder}" =~ ^_[A-Z0-9\-]+_$ ]];then
-      warn "${l_cicdYaml}文件中占位符${l_placeholder}未定义值"
+      warn "common.wydevops.extend.point.placeholder.not.defined" "${l_cicdYaml}#${l_placeholder}"
     fi
   done
 
   if [ "${l_placeholders}" ];then
-    error "${l_cicdYaml}文件中存在未定义的占位符"
+    error "common.wydevops.extend.point.undefined.placeholders.exist" "${l_cicdYaml}"
   fi
 }
 
@@ -140,19 +145,19 @@ function createCiCdTemplateFile_ex() {
 
   l_templateFile="${gBuildPath}/${gHelmBuildDirName}/templates/config/_${gCiCdTemplateFileName}"
   if [ -f "${l_templateFile}" ];then
-    l_info="将项目级_ci-cd-template.yaml模板文件内容复制到${l_cicdTemplateFile##*/}文件中"
+    l_info="common.wydevops.extend.point.copying.project.template" "${l_cicdTemplateFile##*/}"
   else
     l_templateFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/${l_runtimeVersion}_${gCiCdTemplateFileName}"
     if [ -f "${l_templateFile}" ];then
-      l_info="将语言级_ci-cd-template.yaml模板文件内容复制到${l_cicdTemplateFile##*/}文件中"
+      l_info="common.wydevops.extend.point.copying.language.template" "${l_cicdTemplateFile##*/}"
     else
       l_templateFile="${gBuildScriptRootDir}/templates/config/_ci-cd-template.yaml"
-      l_info="将公共级_ci-cd-template.yaml模板文件内容复制到${l_cicdTemplateFile##*/}文件中"
+      l_info="common.wydevops.extend.point.copying.common.template" "${l_cicdTemplateFile##*/}"
     fi
   fi
 
   if [ ! -f "${l_templateFile}" ];then
-    error "未找到匹配的_ci-cd-template.yaml模板文件"
+    error "common.wydevops.extend.point.template.not.found"
   fi
 
   info "${l_info}"
@@ -183,7 +188,7 @@ function createCiCdConfigFile_ex() {
 
   l_tmpCicdConfigFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/${l_runtimeVersion}_ci-cd-config.yaml"
   if [ -f "${l_tmpCicdConfigFile}" ];then
-    info "复制${gLanguage}类项目的_ci-cd-config.yaml模板文件，创建一个项目级的_ci-cd-config.yaml"
+    info "common.wydevops.extend.point.copying.language.config.template" "${gLanguage}"
     cat "${l_tmpCicdConfigFile}" > "${l_cicdConfigFile}"
   fi
 }
@@ -258,7 +263,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
 
             gDefaultRetVal=""
             #如果${l_array[1]}里面包含了application.yml文件，则尝试读取当前环境的配置文件。
-            invokeExtendPointFunc "onLoadMatchedAdditionalConfigFiles" "获取当前部署环境对应的配置文件" "${l_array[1]//\"/}"
+            invokeExtendPointFunc "onLoadMatchedAdditionalConfigFiles" "common.wydevops.extend.point.getting.env.config.files" "" "${l_array[1]//\"/}"
 
             if [ "${gDefaultRetVal}" ] && [ "${gDefaultRetVal}" != "null" ];then
               l_array[1]="${gDefaultRetVal},${l_array[1]//\"/}"
@@ -279,7 +284,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   done
 
   if [ "${l_loadOk}" == "false" ];then
-    invokeExtendPointFunc "onFailToLoadingParamMappingFiles" "处理加载参数映射文件失败异常" "${l_array[1]}"
+    invokeExtendPointFunc "onFailToLoadingParamMappingFiles" "common.wydevops.extend.point.fail.to.load.mapping.files" "" "${l_array[1]}"
   fi
 
   [[ "${l_configMapFiles}" =~ ^(,) ]] && l_configMapFiles="${l_configMapFiles:1}"
@@ -304,10 +309,10 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
     for l_mapKey in ${l_mapKeys[@]};do
       l_mapValue="${configMapNameAndFilesMap[${l_mapKey}]}"
       if [ "${l_mapKey}" == "_A_" ];then
-        info "初始化${l_cicdTargetFile##*/}文件中的configMapFiles参数的值为:${l_mapValue:1}"
+        info "common.wydevops.extend.point.init.configmap.files" "${l_cicdTargetFile##*/}#${l_mapValue:1}"
         insertParam "${l_cicdTargetFile}" "globalParams.configMapFiles" "${l_mapValue:1}"
       else
-        info "初始化${l_cicdTargetFile##*/}文件中的chart[0].deployments[0].configMaps[${l_index}].files参数的值为:${l_mapValue:1}"
+        info "common.wydevops.extend.point.init.deployment.configmap.files" "${l_cicdTargetFile##*/}#chart[0].deployments[0].configMaps[${l_index}].files#${l_mapValue:1}"
         l_content="name: ${l_mapKey}\nfiles: ${l_mapValue:1}"
         insertParam "${l_cicdTargetFile}" "chart[0].deployments[0].configMaps[${l_index}]" "${l_content}"
         ((l_index = l_index + 1))
@@ -365,45 +370,44 @@ function _onBeforeInitGlobalParams() {
   local l_array
 
   if [ ! "${gWorkMode}" ];then
-    error "未指定工作模式"
+    error "common.wydevops.extend.point.unspecified.work.mode"
   fi
 
   if [ ! "${gLanguage}" ];then
-    error "未指定项目语言类型"
+    error "common.wydevops.extend.point.unspecified.language"
   fi
 
   if [ "${gWorkMode}" == "jenkins" ];then
-    info "从Jenkins全局参数中初始化全局变量"
+    info "common.wydevops.extend.point.init.from.jenkins.params"
     _loadJenkinsGlobalParams
 
     if [ ! "${gBuildPath}" ];then
-      error "未指定构建项目主模块路径"
+      error "common.wydevops.extend.point.unspecified.build.path"
     fi
 
-    info "检测项目是否是多模块项目,并确定项目的构建根目录"
-    invokeExtendPointFunc "checkMultipleModelProjectInJenkins" "Jenkins工作模式下的多模块检测扩展点"
+    info "common.wydevops.extend.point.detect.multi.module"
+    invokeExtendPointFunc "checkMultipleModelProjectInJenkins" "common.wydevops.extend.point.jenkins.multi.module.check" ""
     if [ "${gMultipleModelProject}" == "true" ];then
-      info "--->当前项目是多模块项目"
+      info "common.wydevops.extend.point.is.multi.module"
     else
-      info "--->当前项目是单模块项目"
+      info "common.wydevops.extend.point.is.single.module"
     fi
 
     if [ "${gClearCachedParams}" == "true" ];then
-      info "删除当前存在的ci-cd.yaml文件"
+      info "common.wydevops.extend.point.delete.existing.cicd.yaml"
       rm -rf "${gBuildPath:?}/${gCiCdYamlFileName}"
     fi
 
   else
     if [[ "${gBuildPath}" =~ ^(\.\/[a-zA-Z_]+) ]];then
-      error "本地构建项目时，主模块路径（gBuildPath）必须是绝对路径"
+      error "common.wydevops.extend.point.local.build.path.absolute"
     fi
 
-    info "检测项目是否是多模块项目,并确定项目的构建根目录"
-    invokeExtendPointFunc "checkMultipleModelProjectInLocal" "本地模式下的多模块检测扩展点"
+    invokeExtendPointFunc "checkMultipleModelProjectInLocal" "common.wydevops.extend.point.local.multi.module.check" ""
     if [ "${gMultipleModelProject}" == "true" ];then
-      info "--->当前项目是多模块项目"
+      info "common.wydevops.extend.point.is.multi.module"
     else
-      info "--->当前项目是单模块项目"
+      info "common.wydevops.extend.point.is.single.module"
     fi
 
     #本地模式下，读取git提交随机码
@@ -413,9 +417,9 @@ function _onBeforeInitGlobalParams() {
         # shellcheck disable=SC2206
         l_array=(${l_value})
         gGitHash=${l_array[1]}
-        info "--->获取git提交随机码(gGitHash):${gGitHash}"
+        info "common.wydevops.extend.point.get.git.hash.success" "${gGitHash}"
       else
-        warn "--->获取git提交随机码失败：执行命令失败(git log -n 1)"
+        warn "common.wydevops.extend.point.get.git.hash.failed"
       fi
     fi
 
@@ -451,66 +455,66 @@ function _initGlobalParams() {
   #判断项目中是否存在ci-cd.yaml配置文件？
   if [ ! -f "${gCiCdYamlFile}" ];then
     #如果不存在，则复制语言级公共模板(_ci-cd-template.yaml)创建一个项目级的_ci-cd-template.yaml文件。
-    info "未检测到自定义模板文件，使用默认的_${gCiCdTemplateFileName}模板文件 ..."
-    invokeExtendPointFunc "createCiCdTemplateFile" "创建_ci-cd-template.yaml配置文件" "${l_templateFile}"
+    info "common.wydevops.extend.point.no.custom.template" "_${gCiCdTemplateFileName}"
+    invokeExtendPointFunc "createCiCdTemplateFile" "common.wydevops.extend.point.create.cicd.template.file" "_ci-cd-template.yaml" "${l_templateFile}"
 
-    info "获取项目级_ci-cd-config.yaml配置文件 ..."
+    info "common.wydevops.extend.point.get.project.cicd.config" "_ci-cd-config.yaml"
     l_tmpCiCdConfigFile="${gBuildPath}/_${gCiCdConfigYamlFileName}"
     #尝试复制语言级_ci-cd-config.yaml创建一个项目级的_ci-cd-config.yaml
     #注意：语言级_ci-cd-config.yaml模板文件中对大部分的参数都配置了默认值。
     #如果不存在语言级_ci-cd-config.yaml文件，则直接返回。后续直接将l_ciCdConfigFile文件的内容合并到l_templateFile文件，
-    invokeExtendPointFunc "createCiCdConfigFile" "获取_ci-cd-config.yaml配置文件" "${l_templateFile}" "${l_tmpCiCdConfigFile}"
+    invokeExtendPointFunc "createCiCdConfigFile" "common.wydevops.extend.point.get.cicd.config.file" "_ci-cd-config.yaml" "${l_templateFile}" "${l_tmpCiCdConfigFile}"
 
     #根据参数映射文件中的配置，初始化_ci-cd-config.yaml文件。
     #如果_ci-cd-config.yaml文件不存在，则直接初始化l_templateFile文件。
-    invokeExtendPointFunc "initialCiCdConfigFileByParamMappingFiles" "获取_ci-cd-config.yaml配置文件" "${l_templateFile}" "${l_tmpCiCdConfigFile}"
+    invokeExtendPointFunc "initialCiCdConfigFileByParamMappingFiles" "common.wydevops.extend.point.init.cicd.config.file" "_ci-cd-config.yaml" "${l_templateFile}" "${l_tmpCiCdConfigFile}"
 
     #继续判断项目中是否存在ci-cd-config.yaml配置文件？
     #注意:项目中配置的ci-cd-config.yaml文件内容可能只是_ci-cd-config.yaml文件的子集。
     l_ciCdConfigFile="${gBuildPath}/${gCiCdConfigYamlFileName}"
     if [ -f  "${l_ciCdConfigFile}" ];then
-      info "检测到项目中存在ci-cd-config.yaml配置文件"
+      info "common.wydevops.extend.point.project.cicd.config.exists" "ci-cd-config.yaml"
       if [ -f "${l_tmpCiCdConfigFile}" ];then
-        info "检测到系统中配置有${gLanguage}语言级_ci-cd-config.yaml配置文件"
-        info "先将ci-cd-config.yaml文件内容合并到_ci-cd-config.yaml文件中"
+        info "common.wydevops.extend.point.language.cicd.config.exists" "${gLanguage}#_ci-cd-config.yaml"
+        info "common.wydevops.extend.point.merge.cicd.config.to.underscore" "ci-cd-config.yaml#_ci-cd-config.yaml"
         combine "${l_ciCdConfigFile}" "${l_tmpCiCdConfigFile}" "" "" "true" "true" "true"
         echo -e "\n"
-        info "再将_ci-cd-config.yaml文件内容合并到_ci-cd-template.yaml文件中"
+        info "common.wydevops.extend.point.merge.underscore.config.to.template" "_ci-cd-config.yaml#_ci-cd-template.yaml"
         combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "" "true" "true"
       else
-        warn "系统中未检测到${gLanguage}语言级_ci-cd-config.yaml配置文件"
-        info "直接将ci-cd-config.yaml配置文件的内容合并到_ci-cd-template.yaml文件中"
+        warn "common.wydevops.extend.point.no.language.cicd.config" "${gLanguage}#_ci-cd-config.yaml"
+        info "common.wydevops.extend.point.merge.underscore.config.to.template.direct" "ci-cd-config.yaml#_ci-cd-template.yaml"
         combine "${l_ciCdConfigFile}" "${l_templateFile}" "" "" "true" "true"
       fi
     elif [ -f "${l_tmpCiCdConfigFile}" ];then
-      info "检测到系统中配置有${gLanguage}语言级_ci-cd-config.yaml配置文件"
-      info "直接将_ci-cd-config.yaml配置文件的内容合并到_ci-cd-template.yaml文件中"
+      info "common.wydevops.extend.point.language.cicd.config.exists" "${gLanguage}#_ci-cd-config.yaml"
+      info "common.wydevops.extend.point.merge.underscore.config.to.template.direct" "_ci-cd-config.yaml#_ci-cd-template.yaml"
       combine "${l_tmpCiCdConfigFile}" "${l_templateFile}" "" "" "true" "true"
     fi
     #删除临时文件
     rm -f "${l_tmpCiCdConfigFile}" || true
 
-    info "从_ci-cd-template.yaml文件创建ci-cd.yaml文件"
-    #将ci-cd-template.yaml文件更名为ci-cd.yaml文件中。
+    info "common.wydevops.extend.point.create.cicd.yaml.from.template" "_ci-cd-template.yaml#ci-cd.yaml"
+    #将_ci-cd-template.yaml文件内容复制到ci-cd.yaml文件中。
     cat "${l_templateFile}" > "${gCiCdYamlFile}"
 
     #删除临时文件
     rm -f "${l_templateFile}" || true
 
     #调用：替换变量引用前扩展点。
-    invokeExtendPointFunc "onBeforeReplaceParamPlaceholder" "ci-cd.yaml文件中变量引用处理前" "${gCiCdYamlFile}"
+    invokeExtendPointFunc "onBeforeReplaceParamPlaceholder" "common.wydevops.extend.point.before.replace.placeholder" "ci-cd.yaml" "${gCiCdYamlFile}"
     #调用：替换变量引用扩展点。
-    invokeExtendPointFunc "replaceParamPlaceholder" "处理ci-cd.yaml文件中变量引用" "${gCiCdYamlFile}"
+    invokeExtendPointFunc "replaceParamPlaceholder" "common.wydevops.extend.point.replace.placeholder" "ci-cd.yaml" "${gCiCdYamlFile}"
     #调用：替换变量引用后扩展点。
-    invokeExtendPointFunc "onAfterReplaceParamPlaceholder" "ci-cd.yaml文件中变量引用处理后" "${gCiCdYamlFile}"
+    invokeExtendPointFunc "onAfterReplaceParamPlaceholder" "common.wydevops.extend.point.after.replace.placeholder" "ci-cd.yaml" "${gCiCdYamlFile}"
 
   fi
 
-  info "从ci-cd.yaml文件中统一读取全局配置参数..."
+  info "common.wydevops.extend.point.load.global.params.from.cicd.yaml" "ci-cd.yaml"
   _loadGlobalParamsFromCiCdYaml "${gCiCdYamlFile}"
 
   gDockerTemplateDir="${gBuildScriptRootDir}/templates/docker"
-  info "初始化docker模板文件的路径:${gDockerTemplateDir}"
+  info "common.wydevops.extend.point.init.docker.template.path" "${gDockerTemplateDir}"
 
   #清理并创建需要的全局目录
   _createGlobalDirectory
@@ -542,13 +546,13 @@ function _createGlobalDirectory() {
 
   gHelmBuildDir="${gBuildPath}/${gHelmBuildDirName}"
   if [[ ! -d "${gHelmBuildDir}" ]];then
-    info "初始化构建主目录:${gHelmBuildDir}"
+    info "common.wydevops.extend.point.init.build.main.dir" "${gHelmBuildDir}"
     mkdir -p "${gHelmBuildDir}"
   fi
 
   gHelmBuildOutDir="${gHelmBuildDir}/${gHelmBuildOutDirName}"
   if [[ ! -d "${gHelmBuildOutDir}" ]];then
-    info "初始化构建输出目录:${gHelmBuildOutDir}"
+    info "common.wydevops.extend.point.init.build.out.dir" "${gHelmBuildOutDir}"
     mkdir -p "${gHelmBuildOutDir}"
   fi
 
@@ -556,14 +560,14 @@ function _createGlobalDirectory() {
   if [[ -d "${gDockerBuildDir}" ]];then
     rm -rf "${gDockerBuildDir:?}"
   fi
-  info "初始化docker镜像构建目录:${gDockerBuildDir}"
+  info "common.wydevops.extend.point.init.docker.build.dir" "${gDockerBuildDir}"
   mkdir -p "${gDockerBuildDir}"
 
   gChartBuildDir="${gHelmBuildDir}/${gChartBuildDirName}"
   if [[ -d "${gChartBuildDir}" ]];then
     rm -rf "${gChartBuildDir:?}"
   fi
-  info "初始化chart镜像构建目录:${gChartBuildDir}"
+  info "common.wydevops.extend.point.init.chart.build.dir" "${gChartBuildDir}"
   mkdir -p "${gChartBuildDir}"
 
   gTempFileDir="${gHelmBuildDir}/${gTempFileDirName}"
@@ -571,36 +575,36 @@ function _createGlobalDirectory() {
     #如果不为空，则删除该临时目录。
     rm -rf "${gTempFileDir:?}"
   fi
-  info "初始化临时文件存储目录:${gTempFileDir}"
+  info "common.wydevops.extend.point.init.temp.file.dir" "${gTempFileDir}"
   mkdir -p "${gTempFileDir}"
 
   gParamMappingDir=${gHelmBuildDir}/${gParamMappingDirName}
   if [ ! -d "${gTempFileDir}" ];then
-    info "初始化项目参数映射配置文件存储目录:${gParamMappingDir}"
+    info "common.wydevops.extend.point.init.param.mapping.dir" "${gParamMappingDir}"
     mkdir -p "${gParamMappingDir}"
   fi
 
   gProjectShellDir="${gHelmBuildDir}/${gProjectShellDirName}"
   if [ ! -d "${gProjectShellDir}" ];then
-    info "初始化项目级脚本文件存储目录:${gProjectShellDir}"
+    info "common.wydevops.extend.point.init.project.shell.dir" "${gProjectShellDir}"
     mkdir -p "${gProjectShellDir}"
   fi
 
   gProjectPluginDir="${gHelmBuildDir}/${gProjectPluginDirName}"
   if [ ! -d "${gProjectPluginDir}" ];then
-    info "初始化项目级资源生成器插件存储目录:${gProjectPluginDir}"
+    info "common.wydevops.extend.point.init.project.plugin.dir" "${gProjectPluginDir}"
     mkdir -p "${gProjectPluginDir}"
   fi
 
  gProjectTemplateDir="${gHelmBuildDir}/${gProjectTemplateDirName}"
  if [ ! -d "${gProjectTemplateDir}" ];then
-   info "初始化项目级模板文件存储目录:${gProjectTemplateDir}"
+   info "common.wydevops.extend.point.init.project.template.dir" "${gProjectTemplateDir}"
    mkdir -p "${gProjectTemplateDir}"
  fi
 
  gProjectDockerTemplateDir="${gProjectTemplateDir}/${gProjectDockerTemplateDirName}"
  if [ ! -d "${gProjectDockerTemplateDir}" ];then
-   info "初始化项目级Dockerfile模板文件存储目录:${gProjectDockerTemplateDir}"
+   info "common.wydevops.extend.point.init.project.docker.template.dir" "${gProjectDockerTemplateDir}"
    mkdir -p "${gProjectDockerTemplateDir}"
  fi
 
@@ -626,74 +630,74 @@ function _checkGlobalDirectory() {
   export gParamMappingDirName
   export gParamMappingDir
 
-  info "检查并创建缺失的全局目录..."
+  info "common.wydevops.extend.point.check.create.missing.dirs"
 
   gHelmBuildDir="${gBuildPath}/${gHelmBuildDirName}"
   if [[ ! -d "${gHelmBuildDir}" ]];then
-    info "初始化构建主目录:${gHelmBuildDir}"
+    info "common.wydevops.extend.point.init.build.main.dir" "${gHelmBuildDir}"
     mkdir -p "${gHelmBuildDir}"
   fi
 
   gHelmBuildOutDir="${gHelmBuildDir}/${gHelmBuildOutDirName}"
   if [[ ! -d "${gHelmBuildOutDir}" ]];then
-    info "初始化构建输出目录:${gHelmBuildOutDir}"
+    info "common.wydevops.extend.point.init.build.out.dir" "${gHelmBuildOutDir}"
     mkdir -p "${gHelmBuildOutDir}"
   fi
 
   gDockerBuildDir="${gHelmBuildDir}/${gDockerBuildDirName}"
   if [[ ! -d "${gDockerBuildDir}" ]];then
-    info "初始化docker镜像构建目录:${gDockerBuildDir}"
+    info "common.wydevops.extend.point.init.docker.build.dir" "${gDockerBuildDir}"
     mkdir -p "${gDockerBuildDir}"
   else
-    info "清空docker镜像构建目录"
+    info "common.wydevops.extend.point.clear.docker.build.dir"
     rm -rf "${gDockerBuildDir:?}/*"
   fi
 
   gChartBuildDir="${gHelmBuildDir}/${gChartBuildDirName}"
   if [[ ! -d "${gChartBuildDir}" ]];then
-    info "初始化chart镜像构建目录:${gChartBuildDir}"
+    info "common.wydevops.extend.point.init.chart.build.dir" "${gChartBuildDir}"
     mkdir -p "${gChartBuildDir}"
   else
-    info "清空chart镜像构建目录"
+    info "common.wydevops.extend.point.clear.chart.build.dir"
     rm -rf "${gChartBuildDir:?}/*"
   fi
 
   gTempFileDir="${gHelmBuildDir}/${gTempFileDirName}"
   if [ ! -d "${gTempFileDir}" ];then
-    info "初始化临时文件存储目录:${gTempFileDir}"
+    info "common.wydevops.extend.point.init.temp.file.dir" "${gTempFileDir}"
     mkdir -p "${gTempFileDir}"
   else
-    info "清空临时文件存储目录"
+    info "common.wydevops.extend.point.clear.temp.file.dir"
     rm -rf "${gTempFileDir:?}/*"
   fi
 
   gParamMappingDir=${gHelmBuildDir}/${gParamMappingDirName}
   if [ ! -d "${gTempFileDir}" ];then
-    info "初始化项目参数映射配置文件存储目录:${gParamMappingDir}"
+    info "common.wydevops.extend.point.init.param.mapping.dir" "${gParamMappingDir}"
     mkdir -p "${gParamMappingDir}"
   fi
 
   gProjectShellDir="${gHelmBuildDir}/${gProjectShellDirName}"
   if [ ! -d "${gProjectShellDir}" ];then
-    info "初始化项目级脚本文件存储目录:${gProjectShellDir}"
+    info "common.wydevops.extend.point.init.project.shell.dir" "${gProjectShellDir}"
     mkdir -p "${gProjectShellDir}"
   fi
 
   gProjectPluginDir="${gHelmBuildDir}/${gProjectPluginDirName}"
   if [ ! -d "${gProjectPluginDir}" ];then
-    info "初始化项目级资源生成器插件存储目录:${gProjectPluginDir}"
+    info "common.wydevops.extend.point.init.project.plugin.dir" "${gProjectPluginDir}"
     mkdir -p "${gProjectPluginDir}"
   fi
 
    gProjectTemplateDir="${gHelmBuildDir}/${gProjectTemplateDirName}"
    if [ ! -d "${gProjectTemplateDir}" ];then
-     info "初始化项目级模板文件存储目录:${gProjectTemplateDir}"
+     info "common.wydevops.extend.point.init.project.template.dir" "${gProjectTemplateDir}"
      mkdir -p "${gProjectTemplateDir}"
    fi
 
    gProjectDockerTemplateDir="${gProjectTemplateDir}/${gProjectDockerTemplateDirName}"
    if [ ! -d "${gProjectDockerTemplateDir}" ];then
-     info "初始化项目级Dockerfile模板文件存储目录:${gProjectDockerTemplateDir}"
+     info "common.wydevops.extend.point.init.project.docker.template.dir" "${gProjectDockerTemplateDir}"
      mkdir -p "${gProjectDockerTemplateDir}"
    fi
 }
@@ -706,7 +710,7 @@ function _onAfterInitGlobalParams(){
   local l_releaseNotes
   local l_releaseNote
 
-  debug "1.读取項目更新历史文件中最新内容"
+  info "common.wydevops.extend.point.read.release.note"
   if [ "${gReleaseNotePath}" ];then
     #读取項目更新历史文件中最新内容。
     l_releaseNotes=$(find "${gReleaseNotePath}" -type f -name "${gReleaseNoteFileName}")
@@ -717,15 +721,15 @@ function _onAfterInitGlobalParams(){
         #仅读取文件中第一个空行前的内容。
         gUpdateNote=$(awk 'BEGIN{RS="\n\n"} {print} {exit}' "${l_releaseNote}")
         if [ ! "${gUpdateNote}" ];then
-          warn "項目更新历史文件是空文件，或者第一个空行前没有有效内容"
+          warn "common.wydevops.extend.point.release.note.empty"
         fi
         break
       done
     else
-      warn "項目更新历史文件${gReleaseNoteFileName}不存在"
+      warn "common.wydevops.extend.point.release.note.not.exist" "${gReleaseNoteFileName}"
     fi
   else
-    warn "項目更新历史文件存放目录参数(gReleaseNotePath)未配置"
+    warn "common.wydevops.extend.point.release.note.path.not.configured"
   fi
 }
 
@@ -735,107 +739,107 @@ function _loadJenkinsGlobalParams() {
   #构建脚本根目录。
   export gBuildScriptRootDir="${BUILD_SCRIPT_ROOT}"
   if [ ! "${gBuildScriptRootDir}" ];then
-    error "未指定构建脚本根目录(BUILD_SCRIPT_ROOT)"
+    error "common.wydevops.extend.point.build.script.root.not.specified"
   fi
-  info "--->设置gBuildScriptRootDir=\${BUILD_SCRIPT_ROOT}"
+  info "common.wydevops.extend.point.set.build.script.root.dir"
 
   export gGitProjectName="${GIT_PROJECT_NAME}"
   if [ ! "${gGitProjectName}" ];then
-    error "未指定需要构建的Git项目名称(GIT_PROJECT_NAME)"
+    error "common.wydevops.extend.point.git.project.name.not.specified"
   fi
-  info "--->设置gGitProjectName=\${GIT_PROJECT_NAME}"
+  info "common.wydevops.extend.point.set.git.project.name"
 
   export gBuildPath="${BUILD_PATH}"
   if [ ! "${gBuildPath}" ];then
-    error "未指定项目构建的根目录(BUILD_PATH)"
+    error "common.wydevops.extend.point.build.path.not.specified"
   fi
-  info "--->设置gBuildPath=\${BUILD_PATH}"
+  info "common.wydevops.extend.point.set.build.path"
 
   #解析Docker镜像仓库
   parseDockerRepoInfo "${DOCKER_REPO_INFO}"
 
   if [ ! "${gDockerRepoType}" ];then
-    error "未配置Docker镜像仓库类型(nexus或harbor)(DOCKER_REPO_TYPE)"
+    error "common.wydevops.extend.point.docker.repo.type.not.configured"
   fi
-  info "--->gDockerRepoType=\${DOCKER_REPO_TYPE}"
+  info "common.wydevops.extend.point.set.docker.repo.type"
 
   if [ ! "${gDockerRepoInstanceName}" ];then
-    error "未配置Docker镜像仓库实例名称(nexus)或项目名称(harbor)(DOCKER_REPO_INSTANCE_NAME)"
+    error "common.wydevops.extend.point.docker.repo.instance.name.not.configured"
   fi
-  info "--->gDockerRepoInstanceName=\${DOCKER_REPO_INSTANCE_NAME}"
+  info "common.wydevops.extend.point.set.docker.repo.instance.name"
 
   if [ ! "${gDockerRepoName}" ];then
-    error "未配置Docker镜像仓库名称(DOCKER_REPO_NAME)"
+    error "common.wydevops.extend.point.docker.repo.name.not.configured"
   fi
-  info "--->设置gDockerRepoName=\${DOCKER_REPO_NAME}"
+  info "common.wydevops.extend.point.set.docker.repo.name"
 
   if [ ! "${gDockerRepoAccount}" ];then
-    error "未配置Docker镜像仓库登录账号(DOCKER_REPO_ACCOUNT)"
+    error "common.wydevops.extend.point.docker.repo.account.not.configured"
   fi
-  info "--->设置gDockerRepoAccount=\${DOCKER_REPO_ACCOUNT}"
+  info "common.wydevops.extend.point.set.docker.repo.account"
 
   if [ ! "${gDockerRepoPassword}" ];then
-    error "未配置Docker镜像仓库登录密码(DOCKER_REPO_PASSWORD)"
+    error "common.wydevops.extend.point.docker.repo.password.not.configured"
   fi
-  info "--->设置gDockerRepoPassword=\${DOCKER_REPO_PASSWORD}"
+  info "common.wydevops.extend.point.set.docker.repo.password"
 
   if [ ! "${gDockerRepoWebPort}" ];then
-    error "未配置Docker镜像仓Web管理端口(DOCKER_REPO_WEB_PORT)"
+    error "common.wydevops.extend.point.docker.repo.web.port.not.configured"
   fi
-  info "--->gDockerRepoWebPort=\${DOCKER_REPO_WEB_PORT}"
+  info "common.wydevops.extend.point.set.docker.repo.web.port"
 
   #解析Chart镜像仓库
   parseChartRepoInfo "${CHART_REPO_INFO}"
 
   if [ ! "${gChartRepoType}" ];then
-    error "未配置Chart镜像仓库类型(nexus或harbor)(CHART_REPO_TYPE)"
+    error "common.wydevops.extend.point.chart.repo.type.not.configured"
   fi
-  info "--->gChartRepoType=\${CHART_REPO_TYPE}"
+  info "common.wydevops.extend.point.set.chart.repo.type"
 
   if [ ! "${gChartRepoInstanceName}" ];then
-    error "未配置Docker镜像仓库实例名称(nexus)或项目名称(harbor)(CHART_REPO_INSTANCE_NAME)"
+    error "common.wydevops.extend.point.chart.repo.instance.name.not.configured"
   fi
-  info "--->gChartRepoInstanceName=\${CHART_REPO_INSTANCE_NAME}"
+  info "common.wydevops.extend.point.set.chart.repo.instance.name"
 
   if [ ! "${gChartRepoName}" ];then
-    error "未配置Chart镜像仓库名称(CHART_REPO_NAME)"
+    error "common.wydevops.extend.point.chart.repo.name.not.configured"
   fi
-  info "--->设置gChartRepoName=\${CHART_REPO_NAME}"
+  info "common.wydevops.extend.point.set.chart.repo.name"
 
   if [ ! "${gChartRepoAccount}" ];then
-    error "未配置Chart镜像仓库登录账号(CHART_REPO_ACCOUNT)"
+    error "common.wydevops.extend.point.chart.repo.account.not.configured"
   fi
-  info "--->设置gChartRepoAccount=\${CHART_REPO_ACCOUNT}"
+  info "common.wydevops.extend.point.set.chart.repo.account"
 
   if [ ! "${gChartRepoPassword}" ];then
-    error "未配置Chart镜像仓库登录密码(CHART_REPO_PASSWORD)"
+    error "common.wydevops.extend.point.chart.repo.password.not.configured"
   fi
-  info "--->设置gChartRepoPassword=\${CHART_REPO_PASSWORD}"
+  info "common.wydevops.extend.point.set.chart.repo.password"
 
   if [ ! "${gChartRepoWebPort}" ];then
-    error "未配置Chart镜像仓库Web管理端口(CHART_REPO_WEB_PORT)"
+    error "common.wydevops.extend.point.chart.repo.web.port.not.configured"
   fi
-  info "--->gChartRepoWebPort=\${CHART_REPO_WEB_PORT}"
+  info "common.wydevops.extend.point.set.chart.repo.web.port"
 
   export gExternalNotifyUrl="${EXTERNAL_NOTIFY_URL}"
   if [ ! "${gExternalNotifyUrl}" ];then
-    warn "未配置发布管理平台构建进度通知接口URL(EXTERNAL_NOTIFY_URL)"
+    warn "common.wydevops.extend.point.external.notify.url.not.configured"
   else
-    info "--->设置gExternalNotifyUrl=\${EXTERNAL_NOTIFY_URL}"
+    info "common.wydevops.extend.point.set.external.notify.url"
   fi
 
   export gUpdateNotifyUrl="${DEPLOY_NOTIFY_URL}"
   if [ ! "${gUpdateNotifyUrl}" ];then
-    warn "未配置发布管理平台构建结果通知接口URL(DEPLOY_NOTIFY_URL)"
+    warn "common.wydevops.extend.point.deploy.notify.url.not.configured"
   else
-    info "--->设置gUpdateNotifyUrl=\${DEPLOY_NOTIFY_URL}"
+    info "common.wydevops.extend.point.set.deploy.notify.url"
   fi
 
   l_value="${DEPLOY_TARGET_NODES}"
   if [ ! "${l_value}" ];then
-    warn "未配置部署服务的目标节点服务器(DEPLOY_TARGET_NODES)"
+    warn "common.wydevops.extend.point.deploy.target.nodes.not.configured"
   else
-    info "--->设置gDeployTargetNodes=\${DEPLOY_TARGET_NODES}"
+    info "common.wydevops.extend.point.set.deploy.target.nodes"
     # shellcheck disable=SC2206
     export gDeployTargetNodes=(${l_value//,/ })
   fi
@@ -918,7 +922,7 @@ function _replaceParamPlaceholder() {
       done
     fi
     l_rowDataMap["${l_paramName}"]="${l_paramValue}"
-    info "---将${l_paramName}替换为${l_paramValue}"
+    info "common.wydevops.extend.point.replace.placeholder.info" "${l_paramName}#${l_paramValue}"
     #替换文件中的占位符。
     l_content=$(echo -e "${l_content}" | sed "s/\\\${${l_paramName}}/${l_paramValue}/g")
   done
@@ -934,7 +938,7 @@ function _replaceParamPlaceholder() {
   # shellcheck disable=SC2002
   l_lines=$(grep -oE "\\\$\{[a-zA-Z0-9_\-]+\}" <<< "${l_content}" | sort | uniq -c)
   if [ "${lines}" ];then
-    error "ci-cd.yaml文件中存在未明确配置的参数:\n${lines}"
+    error "common.wydevops.extend.point.unconfigured.params.in.cicd.yaml" "${lines}"
   fi
 
 }
@@ -967,14 +971,14 @@ function _loadGlobalParamsFromCiCdYaml() {
     readParam "${l_cicdYaml}" "globalParams.runtimeVersion"
     gRuntimeVersion="${gDefaultRetVal}"
   fi
-  info "gRuntimeVersion参数高优先配置值为：${gRuntimeVersion}"
+  info "common.wydevops.extend.point.runtime.version.priority" "${gRuntimeVersion}"
 
   if [ ! "${gBuildType}" ];then
     #初始化gBuildType参数。
     readParam "${l_cicdYaml}" "globalParams.buildType"
     gBuildType="${gDefaultRetVal}"
   fi
-  info "gBuildType参数高优先配置值为：${gBuildType}"
+  info "common.wydevops.extend.point.build.type.priority" "${gBuildType}"
 
   if [ ! "${gArchTypes}" ];then
     #初始化gArchTypes参数。
@@ -985,7 +989,7 @@ function _loadGlobalParamsFromCiCdYaml() {
       gArchTypes="linux/amd64,linux/arm64"
     fi
   fi
-  info "gArchTypes参数高优先配置值为：${gArchTypes}"
+  info "common.wydevops.extend.point.arch.types.priority" "${gArchTypes}"
 
   if [ ! "${gOfflineArchTypes}" ];then
     #初始化gOfflineArchTypes参数。
@@ -996,7 +1000,7 @@ function _loadGlobalParamsFromCiCdYaml() {
       gOfflineArchTypes="linux/amd64,linux/arm64"
     fi
   fi
-  info "gOfflineArchTypes参数高优先配置值为：${gOfflineArchTypes}"
+  info "common.wydevops.extend.point.offline.arch.types.priority" "${gOfflineArchTypes}"
 
   if [ ! "${gUseTemplate}" ];then
     #初始化gUseTemplate参数。
@@ -1007,7 +1011,7 @@ function _loadGlobalParamsFromCiCdYaml() {
       gUseTemplate="false"
     fi
   fi
-  info "gUseTemplate参数高优先配置值为：${gUseTemplate}"
+  info "common.wydevops.extend.point.use.template.priority" "${gUseTemplate}"
 
   if [ ! "${gValidBuildStages}" ];then
     readParam "${l_cicdYaml}" "globalParams.validBuildStages"
@@ -1017,7 +1021,7 @@ function _loadGlobalParamsFromCiCdYaml() {
       gValidBuildStages="all"
     fi
   fi
-  info "gValidBuildStages参数高优先配置值为：${gValidBuildStages}"
+  info "common.wydevops.extend.point.valid.build.stages.priority" "${gValidBuildStages}"
 
   #初始化gRollback参数。
   readParam "${l_cicdYaml}" "globalParams.rollback"
@@ -1026,7 +1030,7 @@ function _loadGlobalParamsFromCiCdYaml() {
   else
     gRollback="true"
   fi
-  info "gRollback:从配置文件中读取配置值(${gRollback})"
+  info "common.wydevops.extend.point.rollback.config.value" "${gRollback}"
 
   #初始化gTargetApiServer参数。
   readParam "${l_cicdYaml}" "globalParams.targetApiServer"
@@ -1035,7 +1039,7 @@ function _loadGlobalParamsFromCiCdYaml() {
   else
     gTargetApiServer=""
   fi
-  info "gTargetApiServer:从配置文件中读取配置值(${gTargetApiServer})"
+  info "common.wydevops.extend.point.target.api.server.config.value" "${gTargetApiServer}"
 
   #初始化gTargetNamespace参数。
   readParam "${l_cicdYaml}" "globalParams.targetNamespace"
@@ -1044,7 +1048,7 @@ function _loadGlobalParamsFromCiCdYaml() {
   else
     gTargetNamespace="default"
   fi
-  info "gTargetNamespace:从配置文件中读取配置值(${gTargetNamespace})"
+  info "common.wydevops.extend.point.target.namespace.config.value" "${gTargetNamespace}"
 
   #初始化gTargetGatewayHosts参数。
   readParam "${l_cicdYaml}" "globalParams.gatewayHost"
@@ -1053,7 +1057,7 @@ function _loadGlobalParamsFromCiCdYaml() {
   else
     gTargetGatewayHosts=""
   fi
-  info "gTargetGatewayHosts:从配置文件中读取配置值(${gTargetGatewayHosts})"
+  info "common.wydevops.extend.point.target.gateway.hosts.config.value" "${gTargetGatewayHosts}"
 
   #初始化gGatewayPath参数。
   readParam "${l_cicdYaml}" "globalParams.gatewayPath"
@@ -1062,23 +1066,23 @@ function _loadGlobalParamsFromCiCdYaml() {
   else
     gGatewayPath=""
   fi
-  info "gGatewayPath:从配置文件中读取配置值(${gGatewayPath})"
+  info "common.wydevops.extend.point.gateway.path.config.value" "${gGatewayPath}"
 
   #初始化gServiceName参数。
   readParam "${l_cicdYaml}" "globalParams.serviceName"
   if [ "${gDefaultRetVal}" == "null" ];then
-    error "${l_cicdYaml}文件中globalParams.serviceName参数不能为空"
+    error "common.wydevops.extend.point.service.name.not.empty" "${l_cicdYaml}#globalParams.serviceName"
   fi
   gServiceName="${gDefaultRetVal}"
-  info "gServiceName:从配置文件中读取配置值(${gServiceName})"
+  info "common.wydevops.extend.point.service.name.config.value" "${gServiceName}"
 
   #初始化gBusinessVersion参数。
   readParam "${l_cicdYaml}" "globalParams.businessVersion"
   if [ "${gDefaultRetVal}" == "null" ];then
-    error "${l_cicdYaml}文件中globalParams.businessVersion参数不能为空"
+    error "common.wydevops.extend.point.service.name.not.empty" "${l_cicdYaml}#globalParams.businessVersion"
   fi
   gBusinessVersion="${gDefaultRetVal}"
-  info "gBusinessVersion:从配置文件中读取配置值(${gBusinessVersion})"
+  info "common.wydevops.extend.point.business.version.config.value" "${gBusinessVersion}"
 }
 
 #------------------------私有方法--结束-------------------------#

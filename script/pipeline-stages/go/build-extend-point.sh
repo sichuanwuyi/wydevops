@@ -5,10 +5,10 @@ function _onBeforeProjectBuilding_ex() {
   export gBuildPath
   export gMultipleModelProject
 
-  info "进入项目主模块目录：${gBuildPath}"
+  info "go.build.extend.point.entering.project.main.module.dir" "${gBuildPath}"
   cd "${gBuildPath}" || true
 
-  info "强行设置gMultipleModelProject变量为false"
+  info "go.build.extend.point.setting.gmultiplemodelproject.to.false" "gMultipleModelProject#false"
   gMultipleModelProject="false"
 }
 
@@ -26,7 +26,7 @@ function _buildProject_ex() {
 
   readParam "${l_cicdYamlFile}" "globalParams.enableOfflineBuild"
   if [[ "${gDefaultRetVal}" == "null" || "${gDefaultRetVal}" == "false" ]];then
-    info "跳过项目编译过程(在docker build过程中编译项目)..."
+    info "go.build.extend.point.skipping.project.compilation"
     return
   fi
 
@@ -37,12 +37,12 @@ function _buildProject_ex() {
   for l_archType in ${l_archTypes[@]};do
     l_osType="${l_archType%%/*}"
     l_archType="${l_archType##*/}"
-    info "开始执行项目编译过程..."
+    info "go.build.extend.point.starting.project.compilation"
     l_errorLog=$(CGO_ENABLED=0 GOOS="${l_osType}" GOARCH="${l_archType}" go build -o "${gServiceName}-${l_osType}-${l_archType}.out" "${gBuildPath}")
     if [ "${l_errorLog}" ];then
-      error "编译${l_osType}/${l_archType}类型的应用失败: ${l_errorLog}"
+      error "go.build.extend.point.compilation.failed" "${l_osType}/${l_archType}#${l_errorLog}"
     fi
-    info "成功编译${l_osType}/${l_archType}类型的应用"
+    info "go.build.extend.point.compilation.succeeded" "${l_osType}/${l_archType}"
   done
 
 }
