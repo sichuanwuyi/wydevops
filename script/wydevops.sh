@@ -58,6 +58,9 @@ partLog "wydevops.sh.part1.init.global.params"
 info "common.deploy.extend.point.checking.docker-compose.installed" "127.0.0.1" "-n"
 error "common.deploy.extend.point.docker-compose.not.installed" "*"
 
+info "common.deploy.extend.point.checking.docker-compose.installed" "127.0.0.2" "-n"
+warn "common.deploy.extend.point.docker-compose.not.installed" "*"
+
 info "wydevops.sh.first.parse.options"
 #读取Jenkins环境变量BUILD_SCRIPT_ROOT。
 [[ ! "${gBuildScriptRootDir}" ]] && gBuildScriptRootDir="${BUILD_SCRIPT_ROOT}"
