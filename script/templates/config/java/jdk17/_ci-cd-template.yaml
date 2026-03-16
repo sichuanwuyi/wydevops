@@ -153,6 +153,13 @@ globalParams:
   cpuRequests: 1000m
   memoryRequests: 1Gi
 
+  #docker容器内的时区配置
+  timeZone: Etc/UTC
+  #springboot启动时的推内存参数
+  jvmOpts: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0 -XX:InitialRAMPercentage=20.0 -XX:MaxMetaspaceSize=256m -XX:MaxDirectMemorySize=256m"
+  #JavaOpts参数
+  javaOpts: "--add-opens=java.base/sun.reflect.annotation=ALL-UNNAMED -Dspring.config.location=_WORK-DIR-IN-CONTAINER_/wydevops-config/"
+
   #需要放到项目默认ConfigMap中的文本文件的相对路径列表，文件间使用英文逗号分隔
   configMapFiles:
   #需要打包到离线安装包中镜像名称，格式：{镜像名称}:{镜像版本},...
@@ -243,7 +250,11 @@ docker:
   #生成的Docker镜像对外暴露的端口列表
   exposePorts: ${containerPorts}
   #docker容器内的时区配置
-  timeZone: Asia/Shanghai
+  timeZone: ${timeZone}
+  #JVMOpts参数
+  jvmOpts: ${jvmOpts}
+  #JavaOpts参数
+  javaOpts: ${javaOpts}
   business:
     name: ${businessImage}
     #业务镜像的版本
