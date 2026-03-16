@@ -14,6 +14,7 @@ _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
 echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 
 _selfRootDir="${_SCRIPTS_ROOT_DIR}"
+export gLanguageInLog="zh"
 source "${_SCRIPTS_ROOT_DIR}/helper/log-helper.sh"
 source "${_SCRIPTS_ROOT_DIR}/helper/yaml-helper.sh"
 source "${_SCRIPTS_ROOT_DIR}/wydevops-update.sh"
