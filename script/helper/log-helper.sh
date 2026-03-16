@@ -41,7 +41,7 @@ function extendLog() {
   if [ "${l_startFlag}" == "true" ];then
     l_info="\n--->> ${gDefaultRetVal}(${l_funcName}) <<---"
   else
-    l_info="\n<<--- ${gDefaultRetVal}(${l_funcName}) --->>"
+    l_info="<<--- ${gDefaultRetVal}(${l_funcName}) --->>\n"
   fi
 
   if [ "${gWorkMode}" == "local" ];then
