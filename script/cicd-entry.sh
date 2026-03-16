@@ -18,6 +18,7 @@ function standardCICD(){
     l_stages=(${gBuildStages//,/ })
   fi
 
+  echo "--------gValidBuildStages=${gValidBuildStages}-------------"
   warn "cicd.entry.sh.valid.stages" "${gValidBuildStages}"
 
   # shellcheck disable=SC2068
