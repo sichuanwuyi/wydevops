@@ -250,6 +250,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
           initialMapFromConfigFile "${l_mappingFile}" "_paramMappingMap"
 
           if [ "${#_paramMappingMap[@]}" -gt 0 ];then
+            echo "----------gDefaultRetVal=${gDefaultRetVal}----------------"
             # shellcheck disable=SC2206
             l_array=(${gDefaultRetVal//|/ })
             #收集部署时需要打包到ConfigMap中的配置文件
