@@ -1294,7 +1294,7 @@ function getDeployValueOfParam() {
   local l_packageName
 
   ((l_index = -1))
-  info "common.chart.extend.point.getting.deploy.config.index" "" "-n"
+  info "common.chart.extend.point.getting.deploy.config.index"
   #根据l_chartName获取打包名。
   getListIndexByPropertyNameQuickly "${gCiCdYamlFile}" "package" "chartName" "${l_chartName}"
   if [ "${gDefaultRetVal}" -ge 0 ];then
@@ -1313,11 +1313,11 @@ function getDeployValueOfParam() {
   fi
 
   if [ "${l_index}" -lt 0 ];then
-    warn "common.chart.extend.point.get.index.failed" "" "*"
+    warn "common.chart.extend.point.get.index.failed"
     return
   fi
 
-  info "common.chart.extend.point.get.index.success" "${l_index}" "*"
+  info "common.chart.extend.point.get.index.success" "${l_index}"
   info "common.chart.extend.point.getting.service.params"
   ((l_i = 0))
   while true;do

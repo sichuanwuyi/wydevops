@@ -151,9 +151,9 @@ function initialGlobalParamsForDeployStage_ex() {
             readParamInList "${l_paramContentBlock}" "${l_paramIndex}" "value"
             gParamDeployedValueMap["${l_paramName}"]="${l_paramValue}"
             if [ "${l_paramValue}" ];then
-              info "${l_paramValue}" "*"
+              info "${l_paramValue}" "" "*"
             else
-              warn "common.deploy.extend.point.no.config.value" "*"
+              warn "common.deploy.extend.point.no.config.value" "" "*"
             fi
           fi
 
@@ -662,10 +662,10 @@ function _deployServiceInK8S() {
     l_account="${l_array[2]}"
     l_password="${l_array[3]}"
 
-    info "common.deploy.extend.point.finding.chart.image.and.settings" "" "-n"
+    info "common.deploy.extend.point.finding.chart.image.and.settings"
     _findChartImage "${l_chartName}" "${l_chartVersion}"
-    [[ ! "${gDefaultRetVal}" ]] && error "common.deploy.extend.point.failed" "" "*"
-    info "common.deploy.extend.point.success" "" "*"
+    [[ ! "${gDefaultRetVal}" ]] && error "common.deploy.extend.point.finding.chart.image.failed"
+
     # shellcheck disable=SC2206
     l_array=(${gDefaultRetVal})
     l_chartFile="${l_array[0]}"

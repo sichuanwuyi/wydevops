@@ -458,10 +458,10 @@ function loadMessageProperties(){
 
   local l_language
 
-  if [ "${gLanguageInLog}" ];then
-    l_language="${gLanguageInLog}"
+  if [ "${gLanguageInLog}" != "zh" ];then
+    l_language="en"
+    gLanguageInLog="${l_language}"
   else
-    l_language="zh"
     gLanguageInLog="${l_language}"
   fi
 
