@@ -10,14 +10,12 @@ function existRepositoryInHarborProject() {
   local l_imageVersion=$4
 
   local l_imageName
-  local l_result
-  local l_errorLog
 
   l_imageName="${l_imageFullName##*/}"
 
   gDefaultRetVal="false"
 
-  curl -s -X 'GET' -H 'accept: application/json' \
+  curl -s -o /dev/null -X 'GET' -H 'accept: application/json' \
     "http://${l_dockerRepoHostAndPort}/api/v2.0/projects/${l_projectName}/repositories/${l_imageName}/artifacts/${l_imageVersion}?page=1&page_size=10&with_tag=true&with_label=false&with_scan_overview=false&with_sbom_overview=false&with_accessory=false&with_signature=false&with_immutable_status=false" 2>&1
   [[ $? -eq 0 ]] && gDefaultRetVal="true"
 
@@ -39,7 +37,7 @@ function deleteRepositoryInHarborProject() {
 
   gDefaultRetVal="false"
 
-  curl -s -X 'DELETE' -H 'accept: application/json' -u "${l_dockerRepoAccount}:${l_dockerRepoPassword}" \
+  curl -s -o /dev/null -X 'DELETE' -H 'accept: application/json' -u "${l_dockerRepoAccount}:${l_dockerRepoPassword}" \
     "http://${l_dockerRepoHostAndPort}/api/v2.0/projects/${l_projectName}/repositories/${l_imageName}/artifacts/${l_imageVersion}" 2>&1
   [[ $? -ne 0 ]] && error "harbor.api.helper.delete.image.failed"
   gDefaultRetVal="true"

@@ -485,11 +485,11 @@ function _deployServiceByDocker(){
     l_account="${l_array[2]}"
     l_password="${l_array[3]}"
 
-    info "common.deploy.extend.point.checking.server.arch" "${l_ip}" "-n"
+    info "common.deploy.extend.point.checking.server.arch" "${l_ip}"
     invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
     # shellcheck disable=SC2015
-    [[ "${gDefaultRetVal}" == "false" ]] && error "common.deploy.extend.point.read.server.arch.failed" "" "*"
-    info "common.deploy.extend.point.read.server.arch.success" "${gDefaultRetVal}" "*"
+    [[ "${gDefaultRetVal}" == "false" ]] && error "common.deploy.extend.point.read.server.arch.failed" "${l_ip}"
+    info "common.deploy.extend.point.read.server.arch.success" "${l_ip}#${gDefaultRetVal}"
     l_archType="${gDefaultRetVal}"
 
     l_nodeItem="${l_archTypeMap[${l_archType}]},${l_nodeItem}"

@@ -14,8 +14,8 @@ function queryNexusComponentId() {
 
   gDefaultRetVal=""
 
-  echo "curl -s -X 'GET' -H 'accept: application/json' http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/search?repository=${l_repository}&name=${l_componentName}&version=${l_componentVersion}"
-  l_result=$(curl -s -X 'GET' -H 'accept: application/json' \
+  echo "curl -s -o /dev/null -X 'GET' -H 'accept: application/json' http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/search?repository=${l_repository}&name=${l_componentName}&version=${l_componentVersion}"
+  l_result=$(curl -s -o /dev/null -X 'GET' -H 'accept: application/json' \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/search?repository=${l_repository}&name=${l_componentName}&version=${l_componentVersion}" 2>&1)
   l_result=$(grep -m 1 -oE "^([ ]*)\"id\" : (.*)$" <<< "${l_result}")
   if [ "${l_result}" ];then
@@ -42,8 +42,8 @@ function deleteNexusComponentById() {
 
   gDefaultRetVal="false"
 
-  echo "curl -s -X 'DELETE' -H 'accept: application/json' -u ${gDockerRepoAccount}:${gDockerRepoPassword} http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}"
-  l_result=$(curl -s -X 'DELETE' -H 'accept: application/json' -u "${gDockerRepoAccount}:${gDockerRepoPassword}" \
+  echo "curl -s -o /dev/null -X 'DELETE' -H 'accept: application/json' -u ${gDockerRepoAccount}:${gDockerRepoPassword} http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}"
+  l_result=$(curl -s -o /dev/null -X 'DELETE' -H 'accept: application/json' -u "${gDockerRepoAccount}:${gDockerRepoPassword}" \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}" 2>&1)
   l_errorLog=$(grep -ioE "^(.*)(Error|Failed)(.*)$" <<< "${l_result}")
   [[ "${l_errorLog}" ]] && error "nexus.api.helper.delete.component.failed" "${l_result}"
@@ -68,7 +68,7 @@ function pushNexusChartComponent(){
   registerTempFile "${l_tmpFile}"
 
   info "nexus.api.helper.push.chart.start" "${l_chartFile##*/}" "-n"
-  curl -s -v -X 'POST' -F file=@"${l_chartFile}" -u "${l_account}":"${l_password}" \
+  curl -s -o /dev/null -v -X 'POST' -F file=@"${l_chartFile}" -u "${l_account}":"${l_password}" \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components?repository=${l_repository}" 2>&1 | tee "${l_tmpFile}"
   l_result=$(cat "${l_tmpFile}")
   l_errorLog=$(grep -ioE "^(.*)(Error|Failed)(.*)$" <<< "${l_result}")

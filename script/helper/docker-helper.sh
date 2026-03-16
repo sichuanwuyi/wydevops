@@ -12,7 +12,7 @@ function dockerLogin(){
   local l_errorLog
 
   if [ "${l_repoName}" ];then
-    info "docker.helper.executing.command" "docker logout ${l_repoName} && echo ${l_password} | docker login ${l_repoName} -u ${l_account} --password-stdin" "-n"
+    info "docker.helper.executing.command" "docker logout ${l_repoName} && echo ${l_password} | docker login ${l_repoName} -u ${l_account} --password-stdin"
     # shellcheck disable=SC2088
     l_tmpFile="${gTempFileDir}/docker-${RANDOM}.tmp"
     registerTempFile "${l_tmpFile}"
@@ -24,9 +24,9 @@ function dockerLogin(){
     unregisterTempFile "${l_tmpFile}"
     # shellcheck disable=SC2015
     if [[ "${l_errorLog}" ]];then
-      error "docker.helper.login.fail" "${l_repoName}#${l_tmpFileContent}" "*"
+      error "docker.helper.login.fail" "${l_repoName}#${l_tmpFileContent}"
     else
-      info "docker.helper.common.success" "" "*"
+      info "docker.helper.login.success"
     fi
   fi
 }
