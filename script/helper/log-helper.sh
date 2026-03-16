@@ -465,7 +465,7 @@ function loadMessageProperties(){
     l_language="${gLanguageInLog}"
   fi
 
-  local l_file_path="${_selfRootDir}/i18n/message_${l_language}.properties"
+  local l_file_path="${_selfRootDir}/i18n/message_zh.properties"
   if [ -f "${l_file_path}" ]; then
     while IFS='=' read -r key value || [ -n "${key}" ]; do
       # 忽略空行和注释
