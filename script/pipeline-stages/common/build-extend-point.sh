@@ -42,10 +42,10 @@ function initialGlobalParamsForBuildStage_ex() {
 function buildProject_ex() {
   export gCurrentStageResult
   export gServiceName
-  export gDefaultRetVal
+  export gLogI18NRetVal
 
   convertI18NText "common.build.extend.point.build.success" "${gServiceName}"
-  gCurrentStageResult="INFO|${gDefaultRetVal}"
+  gCurrentStageResult="INFO|${gLogI18NRetVal}"
 }
 
 #加载build阶段脚本库文件

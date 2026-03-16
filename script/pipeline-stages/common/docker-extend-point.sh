@@ -5,6 +5,7 @@ function createThirdPartyImage_ex(){
   export gImageCacheDir
   export gCurrentStageResult
   export gDefaultRetVal
+  export gLogI18NRetVal
 
   local l_image=$1
   local l_archType=$2
@@ -17,7 +18,7 @@ function createThirdPartyImage_ex(){
     #然后推送到私库中，最后导出到gDockerBuildOutDir目录中。
     pullImage "${l_image}" "${l_archType}" "${gDockerRepoName}" "${gImageCacheDir}"
     convertI18NText "common.docker.extend.point.pull.third.party.image.success" "${l_archType}#${l_image}"
-    gCurrentStageResult="INFO|${gDefaultRetVal}"
+    gCurrentStageResult="INFO|${gLogI18NRetVal}"
     gDefaultRetVal="${l_image}"
   fi
 }
@@ -118,6 +119,7 @@ function onBeforeInitialingGlobalParamsForDockerStage_ex(){
 
 function initialGlobalParamsForDockerStage_ex(){
   export gDefaultRetVal
+  export gLogI18NRetVal
   export gBuildScriptRootDir
   export gArchTypes
   export gBuildType
@@ -223,7 +225,7 @@ function initialGlobalParamsForDockerStage_ex(){
         readParam "${l_cicdYaml}" "docker.${l_typeName}.${l_param}"
         eval "export gTargetDocker${l_param^}_${l_typeName}=\"${gDefaultRetVal}\""
         convertI18NText "common.docker.extend.point.reading.param.value" "docker.${l_typeName}.${l_param}#gTargetDocker${l_param^}_${l_typeName}#${gDefaultRetVal}"
-        eval "info \"${gDefaultRetVal}\""
+        eval "info \"${gLogI18NRetVal}\""
       done
     done
 
@@ -647,6 +649,7 @@ function _copyDirsIntoDockerBuildDir() {
 
 function _createDockerImage() {
   export gDefaultRetVal
+  export gLogI18NRetVal
   export gDeleteImageAfterBuilding
   export gDockerRepoName
   export gDockerRepoInstanceName
@@ -718,7 +721,7 @@ function _createDockerImage() {
   fi
 
   convertI18NText "common.docker.extend.point.build.image.success.arch" "${l_archType}#${l_image}"
-  gCurrentStageResult="INFO|成功构建${gDefaultRetVal}"
+  gCurrentStageResult="INFO|${gLogI18NRetVal}"
   gDefaultRetVal="${l_image}"
 }
 

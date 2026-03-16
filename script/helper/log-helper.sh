@@ -20,7 +20,7 @@ function partLog() {
 
 #扩展点日志
 function extendLog() {
-  export gDefaultRetVal
+  export gLogI18NRetVal
 
   #扩展点函数方法名
   local l_funcName=$1
@@ -39,9 +39,9 @@ function extendLog() {
   #使用国际化资源替换l_info
   convertI18NText "${l_info}" "${l_infoParams}"
   if [ "${l_startFlag}" == "true" ];then
-    l_info="\n--->> ${gDefaultRetVal}(${l_funcName}) <<---"
+    l_info="\n--->> ${gLogI18NRetVal}(${l_funcName}) <<---"
   else
-    l_info="<<--- ${gDefaultRetVal}(${l_funcName}) --->>\n"
+    l_info="<<--- ${gLogI18NRetVal}(${l_funcName}) --->>\n"
   fi
 
   if [ "${gWorkMode}" == "local" ];then
@@ -55,7 +55,7 @@ function extendLog() {
 #调用log函数输出信息
 function info() {
   export gMessagePropertiesMap
-  export gDefaultRetVal
+  export gLogI18NRetVal
 
   #需要输出的信息
   local l_info=$1
@@ -72,7 +72,7 @@ function info() {
 
   #使用国际化资源替换l_info
   convertI18NText "${l_info}" "${l_infoParams}"
-  l_info="${gDefaultRetVal}"
+  l_info="${gLogI18NRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.info"]}"
 
@@ -95,7 +95,7 @@ function info() {
 function error() {
   export gTempFileRegTables
   export gMessagePropertiesMap
-  export gDefaultRetVal
+  export gLogI18NRetVal
 
   #需要输出的信息
   local l_info=$1
@@ -114,7 +114,7 @@ function error() {
 
   #使用国际化资源替换l_info
   convertI18NText "${l_info}" "${l_infoParams}"
-  l_info="${gDefaultRetVal}"
+  l_info="${gLogI18NRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.error"]}"
 
@@ -186,7 +186,7 @@ function unregisterTempFile(){
 #调用log函数输出调试信息
 function debug() {
   export gMessagePropertiesMap
-  export gDefaultRetVal
+  export gLogI18NRetVal
 
   #需要输出的信息
   local l_info=$1
@@ -203,7 +203,7 @@ function debug() {
 
   #使用国际化资源替换l_info
   convertI18NText "${l_info}" "${l_infoParams}"
-  l_info="${gDefaultRetVal}"
+  l_info="${gLogI18NRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.debug"]}"
 
@@ -225,7 +225,7 @@ function debug() {
 
 function warn() {
   export gMessagePropertiesMap
-  export gDefaultRetVal
+  export gLogI18NRetVal
 
   #需要输出的信息
   local l_info=$1
@@ -242,7 +242,7 @@ function warn() {
 
   #使用国际化资源替换l_info
   convertI18NText "${l_info}" "${l_infoParams}"
-  l_info="${gDefaultRetVal}"
+  l_info="${gLogI18NRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.warn"]}"
 
@@ -321,7 +321,7 @@ function log() {
 }
 
 function part() {
-  export gDefaultRetVal
+  export gLogI18NRetVal
 
   #需要输出的信息
   local l_info=$1
@@ -343,7 +343,7 @@ function part() {
 
   #使用国际化资源替换l_info
   convertI18NText "${l_info}" "${l_infoParams}"
-  l_info="${gDefaultRetVal}"
+  l_info="${gLogI18NRetVal}"
 
   l_lineLen="50"
   #得到l_info的显示长度
@@ -378,7 +378,7 @@ function part() {
 
 function convertI18NText(){
   export gMessagePropertiesMap
-  export gDefaultRetVal
+  export gLogI18NRetVal
 
   local l_message=$1
   local l_msgParams=$2
@@ -416,7 +416,7 @@ function convertI18NText(){
     fi
   fi
 
-  gDefaultRetVal="${l_message}"
+  gLogI18NRetVal="${l_message}"
 
 }
 
@@ -482,6 +482,9 @@ export gMessagePropertiesMap
 
 #构建脚本所在的根目录
 export _selfRootDir
+
+#convertI18NText方法的返回值变量。
+export gLogI18NRetVal
 
 #日志输出的语言，默认值为zh。
 export gLanguageInLog

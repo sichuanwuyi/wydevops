@@ -85,6 +85,7 @@ function initialParamValueByMappingConfigFiles() {
 
 function _processProjectParamMapping() {
   export gDefaultRetVal
+  export gLogI18NRetVal
   export _alreadyProcessedParamMap
 
   #文件列表，以空格隔开。
@@ -269,7 +270,7 @@ function _processProjectParamMapping() {
       #从l_value中读取参数的默认值。如果没有默认值(没有“|”符号)，则认定为错误。
       if [ "${l_value}" ];then
         convertI18NText "map.loader.read.param.fail.summary" "${l_shortFileNames}#${l_key}"
-        l_error="${l_error}\n${gDefaultRetVal}"
+        l_error="${l_error}\n${gLogI18NRetVal}"
       fi
     done
 

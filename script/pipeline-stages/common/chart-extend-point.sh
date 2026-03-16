@@ -160,7 +160,7 @@ function createChartImage_ex() {
   export gCustomizedHelm
   export gHelmBuildOutDir
   export gCurrentStageResult
-  export gDefaultRetVal
+  export gLogI18NRetVal
 
   local l_chartPath=$1
 
@@ -174,12 +174,12 @@ function createChartImage_ex() {
     invokeExtendPointFunc "onModifyingValuesYaml" "common.chart.extend.point.modifying.values.yaml" "" "${l_chartPath}"
     #设置要发送的通知消息。
     convertI18NText "common.chart.extend.point.package.success" "${l_chartPath##*/}"
-    gCurrentStageResult="INFO|${gDefaultRetVal}"
+    gCurrentStageResult="INFO|${gLogI18NRetVal}"
   fi
 }
 
 function onAfterCreatingChartImage_ex() {
-  export gDefaultRetVal
+  export gLogI18NRetVal
   export gHelmBuildOutDir
   export gCurrentChartName
   export gCurrentChartVersion
@@ -214,7 +214,7 @@ function onAfterCreatingChartImage_ex() {
       # 使用更高效的正则匹配和错误信息截断
       l_errorFlag=$(grep -Em1 'Error|failed' <<< "${l_errorFlag}")
       convertI18NText "common.chart.extend.point.unknown.error"
-      error "common.chart.extend.point.chart.template.check.failed" "${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz#${l_errorFlag:-${gDefaultRetVal}}"
+      error "common.chart.extend.point.chart.template.check.failed" "${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz#${l_errorFlag:-${gLogI18NRetVal}}"
   fi
   info "common.chart.extend.point.chart.template.check.passed" "${gCurrentChartName//\//-}-${gCurrentChartVersion}.tgz"
 
@@ -256,6 +256,7 @@ function onModifyingChartYaml_ex(){
 
 function onModifyingValuesYaml_ex(){
   export gDefaultRetVal
+  export gLogI18NRetVal
   export gDockerRepoName
   export gFileContentMap
   export gBuildPath
@@ -288,7 +289,7 @@ function onModifyingValuesYaml_ex(){
 
   #覆盖l_valuesYaml文件内容。
   convertI18NText "common.chart.extend.point.docker.image.registry.comment"
-  echo "#${gDefaultRetVal}" > "${l_valuesYaml}"
+  echo "#${gLogI18NRetVal}" > "${l_valuesYaml}"
   echo "image:" >> "${l_valuesYaml}"
   #在values.yaml文件中定义image.registry参数
   insertParam "${l_valuesYaml}" "image.registry" "${gDockerRepoName}"
@@ -551,6 +552,7 @@ function addParamsToValuesYaml_ex(){
 
 function combineParamsToValuesYaml_ex() {
   export gDefaultRetVal
+  export gLogI18NRetVal
   export gBuildPath
 
   local l_packageYaml=$1
@@ -647,21 +649,21 @@ function combineParamsToValuesYaml_ex() {
           #向l_valuesYaml文件中插入参数。
           insertParam "${l_valuesYaml}" "${l_paramName}" "${l_paramValue}"
           convertI18NText "common.chart.extend.point.insert.param.into.file" "${l_valuesYaml##*/}#${l_paramName}"
-          l_info="${gDefaultRetVal}"
+          l_info="${gLogI18NRetVal}"
           if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
             if [ "${l_paramValue}" ];then
               convertI18NText "common.chart.extend.point.failed.with.value" "${l_paramValue}"
             else
               convertI18NText "common.chart.extend.point.failed.empty.value"
             fi
-            error "${l_info}${gDefaultRetVal}"
+            error "${l_info}${gLogI18NRetVal}"
           else
             if [ "${l_paramValue}" ];then
               convertI18NText "common.chart.extend.point.success.with.value" "${l_paramValue}"
             else
               convertI18NText "common.chart.extend.point.success.empty.value"
             fi
-            info "${l_info}${gDefaultRetVal}"
+            info "${l_info}${gLogI18NRetVal}"
           fi
 
         done

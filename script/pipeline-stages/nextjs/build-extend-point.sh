@@ -39,9 +39,7 @@ function _buildProject_ex() {
 function _buildSubModule() {
   export gServiceName
   export gCurrentStageResult
-  export gDefaultRetVal
-
-  local l_info
+  export gLogI18NRetVal
 
   info "nextjs.build.extend.point.checking.pnpm.version"
   pnpm -v
@@ -68,6 +66,5 @@ function _buildSubModule() {
   fi
 
   convertI18NText "nextjs.build.extend.point.project.compilation.succeeded" "${gServiceName}"
-  l_info=" ${gDefaultRetVal}"
-  gCurrentStageResult="INFO|${l_info}"
+  gCurrentStageResult="INFO|${gLogI18NRetVal}"
 }

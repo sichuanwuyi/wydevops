@@ -278,11 +278,7 @@ function invokeExtendPointFunc() {
   # shellcheck disable=SC2068
   executeShellScript "${gBuildPath}" "${l_funcName}.sh" ${l_param[@]}
 
-  l_tmpRetVal="${gDefaultRetVal}"
-
   extendLog "${l_funcName}" "${l_extentPointName}" "${l_extentPointNameParams}" "false"
-
-  gDefaultRetVal="${l_tmpRetVal}"
 }
 
 function executeShellScript() {

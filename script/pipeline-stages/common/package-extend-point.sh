@@ -34,6 +34,7 @@ function initialGlobalParamsForPackageStage_ex() {
 
 function createOfflinePackage_ex() {
   export gDefaultRetVal
+  export gLogI18NRetVal
   export gCiCdYamlFile
   export gHelmBuildOutDir
   export gCurrentStageResult
@@ -86,7 +87,7 @@ function createOfflinePackage_ex() {
   done
 
   convertI18NText "common.package.extend.point.package.success" "${l_chartName}"
-  gCurrentStageResult="INFO|${gDefaultRetVal}"
+  gCurrentStageResult="INFO|${gLogI18NRetVal}"
 
 }
 

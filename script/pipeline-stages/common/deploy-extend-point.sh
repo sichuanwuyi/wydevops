@@ -216,7 +216,7 @@ function onBeforeDeployingServicePackage_ex() {
 
 function deployServicePackage_ex() {
   export gCurrentStageResult
-  export gDefaultRetVal
+  export gLogI18NRetVal
 
   local l_index=$1
   local l_chartName=$2
@@ -238,7 +238,7 @@ function deployServicePackage_ex() {
     _deployServiceInK8S "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_localBaseDir}" "${l_installMode}"
   fi
   convertI18NText "common.deploy.extend.point.package.deployed.successfully" "${l_packageName}"
-  gCurrentStageResult="INFO|${gDefaultRetVal}"
+  gCurrentStageResult="INFO|${gLogI18NRetVal}"
 }
 
 function onBeforeDeployingServicePackageByDockerMode_ex() {

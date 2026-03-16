@@ -61,7 +61,7 @@ function _buildProject_ex() {
 function _buildSubModule() {
   export gServiceName
   export gCurrentStageResult
-  export gDefaultRetVal
+  export gLogI18NRetVal
 
   local l_cmd=$1
   local l_info
@@ -71,7 +71,7 @@ function _buildSubModule() {
   fi
 
   convertI18NText "java.build.extend.point.project.compilation.succeeded" "${gServiceName}#mvn clean ${l_cmd} -Dmaven.test.skip=true"
-  l_info="${gDefaultRetVal}"
+  l_info="${gLogI18NRetVal}"
   info "${l_info}"
   gCurrentStageResult="INFO|${l_info}"
 }
