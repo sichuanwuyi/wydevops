@@ -172,7 +172,7 @@ function _onLoadMatchedAdditionalConfigFiles_ex() {
     gDefaultRetVal=""
     return
   fi
-
+  echo "------l_configFiles=${l_configFiles}--------"
   l_targetFile=""
   l_resourcesDir="${gBuildPath}/src/main/resources"
   info "java.wydevops.extend.point.reading.spring.profiles.active" "spring.profiles.active"
