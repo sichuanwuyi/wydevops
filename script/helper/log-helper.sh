@@ -167,7 +167,7 @@ function registerTempFile(){
     unset gFileContentMap["${l_tmpFile}"]
   fi
 
-  info "log.helper.register.tmp.file" "${l_tmpFile##*/}"
+  #info "log.helper.register.tmp.file" "${l_tmpFile##*/}"
   gTempFileRegTables["${l_tmpFile##*/}"]="${l_tmpFile}"
 }
 
@@ -175,7 +175,7 @@ function unregisterTempFile(){
   export gTempFileRegTables
   local l_tmpFile=$1
   if [ -f "${l_tmpFile}" ];then
-    info "log.helper.delete.tmp.file" "${l_tmpFile##*/}"
+    #info "log.helper.delete.tmp.file" "${l_tmpFile##*/}"
     rm -f "${l_tmpFile}"
     # shellcheck disable=SC2184
     unset gTempFileRegTables["${l_tmpFile##*/}"]
