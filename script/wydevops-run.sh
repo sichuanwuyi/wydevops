@@ -4,6 +4,11 @@
 Color_Off='\033[0m'
 BBlue='\033[1;34m'
 
+if [ -z "$LOG_LANUAGE" ];then
+  #define language in log as zh-CN
+  export LOG_LANGUAGE="zh"
+fi
+
 # The home directory for all wydevops related files and scripts.
 _WYDEVOPS_HOME="${WYDEVOPS_HOME:=$HOME/.wydevops}"
 echo -e "${BBlue}_WYDEVOPS_HOME=${_WYDEVOPS_HOME}${Color_Off}"
@@ -14,7 +19,6 @@ _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
 echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 
 _selfRootDir="${_SCRIPTS_ROOT_DIR}"
-export gLanguageInLog="zh"
 source "${_SCRIPTS_ROOT_DIR}/helper/log-helper.sh"
 source "${_SCRIPTS_ROOT_DIR}/helper/yaml-helper.sh"
 source "${_SCRIPTS_ROOT_DIR}/wydevops-update.sh"

@@ -454,18 +454,8 @@ function _getStringLen() {
 function loadMessageProperties(){
   export gMessagePropertiesMap
   export _selfRootDir
-  export gLanguageInLog
 
-  local l_language
-
-  if [ "${gLanguageInLog}" != "zh" ];then
-    l_language="en"
-    gLanguageInLog="${l_language}"
-  else
-    l_language="${gLanguageInLog}"
-  fi
-
-  local l_file_path="${_selfRootDir}/i18n/message_zh.properties"
+  local l_file_path="${_selfRootDir}/i18n/message_${LOG_LANGUAGE}.properties"
   if [ -f "${l_file_path}" ]; then
     while IFS='=' read -r key value || [ -n "${key}" ]; do
       # 忽略空行和注释
@@ -488,9 +478,6 @@ export _selfRootDir
 
 #convertI18NText方法的返回值变量。
 export gLogI18NRetVal
-
-#日志输出的语言，默认值为zh。
-export gLanguageInLog
 
 #引入工作模式全局变量,jenkins模式下输出的日志不设置颜色。
 export gWorkMode

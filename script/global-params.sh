@@ -38,8 +38,6 @@ export gGlobalParamNames=(
 "gValidBuildStages" \
 #项目的语言类型
 "gLanguage" \
-#项目的语言类型
-"gLanguageInLog" \
 
 #构建项目的主模块路径。
 "gBuildPath" \
@@ -159,7 +157,6 @@ function usage() {
   local l_removeImageParam="${gMessagePropertiesMap['global.params.sh.usage.removeImage']}"
   local l_templateParam="${gMessagePropertiesMap['global.params.sh.usage.template']}"
   local l_versionParam="${gMessagePropertiesMap['global.params.sh.usage.version']}"
-  local l_langInLogParam="${gMessagePropertiesMap['global.params.sh.usage.languageInLog']}"
 
   local l_optionsParams="${gMessagePropertiesMap['global.params.sh.usage.options']}"
   local l_archTypesParam="${gMessagePropertiesMap['global.params.sh.usage.archTypes']}"
@@ -190,7 +187,6 @@ function usage() {
     -r, --removeImage        ${l_removeImageParam}
     -t, --template           ${l_templateParam}
     -v, --version            ${l_versionParam}
-    -z, --zh_CN              ${l_langInLogParam}
 
     [${l_optionsParams}]
     -A, --archTypes       string    ${l_archTypesParam}
@@ -236,7 +232,6 @@ function invokeExtendPointFunc() {
   local l_funcName1
   local l_param=("${@}")
   local l_param_count=${#l_param[@]}
-  local l_tmpRetVal
 
   #删除前两个参数
   # shellcheck disable=SC2184
@@ -464,7 +459,6 @@ function parseOptions1() {
   export gDebugMode
   export gBuildType
   export gLanguage
-  export gLanguageInLog
   export gWorkMode
   export gArchTypes
   export gOfflineArchTypes
@@ -482,7 +476,7 @@ function parseOptions1() {
   gMultipleModelProject="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdefhmrtvzA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,zh_CN,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdefhmrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -519,9 +513,6 @@ function parseOptions1() {
       -v|--version)
         version
         exit ;;
-      -z|--zh_CN)
-        gLanguageInLog="zh"
-        shift ;;
       -A|--archTypes)
         l_param="${2}"
         if [[ "${l_param}" &&  "${l_param}" != "undefine" ]];then
@@ -639,7 +630,7 @@ function parseOptions2() {
   gUseTemplate="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdefhmrtvzA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,zh_CN,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdefhmrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -671,8 +662,6 @@ function parseOptions2() {
         gUseTemplate="true"
         shift ;;
       -v|--version)
-        shift ;;
-      -z|--zh_CN)
         shift ;;
       -A|--archTypes)
         shift 2
