@@ -138,21 +138,20 @@ function createCiCdTemplateFile_ex() {
 
   local l_runtimeVersion
   local l_templateFile
-  local l_info
 
   l_runtimeVersion=""
   [[ "${gRuntimeVersion}" ]] && l_runtimeVersion="${gRuntimeVersion}/"
 
   l_templateFile="${gBuildPath}/${gHelmBuildDirName}/templates/config/_${gCiCdTemplateFileName}"
   if [ -f "${l_templateFile}" ];then
-    l_info="common.wydevops.extend.point.copying.project.template" "${l_cicdTemplateFile##*/}"
+    info "common.wydevops.extend.point.copying.project.template" "${l_cicdTemplateFile##*/}"
   else
     l_templateFile="${gBuildScriptRootDir}/templates/config/${gLanguage}/${l_runtimeVersion}_${gCiCdTemplateFileName}"
     if [ -f "${l_templateFile}" ];then
-      l_info="common.wydevops.extend.point.copying.language.template" "${l_cicdTemplateFile##*/}"
+      info "common.wydevops.extend.point.copying.language.template" "${l_cicdTemplateFile##*/}"
     else
       l_templateFile="${gBuildScriptRootDir}/templates/config/_ci-cd-template.yaml"
-      l_info="common.wydevops.extend.point.copying.common.template" "${l_cicdTemplateFile##*/}"
+      info "common.wydevops.extend.point.copying.common.template" "${l_cicdTemplateFile##*/}"
     fi
   fi
 
@@ -160,7 +159,6 @@ function createCiCdTemplateFile_ex() {
     error "common.wydevops.extend.point.template.not.found"
   fi
 
-  info "${l_info}"
   cat "${l_templateFile}" > "${l_cicdTemplateFile}"
 }
 
