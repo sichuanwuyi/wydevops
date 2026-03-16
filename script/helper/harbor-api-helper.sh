@@ -41,7 +41,7 @@ function deleteRepositoryInHarborProject() {
 
   curl -s -X 'DELETE' -H 'accept: application/json' -u "${l_dockerRepoAccount}:${l_dockerRepoPassword}" \
     "http://${l_dockerRepoHostAndPort}/api/v2.0/projects/${l_projectName}/repositories/${l_imageName}/artifacts/${l_imageVersion}" 2>&1
-  [[ $? -ne 0 ]] && error "删除仓库中现有的同名同版本的镜像失败"
+  [[ $? -ne 0 ]] && error "harbor.api.helper.delete.image.failed"
   gDefaultRetVal="true"
 
 }

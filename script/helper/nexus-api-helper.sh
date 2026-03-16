@@ -46,7 +46,7 @@ function deleteNexusComponentById() {
   l_result=$(curl -s -X 'DELETE' -H 'accept: application/json' -u "${gDockerRepoAccount}:${gDockerRepoPassword}" \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components/${l_componentId}" 2>&1)
   l_errorLog=$(grep -ioE "^(.*)(Error|Failed)(.*)$" <<< "${l_result}")
-  [[ "${l_errorLog}" ]] && error "删除仓库中现有的同名同版本的镜像失败: ${l_result}"
+  [[ "${l_errorLog}" ]] && error "nexus.api.helper.delete.component.failed" "${l_result}"
   gDefaultRetVal="true"
 
 }
@@ -67,15 +67,15 @@ function pushNexusChartComponent(){
   l_tmpFile="chart-push-${RANDOM}.tmp"
   registerTempFile "${l_tmpFile}"
 
-  info "开始推送${l_chartFile##*/}镜像到chart仓库中..." "-n"
+  info "nexus.api.helper.push.chart.start" "${l_chartFile##*/}" "-n"
   curl -s -v -X 'POST' -F file=@"${l_chartFile}" -u "${l_account}":"${l_password}" \
     "http://${l_ipAddr}:${l_restfulPort}/service/rest/v1/components?repository=${l_repository}" 2>&1 | tee "${l_tmpFile}"
   l_result=$(cat "${l_tmpFile}")
   l_errorLog=$(grep -ioE "^(.*)(Error|Failed)(.*)$" <<< "${l_result}")
   if [ "${l_errorLog}" ];then
-    error "推送失败：\n${l_result}"
+    error "nexus.api.helper.push.chart.failed" "${l_result}" "*"
   else
-    info "推送成功"
+    info "nexus.api.helper.push.chart.success" "" "*"
   fi
 
   unregisterTempFile "${l_tmpFile}"

@@ -194,7 +194,7 @@ function getAllParamPathAndValue() {
 
 
   readParam "${l_yamlFile}" "${l_paramPath}"
-  [ "${gDefaultRetVal}" == "null" ] && error "${l_yamlFile##*/}文件中不存在${l_paramPath}参数"
+  [ "${gDefaultRetVal}" == "null" ] && error "yaml.helper.file.not.exist.in.param" "${l_yamlFile##*/}#${l_paramPath}"
 
   _getAllParamPathAndValueByParentPath "${l_yamlFile}" "${l_paramPath}" "${l_resultMapName}" \
     "${l_paramKeys}" "${gDefaultRetVal}" "${l_paramPathPrefix}"
@@ -401,13 +401,13 @@ function combine(){
     l_srcContent=$(< "${l_srcYamlFile}")
   fi
 
-  info "合并${l_srcYamlFile}文件与${l_targetYamlFile}文件中的参数---开始"
+  info "yaml.helper.combine.start" "${l_srcYamlFile}#${l_targetYamlFile}"
 
   #给定参数路径及其参数下属数据块内容，更新目标文件l_targetYamlFile的内容。
   _combine "${l_srcContent}" "${l_srcParamPath}" "${l_targetYamlFile}" "${l_srcParamPath}" "${l_allowInsertNewListItem}" \
     "${l_exitOnFailure}" "${l_cascadeDelete}"
 
-  info "合并${l_srcYamlFile}文件与${l_targetYamlFile}文件中的参数---结束"
+  info "yaml.helper.combine.end" "${l_srcYamlFile}#${l_targetYamlFile}#"
 
   #恢复gSaveBackImmediately的原始值。
   enableSaveBackImmediately "${l_saveBackStatus}"
@@ -415,7 +415,7 @@ function combine(){
   #将内存中的l_targetYamlFile文件内容写入文件中。
   l_srcContent="${gFileContentMap[${l_targetYamlFile}]}"
   if [[ "${l_srcContent}" ]];then
-    info "将${l_targetYamlFile##*/}文件的内容回写到文件中"
+    info "yaml.helper.write.back.file.content" "${l_targetYamlFile##*/}"
     echo -e "${l_srcContent}" > "${l_targetYamlFile}"
   fi
 
@@ -500,7 +500,7 @@ function _readOrWriteYamlFile() {
   l_params=("${@}")
   l_paramsLen=${#l_params[@]}
   if [ "${l_paramsLen}" -lt 3 ];then
-    error "_readOrWriteYamlFile方法调用参数不足：最少需要3个参数。"
+    error "yaml.helper.method.insufficient.params"
   fi
 
   l_mode="${l_params[0]}"
@@ -665,7 +665,7 @@ function __readOrWriteYamlFile() {
   local _yamlFileContent
 
   if [ ! "${l_paramPath}" ];then
-    error "__readOrWriteYamlFile方法传入参数l_paramPath不能为空"
+    error "yaml.helper.param.path.cannot.be.empty"
   fi
 
   #将l_paramPath参数转成数组。

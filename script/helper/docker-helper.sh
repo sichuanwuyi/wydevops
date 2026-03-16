@@ -12,7 +12,7 @@ function dockerLogin(){
   local l_errorLog
 
   if [ "${l_repoName}" ];then
-    info "执行命令(docker logout ${l_repoName} && echo ${l_password} | docker login ${l_repoName} -u ${l_account} --password-stdin)..." "-n"
+    info "docker.helper.executing.command" "docker logout ${l_repoName} && echo ${l_password} | docker login ${l_repoName} -u ${l_account} --password-stdin" "-n"
     # shellcheck disable=SC2088
     l_tmpFile="${gTempFileDir}/docker-${RANDOM}.tmp"
     registerTempFile "${l_tmpFile}"
@@ -24,9 +24,9 @@ function dockerLogin(){
     unregisterTempFile "${l_tmpFile}"
     # shellcheck disable=SC2015
     if [[ "${l_errorLog}" ]];then
-      error "失败：\n1.首先确保镜像仓库服务已经启动; \n2.然后请检查网络并确保docker配置文件(daemon.json)中insecure-registries数组参数中已经添加了${l_repoName}\n${l_tmpFileContent}" "*"
+      error "docker.helper.login.fail" "${l_repoName}#${l_tmpFileContent}" "*"
     else
-      info "成功" "*"
+      info "docker.helper.common.success" "" "*"
     fi
   fi
 }
@@ -52,14 +52,21 @@ function pullImage(){
     _pullImageFromPublicRepository "${l_image}" "${l_archType}" "${l_repoName1}" "${l_imageCachedDir}"
     if [ "${gDefaultRetVal}" == "true" ];then
       if [ "${l_repoName1}" ];then
-        info "将从公网拉取的${l_archType}架构的${l_image}镜像推送到${l_repoName1}仓库中..."
+        info "docker.helper.push.public.image.to.private.repo" "${l_archType}#${l_image}#${l_repoName1}" "-n"
         pushImage "${l_image}" "${l_archType}" "${l_repoName1}"
         if [ "${gDefaultRetVal}" == "true" ];then
-          info "将导出的镜像文件${l_savedFile}复制到${l_imageCachedDir}目录中..."
+          info "docker.helper.common.success" "" "*"
+          info "docker.helper.copy.exported.image" "${l_savedFile}#${l_imageCachedDir}" "-n"
           l_fileName="${l_image//\//_}"
           l_fileName="${l_fileName//:/-}-${l_archType//\//-}.tar"
           cp -f "${l_savedFile}" "${l_imageCachedDir}/${l_fileName}"
+          if [ "$?" -ne "0" ];then
+            error "docker.helper.common.fail" "" "*"
+          fi
+          info "docker.helper.common.success" "" "*"
           gDefaultRetVal="${l_image}"
+        else
+          error "docker.helper.common.fail" "" "*"
         fi
       else
         gDefaultRetVal="${l_image}"
@@ -119,32 +126,32 @@ function pullAndCheckImage(){
   l_tmpImage="${l_image}"
   [[ "${l_pullFromRepoName}" == "true" && "${l_repoName}" ]] && l_tmpImage="${l_repoName}/${l_image}"
 
-  info "先删除可能已存在的同名异构的镜像:${l_tmpImage}"
+  info "docker.helper.delete.existing.heterogeneous.image" "${l_tmpImage}"
   docker rmi "${l_tmpImage}" 2>/dev/null || true
 
-  info "执行命令：docker pull --platform ${l_archType} ${l_tmpImage}"
+  info "docker.helper.executing.command" "docker pull --platform ${l_archType} ${l_tmpImage}"
   docker pull --platform "${l_archType}" "${l_tmpImage}"
 
   # shellcheck disable=SC2181
   if [ "$?" -eq 0 ];then
     l_errorLog=$(docker inspect -f '{{.Architecture}}' "${l_tmpImage}" | grep -x "${l_archType#*/}")
     if [ ! "${l_errorLog}" ];then
-      error "从${l_repoName}私库拉取${l_archType}架构的镜像${l_image}失败，架构类型与指定的${l_archType}不一致"
+      error "docker.helper.pull.from.private.repo.fail.arch.mismatch" "${l_repoName}#${l_archType}#${l_image}#${l_archType}"
       gDefaultRetVal="false"
     else
       if [[ "${l_pullFromRepoName}" == "true" && "${l_repoName}" ]];then
-        info "成功从${l_repoName}私库拉取${l_archType}架构的镜像：${l_image}"
+        info "docker.helper.pull.from.private.repo.success" "${l_repoName}#${l_archType}#${l_image}"
         #去掉docker镜像的仓库前缀。
         docker tag "${l_tmpImage}" "${l_image}"
         #删除带私库的前缀。
         docker rmi "${l_tmpImage}"
       else
-        info "从公网拉取${l_archType}架构的镜像成功：${l_image}"
+        info "docker.helper.pull.from.public.repo.success" "${l_archType}#${l_image}"
         if [ "${l_repoName}" ];then
-          info "将${l_archType}架构的${l_image}镜像推送到${l_repoName}仓库中..."
+          info "docker.helper.push.image.to.private.repo" "${l_archType}#${l_image}#${l_repoName}"
           pushImage "${l_image}" "${l_archType}" "${l_repoName}"
         else
-          warn "未将公共镜像${l_image}推送到私库中：没有指定私库信息"
+          warn "docker.helper.push.public.image.to.private.repo.not.specified" "${l_image}"
         fi
       fi
     fi
@@ -166,22 +173,23 @@ function pushImage() {
 
   l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
 
+  info "docker.helper.executing.command" "docker tag ${l_image} ${l_tmpImage}" "-n"
   docker tag "${l_image}" "${l_tmpImage}" 2>&1
   if [ "$?" -ne 0 ];then
-    error "--->执行命令(docker tag ${l_image} ${l_tmpImage})失败"
+    error "docker.helper.common.fail" "" "*"
   else
-    info "--->成功执行命令(docker tag ${l_image} ${l_tmpImage})"
+    info "docker.helper.common.success" "" "*"
   fi
 
-  info "执行命令：docker push -q ${l_tmpImage}"
+  info "docker.helper.executing.command" "docker push -q ${l_tmpImage}" "-n"
 
   docker push -q "${l_tmpImage}" 2>&1
   if [ "$?" -ne 0 ];then
     #报错前删除刚定义的镜像。
     docker rmi -f "${l_tmpImage}"
-    error "--->失败:\n1.确保镜像仓库服务已经启动;\n2.推送到本地镜像仓库时不应该启用代理(docker desktop->settings->resources->proxies->Bypass proxy settings...中添加镜像仓库IP地址)"
+    error "docker.helper.push.fail.reason" "" "*"
   else
-    info "--->成功执行命令(docker push ${l_tmpImage})"
+    info "docker.helper.common.success" "" "*"
   fi
 
   _createDockerManifest "${l_image}" "${l_archType}" "${l_repoName}"
@@ -206,18 +214,25 @@ function saveImage(){
   local l_curDir
 
   if [ ! -d "${l_savePath}" ];then
-    info "创建镜像导出文件的存储目录：${l_savePath}"
+    info "docker.helper.create.export.dir" "${l_savePath}" "-n"
     mkdir -p "${l_savePath}"
     if [ ! -d "${l_savePath}" ];then
-      error "创建${l_savePath}目录失败"
+      error "docker.helper.common.fail" "" "*"
+    else
+      info "docker.helper.common.success" "" "*"
     fi
   fi
 
   l_fileName="${l_image//\//_}"
   l_fileName="${l_fileName//:/-}-${l_archType//\//-}.tar"
   if [ -f "${l_savePath}/${l_fileName}" ];then
-    info "删除现存的同名导出文件:${l_fileName}"
+    info "docker.helper.delete.existing.export.file" "${l_fileName}" "-n"
     rm -f "${l_savePath}/${l_fileName}"
+    if [ "$?" -ne 0 ];then
+      error "docker.helper.common.fail" "" "*"
+    else
+      info "docker.helper.common.success" "" "*"
+    fi
   fi
 
 
@@ -225,7 +240,7 @@ function saveImage(){
   # shellcheck disable=SC2164
   cd "${l_savePath}"
 
-  info "生成镜像导出文件${l_savePath}/${l_fileName}..." "-n"
+  info "docker.helper.generating.export.file" "${l_savePath}/${l_fileName}" "-n"
   # shellcheck disable=SC2088
   l_tmpFile="${gTempFileDir}/docker-save-${RANDOM}.tmp"
   registerTempFile "${l_tmpFile}"
@@ -238,9 +253,9 @@ function saveImage(){
   cd "${l_curDir}"
 
   if [ "${l_errorLog}" ];then
-    error "失败：${l_errorLog}" "*"
+    error "docker.helper.execute.command.fail.with.reason" "${l_errorLog}" "*"
   else
-    info "成功" "*"
+    info "docker.helper.common.success" "" "*"
   fi
 }
 #**********************私有方法-开始******************************#
@@ -254,31 +269,33 @@ function _pullImageFromPrivateRepository(){
   local l_imageCachedDir=$4
   local l_savedFilePath=$5
 
-  info "检查本地是否存在${l_archType}架构的目标镜像:${l_image} ..." "-n"
+  info "docker.helper.check.local.image.existence" "${l_archType}#${l_image}" "-n"
   existDockerImage "${l_image}" "${l_archType}"
   # shellcheck disable=SC2015
   if [[ "${gDefaultRetVal}" == "true" ]];then
-    info "存在" "*"
+    info "docker.helper.common.exist" "" "*"
   else
-    info "不存在" "*"
+    info "docker.helper.common.not.exist" "" "*"
   fi
 
   if [ "${gDefaultRetVal}" == "false" ];then
-    info "尝试从本地镜像缓存目录${l_imageCachedDir}中加载${l_archType}架构的镜像:${l_image} ..." "-n"
+    info "docker.helper.load.image.from.cache.dir" "${l_imageCachedDir}#${l_archType}#${l_image}"
     _loadImageFromDir "${l_image}" "${l_archType}" "${l_imageCachedDir}"
     # shellcheck disable=SC2015
-    [[ "${gDefaultRetVal}" == "true" ]] && info "成功" "*" || info "失败" "*"
+    [[ "${gDefaultRetVal}" == "true" ]] && info "docker.helper.load.image.success" "${l_image}" "*" \
+      || info "docker.helper.load.image.fail" "${l_image}" "*"
   fi
 
   if [[ "${gDefaultRetVal}" == "false" && "${l_repoName}" ]];then
-    info "尝试从${l_repoName}仓库中获取${l_archType}架构的镜像:${l_image}..."
+    info "docker.helper.get.image.from.private.repo" "${l_repoName}#${l_archType}#${l_image}"
     pullAndCheckImage "${l_image}" "${l_archType}" "${l_repoName}" "true"
     # shellcheck disable=SC2015
-    [[ "${gDefaultRetVal}" == "true" ]] && info "成功" "*" || info "失败" "*"
+    [[ "${gDefaultRetVal}" == "true" ]] && info "docker.helper.load.image.success" "${l_image}" "*" \
+      || info "docker.helper.load.image.fail" "${l_image}" "*"
   fi
 
   if [[ "${gDefaultRetVal}" == "true" && "${l_savedFilePath}" ]];then
-    info "将本地${l_archType}架构的镜像${l_image}导出到${l_savedFilePath%/*}目录中..."
+    info "docker.helper.export.local.image.to.dir" "${l_archType}#${l_image}#${l_savedFilePath%/*}"
     _cacheImageToDir "${l_image}" "${l_archType}" "${l_savedFilePath%/*}"
   fi
 
@@ -292,13 +309,13 @@ function _pullImageFromPublicRepository(){
   local l_repoName=$3
   local l_imageCachedDir=$4
 
-  info "尝试从公网仓库中拉取架构为${l_archType}的目标镜像:${l_image} ..."
+  info "docker.helper.pull.from.public.repo" "${l_archType}#${l_image}"
   pullAndCheckImage "${l_image}" "${l_archType}" "${l_repoName}" "false"
   if [ "${gDefaultRetVal}" == "true" ];then
-    info "将从公网拉取的${l_archType}架构的${l_image}镜像缓存到本地镜像缓存目录${l_imageCachedDir}中 ..."
+    info "docker.helper.cache.public.image.to.local.dir" "${l_archType}#${l_image}#${l_imageCachedDir}"
     _cacheImageToDir "${l_image}" "${l_archType}" "${l_imageCachedDir}"
   else
-    error "从公网拉取${l_archType}架构的${l_image}镜像失败"
+    error "docker.helper.pull.from.public.repo.fail" "${l_archType}#${l_image}"
   fi
 }
 
@@ -320,15 +337,22 @@ function _loadImageFromDir() {
     l_fileName="${l_image//\//_}"
     l_fileName="${l_fileName//:/-}-${l_archType//\//-}.tar"
 
-    info "在${l_cacheDir}目录中查找${l_fileName}文件..."
+    info "docker.helper.find.file.in.dir" "${l_cacheDir}#${l_fileName}" "-n"
 
     l_targetFiles=$(find "${l_cacheDir}" -maxdepth 1 -type f -name "${l_fileName}")
     if [ "${l_targetFiles}" ];then
+      info "docker.helper.common.success" "" "*"
       l_targetFile=${l_targetFiles[0]}
-      info "找到${l_fileName}文件，路径为:${l_targetFile}"
+      info "docker.helper.executing.command" "docker load -i ${l_targetFile}" "-n"
       l_errorLog=$(docker load -i "${l_targetFile}" 2>&1 | grep -oE "^.*(Loaded image: ${l_image}).*$")
-      info "执行命令(docker load -i ${l_targetFile})...${l_errorLog}"
-      [[ "${l_errorLog}" ]] && gDefaultRetVal="true"
+      if [ "${l_errorLog}" ];then
+        gDefaultRetVal="true"
+        info "docker.helper.common.success" "" "*"
+      else
+        info "docker.helper.common.fail" "" "*"
+      fi
+    else
+      warn "docker.helper.common.fail" "" "*"
     fi
   fi
 }
@@ -346,9 +370,12 @@ function _cacheImageToDir() {
   local l_curDir
 
   if [ ! -d "${l_cacheDir}" ];then
+    info "docker.helper.create.cache.dir" "${l_cacheDir}" "-n"
     mkdir -p "${l_cacheDir}" 2>&1
     if [ ! -d "${l_cacheDir}" ];then
-      error "创建镜像缓存目录(${l_cacheDir})失败"
+      error "docker.helper.common.fail" "" "*"
+    else
+      info "docker.helper.common.success" "" "*"
     fi
   fi
 
@@ -356,8 +383,13 @@ function _cacheImageToDir() {
   l_fileName="${l_fileName//:/-}-${l_archType//\//-}.tar"
 
   if [ -f "${l_cacheDir}/${l_fileName}" ];then
-    info "先删除已经存在的同名文件:${l_cacheDir}/${l_fileName}"
-    rm -f "${l_cacheDir}/${l_fileName}" || true
+    info "docker.helper.delete.existing.file.before.cache" "${l_cacheDir}/${l_fileName}" "-n"
+    rm -f "${l_cacheDir}/${l_fileName}"
+    if [ "$?" -ne 0 ];then
+      warn "docker.helper.common.fail" "" "*"
+    else
+      info "docker.helper.common.success" "" "*"
+    fi
   fi
 
   l_curDir=$(pwd)
@@ -367,8 +399,8 @@ function _cacheImageToDir() {
   # shellcheck disable=SC2088
   l_tmpFile="${gTempFileDir}/docker-save-${RANDOM}.tmp"
   registerTempFile "${l_tmpFile}"
-  info "将${l_image}镜像导出到${l_cacheDir}/${l_fileName}文件中..."
-  info "执行命令(docker save --platform ${l_archType} -o ${l_fileName} ${l_image})..."
+  info "docker.helper.export.image.to.file.in.dir" "${l_image}#${l_cacheDir}/${l_fileName}"
+  info "docker.helper.executing.command" "docker save --platform ${l_archType} -o ${l_fileName} ${l_image}" "-n"
   docker save --platform "${l_archType}" -o "${l_fileName}" "${l_image}" 2>&1 | tee "${l_tmpFile}"
   # shellcheck disable=SC2002
   l_errorLog=$(grep -oE "^.*(Error|failed).*$" <<< "${l_tmpFile}")
@@ -378,7 +410,9 @@ function _cacheImageToDir() {
   cd "${l_curDir}"
 
   if [ "${l_errorLog}" ];then
-    error "执行命令(docker save -o ${l_fileName} ${l_image})失败：${l_errorLog}"
+    error "docker.helper.execute.command.fail.with.reason" "${l_errorLog}" "*"
+  else
+    info "docker.helper.common.success" "" "*"
   fi
 }
 
@@ -403,12 +437,21 @@ function _createDockerManifest() {
   # shellcheck disable=SC2088
   l_cacheDir="${HOME}/.docker/manifests/${l_tmpImage}"
   if [ ! -d "${l_cacheDir}" ];then
+    info "docker.helper.manifest.cache.dir.create" "${l_cacheDir}" "-n"
     mkdir -p "${l_cacheDir}"
-    info "镜像manifests缓存目录创建成功:${l_cacheDir}"
+    if [ "$?" -ne 0 ];then
+      info "docker.helper.common.fail" "" "*"
+    else
+      info "docker.helper.common.success" "" "*"
+    fi
   else
-    info "镜像manifests缓存目录已经存在:${l_cacheDir}"
+    info "docker.helper.manifest.cache.dir.clear" "${l_cacheDir}" "-n"
     rm -rf "${l_cacheDir:?}/*"
-    info "镜像manifests缓存目录已清空"
+    if [ "$?" -ne 0 ];then
+      info "docker.helper.common.fail" "" "*"
+    else
+      info "docker.helper.common.success" "" "*"
+    fi
   fi
 
   if [ "${l_archType}" == "linux/amd64" ];then
@@ -418,31 +461,29 @@ function _createDockerManifest() {
   fi
 
   #获取其他架构的镜像名称。
-  info "获取现有${l_otherArchType}架构的镜像名称..." "-n"
+  info "docker.helper.get.existing.image.name.for.arch" "${l_otherArchType}" "-n"
   l_otherImage="${l_repoName}/${l_image}-${l_otherArchType//\//-}"
   _readDigestValueOfManifestList "${l_otherImage}" "${l_otherArchType}" "${l_repoName}"
   if [ "${gDefaultRetVal}" != "null" ];then
     if [ "${gDefaultRetVal}" ];then
       l_otherImage="${l_otherImage%:*}@${gDefaultRetVal}"
     fi
-    info "" "*"
-    info "${l_otherImage}"
+    info "${l_otherImage}" "*"
   else
     l_otherImage=""
-    info "失败" "*"
+    info "docker.helper.common.fail" "" "*"
   fi
 
   #获取当前架构的镜像名称。
-  info "获取现有${l_archType}架构的镜像名称..." -n
+  info "docker.helper.get.existing.image.name.for.arch" "${l_archType}" "-n"
   gDefaultRetVal=""
   l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
   _readDigestValueOfManifestList "${l_tmpImage}" "${l_archType}" "${l_repoName}"
   if [ "${gDefaultRetVal}" ];then
     l_tmpImage="${l_tmpImage%:*}@${gDefaultRetVal}"
-    info "" "*"
-    info "${l_tmpImage}"
+    info "${l_tmpImage}" "*"
   else
-    info "失败" "*"
+    info "docker.helper.common.fail" "" "*"
   fi
 
 
@@ -457,35 +498,35 @@ function _createDockerManifest() {
   fi
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
-    error "--->执行命令(docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage} ${l_otherImage})失败:\n${l_result}"
+    error "docker.helper.execute.command.fail" "docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage} ${l_otherImage}#${l_result}"
   else
-    info "--->成功执行命令(docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage} ${l_otherImage})"
+    info "docker.helper.execute.command.success" "docker manifest create --insecure --amend ${l_repoName}/${l_image} ${l_tmpImage} ${l_otherImage}"
   fi
 
   l_result=$(docker manifest annotate "${l_repoName}/${l_image}" "${l_tmpImage}" --os "${l_archType%%/*}" --arch "${l_archType#*/}" 2>&1)
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
-    error "--->执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage}  --os ${l_archType%%/*} --arch ${l_archType#*/})失败:\n${l_result}"
+    error "docker.helper.execute.command.fail" "docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage} --os ${l_archType%%/*} --arch ${l_archType#*/}#${l_result}"
   else
-    info "--->成功执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage} --os ${l_archType%%/*} --arch ${l_archType#*/})"
+    info "docker.helper.execute.command.success" "docker manifest annotate ${l_repoName}/${l_image} ${l_tmpImage} --os ${l_archType%%/*} --arch ${l_archType#*/}"
   fi
 
   if [ "${l_otherImage}" ];then
     l_result=$(docker manifest annotate "${l_repoName}/${l_image}" "${l_otherImage}" --os "${l_otherArchType%%/*}" --arch "${l_otherArchType#*/}" 2>&1)
     # shellcheck disable=SC2181
     if [ "$?" -ne 0 ];then
-      error "--->执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_otherImage}  --os ${l_otherArchType%%/*} --arch ${l_otherArchType#*/})失败:\n${l_result}"
+      error "docker.helper.execute.command.fail" "docker manifest annotate ${l_repoName}/${l_image} ${l_otherImage}  --os ${l_otherArchType%%/*} --arch ${l_otherArchType#*/}#${l_result}"
     else
-      info "--->成功执行命令(docker manifest annotate ${l_repoName}/${l_image} ${l_otherImage} --os ${l_otherArchType%%/*} --arch ${l_otherArchType#*/})"
+      info "docker.helper.execute.command.success" "docker manifest annotate ${l_repoName}/${l_image} ${l_otherImage} --os ${l_otherArchType%%/*} --arch ${l_otherArchType#*/}"
     fi
   fi
 
   l_result=$(docker manifest push --insecure --purge "${l_repoName}/${l_image}" 2>&1)
   # shellcheck disable=SC2181
    if [ "$?" -ne 0 ];then
-    error "--->执行命令(docker manifest push --insecure --purge ${l_repoName}/${l_image})失败:\n${l_result}"
+    error "docker.helper.execute.command.fail" "docker manifest push --insecure --purge ${l_repoName}/${l_image}#${l_result}"
   else
-    info "--->成功执行命令(docker manifest push --insecure --purge ${l_repoName}/${l_image})"
+    info "docker.helper.execute.command.success" "docker manifest push --insecure --purge ${l_repoName}/${l_image}"
   fi
 
   #删除本地manifest缓存中的文件。

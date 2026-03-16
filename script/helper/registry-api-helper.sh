@@ -60,9 +60,9 @@ function deleteImageByDigestCode() {
   #先删除manifests数据。
   l_result=$(curl -s -u "${l_dockerRepoAccount}":"${l_dockerRepoPassword}" -X DELETE "http://${l_dockerRepoHostAndPort}/v2/${l_dockerPath}/${l_imageName}/manifests/${l_digestCode}" 2>&1)
   if [ "${l_result}" ];then
-    error "删除现存的${l_imageName}:${l_imageVersion}镜像失败：${l_result}"
+    error "registry.api.helper.delete.image.fail" "${l_imageName}:${l_imageVersion}#${l_result}"
   fi
-  info "成功删除manifests数据"
+  info "registry.api.helper.delete.manifests.success"
 
   if [ "${gRegistryName}" ];then
     # shellcheck disable=SC2206
@@ -100,20 +100,20 @@ function deleteImageByDigestCode() {
         "${l_cmdPrefix}" docker exec -d "${l_containerId}" registry garbage-collect "${l_defaultConfigFile}"
         # shellcheck disable=SC2181
         if [[ "${?}" -ne 0 && ${l_configFile} != "${l_defaultConfigFile}" ]];then
-          info "清除无效的镜像数据时，使用指定的配置文件全路径名称：${l_configFile}"
+          info "registry.api.helper.use.specified.config.file" "${l_configFile}"
           "${l_cmdPrefix}" docker exec -d "${l_containerId}" registry garbage-collect "${l_configFile}"
         fi
         # shellcheck disable=SC2181
         if [ "${?}" -eq 0 ];then
-          info "成功清除无效的镜像数据"
+          info "registry.api.helper.gc.success"
         else
-          warn "清除无效的镜像数据失败"
+          warn "registry.api.helper.gc.fail"
         fi
         break
       done
     else
-      warn "未能查询到名称为${gRegistryName}的Registry镜像仓库服务。"
-      warn "请定时使用\"registry garbage-collect {registry配置文件}\"命令清除仓库中的无效镜像数据。"
+      warn "registry.api.helper.registry.service.not.found" "${gRegistryName}"
+      warn "registry.api.helper.gc.reminder"
     fi
 
   fi
@@ -155,12 +155,12 @@ function _remoteDeleteImageByBlobData() {
       if [ "${l_defaultConfigFile}" != "${l_configFile}" ];then
         ssh -o "StrictHostKeyChecking no" -p "${l_array[2]}" "${l_array[3]}@${l_array[1]}" docker exec -d "${l_containerId}" registry garbage-collect "${l_defaultConfigFile}"
       fi
-      info "成功清除无效的镜像数据"
+      info "registry.api.helper.gc.success"
       break
     done
   else
-    warn "未能在${l_array[1]}服务器上远程查询到名称为${l_array[0]}的Registry镜像仓库服务。"
-    warn "请定时使用\"registry garbage-collect {registry配置文件}\"命令清除仓库中的无效镜像数据。"
+    warn "registry.api.helper.remote.registry.service.not.found" "${l_array[1]}#${l_array[0]}"
+    warn "registry.api.helper.gc.reminder"
   fi
 
 }
