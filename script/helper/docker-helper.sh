@@ -469,11 +469,11 @@ function _createDockerManifest() {
     info "docker.helper.get.existing.image.name.for.arch.success" "${l_otherArchType}#${l_otherImage}"
   else
     l_otherImage=""
-    info "docker.helper.get.existing.image.name.for.arch.fail" "${l_otherArchType}"
+    warn "docker.helper.get.existing.image.name.for.arch.fail" "${l_otherArchType}"
   fi
 
   #获取当前架构的镜像名称。
-  info "docker.helper.get.existing.image.name.for.arch" "${l_archType}" "-n"
+  info "docker.helper.get.existing.image.name.for.arch" "${l_archType}"
   gDefaultRetVal=""
   l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
   _readDigestValueOfManifestList "${l_tmpImage}" "${l_archType}" "${l_repoName}"
@@ -481,7 +481,7 @@ function _createDockerManifest() {
     l_tmpImage="${l_tmpImage%:*}@${gDefaultRetVal}"
     info "docker.helper.get.existing.image.name.for.arch.success" "${l_archType}#${l_tmpImage}"
   else
-    info "docker.helper.get.existing.image.name.for.arch.fail" "${l_archType}"
+    warn "docker.helper.get.existing.image.name.for.arch.fail" "${l_archType}"
   fi
 
 
