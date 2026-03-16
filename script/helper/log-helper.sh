@@ -462,7 +462,7 @@ function loadMessageProperties(){
     l_language="en"
     gLanguageInLog="${l_language}"
   else
-    gLanguageInLog="${l_language}"
+    l_language="${gLanguageInLog}"
   fi
 
   local l_file_path="${_selfRootDir}/i18n/message_${l_language}.properties"
