@@ -167,12 +167,14 @@ function _onLoadMatchedAdditionalConfigFiles_ex() {
   local l_configFile
   local l_targetFile
 
+  echo "------l_configFiles=${l_configFiles}--------"
+
   l_configFileName="application.yml"
   if [[ "${l_configFiles}" != *"${l_configFileName}"* ]];then
     gDefaultRetVal=""
     return
   fi
-  echo "------l_configFiles=${l_configFiles}--------"
+
   l_targetFile=""
   l_resourcesDir="${gBuildPath}/src/main/resources"
   info "java.wydevops.extend.point.reading.spring.profiles.active" "spring.profiles.active"
