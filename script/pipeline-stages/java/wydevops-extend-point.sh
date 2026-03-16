@@ -173,6 +173,8 @@ function _onLoadMatchedAdditionalConfigFiles_ex() {
     return
   fi
 
+  echo "------l_configFiles=${l_configFiles}--------"
+
   l_targetFile=""
   l_resourcesDir="${gBuildPath}/src/main/resources"
   info "java.wydevops.extend.point.reading.spring.profiles.active" "spring.profiles.active"
@@ -181,6 +183,7 @@ function _onLoadMatchedAdditionalConfigFiles_ex() {
     # shellcheck disable=SC2068
     for l_ymalFile in ${l_yamlList[@]}
     do
+      echo "------l_ymalFile=${l_ymalFile}--------"
       readParam "${l_ymalFile}" "spring.profiles.active"
       if [ "${gDefaultRetVal}" != "null" ];then
         #去掉注释部分
