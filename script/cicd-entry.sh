@@ -18,7 +18,6 @@ function standardCICD(){
     l_stages=(${gBuildStages//,/ })
   fi
 
-  echo "--------gValidBuildStages=${gValidBuildStages}-------------"
   warn "cicd.entry.sh.valid.stages" "${gValidBuildStages}"
 
   # shellcheck disable=SC2068
@@ -58,7 +57,7 @@ function standardCICD(){
           source "${l_targetScript}"
           ;;
         package)
-          partLog "cicd.entry.sh.part5.package.stage"
+          partLog "cicd.entry.sh.part6.package.stage"
           # shellcheck disable=SC1090
           source "${l_targetScript}"
           ;;

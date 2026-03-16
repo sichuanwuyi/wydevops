@@ -1034,11 +1034,11 @@ function _pushDockerImageForDeployStage() {
   # shellcheck disable=SC2206
   l_images=(${gDefaultRetVal//,/ })
 
-  info "common.deploy.extend.point.checking.server.arch" "${l_ip}" "-n"
+  info "common.deploy.extend.point.checking.server.arch" "${l_ip}"
   invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
   # shellcheck disable=SC2015
-  [[ "${gDefaultRetVal}" == "false" ]] && error "common.deploy.extend.point.read.server.arch.failed" "" "*"
-  info "common.deploy.extend.point.read.server.arch.success" "${gDefaultRetVal}" "*"
+  [[ "${gDefaultRetVal}" == "false" ]] && error "common.deploy.extend.point.read.server.arch.failed" "${l_ip}"
+  info "common.deploy.extend.point.read.server.arch.success" "${l_ip}#${gDefaultRetVal}"
   l_archType="${gDefaultRetVal}"
 
   #获取到需要推送的镜像
