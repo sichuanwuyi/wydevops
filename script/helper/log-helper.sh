@@ -110,11 +110,12 @@ function error() {
 
   local l_start
   local l_end
+  local l_tmpInfo
   local l_infoPrefix
 
   #使用国际化资源替换l_info
   convertI18NText "${l_info}" "${l_infoParams}"
-  l_info="${gLogI18NRetVal}"
+  l_tmpInfo="${gLogI18NRetVal}"
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.error"]}"
 
@@ -126,12 +127,12 @@ function error() {
 
   if [ "${l_options}" ];then
     if [[ "${l_options}" =~ ^(\-) ]];then
-      log "${l_start}${l_infoPrefix}${l_info}${l_end}" "error" "${l_options}" "${l_outFileName}"
+      log "${l_start}${l_infoPrefix}${l_tmpInfo}${l_end}" "error" "${l_options}" "${l_outFileName}"
     else
-      log "${l_start}${l_info}${l_end}" "error" "" "${l_outFileName}"
+      log "${l_start}${l_tmpInfo}${l_end}" "error" "" "${l_outFileName}"
     fi
   else
-    log "${l_start}${l_infoPrefix}${l_info}${l_end}" "error" "" "${l_outFileName}"
+    log "${l_start}${l_infoPrefix}${l_tmpInfo}${l_end}" "error" "" "${l_outFileName}"
   fi
 
   #清除注册的临时文件。

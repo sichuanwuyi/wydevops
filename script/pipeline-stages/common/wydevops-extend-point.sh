@@ -262,7 +262,6 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
             gDefaultRetVal=""
             #如果${l_array[1]}里面包含了application.yml文件，则尝试读取当前环境的配置文件。
             invokeExtendPointFunc "onLoadMatchedAdditionalConfigFiles" "common.wydevops.extend.point.getting.env.config.files" "" "${l_array[1]//\"/}"
-            echo "---@@@--------gDefaultRetVal=${gDefaultRetVal}------------"
             if [ "${gDefaultRetVal}" ] && [ "${gDefaultRetVal}" != "null" ];then
               l_array[1]="${gDefaultRetVal},${l_array[1]//\"/}"
               l_configMapFiles="${gDefaultRetVal},${l_configMapFiles:1}"
