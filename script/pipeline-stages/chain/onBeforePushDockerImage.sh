@@ -41,24 +41,24 @@ function onBeforePushDockerImage_harbor() {
   # shellcheck disable=SC2068
   for l_versionItem in ${l_versionList[@]};do
 
-    info "on.before.push.docker.image.finding.existing.image" "${l_dockerRepoType}#${l_imageName}#${l_versionItem}" "-n"
+    info "on.before.push.docker.image.finding.existing.image" "${l_dockerRepoType}#${l_imageName}#${l_versionItem}"
     existRepositoryInHarborProject "${l_dockerRepoHostAndPort}" "${l_dockerRepoInstanceName}" "${l_imageName}" "${l_versionItem}"
     if [ "${gDefaultRetVal}" == "true" ];then
-      info "on.before.push.docker.image.target.image.exist" "" "*"
+      info "on.before.push.docker.image.target.image.exist"
       if [ "${l_forceCoverage}" == "true" ];then
-        info "on.before.push.docker.image.target.image.exists.force.coverage.clearing" "" "-n"
+        info "on.before.push.docker.image.target.image.exists.force.coverage.clearing"
         deleteRepositoryInHarborProject "${l_dockerRepoHostAndPort}" "${l_dockerRepoInstanceName}" "${l_imageName}" "${l_versionItem}" \
           "${l_dockerRepoAccount}" "${l_dockerRepoPassword}"
-        info "on.before.push.docker.image.target.image.cleared.successfully" "" "*"
+        info "on.before.push.docker.image.target.image.cleared.successfully"
         #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
         [[ ! "${l_result}" ]] && l_result="true|true|true"
       else
-        warn "on.before.push.docker.image.target.image.exists.not.force.coverage.skipping" ""
+        warn "on.before.push.docker.image.target.image.exists.not.force.coverage.skipping"
         #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
         [[ ! "${l_result}" ]] && l_result="true|true|false"
       fi
     else
-      warn "on.before.push.docker.image.target.image.not.found" "" "*"
+      warn "on.before.push.docker.image.target.image.not.found"
       #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
       [[ ! "${l_result}" ]] && l_result="true|false|false"
     fi
@@ -105,23 +105,23 @@ function onBeforePushDockerImage_nexus() {
   l_result=""
   # shellcheck disable=SC2068
   for l_versionItem in ${l_versionList[@]};do
-    info "on.before.push.docker.image.finding.existing.image" "${l_dockerRepoType}#${l_imageName}#${l_versionItem}" "-n"
+    info "on.before.push.docker.image.finding.existing.image" "${l_dockerRepoType}#${l_imageName}#${l_versionItem}"
     queryNexusComponentId "${l_dockerRepoName%%:*}" "${l_dockerRepoWebPort}" "${l_dockerRepoInstanceName}" "${l_imageName}" "${l_versionItem}"
     if [ "${gDefaultRetVal}" ];then
-      info "on.before.push.docker.image.target.image.exist" "" "*"
+      info "on.before.push.docker.image.target.image.exist"
       if [ "${l_forceCoverage}" == "true" ];then
-        info "on.before.push.docker.image.target.image.exists.force.coverage.clearing" "" "-n"
+        info "on.before.push.docker.image.target.image.exists.force.coverage.clearing"
         deleteNexusComponentById "${l_dockerRepoName%%:*}" "${l_dockerRepoWebPort}" "${gDefaultRetVal}"
-        info "on.before.push.docker.image.target.image.cleared.successfully" "" "*"
+        info "on.before.push.docker.image.target.image.cleared.successfully"
         #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
         [[ ! "${l_result}" ]] && l_result="true|true|true"
       else
-        warn "on.before.push.docker.image.target.image.exists.not.force.coverage.skipping" ""
+        warn "on.before.push.docker.image.target.image.exists.not.force.coverage.skipping"
         #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
         [[ ! "${l_result}" ]] && l_result="true|true|false"
       fi
     else
-      warn "on.before.push.docker.image.target.image.not.found" "" "*"
+      warn "on.before.push.docker.image.target.image.not.found"
       #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
       [[ ! "${l_result}" ]] && l_result="true|false|false"
     fi
@@ -170,24 +170,24 @@ function onBeforePushDockerImage_registry() {
   l_result=""
   # shellcheck disable=SC2068
   for l_versionItem in ${l_versionList[@]};do
-    info "on.before.push.docker.image.finding.existing.image" "${l_dockerRepoType}#${l_imageName}#${l_versionItem}" "-n"
+    info "on.before.push.docker.image.finding.existing.image" "${l_dockerRepoType}#${l_imageName}#${l_versionItem}"
     queryDigestCodeOfImage "${l_dockerRepoHostAndPort}" "${l_dockerPath}" "${l_imageName}" "${l_versionItem}"
     if [ "${gDefaultRetVal}" ];then
-      info "on.before.push.docker.image.target.image.exist" "" "*"
+      info "on.before.push.docker.image.target.image.exist"
       if [ "${l_forceCoverage}" == "true" ];then
-        info "on.before.push.docker.image.target.image.exists.force.coverage.clearing" "" "-n"
+        info "on.before.push.docker.image.target.image.exists.force.coverage.clearing"
         deleteImageByDigestCode "${l_dockerRepoHostAndPort}" "${l_dockerPath}" "${l_imageName}" "${l_versionItem}" \
           "${l_dockerRepoAccount}" "${l_dockerRepoPassword}" "${gDefaultRetVal}"
-        info "on.before.push.docker.image.target.image.cleared.successfully" "" "*"
+        info "on.before.push.docker.image.target.image.cleared.successfully"
         #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
         [[ ! "${l_result}" ]] && l_result="true|true|true"
       else
-        warn "on.before.push.docker.image.target.image.exists.not.force.coverage.skipping" ""
+        warn "on.before.push.docker.image.target.image.exists.not.force.coverage.skipping"
         #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
         [[ ! "${l_result}" ]] && l_result="true|true|false"
       fi
     else
-      warn "on.before.push.docker.image.target.image.not.found" "" "*"
+      warn "on.before.push.docker.image.target.image.not.found"
       #返回: 是否找到了匹配的调用链方法|目标镜像是否已存在|是否删除成功
       [[ ! "${l_result}" ]] && l_result="true|false|false"
     fi
