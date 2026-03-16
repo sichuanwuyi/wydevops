@@ -181,15 +181,13 @@ function pushImage() {
     info "docker.helper.common.success" "" "*"
   fi
 
-  info "docker.helper.executing.command" "docker push -q ${l_tmpImage}" "-n"
+  info "docker.helper.executing.command" "docker push -q ${l_tmpImage}"
 
   docker push -q "${l_tmpImage}" 2>&1
   if [ "$?" -ne 0 ];then
     #报错前删除刚定义的镜像。
     docker rmi -f "${l_tmpImage}"
-    error "docker.helper.push.fail.reason" "" "*"
-  else
-    info "docker.helper.common.success" "" "*"
+    error "docker.helper.push.fail.reason"
   fi
 
   _createDockerManifest "${l_image}" "${l_archType}" "${l_repoName}"
