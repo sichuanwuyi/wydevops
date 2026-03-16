@@ -248,7 +248,7 @@ function invokeExtendPointFunc() {
   l_param=(${l_param[*]})
 
   #调用公共功能扩展
-  extendLog "${l_funcName}" "${l_extentPointName}" "${l_extentPointNameParams}"
+  extendLog "${l_funcName}" "${l_extentPointName}" "${l_extentPointNameParams}" "true"
 
   gDefaultRetVal="null"
   gShellExecuteResult="false"
@@ -277,7 +277,7 @@ function invokeExtendPointFunc() {
   # shellcheck disable=SC2068
   executeShellScript "${gBuildPath}" "${l_funcName}.sh" ${l_param[@]}
 
-  extendLog "<<--- ${l_extentPointName}(${l_funcName}) --->>\n"
+  extendLog "${l_funcName}" "${l_extentPointName}" "${l_extentPointNameParams}" "false"
 
 }
 

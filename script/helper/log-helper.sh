@@ -28,15 +28,21 @@ function extendLog() {
   local l_info=$2
   #扩展点名称中的占位参数值
   local l_infoParams=$3
+  #是否是开始标识
+  local l_startFlag=$4
   #内容输出文件名称
-  local l_outFileName=$4
+  local l_outFileName=$5
 
   local l_start
   local l_end
 
   #使用国际化资源替换l_info
   convertI18NText "${l_info}" "${l_infoParams}"
-  l_info="\n--->> ${gDefaultRetVal}(${l_funcName}) <<---"
+  if [ "${l_startFlag}" == "true" ];then
+    l_info="\n--->> ${gDefaultRetVal}(${l_funcName}) <<---"
+  else
+    l_info="\n<<--- ${gDefaultRetVal}(${l_funcName}) --->>"
+  fi
 
   if [ "${gWorkMode}" == "local" ];then
     l_start="\e[32m"
