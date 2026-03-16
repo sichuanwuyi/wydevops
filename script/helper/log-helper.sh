@@ -35,8 +35,6 @@ function extendLog() {
 
   local l_start
   local l_end
-  #缓存原始gDefaultRetVal的值。
-  local l_tmpRetVal="${gDefaultRetVal}"
 
   #使用国际化资源替换l_info
   convertI18NText "${l_info}" "${l_infoParams}"
@@ -52,8 +50,6 @@ function extendLog() {
   fi
 
   log "${l_start}${l_info}${l_end}" "info" "${l_outFileName}"
-  #恢复原始gDefaultRetVal的值。
-  gDefaultRetVal="${l_tmpRetVal}"
 }
 
 #调用log函数输出信息

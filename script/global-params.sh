@@ -232,6 +232,7 @@ function invokeExtendPointFunc() {
   local l_funcName1
   local l_param=("${@}")
   local l_param_count=${#l_param[@]}
+  local l_tmpRetVal
 
   #删除前两个参数
   # shellcheck disable=SC2184
@@ -277,8 +278,11 @@ function invokeExtendPointFunc() {
   # shellcheck disable=SC2068
   executeShellScript "${gBuildPath}" "${l_funcName}.sh" ${l_param[@]}
 
+  l_tmpRetVal="${gDefaultRetVal}"
+
   extendLog "${l_funcName}" "${l_extentPointName}" "${l_extentPointNameParams}" "false"
 
+  gDefaultRetVal="${l_tmpRetVal}"
 }
 
 function executeShellScript() {
