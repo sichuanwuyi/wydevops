@@ -397,23 +397,27 @@ function convertI18NText(){
   fi
 
   if [ "${l_msgParams}" ];then
-    #将l_options参数中的#替换为空格，然后转换为数组。
+    #将l_options参数中按#字符分割为数组。
     IFS='#' read -r -a l_params <<< "${l_msgParams}"
-    l_index=0
     l_param_count=${#l_params[@]}
-    while [[ "$l_message" == *"{${l_index}}"* ]]
-    do
-      if [ "${l_index}" -lt "${l_param_count}" ];then
-        l_param_val="${l_params[${l_index}]}"
-      else
-        l_param_val="?"
-      fi
-      # 将 {index} 替换为实际的参数值
-      # shellcheck disable=SC1083
-      l_message="${l_message//\{$l_index\}/$l_param_val}"
-      ((l_index++))
-    done
+  else
+    l_params=()
+    l_param_count=0
   fi
+
+  l_index=0
+  while [[ "$l_message" == *"{${l_index}}"* ]]
+  do
+    if [ "${l_index}" -lt "${l_param_count}" ];then
+      l_param_val="${l_params[${l_index}]}"
+    else
+      l_param_val="?"
+    fi
+    # 将 {index} 替换为实际的参数值
+    # shellcheck disable=SC1083
+    l_message="${l_message//\{$l_index\}/$l_param_val}"
+    ((l_index++))
+  done
 
   gLogI18NRetVal="${l_message}"
 
