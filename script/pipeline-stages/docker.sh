@@ -261,7 +261,7 @@ function _createDockerImageByDockerfile() {
       l_image="${gDefaultRetVal}"
       invokeExtendPointFunc "onAfterCreatingDockerImage" "docker.sh.after.creating.docker.image.extend" "" "${l_image}" "${l_archType}"
       #调用外部接口发送通知消息
-      invokeExtendPointFunc "sendNotify" "docker.sh.send.notify" "${gCurrentStageResult}"
+      invokeExtendPointFunc "sendNotify" "docker.sh.send.notify" "" "${gCurrentStageResult}"
 
       if [ "${gDeleteImageAfterBuilding}" == "true" ];then
         info "docker.sh.deleting.local.image" "${l_image}"
