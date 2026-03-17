@@ -14,11 +14,11 @@ function virtualServiceGenerator_default() {
   l_apiVersion="${gDefaultRetVal}"
   [[ -z "${l_apiVersion}" ]] && l_apiVersion="networking.istio.io/v1"
   [[ -z "${t_apiVersion}" ]] && t_apiVersion="${l_apiVersion}"
-  info "${l_resourceType}资源的采用的ApiVersion版本是：${t_apiVersion}"
+  info "plugin.common.k8s.api.version" "${l_resourceType}#${t_apiVersion}"
 
   readParam "${l_valuesYaml}" "gatewayRoute.enableRewrite"
   if [ "${gDefaultRetVal}" == "false" ];then
-    info "不启用路由重写，则删除virtualService.rewrite参数"
+    info "virtualservice.generator.sh.delete.rewrite.param"
     deleteParam "${l_valuesYaml}" \
       "deployment${l_deploymentIndex}.istioRoute.virtualService.rewrite"
   fi

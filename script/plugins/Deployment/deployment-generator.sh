@@ -8,7 +8,7 @@ function deploymentGenerator_default() {
 
   #最终确定采用的ApiVersion版本
   [[ -z "${t_apiVersion}" ]] && t_apiVersion="apps/v1"
-  info "${l_resourceType}资源的采用的ApiVersion版本是：${t_apiVersion}"
+  info "plugin.common.k8s.api.version" "${l_resourceType}#${t_apiVersion}"
 
   gDefaultRetVal="false"
   readParam "${l_valuesYaml}" "deployment${l_deploymentIndex}.kind"

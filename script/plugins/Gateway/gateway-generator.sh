@@ -16,12 +16,12 @@ function gatewayGenerator_default() {
   l_apiVersion="${gDefaultRetVal}"
   [[ -z "${l_apiVersion}" ]] && l_apiVersion="networking.istio.io/v1"
   [[ -z "${t_apiVersion}" ]] && t_apiVersion="${l_apiVersion}"
-  info "${l_resourceType}资源的采用的ApiVersion版本是：${t_apiVersion}"
+  info "plugin.common.k8s.api.version" "${l_resourceType}#${t_apiVersion}"
 
   readParam "${l_valuesYaml}" "deployment${l_deploymentIndex}.${l_configPath}.gateway.name"
   l_gatewayName="${gDefaultRetVal}"
   if [ "${l_gatewayName}" != "${gServiceName}-gw" ];then
-    warn "检测到网关名称为非默认名称(${gServiceName}-gw),中断默认网关配置自动生成过程。"
+    warn "gateway.generator.sh.non.default.name" "${gServiceName}-gw"
     return
   fi
 

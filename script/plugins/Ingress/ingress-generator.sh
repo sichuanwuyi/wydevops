@@ -48,15 +48,15 @@ function ingressGenerator_default() {
   l_apiVersion="${gDefaultRetVal}"
   [[ -z "${l_apiVersion}" ]] && l_apiVersion="networking.k8s.io/v1"
   [[ -z "${t_apiVersion}" ]] && t_apiVersion="${l_apiVersion}"
-  info "${l_resourceType}资源的采用的ApiVersion版本是：${t_apiVersion}"
+  info "plugin.common.k8s.api.version" "${l_resourceType}#${t_apiVersion}"
 
   readParam "${l_valuesYaml}" "${t_moduleName}.name"
   t_deploymentName="${gDefaultRetVal}"
 
   l_templateFile="${l_generatorFile%/*}/${l_resourceType,}-${l_generatorName}-template.yaml"
-  [[ ! -f "${l_templateFile}" ]] && error "目标模板文件不存在：${l_templateFile}"
+  [[ ! -f "${l_templateFile}" ]] && error "plugin.common.template.file.not.exist" "${l_templateFile}"
   # shellcheck disable=SC2145
-  info "加载${l_resourceType}模板文件：${l_templateFile##*/}"
+  info "plugin.common.load.template.file" "${l_resourceType}#${l_templateFile##*/}"
 
   #设定目标配置文件
   l_targetFile="${l_valuesYaml%/*}/templates/${t_deploymentName}-${l_resourceType,,}.yaml"

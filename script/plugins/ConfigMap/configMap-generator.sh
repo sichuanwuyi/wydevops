@@ -24,12 +24,12 @@ function configMapGenerator_default() {
 
   #最终确定采用的ApiVersion版本
   [[ -z "${t_apiVersion}" ]] && t_apiVersion="v1"
-  info "${l_resourceType}资源的采用的ApiVersion版本是：${t_apiVersion}"
+  info "plugin.common.k8s.api.version" "${l_resourceType}#${t_apiVersion}"
 
   l_templateFile="${l_generatorFile%/*}/${l_resourceType,}-${l_generatorName}-template.yaml"
-  [[ ! -f "${l_templateFile}" ]] && error "目标模板文件不存在：${l_templateFile}"
+  [[ ! -f "${l_templateFile}" ]] && error "plugin.manager.sh.template.file.not.exist" "${l_templateFile}"
   # shellcheck disable=SC2145
-  info "加载${l_resourceType}模板文件：${l_templateFile##*/}"
+  info "plugin.manager.sh.load.template.file" "${l_resourceType}#${l_templateFile##*/}"
 
   ((l_index = 0))
   while true;do
@@ -44,10 +44,10 @@ function configMapGenerator_default() {
     l_configMapFiles=(${gDefaultRetVal//,/ })
 
     readParam "${l_valuesYaml}" "deployment${l_deploymentIndex}.configMaps[${l_index}].name"
-    [[ ! "${gDefaultRetVal}" ]] && error "${l_valuesYaml##*/}文件中deployment${l_deploymentIndex}.configMaps[${l_index}].name参数值为空"
+    [[ ! "${gDefaultRetVal}" ]] && error "configmap.generator.sh.param.empty" "${l_valuesYaml##*/}#${l_deploymentIndex}.configMaps[${l_index}].name"
 
     l_configMapName="${gDefaultRetVal}"
-    info "正在生成ConfigMap文件：${l_configMapName}"
+    info "configmap.generator.sh.generating.configmap" "${l_configMapName}"
 
     l_targetFile="${l_valuesYaml%/*}/templates/${l_configMapName}.yaml"
     #读取模板文件内容。
@@ -61,10 +61,10 @@ function configMapGenerator_default() {
 
     # shellcheck disable=SC2068
     for l_configFile in ${l_configMapFiles[@]};do
-      info "正在将${l_configFile##*/}文件写入ConfigMap配置文件中..."
+      info "configmap.generator.sh.writing.file" "${l_configFile##*/}"
       [[ "${l_configFile}" =~ ^(\./) ]] && l_configFile="${gBuildPath}/${l_configFile:2}"
 
-      [[ ! -f "${l_configFile}" ]] && error "目标配置文件不存在：${l_configFile}"
+      [[ ! -f "${l_configFile}" ]] && error "configmap.generator.sh.config.file.not.exist" "${l_configFile}"
 
       #将文件内容插入ConfigMap配置文件中。
       l_configFileContent=$(cat "${l_configFile}")

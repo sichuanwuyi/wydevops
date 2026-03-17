@@ -30,14 +30,14 @@ function externalChartGenerator_default() {
     for l_refExternalChart in ${l_refExternalCharts[@]};do
       #判断外部Chart是否是wydevops生成的。
 
-      info "向${l_valuesYaml##*/}文件中插入外部Chart镜像中的deployments配置"
+      info "externalchart.generator.sh.insert.config" "${l_valuesYaml##*/}"
       _insertExternalChart "${l_valuesYaml}" "${gCurrentChartName}" "${gCurrentChartVersion}" \
         "${l_refExternalChart}" "${l_index}"
       l_index="${gDefaultRetVal}"
     done
   fi
 
-  info "清除${l_valuesYaml##*/}文件中的${l_configPath}参数"
+  info "externalchart.generator.sh.clear.param" "${l_valuesYaml##*/}#${l_configPath}"
   deleteParam "${l_valuesYaml}" "${l_configPath}"
 
   gDefaultRetVal="true"
@@ -83,7 +83,7 @@ function _insertExternalChart() {
   if [[ ! "${l_refExternalChart}" =~ ^(.*)/(.*)$ ]];then
 
     [[ ! "${gChartRepoName}" ]] && \
-      error "没有配置Chart镜像仓库，无法拉取${l_refExternalChart}镜像。请指定Chart镜像仓库或${l_refExternalChart}镜像文件所在的本地路径。"
+      error "plugin.common.no.chart.repo" "${l_refExternalChart}#${l_refExternalChart}"
     l_chartVersion="${l_refExternalChart##*-}"
     l_chartVersion="${l_chartVersion%.*}"
     l_chartName="${l_refExternalChart%-*}"
@@ -100,7 +100,7 @@ function _insertExternalChart() {
 
   gDefaultRetVal="${l_index}"
   if [ -f "${l_refExternalChart}" ];then
-    info "解压外部Chart镜像文件..."
+    info "plugin.common.unzip.chart"
     tar -zxvf "${l_refExternalChart}" -C "${l_refExternalChart%/*}"
     l_externalValuesYaml="${l_refExternalChart%/*}/${l_chartName}/values.yaml"
     l_externalTemplateDir="${l_externalValuesYaml%/*}/templates"
@@ -119,7 +119,7 @@ function _insertExternalChart() {
         readParam "${l_externalValuesYaml}" "deployment0.name"
         if [ "${gDefaultRetVal}" != "null" ];then
           #并且存在deployment0.name参数，则判定该chart镜像是wydevops生成的
-          info "调用专用于wydevops生成的Chart镜像的合并方法..."
+          info "plugin.common.invoke.merge.method"
           _combineExternalChartCreatedByWydevops "${l_valuesYaml}" "${l_curChartName}" "${l_curChartVersion}" "${l_index}" \
             "${l_externalValuesYaml}" "${l_externalTemplateDir}" "${l_currentTemplateDir}" "${l_externalValuesYamlContent}" \
             "${l_refExternalChart}"
@@ -134,7 +134,7 @@ function _insertExternalChart() {
         "${l_externalTemplateDir}" "${l_currentTemplateDir}" "${l_externalValuesYamlContent}"
     fi
 
-    info "删除外部Chart镜像文件和解压出的目录..."
+    info "plugin.common.delete.chart.files"
     rm -f "${l_refExternalChart:?}"
     l_path="${l_refExternalChart%/*}"
     rm -rf "${l_path:?}/${l_chartName}"
@@ -180,21 +180,21 @@ function _combineExternalChartCreatedByWydevops() {
 
     # shellcheck disable=SC2068
     for l_paramPath in ${l_paramPaths[@]};do
-      info "读取外部镜像${l_externalValuesYaml##*/}文件中的${l_paramPath%%|*}参数值..."
+      info "externalchart.generator.sh.read.external.param" "${l_externalValuesYaml##*/}#${l_paramPath%%|*}"
       readParam "${l_externalValuesYaml}" "${l_paramPath%%|*}"
       if [[ "${gDefaultRetVal}" == "null" && ! "${l_paramPath}" =~ ^(params\.) ]];then
-        warn "外部Chart镜像的${l_externalValuesYaml##*/}文件中不存在${l_paramPath%%|*}参数"
-        error "外部Chart镜像${l_refExternalChart##*/}不是wydevops生成的。"
+        warn "plugin.common.param.not.exist.in.external" "${l_externalValuesYaml##*/}#${l_paramPath%%|*}"
+        error "externalchart.generator.sh.not.created.by.wydevops" "${l_refExternalChart##*/}"
       fi
       [[ ! "${gDefaultRetVal}" ]] && continue
-      info "将读取的参数值赋给当前镜像${l_valuesYaml##*/}文件中的${l_paramPath#*|}参数"
+      info "externalchart.generator.sh.set.current.param" "${l_valuesYaml##*/}#${l_paramPath#*|}"
       insertParam "${l_valuesYaml}" "${l_paramPath#*|}" "${gDefaultRetVal}"
     done
 
     l_fileList=$(find "${l_externalTemplateDir}" -maxdepth 1 -type f -name "*.yaml")
     # shellcheck disable=SC2068
     for l_file in ${l_fileList[@]};do
-      info "调整外部镜像中${l_file##*/}文件的参数..."
+      info "externalchart.generator.sh.adjust.external.param" "${l_file##*/}"
       sed -i "s/\.deployment${l_i}\./\.deployment${l_index}\./g" "${l_file}"
       sed -i "s/\.deployment${l_i} /\.deployment${l_index} /g" "${l_file}"
     done
@@ -221,7 +221,7 @@ function _combineExternalChartCreatedByWydevops() {
       sed -i "s/${l_tmpContent//\//\\\/}/${l_contentType//\//\\\/}: ${l_curChartVersion}/g" "${l_file}"
     fi
 
-    info "从外部镜像拷贝${l_file##*/}文件到当前镜像的templates目录中"
+    info "externalchart.generator.sh.copy.external.file" "${l_file##*/}"
     cp -f "${l_file}" "${l_currentTemplateDir}/"
 
   done
@@ -267,7 +267,7 @@ function _insertUnknownExternalDeployment() {
   # shellcheck disable=SC2068
   for l_file in ${l_fileList[@]};do
     [[ "${l_file}" =~ ^.*\.txt$ ]] && continue
-    info "调整外部镜像中${l_file##*/}文件中的参数..."
+    info "externalchart.generator.sh.adjust.external.param.in.unknown" "${l_file##*/}"
     sed -i "s/\.Values\./\.Values\.deployment${l_maxIndex}\./g" "${l_file}"
 
     l_externalFileContent=$(cat "${l_file}")
@@ -279,7 +279,7 @@ function _insertUnknownExternalDeployment() {
     l_contentType="${l_tmpContent%%:*}"
     sed -i "s/${l_tmpContent//\//\\\/}/${l_contentType//\//\\\/}: ${l_curChartVersion}/g" "${l_file}"
 
-    info "将外部chart镜像中的${l_file##*/}文件复制到当前chart镜像的templates目录中..."
+    info "externalchart.generator.sh.copy.external.file.in.unknown" "${l_file##*/}"
     cp -f "${l_file}" "${l_currentTemplateDir}/"
   done
 

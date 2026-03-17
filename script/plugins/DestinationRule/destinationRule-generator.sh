@@ -14,7 +14,7 @@ function destinationRuleGenerator_default() {
   l_apiVersion="${gDefaultRetVal}"
   [[ -z "${l_apiVersion}" ]] && l_apiVersion="networking.istio.io/v1"
   [[ -z "${t_apiVersion}" ]] && t_apiVersion="${l_apiVersion}"
-  info "${l_resourceType}资源的采用的ApiVersion版本是：${t_apiVersion}"
+  info "plugin.common.k8s.api.version" "${l_resourceType}#${t_apiVersion}"
 
   commonGenerator_default "DestinationRule" "${@}"
 }

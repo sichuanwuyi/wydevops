@@ -28,7 +28,7 @@ function externalContainerGenerator_default() {
     # shellcheck disable=SC2068
     for l_externalChartImage in ${l_externalChartImages[@]};do
       [[ "${l_externalChartImage}" =~ ^(\./) ]] && l_externalChartImage="${gBuildPath}${l_externalChartImage:2}"
-      info "正在处理引用的外部Chart镜像中的容器：${l_externalChartImage}"
+      info "externalcontainer.generator.sh.processing.external.container" "${l_externalChartImage}"
       #将外部Chart镜像中values.yaml文件中的params.deployment0配置节复制到l_valuesYaml文件中。
       #并将外部chart镜像中deployment[0]的initialContainers和containers合并到当前chart的deployment0中。
       _combineExternalContainer "${l_valuesYaml}" "${l_externalChartImage}" "${l_index}"
@@ -74,7 +74,7 @@ function _combineExternalContainer() {
   if [[ ! "${l_externalChartImage}" =~ ^(.*)/(.*)$ ]];then
 
     [[ ! "${gChartRepoName}" ]] && \
-      error "没有配置Chart镜像仓库，无法拉取${l_externalChartImage}镜像。请指定Chart镜像仓库或${l_externalChartImage}镜像文件所在的本地路径。"
+      error "plugin.common.no.chart.repo" "${l_externalChartImage}#${l_externalChartImage}"
     l_chartVersion="${l_externalChartImage##*-}"
     l_chartVersion="${l_chartVersion%.*}"
     l_chartName="${l_externalChartImage%-*}"
@@ -92,7 +92,7 @@ function _combineExternalContainer() {
   gDefaultRetVal="${l_index}"
 
   if [ -f "${l_externalChartImage}" ];then
-    info "解压外部Chart镜像文件..."
+    info "plugin.common.unzip.chart"
     tar -zxvf "${l_externalChartImage}" -C "${l_externalChartImage%/*}"
     l_valuesYaml1="${l_externalChartImage%/*}/${l_chartName}/values.yaml"
      
@@ -106,14 +106,14 @@ function _combineExternalContainer() {
         readParam "${l_valuesYaml1}" "deployment0.name"
         if [ "${gDefaultRetVal}" != "null" ];then
           #并且存在deployment0.name参数，则判定该chart镜像是wydevops生成的
-          info "调用专用于wydevops生成的Chart镜像的合并方法..."
+          info "plugin.common.invoke.merge.method"
           _combineExternalContainerCreatedByWydevops "${l_valuesYaml}" "${l_externalChartImage}" "${l_index}" \
             "${l_valuesYaml1}" "${l_chartName}"
         fi
       fi
     fi
 
-    info "删除外部Chart镜像文件和解压出的目录..."
+    info "plugin.common.delete.chart.files"
     rm -f "${l_externalChartImage:?}"
     l_path="${l_externalChartImage%/*}"
     rm -rf "${l_path:?}/${l_chartName}"
@@ -163,7 +163,7 @@ function _combineExternalContainerCreatedByWydevops() {
       #读取l_valuesYaml1文件中的参数，判断是否存在，不存在则报错。
       readParam "${l_valuesYaml1}" "${l_paramPath%%|*}"
       if [ "${gDefaultRetVal}" == "null" ];then
-        warn "外部Chart镜像的${l_valuesYaml1##*/}文件中不存在${l_paramPath%%|*}参数"
+        warn "plugin.common.param.not.exist.in.external" "${l_valuesYaml1##*/}#${l_paramPath%%|*}"
         continue
       fi
       [[ ! "${gDefaultRetVal}" ]] && continue
@@ -217,7 +217,7 @@ function _combineExternalContainerCreatedByWydevops() {
     # shellcheck disable=SC2002
     l_content=$(cat "${l_tmpFile}" | grep -oP "^(kind: ConfigMap)$")
     if [ "${l_content}" ];then
-      info "将${l_tmpFile##*/}文件复制到${l_valuesYaml%/*}目录中"
+      info "externalcontainer.generator.sh.copy.configmap" "${l_tmpFile##*/}#${l_valuesYaml%/*}"
       cp -f "${l_tmpFile}" "${l_valuesYaml%/*}/templates"
     fi
   done

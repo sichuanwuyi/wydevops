@@ -37,7 +37,7 @@ function invokeResourceGenerator() {
     getApiVersion "${l_resourceType}"
     t_apiVersion="${gDefaultRetVal}"
     if [ "${t_apiVersion}" ];then
-      info "目标服务器中${l_resourceType}资源的ApiVersion版本是：${t_apiVersion}"
+      info "plugin.manager.target.server.resource.api.version" "${l_resourceType}#${t_apiVersion}"
     fi
   fi
 
@@ -56,7 +56,7 @@ function invokeResourceGenerator() {
     l_registerItem="${l_registerItem#*|}"
     l_result=$(echo -e "${l_registerItem}" | grep -oE "${l_funcName},")
     if [ "${l_result}" ];then
-      info "找到匹配的资源生成器方法${l_funcName},立即调用之..."
+      info "plugin.manager.sh.found.generator" "${l_funcName}"
       "${l_funcName}" "${l_fileName}" "${@}" "${t_apiVersion}"
       l_found="true"
       break
@@ -65,11 +65,11 @@ function invokeResourceGenerator() {
 
   [[ "${l_found}" == "true" ]] && return
 
-  warn "未找到匹配的资源生成器方法：${l_funcName}"
+  warn "plugin.manager.sh.not.found.generator" "${l_funcName}"
 
   l_isOk="false"
   #查找l_resourceType目录下是否存在配置文件，如果存在则直接拷贝到l_valuesYaml文件所在目录下的templates子目录中
-  info "继续查找${l_resourceType}资源配置文件..."
+  info "plugin.manager.sh.find.resource.config" "${l_resourceType}"
   l_pluginDirs=("${gBuildScriptRootDir}/plugins/${l_resourceType}" "${gProjectPluginDir}/${l_resourceType}")
   # shellcheck disable=SC2068
   for l_pluginDir in ${l_pluginDirs[@]};do
@@ -81,13 +81,13 @@ function invokeResourceGenerator() {
     # shellcheck disable=SC2066
     for l_configFile in ${l_configFiles[@]};do
       [[ "${l_configFile}" =~ ^(.*)-template.yaml ]] && continue
-      info "找到${l_configFile##*/}资源配置文件,拷贝到当前chart镜像的templates目录中"
+      info "plugin.manager.sh.found.resource.config" "${l_configFile##*/}"
       cp -f "${l_configFile}" "${l_valuesYaml%/*}/templates/"
       l_isOk="true"
     done
   done
 
-  [[ "${l_isOk}" == "false" ]] && error "未能找到${l_resourceType}资源配置文件"
+  [[ "${l_isOk}" == "false" ]] && error "plugin.manager.sh.fail.to.find.resource.config" "${l_resourceType}"
 
 }
 
@@ -112,7 +112,7 @@ function registerPlugin() {
       #检测生成器方法是否存在重复。
       l_result=$(grep -oE "[a-zA-Z0-9_\-]+," <<< "${l_registerContent}" | sort | uniq -c | grep -oE "^([ ]*)[2-9]{1}[0-9]*(.*)$")
       l_result=$(grep -oE "[a-zA-Z_]+[a-zA-Z0-9_\-]*" <<< "${l_result}")
-      [[ "${l_result}" ]] && error "以下资源生成器方法重名:${l_result}"
+      [[ "${l_result}" ]] && error "plugin.manager.sh.duplicate.generator.method" "${l_result}"
 
       gPluginRegTables["${l_resourceType}"]="${l_registerContent}"
     fi
@@ -165,9 +165,9 @@ function commonGenerator_default() {
   t_deploymentName="${gDefaultRetVal}"
 
   l_templateFile="${l_generatorFile%/*}/${l_resourceType,}-${l_generatorName}-template.yaml"
-  [[ ! -f "${l_templateFile}" ]] && error "目标模板文件不存在：${l_templateFile}"
+  [[ ! -f "${l_templateFile}" ]] && error "plugin.common.template.file.not.exist" "${l_templateFile}"
   # shellcheck disable=SC2145
-  info "加载${l_resourceType}模板文件：${l_templateFile##*/}"
+  info "plugin.common.load.template.file" "${l_resourceType}#${l_templateFile##*/}"
 
   #设定目标配置文件
   l_targetFile="${l_valuesYaml%/*}/templates/${t_deploymentName}-${l_resourceType,,}.yaml"
@@ -225,11 +225,11 @@ function loadPlugins() {
         l_funcName="${l_funcName//function/}"
         l_funcName="${l_funcName%%(*}"
         l_result=$(echo -e "${l_funcNameStr}," | grep -oP "${l_funcName},")
-        [[ "${l_result}" ]] && error "${l_resourceType}类型的资源生成器名称冲突：${l_resourceType,}Generator_${l_funcName}名称已经存在"
+        [[ "${l_result}" ]] && error "plugin.manager.sh.generator.name.conflict" "${l_resourceType}#${l_resourceType,}Generator_${l_funcName}"
         l_funcNameStr="${l_funcNameStr}${l_funcName},"
       done
       #注册调用链。
-      info "注册${l_resourceType^}类型的资源生成器插件:${l_funcNameStr}"
+      info "plugin.manager.sh.register.plugin" "${l_resourceType^}#${l_funcNameStr}"
       registerPlugin "${l_resourceType^}" "${l_pluginGenerator}|${l_funcNameStr}"
       # shellcheck disable=SC1090
       source "${l_pluginGenerator}"

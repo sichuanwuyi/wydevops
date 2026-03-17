@@ -12,7 +12,7 @@ function tryLoadApiResources() {
   local l_port
   local l_account
 
-  [[ -z "${l_apiServer}" ]] && error "从ApiServer服务器读取各类资源的Api版本时，ApiServer参数不能为空"
+  [[ -z "${l_apiServer}" ]] && error "k8s.api.resources.reader.sh.apiserver.empty"
 
   # shellcheck disable=SC2206
   l_array=(${l_apiServer//\|/ })
@@ -23,7 +23,7 @@ function tryLoadApiResources() {
   gApiResourcesInfo=$(ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "kubectl api-resources")
   # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
-    error "执行命令失败：ssh -o \"StrictHostKeyChecking no\" -p ${l_port} ${l_account}@${l_ip} \"kubectl api-resources\""
+    error "k8s.api.resources.reader.sh.command.failed" "ssh -o \"StrictHostKeyChecking no\" -p ${l_port} ${l_account}@${l_ip} \"kubectl api-resources\""
   fi
 }
 
@@ -33,7 +33,7 @@ function getApiVersion() {
 
   local l_resourceType="$1"
 
-  [[ -z "${gApiResourcesInfo}" ]] && error "获取${l_resourceType}资源的ApiVersion版本时，gApiResourcesInfo参数是空的"
+  [[ -z "${gApiResourcesInfo}" ]] && error "k8s.api.resources.reader.sh.gapiresourcesinfo.empty" "${l_resourceType}"
 
   #从gApiResourcesInfo变量中提取l_resourceType资源的Api版本
   gDefaultRetVal=$(echo "${gApiResourcesInfo}" | awk -v var="${l_resourceType}" '$NF == var {print $3}')
