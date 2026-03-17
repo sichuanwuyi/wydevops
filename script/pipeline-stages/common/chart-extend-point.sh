@@ -941,7 +941,7 @@ function _createServiceConfig() {
           l_subPath=""
           if [[ "${l_j}" -lt "${l_nodePortCount}" && "${l_nodePortList[${l_j}]}" -gt 0 ]];then
             l_subPath="nodePort"
-            [[ "${l_servicePortList[${l_j}]}" -le 0 ]] && error "${l_paramPath}.ports[${l_i}].servicePort参数中第${l_j}个端口号必须大于0"
+            [[ "${l_servicePortList[${l_j}]}" -le 0 ]] && error "common.chart.extend.point.invalid.port" "${l_paramPath}.ports[${l_i}].servicePort#${l_j}"
             ((l_tmpIndex = l_nodePortIndex))
           elif [[ "${l_j}" -lt "${l_servicePortCount}" && "${l_servicePortList[${l_j}]}" -gt 0 ]];then
             l_subPath="clusterIP"

@@ -194,7 +194,7 @@ function getAllParamPathAndValue() {
 
 
   readParam "${l_yamlFile}" "${l_paramPath}"
-  [ "${gDefaultRetVal}" == "null" ] && error "yaml.helper.file.not.exist.in.param" "${l_yamlFile##*/}#${l_paramPath}"
+  [ "${gDefaultRetVal}" == "null" ] && error "yaml.helper.param.not.exist.in.file" "${l_yamlFile##*/}#${l_paramPath}"
 
   _getAllParamPathAndValueByParentPath "${l_yamlFile}" "${l_paramPath}" "${l_resultMapName}" \
     "${l_paramKeys}" "${gDefaultRetVal}" "${l_paramPathPrefix}"
@@ -392,7 +392,7 @@ function combine(){
     #读取整个参数的数据块内容。
     readParam "${l_srcYamlFile}" "${l_srcParamPath}"
     if [ "${gDefaultRetVal}" == "null" ];then
-      error "${l_srcYamlFile}文件中不存在${l_srcParamPath}参数"
+      error "yaml.helper.param.not.exist.in.file" "${l_srcYamlFile}#${l_srcParamPath}"
     else
       l_srcContent="${gDefaultRetVal}"
     fi
@@ -401,13 +401,13 @@ function combine(){
     l_srcContent=$(< "${l_srcYamlFile}")
   fi
 
-  info "yaml.helper.combine.start" "${l_srcYamlFile}#${l_targetYamlFile}"
+  info "yaml.helper.combine.file.content.start" "${l_srcYamlFile}#${l_targetYamlFile}"
 
   #给定参数路径及其参数下属数据块内容，更新目标文件l_targetYamlFile的内容。
   _combine "${l_srcContent}" "${l_srcParamPath}" "${l_targetYamlFile}" "${l_srcParamPath}" "${l_allowInsertNewListItem}" \
     "${l_exitOnFailure}" "${l_cascadeDelete}"
 
-  info "yaml.helper.combine.end" "${l_srcYamlFile}#${l_targetYamlFile}#"
+  info "yaml.helper.combine.file.content.end" "${l_srcYamlFile}#${l_targetYamlFile}#"
 
   #恢复gSaveBackImmediately的原始值。
   enableSaveBackImmediately "${l_saveBackStatus}"
@@ -691,7 +691,7 @@ function __readOrWriteYamlFile() {
   if [ ! -f "${l_yamlFile}" ];then
     #不是插入模式则报错退出。
     if [[ "${l_mode}" != "insert" ]];then
-      error "目标文件${l_yamlFile}不存在"
+      error "yaml.helper.target.file.not.exist" "${l_yamlFile}"
     else
       #文件不存在且是插入模式，则直接创建文件。
       touch "${l_yamlFile}"
@@ -708,7 +708,7 @@ function __readOrWriteYamlFile() {
     #初始化文件内容在内存中的缓存。
     _yamlFileContent=$(<"${l_yamlFile}")
     gFileContentMap["${l_yamlFile}"]="${_yamlFileContent}"
-    info "读取${l_yamlFile##*/}文件内容并缓存到内存中"
+    info "yaml.helper.read.and.cache.file" "${l_yamlFile##*/}"
   fi
 
   #如果数据块截止行号无效，则从文件中读取数据块的起止行号。
@@ -819,7 +819,7 @@ function __readOrWriteYamlFile() {
         ((l_addTotalLineCount = l_addTotalLineCount + ${l_array[3]}))
         ;;
       *)
-        error "不存在的操作模式：${l_mode}"
+        error "yaml.helper.unsupported.operation.mode" "${l_mode}"
         ;;
       esac
   else
@@ -860,7 +860,7 @@ function __readOrWriteYamlFile() {
         ;;
       "insert")
         if [ "${l_curItemIndex}" -gt "${l_array[3]}" ];then
-          warn "${l_mode}模式下，将在数组或列表的尾部追加多个新项"
+          warn "yaml.helper.append.new.items.in.mode" "${l_mode}"
         fi
         ;;
       "delete")
@@ -869,7 +869,7 @@ function __readOrWriteYamlFile() {
         return
         ;;
       *)
-        error "不存在的操作模式：${l_mode}"
+        error "yaml.helper.unsupported.operation.mode" "${l_mode}"
         return
         ;;
     esac
@@ -1002,7 +1002,7 @@ function __readOrWriteYamlFile() {
       gDefaultRetVal="${gDefaultRetVal} ${l_curItemIndex} ${l_itemCount}"
       ;;
     *)
-      error "不存在的操作模式：${l_mode}"
+      error "yaml.helper.unsupported.operation.mode" "${l_mode}"
       ;;
   esac
 
@@ -2645,7 +2645,7 @@ function _combine(){
     l_cascadeDeleteFlag=$(grep -E "^([0-9]+):([ ]*)\-([ ]*)!([ ]*)$" <<< "${l_layerParamLines}")
     if [ "${l_cascadeDeleteFlag}" ];then
       #整体赋值到目标文件对应列表参数。
-      info "检测到带有整体替换标识项的列表型参数${l_targetParamPath}，执行整体替换 ..."
+      info "yaml.helper.full.replace.list.detected" "${l_targetParamPath}"
       if [[ "${l_allowInsertNewListItem}" == "true" ]];then
         insertParam "${l_targetYamlFile}" "${l_targetParamPath}" "${l_srcContent}"
       else
@@ -2653,12 +2653,12 @@ function _combine(){
       fi
       if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
         if [[ "${l_exitOnFailure}" == "true" ]];then
-          error "整体替换${l_targetParamPath}参数失败"
+          error "yaml.helper.full.replace.failed" "${l_targetParamPath}"
         else
-          warn "整体替换${l_targetParamPath}参数失败"
+          warn "yaml.helper.full.replace.failed" "${l_targetParamPath}"
         fi
       else
-        info "整体替换成功"
+        info "yaml.helper.full.replace.succeeded"
       fi
       return
     fi
@@ -2666,7 +2666,7 @@ function _combine(){
     getListTypeByContent "${l_srcContent}"
     if [ "${gDefaultRetVal}" == "array" ];then
       #是数组，则直接整体替换。
-      info "检测到数组型列表参数${l_targetParamPath}，执行整体替换 ..."
+      info "yaml.helper.full.replace.array.detected" "${l_targetParamPath}"
       deleteParam "${l_targetYamlFile}" "${l_targetParamPath}"
       if [[ "${l_allowInsertNewListItem}" == "true" ]];then
         insertParam "${l_targetYamlFile}" "${l_targetParamPath}" "${l_srcContent}"
@@ -2675,25 +2675,25 @@ function _combine(){
       fi
       if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
         if [[ "${l_exitOnFailure}" == "true" ]];then
-          error "整体替换${l_targetParamPath}参数失败"
+          error "yaml.helper.full.replace.failed" "${l_targetParamPath}"
         else
-          warn "整体替换${l_targetParamPath}参数失败"
+          warn "yaml.helper.full.replace.failed" "${l_targetParamPath}"
         fi
       else
-        info "整体替换成功"
+        info "yaml.helper.full.replace.succeeded"
       fi
       return
     fi
 
     #预先读取目标文件中l_targetParamPath列表参数的内容。
-    info "将目标文件中${l_targetParamPath}参数的现有值读入内存中备查 ..."
+    info "yaml.helper.cache.target.param.value" "${l_targetParamPath}"
     l_targetParamContent=""
     readParam "${l_targetYamlFile}" "${l_targetParamPath}"
     if [ "${gDefaultRetVal}" == "null" ];then
       if [[ "${l_exitOnFailure}" == "true" ]];then
-        error "目标文件中不存在${l_targetParamPath}参数"
+        error "yaml.helper.target.param.not.exist" "${l_targetParamPath}"
       else
-        warn "缓存${l_targetParamPath}参数现有值失败: 目标文件中不存在${l_targetParamPath}参数"
+        warn "yaml.helper.cache.failed.as.param.not.exist" "${l_targetParamPath}#${l_targetParamPath}"
       fi
     else
       #预先读取目标文件中l_targetParamPath参数的内容。
@@ -2703,7 +2703,7 @@ function _combine(){
         #列表项转成Map存放，方便后续匹配查找。
         _convertToNameIndexMap "${l_targetParamContent}"
       else
-        warn "缓存${l_targetParamPath}参数现有值失败"
+        warn "yaml.helper.cache.param.value.failed" "${l_targetParamPath}"
       fi
     fi
 
@@ -2757,7 +2757,7 @@ function _combine(){
         [[ "${l_paramName}" =~ ^[#]+ ]] && l_paramName=""
         #如果存在name属性，但是没有配置值，则不处理这个列表项。
         if [ ! "${l_paramName}" ];then
-          warn "忽略项列表项${l_srcParamPath}[${l_tmpIndex}](存在name属性但是没有设置值)，继续下一个列表项"
+          warn "yaml.helper.ignore.item.with.empty.name.value" "${l_srcParamPath}[${l_tmpIndex}]"
           ((l_tmpIndex = l_tmpIndex + 1))
           continue
         fi
@@ -2778,22 +2778,22 @@ function _combine(){
       #如果没有匹配到，则直接追加到目标文件对应的列表参数中
       if [[ "${l_targetIndex}" -eq -1 ]];then
         if [[ "${l_allowInsertNewListItem}" != "true" ]];then
-          warn "忽略项列表项${l_srcParamPath}[${l_tmpIndex}](在目标文件中未能匹配到对应的列表项)，继续下一个列表项"
+          warn "yaml.helper.ignore.item.not.matched.in.target" "${l_srcParamPath}[${l_tmpIndex}]"
           ((l_tmpIndex = l_tmpIndex + 1))
           continue
         fi
         #直接将列表项追加到目标文件对应的列表参数中
-        info "向目标文件中插入列表项参数${l_targetParamPath}[${l_targetParamItemCount}] ..."
+        info "yaml.helper.insert.list.item" "${l_targetParamPath}[${l_targetParamItemCount}]"
         insertParam "${l_targetYamlFile}" "${l_targetParamPath}[${l_targetParamItemCount}]" "${l_tmpContent}"
         if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
           if [[ "${l_exitOnFailure}" == "true" ]];then
-            error "向目标文件中插入列表项参数${l_targetParamPath}[${l_targetParamItemCount}]失败"
+            error "yaml.helper.insert.list.item.failed" "${l_targetParamPath}[${l_targetParamItemCount}]"
           else
-            warn "向目标文件中插入列表项参数${l_targetParamPath}[${l_targetParamItemCount}]失败"
+            warn "yaml.helper.insert.list.item.failed" "${l_targetParamPath}[${l_targetParamItemCount}]"
             return
           fi
         else
-          info "列表项参数整体插入成功"
+          info "yaml.helper.list.item.insert.succeeded"
           l_paramName="${l_targetParamPath}[${l_targetParamItemCount}]"
           _targetParamNameIndexMap["${l_paramName}"]="${l_targetParamItemCount}"
         fi
@@ -2803,7 +2803,7 @@ function _combine(){
         [[ "${l_tmpSrcParamPath}" =~ ^\. ]] && l_tmpSrcParamPath="${l_tmpSrcParamPath:1}"
         l_tmpTargetParamPath="${l_targetParamPath}[${l_targetIndex}]"
         [[ "${l_tmpTargetParamPath}" =~ ^\. ]] && l_tmpTargetParamPath="${l_tmpTargetParamPath:1}"
-        info "合并源文件中${l_tmpSrcParamPath}参数(目标文件中对应参数路径为${l_tmpTargetParamPath}) ..."
+        info "yaml.helper.merge.source.param" "${l_tmpSrcParamPath}#${l_tmpTargetParamPath}"
         _combineObject "${l_tmpContent}" "${l_tmpSrcParamPath}" "${l_targetYamlFile}" "${l_tmpTargetParamPath}" \
           "${l_allowInsertNewListItem}" "${l_exitOnFailure}" "${l_cascadeDelete}"
       fi
@@ -2852,11 +2852,11 @@ function _combineObject(){
 
   #读取目标文件中相同参数的数据块,以备后续使用。
   if [ "${l_targetParamPath}" ];then
-    info "将目标文件中${l_targetParamPath}参数的现有值读入内存中备查 ..."
+    info "yaml.helper.cache.target.param.value" "${l_targetParamPath}"
     readParam "${l_targetYamlFile}" "${l_targetParamPath}"
     if [[ "${gDefaultRetVal}" == "null" ]];then
       l_targetParamBlockContent=""
-      warn "缓存${l_targetParamPath}参数现有值失败"
+      warn "yaml.helper.cache.param.value.failed" "${l_targetParamPath}"
     else
       l_targetParamBlockContent="${gDefaultRetVal}"
       _deleteInvalidLines "${l_targetParamBlockContent}"
@@ -2914,7 +2914,7 @@ function _combineObject(){
           [[ "${l_tmpSrcParamPath}" =~ ^\. ]] && l_tmpSrcParamPath="${l_tmpSrcParamPath:1}"
           l_tmpTargetParamPath="${l_targetParamPath}.${l_paramName}"
           [[ "${l_tmpTargetParamPath}" =~ ^\. ]] && l_tmpTargetParamPath="${l_tmpTargetParamPath:1}"
-          info "合并源文件中${l_tmpSrcParamPath}参数(目标文件中对应参数路径为${l_tmpTargetParamPath}) ..."
+          info "yaml.helper.merge.source.param" "${l_tmpSrcParamPath}#${l_tmpTargetParamPath}"
           #递归调用处理下层参数。
           _combine "${l_paramValue}" "${l_tmpSrcParamPath}" "${l_targetYamlFile}" "${l_tmpTargetParamPath}" \
             "${l_allowInsertNewListItem}" "${l_exitOnFailure}" "${l_cascadeDelete}"
@@ -2964,16 +2964,16 @@ function _combineObject(){
         fi
         if [[ "${gDefaultRetVal}" =~ ^(\-1) ]];then
           if [[ "${l_allowInsertNewListItem}" == "false" && "${l_exitOnFailure}" == "true" ]];then
-            error "合并${l_targetParamPath}.${l_paramName}参数失败:${gDefaultRetVal}"
+            error "yaml.helper.merge.param.failed" "${l_targetParamPath}.${l_paramName}#${gDefaultRetVal}"
           else
-            warn "合并${l_targetParamPath}.${l_paramName}参数失败:${gDefaultRetVal}"
+            warn "yaml.helper.merge.param.failed" "${l_targetParamPath}.${l_paramName}#${gDefaultRetVal}"
             return
           fi
         else
-          info "合并${l_targetParamPath}.${l_paramName}参数的值为:${l_paramValue}"
+          info "yaml.helper.merged.param.value" "${l_targetParamPath}.${l_paramName}#${l_paramValue}"
         fi
       else
-        warn "${l_targetParamPath}.${l_paramName}参数值(${l_targetParamValue})没有变化，继续合并下一个参数 ..."
+        warn "yaml.helper.param.value.unchanged" "${l_targetParamPath}.${l_paramName}#${l_targetParamValue}"
       fi
 
     fi
@@ -3222,7 +3222,7 @@ function _getAllParamPathAndValueByParentPath() {
       #处理数组项
       for (( l_i=0; l_i < l_listItemCount; l_i++ ));do
         readParam "${l_yamlFile}" "${l_paramPath[${l_i}]}"
-        info "将${l_paramPath}[${l_i}]参数及其值${gDefaultRetVal}放入${l_resultMapName}中"
+        info "yaml.helper.add.param.with.value.to.map" "${l_paramPath}[${l_i}]#${gDefaultRetVal}#${l_resultMapName}"
         eval "${l_resultMapName}[${l_paramPathPrefix}${l_paramPath}[${l_i}]]=\"${gDefaultRetVal}\""
         # 获取数组当前长度作为新元素的索引
         eval "l_currentIndex=\"\${#${l_paramKeys}[@]}\""
@@ -3263,13 +3263,13 @@ function _getAllParamPathAndValueByParentPath() {
     fi
 
     if [[ "${l_paramValue}" =~ ^([ ]*\|[ ]*$) ]];then
-      info "将${l_paramPathPrefix}${l_tmpParamPath}参数及其值(多行数据)放入${l_resultMapName}中"
+      info "yaml.helper.add.multiline.param.to.map" "${l_paramPathPrefix}${l_tmpParamPath}#${l_resultMapName}"
       eval "${l_resultMapName}[${l_paramPathPrefix}${l_tmpParamPath}]=\"${gDefaultRetVal}\""
     elif [ "${l_paramValue}" ];then
-      info "将${l_paramPathPrefix}${l_tmpParamPath}参数及其值${l_paramValue}放入${l_resultMapName}"
+      info "yaml.helper.add.param.value.to.map" "${l_paramPathPrefix}${l_tmpParamPath}#${l_paramValue}#${l_resultMapName}"
       eval "${l_resultMapName}[${l_paramPathPrefix}${l_tmpParamPath}]=\"${l_paramValue}\""
     elif [ ! "${gDefaultRetVal}" ];then
-      info "将${l_paramPathPrefix}${l_tmpParamPath}参数及其值(空)放入${l_resultMapName}中"
+      info "yaml.helper.add.empty.param.to.map" "${l_paramPathPrefix}${l_tmpParamPath}#${l_resultMapName}"
       eval "${l_resultMapName}[${l_paramPathPrefix}${l_tmpParamPath}]=\"\""
     else
       #递归处理列表项
@@ -3289,12 +3289,12 @@ function _getParamLines() {
 
   gDefaultRetVal=$(awk -v space="${l_space}" -v param="${l_param}" '
 BEGIN {
-   # 构建两种匹配模式：列表项格式和子级格式
-   regex1 = "^ {" space "}- "param":"     # 精确匹配列表项
-   regex2 = "^ {" space + 2 "}"param":"    # 精确匹配子级项
+   # Construct two matching patterns: list item format and child-level format.
+   regex1 = "^ {" space "}- "param":"     # Exact match for list item
+   regex2 = "^ {" space + 2 "}"param":"    # Exact match for child item
 }
 {
-   # 检查前导空格数
+   # Check the number of leading spaces.
    prefix = substr($0, 1, space + 2)
    if ($0 ~ regex1 || $0 ~ regex2) {
        print
@@ -3456,7 +3456,7 @@ function profileFunction() {
   # 生成带跟踪的函数
   eval "function _traced_${func_name}() {
       local start=\$(date +%s%3N)
-      command ${func_name} \"\$@\"  # 正确传递所有参数
+      command ${func_name} \"\$@\"  # Pass all parameters correctly.
       local end=\$(date +%s%3N)
       echo \"[\$(date '+%Y-%m-%d %H:%M:%S')] ${func_name} \$((end-start))ms args:\$*\" >> \"${log_file}\"
   }"

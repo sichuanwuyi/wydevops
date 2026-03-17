@@ -3,7 +3,7 @@
 #执行项目的编译
 function _buildProject_ex() {
 
-  if [ "${LOG_LANGUAGE}" == "zh" ];then
+  if [[ "${LOG_LANGUAGE}" =~ ^zh ]];then
     error "暂未实现，实现说明如下：
 调用buildProject扩展，各个语言可按自己的要求完成项目编译过程。
 对于Java语言可以直接在本地系统中构建异构镜像。（需要在docker.json配置文件中设置experimental=true)

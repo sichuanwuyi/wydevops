@@ -15,7 +15,7 @@ function unzipOfflinePackage() {
   tar -zxvf "${l_offlinePackage}" -C "${l_offlinePackage%/*}/${l_chartName}" 2>&1
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
-    echo "${l_offlinePackage##*/}文件解压失败"
+    error "remote.install.proxy.sh.unzip.offline.package" "${l_offlinePackage##*/}"
     resultVal="false"
   fi
 }

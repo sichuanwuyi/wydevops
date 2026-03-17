@@ -726,7 +726,7 @@ function parseOptions2() {
         shift
         break ;;
       *)
-        error "${1} 不是一个有效选项"
+        error "global.params.sh.invalid.option" "${1}"
         ;;
     esac
   done
