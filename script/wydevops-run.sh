@@ -19,51 +19,68 @@ _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
 echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 
 _selfRootDir="${_SCRIPTS_ROOT_DIR}"
-export g_update_occurred=false
-
 source "${_SCRIPTS_ROOT_DIR}/helper/log-helper.sh"
 source "${_SCRIPTS_ROOT_DIR}/helper/yaml-helper.sh"
 source "${_SCRIPTS_ROOT_DIR}/wydevops-update.sh"
 
-# --- Self-update logic (Conditional, Dynamic & Robust) ---
+# --- Self-update logic (Intelligent Merge) ---
 # This logic only runs if the `wydevops-update.sh` script detected a git update.
 if [[ "${g_update_occurred}" == "true" ]]; then
-    # After updating, check if the core logic of this script has changed.
+    info "Git update detected. Checking for wydevops-run.sh script updates..."
+
     l_latest_run_script="${_SCRIPTS_ROOT_DIR}/wydevops-run.sh"
-    # It's possible that BASH_SOURCE[0] is a relative path, so we get the absolute path.
     l_current_run_script=$(readlink -f "${BASH_SOURCE[0]}")
 
-    # Dynamically determine the boundary line for both scripts.
-    # The boundary is the line where the final `bash` command execution starts.
+    # Dynamically find the boundary line (the last line starting with "bash ") in both scripts.
     l_latest_boundary_line=$(grep -n "^bash " "${l_latest_run_script}" | tail -1 | cut -d: -f1)
     l_current_boundary_line=$(grep -n "^bash " "${l_current_run_script}" | tail -1 | cut -d: -f1)
 
-    # If a boundary line is found in both scripts, proceed with the comparison.
-    if [[ -n "${l_latest_boundary_line}" && -n "${l_current_boundary_line}" ]]; then
-        # The header is everything BEFORE the boundary line.
-        l_latest_header_end_line=$((l_latest_boundary_line - 1))
-        l_current_header_end_line=$((l_current_boundary_line - 1))
+    # Proceed only if the boundary is found in the latest script.
+    if [[ -n "${l_latest_boundary_line}" ]]; then
+        info "Merging local parameter values into the latest script template..."
 
-        # Compare the headers using Process Substitution.
-        if ! cmp -s <(sed -n "1,${l_latest_header_end_line}p" "${l_latest_run_script}") <(sed -n "1,${l_current_header_end_line}p" "${l_current_run_script}"); then
-            info "The core logic of wydevops-run.sh has been updated. Merging changes and restarting..."
+        l_merged_script="${l_current_run_script}.merged.tmp"
 
-            l_temp_new_script="${l_current_run_script}.tmp"
+        # 1. Write the header from the latest script (the template) to the new merged script.
+        # This includes the `bash ...` line itself.
+        sed -n "1,${l_latest_boundary_line}p" "${l_latest_run_script}" > "${l_merged_script}"
 
-            # 1. Write the new header from the updated script to the temp file.
-            sed -n "1,${l_latest_header_end_line}p" "${l_latest_run_script}" > "${l_temp_new_script}"
+        # 2. Extract the parameter blocks from both scripts for processing.
+        # The parameter block is everything AFTER the boundary line.
+        l_latest_params=$(sed "1,${l_latest_boundary_line}d" "${l_latest_run_script}")
+        l_local_params=$(sed "1,${l_current_boundary_line}d" "${l_current_run_script}")
 
-            # 2. Append the user-modified part (from the boundary line onwards) from the current script.
-            sed "1,${l_current_header_end_line}d" "${l_current_run_script}" >> "${l_temp_new_script}"
+        # 3. Iterate through each line of the LATEST script's parameter block.
+        echo "${l_latest_params}" | while IFS= read -r l_template_line; do
+            # Skip empty lines.
+            if [[ -z "${l_template_line}" ]]; then
+                continue
+            fi
 
-            # 3. Atomically replace the current script with the merged one.
-            mv "${l_temp_new_script}" "${l_current_run_script}"
+            # Get the parameter key (the first word, e.g., "-P", "#-C", "--localConfigFile").
+            l_param_key=$(echo "${l_template_line}" | awk '{print $1}')
 
-            chmod +x "${l_current_run_script}"
+            # Base key is the key without the leading comment, used for searching.
+            l_base_key=$(echo "${l_param_key}" | sed 's/^#//')
 
-            # Re-execute the script with all original arguments.
-            exec "${l_current_run_script}" "$@"
-        fi
+            # Search for a line in the LOCAL params that starts with this key (commented or not).
+            l_local_line=$(echo "${l_local_params}" | grep -m 1 -E "^[[:space:]]*(#?${l_base_key})[[:space:]]")
+
+            if [[ -n "${l_local_line}" ]]; then
+                # FOUND: The user has this parameter locally. Use the local line to preserve their value.
+                echo "${l_local_line}" >> "${l_merged_script}"
+            else
+                # NOT FOUND: This is a new parameter from the template. Use the template line.
+                echo "${l_template_line}" >> "${l_merged_script}"
+            fi
+        done
+
+        # 4. Atomically replace the current script with the newly merged one.
+        mv "${l_merged_script}" "${l_current_run_script}"
+        chmod +x "${l_current_run_script}"
+
+        info "wydevops-run.sh has been intelligently updated. Restarting script..."
+        exec "${l_current_run_script}" "$@"
     fi
 fi
 # --- End of self-update logic ---
@@ -72,7 +89,7 @@ source "${_SCRIPTS_ROOT_DIR}/helper/path-helper.sh"
 
 # 获取当前脚本所在目录的绝对路径（解析符号链接）。实际就是目标项目的根目录。
 _SELF_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
-warn "_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}"
+echo -e "${BBlue}_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}${Color_Off}"
 
 #允许传入两个参数：第一个参数为项目目录，第二个参数为本地配置文件名称
 
@@ -90,10 +107,13 @@ bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" -e -f -m -c \
 -S build,docker,chart,package,deploy \
 -M local \
 -T true \
+-Z ddd \
 -P "${_PROJECT_MAIN_MODULE_DIR}" \
 -W "${_SCRIPTS_ROOT_DIR}"
 #-C "harbor,chartmuseum,192.168.1.214:80,admin,Harbor12345,80" \
+#-0 ddddddddddddddd
 #-D "harbor,registry.docker.home,192.168.1.214:80,admin,Harbor12345,80"
 #-C "nexus,chartmuseum,192.168.1.214:8081,admin,Wpl118124,8081" \
 #-D "nexus,registry.docker.home,192.168.1.214:8002,admin,Wpl118124,8081"
 #-D "registry,wydevops,192.168.1.218:30783,admin,admin123,30784,true,docker-registry /etc/docker/registry/config.yml"
+#钱钱钱钱钱钱钱钱钱钱钱钱钱
