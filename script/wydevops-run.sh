@@ -6,7 +6,7 @@ BBlue='\033[1;34m'
 
 if [ -z "$LOG_LANUAGE" ];then
   #define language in log as zh-CN
-  export LOG_LANGUAGE="en"
+  export LOG_LANGUAGE="zh"
 fi
 
 # The home directory for all wydevops related files and scripts.
@@ -18,11 +18,10 @@ echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
 _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
 echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 
-source "${_SCRIPTS_ROOT_DIR}/wydevops-update.sh"
-
 _selfRootDir="${_SCRIPTS_ROOT_DIR}"
 source "${_SCRIPTS_ROOT_DIR}/helper/log-helper.sh"
 source "${_SCRIPTS_ROOT_DIR}/helper/yaml-helper.sh"
+source "${_SCRIPTS_ROOT_DIR}/wydevops-update.sh"
 source "${_SCRIPTS_ROOT_DIR}/helper/path-helper.sh"
 
 # 获取当前脚本所在目录的绝对路径（解析符号链接）。实际就是目标项目的根目录。
