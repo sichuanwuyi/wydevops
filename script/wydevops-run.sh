@@ -19,48 +19,51 @@ _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
 echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 
 _selfRootDir="${_SCRIPTS_ROOT_DIR}"
+export g_update_occurred=false
+
 source "${_SCRIPTS_ROOT_DIR}/helper/log-helper.sh"
 source "${_SCRIPTS_ROOT_DIR}/helper/yaml-helper.sh"
 source "${_SCRIPTS_ROOT_DIR}/wydevops-update.sh"
 
-# --- Self-update logic (Dynamic & Robust) ---
-# After updating, check if the core logic of this script has changed.
-l_latest_run_script="${_SCRIPTS_ROOT_DIR}/wydevops-run.sh"
-# It's possible that BASH_SOURCE[0] is a relative path, so we get the absolute path.
-l_current_run_script=$(readlink -f "${BASH_SOURCE[0]}")
+# --- Self-update logic (Conditional, Dynamic & Robust) ---
+# This logic only runs if the `wydevops-update.sh` script detected a git update.
+if [[ "${g_update_occurred}" == "true" ]]; then
+    # After updating, check if the core logic of this script has changed.
+    l_latest_run_script="${_SCRIPTS_ROOT_DIR}/wydevops-run.sh"
+    # It's possible that BASH_SOURCE[0] is a relative path, so we get the absolute path.
+    l_current_run_script=$(readlink -f "${BASH_SOURCE[0]}")
 
-# Dynamically determine the boundary line for both scripts.
-# The boundary is the line where the final `bash` command execution starts.
-# We use `grep` to find all lines starting with "bash ", `tail -1` to get the last one,
-# and `cut` to extract the line number.
-l_latest_boundary_line=$(grep -n "^bash " "${l_latest_run_script}" | tail -1 | cut -d: -f1)
-l_current_boundary_line=$(grep -n "^bash " "${l_current_run_script}" | tail -1 | cut -d: -f1)
+    # Dynamically determine the boundary line for both scripts.
+    # The boundary is the line where the final `bash` command execution starts.
+    l_latest_boundary_line=$(grep -n "^bash " "${l_latest_run_script}" | tail -1 | cut -d: -f1)
+    l_current_boundary_line=$(grep -n "^bash " "${l_current_run_script}" | tail -1 | cut -d: -f1)
 
-# If a boundary line is found in both scripts, proceed with the comparison.
-if [[ -n "${l_latest_boundary_line}" && -n "${l_current_boundary_line}" ]]; then
-    # The header is everything BEFORE the boundary line.
-    l_latest_header_end_line=$((l_latest_boundary_line - 1))
-    l_current_header_end_line=$((l_current_boundary_line - 1))
+    # If a boundary line is found in both scripts, proceed with the comparison.
+    if [[ -n "${l_latest_boundary_line}" && -n "${l_current_boundary_line}" ]]; then
+        # The header is everything BEFORE the boundary line.
+        l_latest_header_end_line=$((l_latest_boundary_line - 1))
+        l_current_header_end_line=$((l_current_boundary_line - 1))
 
-    # Compare the headers using Process Substitution.
-    if ! cmp -s <(sed -n "1,${l_latest_header_end_line}p" "${l_latest_run_script}") <(sed -n "1,${l_current_header_end_line}p" "${l_current_run_script}"); then
-        info "The core logic of wydevops-run.sh has been updated. Merging changes and restarting..."
+        # Compare the headers using Process Substitution.
+        if ! cmp -s <(sed -n "1,${l_latest_header_end_line}p" "${l_latest_run_script}") <(sed -n "1,${l_current_header_end_line}p" "${l_current_run_script}"); then
+            info "The core logic of wydevops-run.sh has been updated. Merging changes and restarting..."
 
-        l_temp_new_script="${l_current_run_script}.tmp"
+            l_temp_new_script="${l_current_run_script}.tmp"
 
-        # 1. Write the new header from the updated script to the temp file.
-        sed -n "1,${l_latest_header_end_line}p" "${l_latest_run_script}" > "${l_temp_new_script}"
+            # 1. Write the new header from the updated script to the temp file.
+            sed -n "1,${l_latest_header_end_line}p" "${l_latest_run_script}" > "${l_temp_new_script}"
 
-        # 2. Append the user-modified part (from the boundary line onwards) from the current script.
-        sed "1,${l_current_header_end_line}d" "${l_current_run_script}" >> "${l_temp_new_script}"
+            # 2. Append the user-modified part (from the boundary line onwards) from the current script.
+            sed "1,${l_current_header_end_line}d" "${l_current_run_script}" >> "${l_temp_new_script}"
 
-        # 3. Atomically replace the current script with the merged one.
-        mv "${l_temp_new_script}" "${l_current_run_script}"
+            # 3. Atomically replace the current script with the merged one.
+            mv "${l_temp_new_script}" "${l_current_run_script}"
 
-        chmod +x "${l_current_run_script}"
+            chmod +x "${l_current_run_script}"
 
-        # Re-execute the script with all original arguments.
-        exec "${l_current_run_script}" "$@"
+            # Re-execute the script with all original arguments.
+            exec "${l_current_run_script}" "$@"
+        fi
     fi
 fi
 # --- End of self-update logic ---
@@ -69,7 +72,7 @@ source "${_SCRIPTS_ROOT_DIR}/helper/path-helper.sh"
 
 # 获取当前脚本所在目录的绝对路径（解析符号链接）。实际就是目标项目的根目录。
 _SELF_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
-echo -e "${BBlue}_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}${Color_Off}"
+warn "_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}"
 
 #允许传入两个参数：第一个参数为项目目录，第二个参数为本地配置文件名称
 

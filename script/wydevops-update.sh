@@ -55,13 +55,35 @@ echo -e "${BBlue}Bootstrapper: Preparing to run wydevops...${Color_Off}"
 echo "  - Repository: $REPO_URL"
 echo "  - Branch:     $BRANCH"
 
+# Initialize a flag to track if an update occurred.
+export g_update_occurred=false
+
 # --- Sync the scripts from Git repository ---
-if [ -d "$_SCRIPTS_PROJECT_DIR/.git" ]; then
+if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
     # If directory exists and is a git repo, pull the latest changes.
-    echo "Syncing existing scripts..."
-    cd "$_SCRIPTS_PROJECT_DIR"
+    info "Syncing existing scripts..."
+    cd "${_SCRIPTS_PROJECT_DIR}" || exit
+
+    # Get the commit hash before pulling.
+    l_before_hash=$(git rev-parse HEAD)
+
     git checkout "$BRANCH" --quiet
-    git pull origin "$BRANCH"
+    # Execute git pull and check its exit code for robustness.
+    if git pull origin "$BRANCH"; then
+        # Pull was successful, now check if the content actually changed.
+        l_after_hash=$(git rev-parse HEAD)
+        if [[ "${l_before_hash}" != "${l_after_hash}" ]]; then
+            info "Git repository was updated."
+            g_update_occurred=true
+        fi
+    else
+        # git pull failed (e.g., network error).
+        warn "Failed to pull from git repository. Continuing with the local version."
+        g_update_occurred=false
+    fi
+
+    # shellcheck disable=SC2164
+    # shellcheck disable=SC2103
     cd - > /dev/null
 fi
 
