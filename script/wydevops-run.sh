@@ -6,7 +6,7 @@ BBlue='\033[1;34m'
 
 if [ -z "$LOG_LANUAGE" ];then
   #define language in log as zh-CN
-  export LOG_LANGUAGE="en"
+  export LOG_LANGUAGE="zh"
 fi
 
 # The home directory for all wydevops related files and scripts.
