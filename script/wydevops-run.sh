@@ -109,8 +109,8 @@ bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" -e -f -m -c \
 -T true \
 -P "${_PROJECT_MAIN_MODULE_DIR}" \
 -W "${_SCRIPTS_ROOT_DIR}"
-#-C "harbor,chartmuseum,192.168.1.214:80,admin,Harbor12345,80" \
-#-D "harbor,registry.docker.home,192.168.1.214:80,admin,Harbor12345,80"
-#-C "nexus,chartmuseum,192.168.1.214:8081,admin,Wpl118124,8081" \
-#-D "nexus,registry.docker.home,192.168.1.214:8002,admin,Wpl118124,8081"
-#-D "registry,wydevops,192.168.1.218:30783,admin,admin123,30784,true,docker-registry /etc/docker/registry/config.yml"
+#-C1 "harbor,chartmuseum,192.168.1.214:80,admin,Harbor12345,80" \
+#-D1 "harbor,registry.docker.home,192.168.1.214:80,admin,Harbor12345,80"
+#-C2 "nexus,chartmuseum,192.168.1.214:8081,admin,Wpl118124,8081" \
+#-D2 "nexus,registry.docker.home,192.168.1.214:8002,admin,Wpl118124,8081"
+#-D3 "registry,wydevops,192.168.1.218:30783,admin,admin123,30784,true,docker-registry /etc/docker/registry/config.yml"
