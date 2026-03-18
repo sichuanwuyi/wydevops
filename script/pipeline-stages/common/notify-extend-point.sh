@@ -19,6 +19,11 @@ function sendNotify_ex() {
   local l_maxTryCount=3
   local l_i
 
+  if [ ! "${gExternalNotifyUrl}" ];then
+    warn "common.notify.extend.point.external.notify.url.is.empty"
+    return
+  fi
+
   # shellcheck disable=SC2124
   l_content="${@}"
   if [ ! "${l_content}" ];then
@@ -34,19 +39,17 @@ function sendNotify_ex() {
   info "common.notify.extend.point.dingtalk.content.as.follows" "DingTalk"
   cat "${l_tmpFile}"
 
-  echo "----------gExternalNotifyUrl=${gExternalNotifyUrl}------------"
-
   for (( l_i = 0; l_i < l_maxTryCount; l_i++ )); do
     info "common.notify.extend.point.trying.to.send.notify.message" "${l_i}" "-n"
     l_errorContent=$(curl -s -X POST -H "Content-Type:application/json" --data "@${l_tmpFile}" "${gExternalNotifyUrl}" 2>&1)
-    echo "----------\$?=$?----l_errorContent=${l_errorContent}------------"
-    l_errorFlag=$(grep -oP  "^.*(Error|bad\/illegal|failed|timed out).*$" <<< "${l_errorContent}")
-    if [ ! "${l_errorFlag}" ];then
+    # shellcheck disable=SC2181
+    if [ "$?" -eq 0 ];then
       info "common.notify.extend.point.send.external.notify.success" "" "*"
       break
     fi
     warn "common.notify.extend.point.send.external.notify.failed" "${l_errorContent}" "*"
   done
+
 
   #删除临时文件
   unregisterTempFile "${l_tmpFile}"
