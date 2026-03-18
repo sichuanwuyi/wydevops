@@ -465,6 +465,11 @@ function loadMessageProperties(){
   local l_language
   local l_matchedFile="true"
 
+  if [ "${#gMessagePropertiesMap[@]}" -ne 0 ]; then
+    #已经加载过了就直接返回。
+    return
+  fi
+
   if [ -z "$LOG_LANGUAGE" ];then
     #define language in log as en-US
     export LOG_LANGUAGE="en-US"
