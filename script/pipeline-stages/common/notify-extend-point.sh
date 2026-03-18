@@ -34,9 +34,12 @@ function sendNotify_ex() {
   info "common.notify.extend.point.dingtalk.content.as.follows" "DingTalk"
   cat "${l_tmpFile}"
 
+  echo "----------gExternalNotifyUrl=${gExternalNotifyUrl}------------"
+
   for (( l_i = 0; l_i < l_maxTryCount; l_i++ )); do
     info "common.notify.extend.point.trying.to.send.notify.message" "${l_i}" "-n"
     l_errorContent=$(curl -s -X POST -H "Content-Type:application/json" --data "@${l_tmpFile}" "${gExternalNotifyUrl}" 2>&1)
+    echo "----------\$?=$?----l_errorContent=${l_errorContent}------------"
     l_errorFlag=$(grep -oP  "^.*(Error|bad\/illegal|failed|timed out).*$" <<< "${l_errorContent}")
     if [ ! "${l_errorFlag}" ];then
       info "common.notify.extend.point.send.external.notify.success" "" "*"
