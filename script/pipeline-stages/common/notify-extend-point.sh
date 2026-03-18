@@ -19,11 +19,6 @@ function sendNotify_ex() {
   local l_maxTryCount=3
   local l_i
 
-  if [ ! "${gExternalNotifyUrl}" ];then
-    warn "common.notify.extend.point.external.notify.url.is.empty"
-    return
-  fi
-
   # shellcheck disable=SC2124
   l_content="${@}"
   if [ ! "${l_content}" ];then
@@ -38,6 +33,11 @@ function sendNotify_ex() {
 
   info "common.notify.extend.point.dingtalk.content.as.follows" "DingTalk"
   cat "${l_tmpFile}"
+
+  if [ ! "${gExternalNotifyUrl}" ];then
+    warn "common.notify.extend.point.external.notify.url.is.empty"
+    return
+  fi
 
   for (( l_i = 0; l_i < l_maxTryCount; l_i++ )); do
     info "common.notify.extend.point.trying.to.send.notify.message" "${l_i}" "-n"
