@@ -5,8 +5,8 @@ Color_Off='\033[0m'
 BBlue='\033[1;34m'
 
 if [ -z "$LOG_LANGUAGE" ];then
-  #define language in log as en-US
-  export LOG_LANGUAGE="en-US"
+  #define language in log as en
+  export LOG_LANGUAGE="en"
 fi
 
 # The home directory for all wydevops related files and scripts.

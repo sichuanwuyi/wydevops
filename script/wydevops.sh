@@ -4,8 +4,8 @@ export LC_ALL=en_US.UTF-8
 export PYTHONIOENCODING=UTF-8
 
 if [ -z "$LOG_LANGUAGE" ];then
-  #define language in log as en-US
-  export LOG_LANGUAGE="en-US"
+  #define language in log as en
+  export LOG_LANGUAGE="en"
 fi
 
 #1.进入获取脚本所在的目录。
