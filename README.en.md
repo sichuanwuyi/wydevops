@@ -172,6 +172,20 @@ In actual development, the content of the `params-mapping-in-*-file.config` file
 
 The `/sample` directory in the project source code contains sample projects for four types: Java, Go, Next.js, and Vue. Each example is relatively simple, and interested developers can refer to these sample projects.
 
+## 💼 Commercial Support & Services
+
+For organizations that require professional assistance, I offer a range of paid services to help you get the most out of `wydevops`. Whether you're looking to integrate it into a complex environment, need custom features, or require dedicated support, I'm here to help.
+
+My services include:
+
+1. **Consulting & Implementation**: Expert guidance on integrating `wydevops` into your existing CI/CD pipelines and development workflows.
+2. **Custom Feature Development**: Need a specific feature or integration? I can design, build, and test custom extensions tailored to your unique requirements.
+3. **Premium Support**: Get dedicated, priority support with guaranteed response times (SLA) for your mission-critical systems.
+
+If you or your team are interested in leveraging my expertise to accelerate your DevOps journey, please feel free to reach out.
+
+**Contact**: `11372349@qq.com`
+
 ## wydevops Microservice Management Platform (V1.0.0)
 
 Based on the offline installation packages for microservices packaged by wydevops, the team has developed a microservice management platform for managing microservice deployment, monitoring, logging, etc.
