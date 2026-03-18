@@ -463,6 +463,7 @@ function loadMessageProperties(){
 
   local l_file_path
   local l_language
+  local l_matchedFile="true"
 
   if [ -z "$LOG_LANGUAGE" ];then
     #define language in log as en-US
@@ -472,13 +473,12 @@ function loadMessageProperties(){
   l_language=${LOG_LANGUAGE}
   l_file_path="${_selfRootDir}/i18n/message_${l_language}.properties"
   if [ ! -f "${l_file_path}" ]; then
-    warn "log.helper.no.message.properties.file" "${LOG_LANGUAGE}"
+    l_matchedFile="false"
     if [[ "${l_language}" =~ ^zh ]];then
       l_language="zh"
     else
       l_language="en"
     fi
-    warn "log.helper.use.default.message.properties.file" "message_${l_language}.properties"
     l_file_path="${_selfRootDir}/i18n/message_${l_language}.properties"
   fi
 
@@ -491,6 +491,13 @@ function loadMessageProperties(){
         fi
       fi
     done < "${l_file_path}"
+
+    if [ "${l_matchedFile}" == "false" ];then
+      warn "log.helper.no.message.properties.file" "${LOG_LANGUAGE}"
+      warn "log.helper.use.default.message.properties.file" "${l_language}#message_${l_language}.properties"
+    else
+      warn "log.helper.use.target.message.properties.file" "${l_language}#message_${l_language}.properties"
+    fi
   fi
 
 }
