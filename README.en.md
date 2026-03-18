@@ -107,10 +107,12 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
       "branch": "master"
     }
     ```
-4. Define the environment variable LOG_LANGUAGE (refer to item 1 for definition methods). 
+4. Define the environment variable WYDEVOPS_LOG_LANGUAGE (refer to item 1 for definition methods). 
    This is used to specify the language for the logs output by wydevops during runtime. Supported languages are: English (en-US) and Simplified Chinese (zh-CN). The default value is en-US. 
-5. Install the third-party dependencies (see the methods described above).
-6. Verify the installation.
+5. Define the environment variable WYDEVOPS_WORK_MODE (refer to item 1 for definition methods).
+   This is used to specify the working mode for wydevops during runtime. Supported modes are: local mode and jenkins mode. The default value is local.
+6. Install the third-party dependencies (see the methods described above).
+7. Verify the installation.
     Execute the command: `bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h`
     If there are no errors, the installation was successful.
 

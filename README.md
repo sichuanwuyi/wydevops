@@ -102,10 +102,12 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
      "repoUrl": "https://gitee.com/tmt_china/wydevops.git",
      "branch": "master"
    }
-4. 定义环境变量LOG_LANGUAGE(定义方法参考第1条)。
-   用于指定wydevops运行时输出的日志采用的语言类型，支持：英文(en-US)和简体中文(zh-CN)。默认值为en-US。
-5. 安装第三方的依赖库（安装方法详见前述）
-6. 安装成功验证
+4. 定义环境变量WYDEVOPS_LOG_LANGUAGE(定义方法参考第1条)。
+   用于指定wydevops运行时输出的日志采用的语言类型，支持：英文(en)和简体中文(zh)。默认值为en。
+5. 定义环境变量WYDEVOPS_WORK_MODE(定义方法参考第1条)。
+   用于指定wydevops运行时的工作模式，支持：local模式和jenkins模式。默认值为local。
+6. 安装第三方的依赖库（安装方法详见前述）
+7. 安装成功验证
    执行命令：bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h
    如果没有报错，说明安装成功。
 

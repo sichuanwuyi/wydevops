@@ -28,8 +28,8 @@ export gGlobalParamNames=(
 "gReleaseNotePath" \
 
 #-------接口參數定义1: 以下为命令行和Jenkins构建可输入的全局变量--------------#
-#工作模式
-"gWorkMode=\"jenkins\"" \
+#工作模式：local、jenkins
+"gWorkMode=\"local\"" \
 #构建类型
 "gBuildType" \
 #当前要执行的构建阶段集合

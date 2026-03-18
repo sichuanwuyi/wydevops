@@ -3,10 +3,18 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 export PYTHONIOENCODING=UTF-8
 
-if [ -z "$LOG_LANGUAGE" ];then
+if [ -z "${WYDEVOPS_LOG_LANGUAGE}" ];then
   #define language in log as en
-  export LOG_LANGUAGE="en"
+  export WYDEVOPS_LOG_LANGUAGE="en"
 fi
+
+if [ -z "${WYDEVOPS_WORK_MODE}" ];then
+  #define work mode as local
+  export WYDEVOPS_WORK_MODE="local"
+fi
+
+# initialize global work mode variable
+export gWorkMode="${WYDEVOPS_WORK_MODE}"
 
 #1.进入获取脚本所在的目录。
 #载入yaml-helper.sh文件时会载入log-helper.sh, _selfRootDir在log-helper.sh文件中被引用了。

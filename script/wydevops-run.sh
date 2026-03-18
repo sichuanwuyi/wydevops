@@ -4,9 +4,14 @@
 Color_Off='\033[0m'
 BBlue='\033[1;34m'
 
-if [ -z "$LOG_LANGUAGE" ];then
+if [ -z "${WYDEVOPS_LOG_LANGUAGE}" ];then
   #define language in log as en
-  export LOG_LANGUAGE="en"
+  export WYDEVOPS_LOG_LANGUAGE="en"
+fi
+
+if [ -z "${WYDEVOPS_WORK_MODE}" ];then
+  #define work mode as local
+  export WYDEVOPS_WORK_MODE="local"
 fi
 
 # The home directory for all wydevops related files and scripts.
@@ -107,7 +112,7 @@ bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" -e -f -m -c \
 -I /d/cachedImage \
 -L java \
 -S build,docker,chart,package,deploy \
--M local \
+-M "${WYDEVOPS_WORK_MODE}" \
 -T true \
 -P "${_PROJECT_MAIN_MODULE_DIR}" \
 -W "${_SCRIPTS_ROOT_DIR}"
