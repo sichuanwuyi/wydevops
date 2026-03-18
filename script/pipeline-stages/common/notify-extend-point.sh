@@ -15,7 +15,6 @@ function sendNotify_ex() {
   local l_content
   local l_tmpFile
   local l_errorContent
-  local l_errorFlag
   local l_maxTryCount=3
   local l_i
 

@@ -144,7 +144,7 @@ function error() {
 
   if type -t "invokeExtendPointFunc" > /dev/null; then
     #调用外部接口发送通知消息
-    invokeExtendPointFunc "sendNotifyBeforeExit" "log.helper.send.notify.before.exit" "ERROR|${l_info}"
+    invokeExtendPointFunc "sendNotifyBeforeExit" "log.helper.send.notify.before.exit" "" "ERROR|${l_tmpInfo}"
   fi
   exit 1
 }

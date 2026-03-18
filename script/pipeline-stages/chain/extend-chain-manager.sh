@@ -6,12 +6,12 @@ function invokeExtendChain() {
 
   local l_chainName=$1
   local l_param=("${@}")
+  local l_param_count=${#l_param[@]}
 
-  #删除前1个参数
-  # shellcheck disable=SC2184
-  unset l_param[0]
-  # shellcheck disable=SC2206
-  l_param=(${l_param[*]})
+  local l_remaining_params=()
+  if [ "${l_param_count}" -gt 1 ];then
+    l_remaining_params=("${l_param[@]:1}")
+  fi
 
   local l_chainContent
   local l_chains
@@ -44,7 +44,7 @@ function invokeExtendChain() {
       fi
       #依次调用调用链上的方法，直至返回”true“为止。
       # shellcheck disable=SC2068
-      "${l_funcName}" ${l_param[@]}
+      "${l_funcName}" ${l_remaining_params[@]}
       # shellcheck disable=SC2145
       if [[ "${gDefaultRetVal}" =~ ^(true\|) ]];then
         break

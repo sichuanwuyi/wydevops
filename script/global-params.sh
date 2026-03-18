@@ -233,19 +233,10 @@ function invokeExtendPointFunc() {
   local l_param=("${@}")
   local l_param_count=${#l_param[@]}
 
-  #删除前两个参数
-  # shellcheck disable=SC2184
-  unset l_param[0]
-  # shellcheck disable=SC2184
-  unset l_param[1]
-
-  if [ "${l_param_count}" -ge 3 ];then
-    # shellcheck disable=SC2184
-    unset l_param[2]
+  local l_remaining_params=()
+  if [ "${l_param_count}" -gt 3 ];then
+    l_remaining_params=("${l_param[@]:3}")
   fi
-
-  # shellcheck disable=SC2206
-  l_param=(${l_param[*]})
 
   #调用公共功能扩展
   extendLog "${l_funcName}" "${l_extentPointName}" "${l_extentPointNameParams}" "true"
@@ -257,7 +248,7 @@ function invokeExtendPointFunc() {
     info "global.params.sh.invoke.common.extend.point" "${l_funcName}"
     gShellExecuteResult="true"
     # shellcheck disable=SC2068
-    "${l_funcName}_ex" "${l_param[@]}"
+    "${l_funcName}_ex" "${l_remaining_params[@]}"
   else
     info "global.params.sh.no.common.extend.point" "${l_funcName}"
   fi
@@ -268,14 +259,14 @@ function invokeExtendPointFunc() {
     info "global.params.sh.invoke.language.extend.point" "${gLanguage}#${l_funcName1}"
     gShellExecuteResult="true"
     # shellcheck disable=SC2068
-    "${l_funcName1}" ${l_param[@]}
+    "${l_funcName1}" ${l_remaining_params[@]}
   else
     info "global.params.sh.no.language.extend.point" "${gLanguage}#${l_funcName1}"
   fi
 
   #如果存在项目级扩展，则调用之
   # shellcheck disable=SC2068
-  executeShellScript "${gBuildPath}" "${l_funcName}.sh" ${l_param[@]}
+  executeShellScript "${gBuildPath}" "${l_funcName}.sh" ${l_remaining_params[@]}
 
   extendLog "${l_funcName}" "${l_extentPointName}" "${l_extentPointNameParams}" "false"
 }
@@ -289,14 +280,12 @@ function executeShellScript() {
   local l_localScriptFile
 
   local l_param=("${@}")
+  local l_param_count=${#l_param[@]}
 
-  #删除前两个参数
-  # shellcheck disable=SC2184
-  unset l_param[0]
-  # shellcheck disable=SC2184
-  unset l_param[1]
-  # shellcheck disable=SC2206
-  l_param=(${l_param[*]})
+  local l_remaining_params=()
+  if [ "${l_param_count}" -gt 2 ];then
+    l_remaining_params=("${l_param[@]:2}")
+  fi
 
   gShellExecuteResult="false"
   #如果l_scriptFile脚本存在，则调用之
@@ -304,7 +293,7 @@ function executeShellScript() {
   if [ -f "${l_localScriptFile}" ];then
     gShellExecuteResult="true"
     # shellcheck disable=SC1090
-    source "${l_localScriptFile}" "${l_param[@]}"
+    source "${l_localScriptFile}" "${l_remaining_params[@]}"
     info "global.params.sh.invoke.project.extend.point.success" "${l_scriptFile}"
   else
     info "global.params.sh.no.project.extend.point.file" "${l_scriptFile}"
