@@ -346,7 +346,7 @@ function part() {
   convertI18NText "${l_info}" "${l_infoParams}"
   l_info="${gLogI18NRetVal}"
 
-  l_lineLen="50"
+  l_lineLen="100"
   #得到l_info的显示长度
   l_infoLen1=$(_getStringLen "${l_info}")
 
