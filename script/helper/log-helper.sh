@@ -472,7 +472,7 @@ function loadMessageProperties(){
 
   if [ -z "$LOG_LANGUAGE" ];then
     #define language in log as en-US
-    export LOG_LANGUAGE="en-US"
+    export LOG_LANGUAGE="en"
   fi
 
   l_language=${LOG_LANGUAGE}
