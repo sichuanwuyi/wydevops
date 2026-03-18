@@ -5,21 +5,22 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
 
 ## Features of the Current V1.* Version
 
-1.  Designed to support multi-language projects (currently adapted for Go, Java, Next.js, and Vue), as well as single-module and multi-module projects.
-2.  Supports building Docker images for both `linux/amd64` and `linux/arm64` architectures.
-3.  Supports two automated microservice deployment methods: K8S and Docker. In local working mode, the entire CI/CD process can be completed directly from the source code project, right up to the microservice running in Docker or a K8S cluster.
-4.  Supports layered packaging of microservice images, resulting in smaller deployment packages for production environments.
-5.  Includes a mechanism for sending notification messages to external systems.
-6.  Supports offline building of microservice deployment packages, caching all third-party images pulled from the public network locally, which greatly facilitates microservice development in private network environments.
-7.  Supports deploying multiple microservices with a single Helm chart, making it easy to uniformly release and uninstall closely coupled business modules.
-8.  Supports deploying multiple microservices within a single container, minimizing the use of valuable Pod resources.
-9.  Supports nexus3、harbor(2.10+)、registry、aws-ecr(AWS ECR repository) as Docker and Helm chart repositories, eliminating the need for the `helm-push` plugin.
-10. Supports integration with Jenkins, allowing consolidation with Jenkins Pipelines using just a single entry script.
-11. All code is developed in Shell, providing maximum flexibility and user adaptability, with the lowest learning curve for developers of various languages.
-12. The project includes powerful, originally developed tools for reading and writing YAML files, offering great convenience for users to custom-extend functionalities.
-13. Designed with a three-tier management model (company-level, development group-level, project-level), providing interfaces for personnel at all levels to manage and control the CI/CD process.
-14. Provides a plugin mechanism for K8S resource configuration files, making it easy for developers to customize configurations.
-15. Based on this project, the maintenance team has already developed the wydevops microservice management platform, which is not yet open-sourced.
+1. Designed to support multi-language projects (currently adapted for Go, Java, Next.js, and Vue), as well as single-module and multi-module projects.
+2. Supports building Docker images for both `linux/amd64` and `linux/arm64` architectures.
+3. Supports two automated microservice deployment methods: K8S and Docker. In local working mode, the entire CI/CD process can be completed directly from the source code project, right up to the microservice running in Docker or a K8S cluster.
+4. Supports layered packaging of microservice images, resulting in smaller deployment packages for production environments.
+5. Includes a mechanism for sending notification messages to external systems.
+6. Supports offline building of microservice deployment packages, caching all third-party images pulled from the public network locally, which greatly facilitates microservice development in private network environments.
+7. Supports deploying multiple microservices with a single Helm chart, making it easy to uniformly release and uninstall closely coupled business modules.
+8. Supports deploying multiple microservices within a single container, minimizing the use of valuable Pod resources.
+9. Supports nexus3、harbor(2.10+)、registry、aws-ecr(AWS ECR repository) as Docker and Helm chart repositories, eliminating the need for the `helm-push` plugin.
+10. Supports registry as Docker repositories.
+11. Supports integration with Jenkins, allowing consolidation with Jenkins Pipelines using just a single entry script.
+12. All code is developed in Shell, providing maximum flexibility and user adaptability, with the lowest learning curve for developers of various languages.
+13. The project includes powerful, originally developed tools for reading and writing YAML files, offering great convenience for users to custom-extend functionalities.
+14. Designed with a three-tier management model (company-level, development group-level, project-level), providing interfaces for personnel at all levels to manage and control the CI/CD process.
+15. Provides a plugin mechanism for K8S resource configuration files, making it easy for developers to customize configurations.
+16. Based on this project, the maintenance team has already developed the wydevops microservice management platform, which is not yet open-sourced.
 
 ## Running Environment
 
@@ -46,6 +47,7 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
 
 2.  **libxml2**
     This is a library for processing XML files. Users need to download and install it themselves.
+    Currently, it is only used in Java projects to read configurations from the pom.xml file. Installation is not required for non-Java projects.
     *   Ubuntu (Debian/Ubuntu series) installation command: `sudo apt install libxml2-utils`
     *   Windows installation command: `choco install libxml2`
 
@@ -74,9 +76,15 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
     Therefore, it is required that Istio is already installed in the K8S cluster (see [here](https://istio.io/latest/docs/setup/getting-started/) for installation instructions).
     **Special Reminder:** wydevops will connect to the target cluster (specified by the `targetApiServer` parameter) to dynamically fetch the `apiVersion` for all generated K8S resource types, ensuring that the version of the generated K8S resources is consistent with the target cluster.
 
+7.  **Dependencies for Local Compilation**
+    This project supports the deployment of microservices for various target languages, each requiring its own specific build dependencies.
+    For example, Java projects require a JDK, while Python projects need a Python interpreter.
+    Please install the appropriate build dependencies based on your target language.
+    Note: If you are building inside a Docker container, you do not need to install these local build dependencies.
+
 ## Installation Steps
 
-1.  Create a directory to serve as the root for wydevops, and define the environment variable `WYDEVOPS_HOME` to point to this directory.
+1. Create a directory to serve as the root for wydevops, and define the environment variable `WYDEVOPS_HOME` to point to this directory.
     *   On Ubuntu (Debian/Ubuntu series):
         1) `vim ~/.bashrc`
         2) At the end of the file, add: `export WYDEVOPS_HOME={path_to_the_new_directory}`, then save and exit.
@@ -88,19 +96,21 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
         4) For `Variable name`, enter `WYDEVOPS_HOME`.
         5) For `Variable value`, enter the path to the newly created directory.
         6) Click OK to save. You will need to open a new terminal window for the settings to take effect.
-2.  Open a Git Bash command line in the `$WYDEVOPS_HOME` directory and execute the following command to download the project's source code.
+2. Open a Git Bash command line in the `$WYDEVOPS_HOME` directory and execute the following command to download the project's source code.
     `git clone -b master https://github.com/sichuanwuyi/wydevops.git`
     or
     `git clone -b master https://gitee.com/tmt_china/wydevops.git`
-3.  Create the `$WYDEVOPS_HOME/client-config.json` file and write the following content into it, so that wydevops can automatically update to the latest version upon execution.
+3. Create the `$WYDEVOPS_HOME/client-config.json` file and write the following content into it, so that wydevops can automatically update to the latest version upon execution.
     ```json
     {
       "repoUrl": "https://gitee.com/tmt_china/wydevops.git",
       "branch": "master"
     }
     ```
-4.  Install the third-party dependencies (see the methods described above).
-5.  Verify the installation.
+4. Define the environment variable LOG_LANGUAGE (refer to item 1 for definition methods). 
+   This is used to specify the language for the logs output by wydevops during runtime. Supported languages are: English (en-US) and Simplified Chinese (zh-CN). The default value is en-US. 
+5. Install the third-party dependencies (see the methods described above).
+6. Verify the installation.
     Execute the command: `bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h`
     If there are no errors, the installation was successful.
 

@@ -4,9 +4,9 @@
 Color_Off='\033[0m'
 BBlue='\033[1;34m'
 
-if [ -z "$LOG_LANUAGE" ];then
-  #define language in log as zh-CN
-  export LOG_LANGUAGE="en"
+if [ -z "$LOG_LANGUAGE" ];then
+  #define language in log as en-US
+  export LOG_LANGUAGE="en-US"
 fi
 
 # The home directory for all wydevops related files and scripts.

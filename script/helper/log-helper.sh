@@ -455,14 +455,27 @@ function loadMessageProperties(){
   export gMessagePropertiesMap
   export _selfRootDir
 
-  local l_language=${LOG_LANGUAGE}
-  if [[ "${LOG_LANGUAGE}" =~ ^zh ]];then
-    l_language="zh"
-  else
-    l_language="en"
+  local l_file_path
+  local l_language
+
+  if [ -z "$LOG_LANGUAGE" ];then
+    #define language in log as en-US
+    export LOG_LANGUAGE="en-US"
   fi
 
-  local l_file_path="${_selfRootDir}/i18n/message_${l_language}.properties"
+  l_language=${LOG_LANGUAGE}
+  l_file_path="${_selfRootDir}/i18n/message_${l_language}.properties"
+  if [ ! -f "${l_file_path}" ]; then
+    warn "log.helper.no.message.properties.file" "${LOG_LANGUAGE}"
+    if [[ "${l_language}" =~ ^zh ]];then
+      l_language="zh"
+    else
+      l_language="en"
+    fi
+    warn "log.helper.use.default.message.properties.file" "message_${l_language}.properties"
+    l_file_path="${_selfRootDir}/i18n/message_${l_language}.properties"
+  fi
+
   if [ -f "${l_file_path}" ]; then
     while IFS='=' read -r key value || [ -n "${key}" ]; do
       # 忽略空行和注释

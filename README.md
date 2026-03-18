@@ -3,7 +3,7 @@
 wydevops的目标是打造功能最强大的、最易扩展和维护的、使用最简单的CI/CD流水线。
 
 ## 当前V1.*版本的功能特点
-1. 从设计上支持多语言项目（目前已完成了GO、JAVA、Next.js、Vue项目的适配）、单模块和多模块项目。
+1. 支持多语言项目（目前已完成了GO、JAVA、Next.js、Vue项目的适配）。
 2. 支持构建linux/amd64和linux/arm64两种架构的docker镜像。
 3. 支持K8S、docker两种微服务自动部署方式。在本地工作模式下，可直接从源码项目中完成整个CI/CD流程，
    直至微服务在docker或K8S集群中运行起来。
@@ -12,13 +12,15 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
 6. 支持离线构建微服务部署包，本地会缓存从公网拉取的所有第三方镜像，为私网环境下的微服务开发提供了极大便利。
 7. 支持单chart部署多个微服务，便于对耦合紧密的业务模块进行统一发布和卸载。
 8. 支持单容器内部署多个微服务，占用最少的宝贵的Pod资源。
-9. 支持nexus3、harbor(2.10+)、registry、aws-ecr(AWS亚马逊网络服务公司的ECR仓库)作为docker镜像和chart镜像仓库,不再需要helm push插件。
-10. 支持与Jenkins的集成，仅使用一个入口脚本即可完成与Jenkins Pipeline流水线的整合。
-11. 全部代码均采用shell开发，具备最大灵活性和用户适应性，各类语言的开发人员学习和掌握的成本最低。
-12. 项目内原创开发有强大的Yaml文件的读写工具，为用户自定义扩展功能提供极大的便利。
-13. 设计有公司级、开发组级、项目级三层管理模型，留有为各级人员提供了管理和控制CI/CD流程的接口。
-14. 为K8S资源配置文件提供了插件机制，便于开发人员自定义配置文件。
-15. 在本项目的基础上，维护团队已经开发完成了wydevops微服务管理平台,目前尚未开源。
+9. 支持nexus3、harbor(2.10+)、aws-ecr(AWS亚马逊网络服务公司的ECR仓库)作为docker镜像和chart镜像仓库。不再需要helm push插件。
+10. 支持registry作为docker镜像仓库。
+11. wydevops控制台输出日志支持中文和英文两种语言, 默认为英文。
+12. 支持与Jenkins的集成，仅使用一个入口脚本即可完成与Jenkins Pipeline流水线的整合。
+13. 全部代码均采用shell开发，具备最大灵活性和用户适应性，各类语言的开发人员学习和掌握的成本最低。
+14. 项目内原创开发有强大的Yaml文件的读写工具，为用户自定义扩展功能提供极大的便利。
+15. 设计有公司级、语言级、项目级三层管理模型，留有为各级人员提供了管理和控制CI/CD流程的接口。
+16. 为K8S资源配置文件提供了插件机制，便于开发人员自定义配置文件。
+17. 在本项目的基础上，维护团队已经开发完成了wydevops微服务管理平台,目前尚未开源。
 
 ## 运行环境
 1. 可在windows下的git bash命令行中运行。
@@ -41,7 +43,7 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
    基本配置（在 PowerShell 或 Git Bash 中）： git config --global user.name "你的名字" git config --global user.email "you@example.com"
 
 2. libxml2
-   这是一个用于处理xml文件的库。需要用户自行下载安装。
+   这是一个用于处理xml文件的库, 需要用户自行下载安装。目前仅应用在Java类型项目中用于读取pom.xml文件中的配置,非Java类型项目可不安装。
     ubuntu (Debian/Ubuntu 系列)下的安装命令：sudo apt install libxml2-utils
     windows下的安装命令：choco install libxml2
 
@@ -71,6 +73,12 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
    特别提醒：wydevops会连接目标集群(由目标参数targetApiServer指定)动态获取所有生成的K8S资源类型的apiVersion参数，
    以便确保生成的K8S资源类型的版本与目标集群保持一致。
 
+7. 目标语言本地编译需要的依赖库
+   本项目支持多种目标语言的微服务部署，每种语言都有其特定的编译依赖库。
+   例如，Java项目需要安装JDK，Python项目需要安装Python解释器等。
+   请根据目标语言的不同，安装其对应的编译依赖库。
+   注意：如果采用的是在Docker中编译的方式，则无需安装目标语言的本地编译依赖库。
+
 ## 安装步骤
 1. 创建一个目录作为wydevops的根目录，并定义环境变量WYDEVOPS_HOME指向这个目录。
    ubuntu (Debian/Ubuntu 系列)下：
@@ -94,8 +102,10 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
      "repoUrl": "https://gitee.com/tmt_china/wydevops.git",
      "branch": "master"
    }
-4. 安装第三方的依赖库（安装方法详见前述）
-5. 安装成功验证
+4. 定义环境变量LOG_LANGUAGE(定义方法参考第1条)。
+   用于指定wydevops运行时输出的日志采用的语言类型，支持：英文(en-US)和简体中文(zh-CN)。默认值为en-US。
+5. 安装第三方的依赖库（安装方法详见前述）
+6. 安装成功验证
    执行命令：bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h
    如果没有报错，说明安装成功。
 

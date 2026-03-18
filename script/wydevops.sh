@@ -3,6 +3,11 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 export PYTHONIOENCODING=UTF-8
 
+if [ -z "$LOG_LANGUAGE" ];then
+  #define language in log as en-US
+  export LOG_LANGUAGE="en-US"
+fi
+
 #1.进入获取脚本所在的目录。
 #载入yaml-helper.sh文件时会载入log-helper.sh, _selfRootDir在log-helper.sh文件中被引用了。
 # shellcheck disable=SC2164
