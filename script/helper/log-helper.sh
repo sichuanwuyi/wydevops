@@ -21,6 +21,7 @@ function partLog() {
 #扩展点日志
 function extendLog() {
   export gLogI18NRetVal
+  export gWorkMode
 
   #扩展点函数方法名
   local l_funcName=$1
@@ -44,7 +45,7 @@ function extendLog() {
     l_info="<<--- ${gLogI18NRetVal}(${l_funcName}) --->>\n"
   fi
 
-  if [ "${gWorkMode}" == "local" ];then
+  if [[ ! "${gWorkMode}" || "${gWorkMode}" == "local" ]];then
     l_start="\e[32m"
     l_end="\e[0m"
   fi
@@ -56,6 +57,7 @@ function extendLog() {
 function info() {
   export gMessagePropertiesMap
   export gLogI18NRetVal
+  export gWorkMode
 
   #需要输出的信息
   local l_info=$1
@@ -76,7 +78,7 @@ function info() {
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.info"]}"
 
-  if [ "${gWorkMode}" == "local" ];then
+  if [[ ! "${gWorkMode}" || "${gWorkMode}" == "local" ]];then
     l_start="\e[32m"
     l_end="\e[0m"
   fi
@@ -96,6 +98,7 @@ function error() {
   export gTempFileRegTables
   export gMessagePropertiesMap
   export gLogI18NRetVal
+  export gWorkMode
 
   #需要输出的信息
   local l_info=$1
@@ -119,7 +122,7 @@ function error() {
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.error"]}"
 
-  if [ "${gWorkMode}" == "local" ];then
+  if [[ ! "${gWorkMode}" || "${gWorkMode}" == "local" ]];then
     l_start="\e[5;31m"
     l_end="\e[0m"
   fi
@@ -188,6 +191,7 @@ function unregisterTempFile(){
 function debug() {
   export gMessagePropertiesMap
   export gLogI18NRetVal
+  export gWorkMode
 
   #需要输出的信息
   local l_info=$1
@@ -208,7 +212,7 @@ function debug() {
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.debug"]}"
 
-  if [ "${gWorkMode}" == "local" ];then
+  if [[ ! "${gWorkMode}" || "${gWorkMode}" == "local" ]];then
     l_start="\e[33m"
     l_end="\e[0m"
   fi
@@ -227,6 +231,7 @@ function debug() {
 function warn() {
   export gMessagePropertiesMap
   export gLogI18NRetVal
+  export gWorkMode
 
   #需要输出的信息
   local l_info=$1
@@ -247,7 +252,7 @@ function warn() {
 
   l_infoPrefix="${gMessagePropertiesMap["log.helper.warn"]}"
 
-  if [ "${gWorkMode}" == "local" ];then
+  if [[ ! "${gWorkMode}" || "${gWorkMode}" == "local" ]];then
     l_start="\e[33m"
     l_end="\e[0m"
   fi
@@ -323,6 +328,7 @@ function log() {
 
 function part() {
   export gLogI18NRetVal
+  export gWorkMode
 
   #需要输出的信息
   local l_info=$1
@@ -369,7 +375,7 @@ function part() {
 
   #定义Part的显示格式
   local l_content="\n${l_lineFlag}\n${l_head}${l_info}${l_tail}\n${l_lineFlag}\n"
-  if [ "${gWorkMode}" == "local" ];then
+  if [[ ! "${gWorkMode}" || "${gWorkMode}" == "local" ]];then
     l_content="\n\e[${l_color}m${l_lineFlag}\n${l_head}${l_info}${l_tail}\n${l_lineFlag}\e[0m\n"
   fi
 
