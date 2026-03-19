@@ -751,6 +751,11 @@ function _deployServiceInK8S() {
       [[ "${l_settingParams}" == *"image.registry="* ]] || l_settingParams="${l_settingParams},image.registry=${l_array[2]}"
     fi
 
+    if [ "${l_forceDeployArchType}" ];then
+      l_settingParams=$(echo "${l_settingParams}" | sed 's/image\.archType=,//g')
+      [[ "${l_settingParams}" == *"image.archType="* ]] || l_settingParams="${l_settingParams},image.archType=-${l_forceDeployArchType}"
+    fi
+
     #如果routeHosts参数配置有值，则需要更新gatewayRoute.host参数的值。
     readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.routeHosts"
     if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
