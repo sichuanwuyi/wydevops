@@ -104,7 +104,8 @@ echo -e "${BBlue}_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}${Color_Off}"
 _MODULE_DIR=$(win2linux "${1:-$_SELF_SCRIPT_DIR}")
 _PROJECT_MAIN_MODULE_DIR=$(realpath -m -- "${_MODULE_DIR}")
 
-bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" -e -f -m \
+bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" \
+-e -f -m \
 --localConfigFile "${2:-ci-cd-config.yaml}" \
 -A linux/amd64 \
 -O linux/amd64 \
