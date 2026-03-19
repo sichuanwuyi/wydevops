@@ -1101,13 +1101,13 @@ function _pushDockerImageForDeployStage() {
         error "common.deploy.extend.point.failed" "" "*"
       fi
     fi
-    warn "common.deploy.extend.point.success" "" "*"
+    info "common.deploy.extend.point.success" "" "*"
 
     info "common.deploy.extend.point.loading.docker.image.from.file" "${l_tmpFile##*/}#${l_image}" "-n"
     if ! docker load -i "${l_tmpFile}" >/dev/null;then
       error "common.deploy.extend.point.failed" "" "*"
     fi
-    warn "common.deploy.extend.point.success" "" "*"
+    info "common.deploy.extend.point.success" "" "*"
 
     if [ -f "${l_pushedImageFile}" ];then
       info "common.deploy.extend.point.reading.runid.from.file" "${l_pushedImageFile}#${l_image}" "-n"
