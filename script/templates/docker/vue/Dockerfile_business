@@ -20,9 +20,9 @@ COPY pnpm-lock.yaml *.js *.json ./
 
 RUN corepack enable pnpm && pnpm run build
 
-# Production image, copy all the files and run next
-FROM --platform=_PLATFORM_ alpine:latest
-USER root
+# 使用一个包含 shell 的轻量级基础镜像 (alpine)，默认的执行用户为root
+FROM --platform=${TARGETPLATFORM:-_PLATFORM_} alpine:latest
+#USER root
 
 RUN mkdir -p _APP-DIR-IN-CONTAINER__PUBLIC-PATH_
 WORKDIR _APP-DIR-IN-CONTAINER_

@@ -1,4 +1,3 @@
-
 FROM --platform=${TARGETPLATFORM:-_PLATFORM_} _FROM-IMAGE0_
 USER root
 
