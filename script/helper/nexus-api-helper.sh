@@ -59,12 +59,13 @@ function pushNexusChartComponent(){
   local l_chartFile=$4
   local l_account=$5
   local l_password=$6
+  local l_tmpFileDir=$7
 
   local l_tmpFile
   local l_result
   local l_errorLog
 
-  l_tmpFile="chart-push-${RANDOM}.tmp"
+  l_tmpFile="${l_tmpFileDir}/chart-push-${RANDOM}.tmp"
   registerTempFile "${l_tmpFile}"
 
   info "nexus.api.helper.push.chart.start" "${l_chartFile##*/}" "-n"

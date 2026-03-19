@@ -44,6 +44,7 @@ function onPushChartImage_harbor() {
 function onPushChartImage_nexus() {
   export gDefaultRetVal
   export gBuildScriptRootDir
+  export gTempFileDir
 
   local l_chartRepoType=$1
 
@@ -61,7 +62,7 @@ function onPushChartImage_nexus() {
   local l_password=$6
 
   pushNexusChartComponent "${l_repoHostAndPort%%:*}" "${l_repoHostAndPort##*:}" "${l_repoInstanceName}" \
-    "${l_chartFile}" "${l_account}" "${l_password}"
+    "${l_chartFile}" "${l_account}" "${l_password}" "${gTempFileDir}"
 
   gDefaultRetVal="true|true"
 }

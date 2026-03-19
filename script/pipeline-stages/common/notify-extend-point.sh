@@ -3,6 +3,7 @@
 function sendNotify_ex() {
   export gDefaultRetVal
   export gEnableNotify
+  export gTempFileDir
 
   if [ "${gEnableNotify}" != "true" ];then
     return
@@ -34,7 +35,7 @@ function sendNotify_ex() {
     return
   fi
 
-  local l_tmpFile="${gHelmBuildDir}/notify-${RANDOM}.json"
+  local l_tmpFile="${gTempFileDir}/notify-${RANDOM}.json"
   registerTempFile "${l_tmpFile}"
   echo "${gDefaultRetVal}" > "${l_tmpFile}"
 
