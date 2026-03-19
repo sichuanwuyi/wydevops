@@ -999,6 +999,7 @@ function _pushDockerImageForDeployStage() {
   export gForceCoverage
   export gImageCacheDir
   export gRunID
+  export gOfflineArchTypes
 
   local l_packageName=$1
   local l_dockerRepoInfo=$2
@@ -1011,6 +1012,8 @@ function _pushDockerImageForDeployStage() {
   local l_packageIndex
   local l_images
   local l_image
+  local l_archType
+  local l_targetArchType
   local l_array
   local l_dockerOutDir
   local l_tmpFile
@@ -1041,6 +1044,11 @@ function _pushDockerImageForDeployStage() {
   info "common.deploy.extend.point.read.server.arch.success" "${l_ip}#${gDefaultRetVal}"
   l_archType="${gDefaultRetVal}"
 
+  l_array=("${gOfflineArchTypes//,/}")
+  l_targetArchType="${l_array[0]}"
+
+  echo "----------l_targetArchType=${l_targetArchType}-------------------"
+
   #获取到需要推送的镜像
   # shellcheck disable=SC2206
   l_array=(${l_dockerRepoInfo//,/ })
@@ -1066,7 +1074,8 @@ function _pushDockerImageForDeployStage() {
       l_tmpFile="${gImageCacheDir}/${l_dockerOutDir}-${l_archType//\//-}.tar"
       warn "common.deploy.extend.point.finding.docker.image.export.file.in.cache" "${l_tmpFile}" "-n"
       if [ ! -f "${l_tmpFile}" ];then
-        error "common.deploy.extend.point.failed" "" "*"
+        warn "common.deploy.extend.point.failed" "" "*"
+        continue
       fi
     fi
     warn "common.deploy.extend.point.success" "" "*"
