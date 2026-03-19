@@ -62,7 +62,7 @@ spec:
           {{- if \$.Values.image.registry }}
           image: {{ \$.Values.image.registry }}/{{ .repository }}:{{ .tag }}{{ \$.Values.image.archType | default "" }}
           {{- else }}
-          image: {{ .repository }}:{{ .tag }}
+          image: {{ .repository }}:{{ .tag }}{{ \$.Values.image.archType | default "" }}
           {{- end }}
           imagePullPolicy: {{ .pullPolicy }}
         {{- if .args }}
