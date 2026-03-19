@@ -1,4 +1,4 @@
-FROM --platform=${TARGETPLATFORM:-_PLATFORM_} _FROM-IMAGE0_ AS base
+FROM --platform=_PLATFORM_ _FROM-IMAGE0_ AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -21,7 +21,7 @@ COPY pnpm-lock.yaml *.js *.json ./
 RUN corepack enable pnpm && pnpm run build
 
 # Production image, copy all the files and run next
-FROM --platform=${TARGETPLATFORM:-_PLATFORM_} _FROM-IMAGE1_
+FROM --platform=_PLATFORM_ _FROM-IMAGE1_
 USER root
 
 EXPOSE _EXPOSE_
