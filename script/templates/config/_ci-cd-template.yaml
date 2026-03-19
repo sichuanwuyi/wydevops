@@ -172,6 +172,8 @@ globalParams:
   #K8S集群的ApiServer服务器的地址信息（必须配置）
   #格式：{服务器IP地址}|{SSH端口号}|{SSH连接账号}|{SSH连接密码}
   targetApiServer:
+  #强制部署指定架构类型的离线包，默认值为空字符串，表示部署与目标服务器架构相同的离线包。
+  forceDeployArchType:
   #部署的命名空间
   targetNamespace: default
   #K8s集群内部拉取镜像的仓库信息
@@ -735,6 +737,9 @@ deploy:
         #格式：{节点IP}|{SSH端口}|{SSH连接账号}|{SSH连接密码}
         #多个集群的ApiServer服务器地址间使用英文逗号隔开。
         apiServer: ${targetApiServer}
+        #强制部署指定架构类型的离线包，默认值为空字符串，表示部署与目标服务器架构相同的离线包。
+        #如果设置了该参数，则会强制部署该架构的离线包，而不管目标服务器的架构。
+        forceDeployArchType: ${forceDeployArchType}
         #发布服务的命名空间（必须配置）
         namespace: ${targetNamespace}
         #目标集群使用的docker仓库信息。
