@@ -1,4 +1,4 @@
-FROM --platform=_PLATFORM_ node:23-alpine AS base
+FROM --platform=_PLATFORM_ _FROM-IMAGE1_ AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -25,7 +25,7 @@ RUN corepack enable npm && npm run build
 RUN cd ./_DOT-NEXT_/_OUTPUT_ && rm -rf ./node_modules
 
 # 使用一个包含 shell 的轻量级基础镜像 (alpine)，默认的执行用户为root
-FROM --platform=_PLATFORM_ alpine:latest
+FROM --platform=_PLATFORM_ _FROM-IMAGE1_
 #USER root
 
 RUN mkdir -p _APP-DIR-IN-CONTAINER_/public _APP-DIR-IN-CONTAINER_/_DOT-NEXT_

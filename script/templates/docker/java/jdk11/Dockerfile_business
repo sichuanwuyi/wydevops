@@ -1,5 +1,5 @@
 # 使用一个包含 shell 的轻量级基础镜像 (alpine)，默认的执行用户为root
-FROM --platform=_PLATFORM_ alpine:latest
+FROM --platform=_PLATFORM_ _FROM-IMAGE0_
 #USER root
 
 COPY ./dependencies/ ./spring-boot-loader/ ./snapshot-dependencies/ ./application/ _APP-DIR-IN-CONTAINER_/

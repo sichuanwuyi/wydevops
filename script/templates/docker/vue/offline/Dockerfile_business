@@ -1,4 +1,4 @@
-FROM --platform=_PLATFORM_ alpine:latest
+FROM --platform=_PLATFORM_ _FROM-IMAGE1_
 USER root
 
 COPY ./dist/ _APP-DIR-IN-CONTAINER__PUBLIC-PATH_/

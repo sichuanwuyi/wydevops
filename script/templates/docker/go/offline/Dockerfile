@@ -1,5 +1,5 @@
 # 使用scratch创建最小镜像
-FROM --platform=_PLATFORM_ scratch
+FROM --platform=_PLATFORM_ _FROM-IMAGE0_
 
 WORKDIR _WORK-DIR-IN-CONTAINER_
 
