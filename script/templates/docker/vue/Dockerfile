@@ -1,4 +1,4 @@
-FROM --platform=_PLATFORM_ _FROM-IMAGE1_ AS base
+FROM --platform=_PLATFORM_ _FROM-IMAGE0_ AS base
 
 # Install dependencies only when needed
 FROM base AS deps

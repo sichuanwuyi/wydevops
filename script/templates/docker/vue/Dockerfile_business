@@ -1,4 +1,4 @@
-FROM --platform=_PLATFORM_ _FROM-IMAGE1_ AS base
+FROM --platform=_PLATFORM_ _FROM-IMAGE0_ AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -21,7 +21,7 @@ COPY pnpm-lock.yaml *.js *.json ./
 RUN corepack enable pnpm && pnpm run build
 
 # 使用一个包含 shell 的轻量级基础镜像 (alpine)，默认的执行用户为root
-FROM --platform=_PLATFORM_ _FROM-IMAGE1_
+FROM --platform=_PLATFORM_ _FROM-IMAGE0_
 #USER root
 
 RUN mkdir -p _APP-DIR-IN-CONTAINER__PUBLIC-PATH_
