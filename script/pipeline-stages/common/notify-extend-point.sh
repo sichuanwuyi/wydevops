@@ -28,7 +28,7 @@ function sendNotify_ex() {
   invokeExtendPointFunc "useNotifyTemplate" "common.notify.extend.point.loading.notify.template" "" "${l_content}"
 
   info "common.notify.extend.point.dingtalk.content.as.follows" "DingTalk"
-  cat "${gDefaultRetVal}"
+  echo "${gDefaultRetVal}"
 
   if [ ! "${gExternalNotifyUrl}" ];then
     warn "common.notify.extend.point.external.notify.url.is.empty"

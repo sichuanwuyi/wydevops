@@ -50,7 +50,7 @@ declare -A gTempFileRegTables
 export gTempFileRegTables
 
 export gTempFileDir
-if [ ! -d "${gTempFileDir}" ];then
+if [[ "${gTempFileDir}" && ! -d "${gTempFileDir}" ]];then
   mkdir -p "${gTempFileDir}"
 fi
 
