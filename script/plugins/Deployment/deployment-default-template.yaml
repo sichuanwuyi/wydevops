@@ -60,7 +60,7 @@ spec:
       {{- range .initContainers }}
         - name: {{ .name }}
           {{- if \$.Values.image.registry }}
-          image: {{ \$.Values.image.registry }}/{{ .repository }}:{{ .tag }}
+          image: {{ \$.Values.image.registry }}/{{ .repository }}:{{ .tag }}{{ \$.Values.image.archType | default "" }}
           {{- else }}
           image: {{ .repository }}:{{ .tag }}
           {{- end }}
