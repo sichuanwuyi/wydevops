@@ -1,5 +1,5 @@
 
-FROM --platform=_PLATFORM_ _FROM-IMAGE0_
+FROM --platform=${TARGETPLATFORM:-_PLATFORM_} _FROM-IMAGE0_
 USER root
 
 ENV TZ=_TZ_
