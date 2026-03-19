@@ -26,17 +26,17 @@ function sendNotify_ex() {
 
   invokeExtendPointFunc "useNotifyTemplate" "common.notify.extend.point.loading.notify.template" "" "${l_content}"
 
-  local l_tmpFile="${gHelmBuildDir}/notify-${RANDOM}.json"
-  registerTempFile "${l_tmpFile}"
-  echo "${gDefaultRetVal}" > "${l_tmpFile}"
-
   info "common.notify.extend.point.dingtalk.content.as.follows" "DingTalk"
-  cat "${l_tmpFile}"
+  cat "${gDefaultRetVal}"
 
   if [ ! "${gExternalNotifyUrl}" ];then
     warn "common.notify.extend.point.external.notify.url.is.empty"
     return
   fi
+
+  local l_tmpFile="${gHelmBuildDir}/notify-${RANDOM}.json"
+  registerTempFile "${l_tmpFile}"
+  echo "${gDefaultRetVal}" > "${l_tmpFile}"
 
   for (( l_i = 0; l_i < l_maxTryCount; l_i++ )); do
     info "common.notify.extend.point.trying.to.send.notify.message" "${l_i}" "-n"
@@ -48,7 +48,6 @@ function sendNotify_ex() {
     fi
     warn "common.notify.extend.point.send.external.notify.failed" "${l_errorContent}" "*"
   done
-
 
   #删除临时文件
   unregisterTempFile "${l_tmpFile}"
