@@ -155,6 +155,7 @@ function createConfigFile_ex() {
     l_settingFile="${l_targetDir}/settings.yaml"
     echo "${gServiceName}: |" > "${l_settingFile}"
     echo "  image.registry=${gDockerRepoName}," >> "${l_settingFile}"
+    echo "  image.archType=," >> "${l_settingFile}"
     echo "  gatewayRoute.host=${l_gatewayHost}," >> "${l_settingFile}"
     echo "  targetNamespace=${l_targetNamespace}," >> "${l_settingFile}"
 

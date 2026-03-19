@@ -27,9 +27,9 @@ function configMapGenerator_default() {
   info "plugin.common.k8s.api.version" "${l_resourceType}#${t_apiVersion}"
 
   l_templateFile="${l_generatorFile%/*}/${l_resourceType,}-${l_generatorName}-template.yaml"
-  [[ ! -f "${l_templateFile}" ]] && error "plugin.manager.sh.template.file.not.exist" "${l_templateFile}"
+  [[ ! -f "${l_templateFile}" ]] && error "configmap.generator.sh.template.file.not.exist" "${l_templateFile}"
   # shellcheck disable=SC2145
-  info "plugin.manager.sh.load.template.file" "${l_resourceType}#${l_templateFile##*/}"
+  info "configmap.generator.sh.load.template.file" "${l_resourceType}#${l_templateFile##*/}"
 
   ((l_index = 0))
   while true;do
