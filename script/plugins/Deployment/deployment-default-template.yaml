@@ -90,9 +90,9 @@ spec:
             {{- toYaml \$.Values.${t_moduleName}.podSecurityContext | nindent 12 }}
           {{- end}}
           {{- if \$.Values.image.registry }}
-          image: {{ \$.Values.image.registry }}/{{ .repository }}:{{ .tag | default \$.Chart.AppVersion }}
+          image: {{ \$.Values.image.registry }}/{{ .repository }}:{{ .tag | default \$.Chart.AppVersion }}{{ \$.Values.image.archType | default "" }}
           {{- else }}
-          image: {{ .repository }}:{{ .tag | default \$.Chart.AppVersion }}
+          image: {{ .repository }}:{{ .tag | default \$.Chart.AppVersion }}{{ \$.Values.image.archType | default "" }}
           {{- end }}
           imagePullPolicy: {{ .pullPolicy }}
           {{- if .ports }}

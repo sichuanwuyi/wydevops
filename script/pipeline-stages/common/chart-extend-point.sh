@@ -293,6 +293,8 @@ function onModifyingValuesYaml_ex(){
   echo "image:" >> "${l_valuesYaml}"
   #在values.yaml文件中定义image.registry参数
   insertParam "${l_valuesYaml}" "image.registry" "${gDockerRepoName}"
+  #在values.yaml文件中定义image.archType参数
+  insertParam "${l_valuesYaml}" "image.archType" ""
   #在values.yaml文件中定义gatewayRoute.host参数
   insertParam "${l_valuesYaml}" "gatewayRoute.host" "${l_gatewayRoute}"
 

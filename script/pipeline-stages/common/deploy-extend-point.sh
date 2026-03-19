@@ -606,7 +606,6 @@ function _deployServiceInK8S() {
 
   local l_forceDeployArchTypes
   local l_forceDeployArchTypeCount=0
-  local l_maxIndex1
   local l_forceDeployArchType
 
   local l_errorLog
@@ -652,7 +651,6 @@ function _deployServiceInK8S() {
     # shellcheck disable=SC2206
     l_forceDeployArchTypes=(${gDefaultRetVal//,/ })
     l_forceDeployArchTypeCount="${#l_forceDeployArchTypes[@]}"
-    ((l_maxIndex1 = l_forceDeployArchTypeCount - 1))
   else
     warn "common.deploy.extend.point.param.missing" "${gCiCdYamlFile##*/}#deploy[${l_index}].k8s.${l_activeProfile}.forceDeployArchType"
   fi
