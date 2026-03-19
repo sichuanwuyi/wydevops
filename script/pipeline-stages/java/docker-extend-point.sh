@@ -48,9 +48,10 @@ function _onBeforeCreatingDockerImage_ex() {
       error "java.docker.extend.point.unzip.jar.error"
     fi
     #将./extract目录中的所有子目录复制到gDockerBuildDir目录下。
+    rm -rf "${gDockerBuildDir:?}"
     mv ./extract/* "${gDockerBuildDir}"
     #删除./extract目录
-    rm -rf "./extract"
+    rm -rf ./extract
   else
     l_command="java -Djarmode=layertools -jar ${l_jarFiles[0]} extract --layers --launcher"
     info "java.docker.extend.point.executing.command" "${l_command}"
