@@ -48,8 +48,7 @@ function _onBeforeCreatingDockerImage_ex() {
       error "java.docker.extend.point.unzip.jar.error"
     fi
     #将./extract目录中的所有子目录复制到gDockerBuildDir目录下。
-    rm -rf "${gDockerBuildDir:?}"
-    mv ./extract/* "${gDockerBuildDir}"
+    _overwrite_move "./extract" "${gDockerBuildDir}"
     #删除./extract目录
     rm -rf ./extract
   else
@@ -79,4 +78,34 @@ function _onBeforeCreatingDockerImage_ex() {
       rm -rf "${gDockerBuildDir:?}/${l_subDir}"
     fi
   done
+}
+
+function _overwrite_move() {
+  local source_dir=$1
+  local dest_dir=$2
+
+  # 检查源目录是否存在
+  if [ ! -d "$source_dir" ]; then
+    return
+  fi
+
+  # 启用 dotglob 以确保 * 能匹配到隐藏文件
+  shopt -s dotglob
+  for item in "$source_dir"/*; do
+    # 检查项目是否存在，以防源目录为空
+    if [ -e "$item" ]; then
+      local base_name
+      base_name=$(basename "$item")
+      local destination_path="${dest_dir}/${base_name}"
+
+      # 如果目标路径已经存在一个同名的目录，则先删除它
+      if [ -d "$destination_path" ]; then
+        rm -rf "$destination_path"
+      fi
+
+      # 现在执行移动操作
+      mv "$item" "$dest_dir"
+    fi
+  done
+  shopt -u dotglob # 操作结束后，恢复 dotglob 的默认行为
 }
