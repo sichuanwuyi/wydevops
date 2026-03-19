@@ -604,6 +604,10 @@ function _deployServiceInK8S() {
   local l_namespaceCount
   local l_namespace
 
+  local l_forceDeployArchTypes
+  local l_forceDeployArchTypeCount=0
+  local l_maxIndex1
+  local l_forceDeployArchType
 
   local l_errorLog
   local l_offlinePackage
@@ -639,21 +643,40 @@ function _deployServiceInK8S() {
   [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == null ]] \
     && error "common.deploy.extend.point.param.missing" "${gCiCdYamlFile##*/}#deploy[${l_index}].k8s.${l_activeProfile}.namespace"
   # shellcheck disable=SC2206
-  l_namespaces=(${gDefaultRetVal})
+  l_namespaces=(${gDefaultRetVal//,/ })
   l_namespaceCount="${#l_namespaces[@]}"
   ((l_maxIndex = l_namespaceCount - 1))
+
+  readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.forceDeployArchType"
+  if [ "${gDefaultRetVal}" ];then
+    # shellcheck disable=SC2206
+    l_forceDeployArchTypes=(${gDefaultRetVal//,/ })
+    l_forceDeployArchTypeCount="${#l_forceDeployArchTypes[@]}"
+    ((l_maxIndex1 = l_forceDeployArchTypeCount - 1))
+  else
+    warn "common.deploy.extend.point.param.missing" "${gCiCdYamlFile##*/}#deploy[${l_index}].k8s.${l_activeProfile}.forceDeployArchType"
+  fi
 
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.apiServer"
   [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == null ]] \
     && error "common.deploy.extend.point.param.missing" "${gCiCdYamlFile##*/}#deploy[${l_index}].k8s.${l_activeProfile}.apiServer"
   # shellcheck disable=SC2206
-  l_apiServers=(${gDefaultRetVal})
+  l_apiServers=(${gDefaultRetVal//,/ })
   ((l_apiServerIndex = 0))
   # shellcheck disable=SC2068
   for l_apiServer in ${l_apiServers[@]};do
     #确定命名空间
-    l_namespace="${l_namespaces[${l_apiServerIndex}]}"
-    [[ "${l_apiServerIndex}" -ge "${l_namespaceCount}" ]] && l_namespace="${l_namespaces[l_maxIndex]}"
+    if [ "${l_apiServerIndex}" -ge "${l_namespaceCount}" ];then
+      l_namespace="${l_namespaces[l_maxIndex]}"
+    else
+      l_namespace="${l_namespaces[${l_apiServerIndex}]}"
+    fi
+
+    #确定要发布的目标架构类型
+    l_forceDeployArchType=""
+    if [ "${l_apiServerIndex}" -lt "${l_forceDeployArchTypeCount}" ];then
+      l_forceDeployArchType="${l_forceDeployArchTypes[${l_apiServerIndex}]}"
+    fi
 
     # shellcheck disable=SC2206
     l_array=(${l_apiServer//\|/ })
@@ -722,7 +745,7 @@ function _deployServiceInK8S() {
       l_repoInfos="${gDefaultRetVal}"
       readParam "${gCiCdYamlFile}" "deploy[${l_index}].packageName"
       _pushDockerImageForDeployStage "${gDefaultRetVal}" "${l_repoInfos}" "${l_chartFile}" "${l_ip}" "${l_port}" \
-        "${l_account}" "${l_password}"
+        "${l_account}" "${l_password}" "${l_forceDeployArchType}"
 
       # 使用正则表达式替换已存在的参数
       # shellcheck disable=SC2001
@@ -762,7 +785,6 @@ function _deployServiceInK8S() {
       #todo: 这里不要在前面添加timeout指令
       ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "cat ~/.kube/config" > "${l_localBaseDir}/kube-config"
     fi
-
 
     if [[ "${l_installMode}" == "install" || "${l_installMode}" == "uninstall" ]];then
       info "common.deploy.extend.point.uninstalling.service" "${l_namespace}#${l_chartName}" "-n"
@@ -999,7 +1021,6 @@ function _pushDockerImageForDeployStage() {
   export gForceCoverage
   export gImageCacheDir
   export gRunID
-  export gOfflineArchTypes
 
   local l_packageName=$1
   local l_dockerRepoInfo=$2
@@ -1008,6 +1029,7 @@ function _pushDockerImageForDeployStage() {
   local l_port=$5
   local l_account=$6
   local l_password=$7
+  local l_forceDeployArchType=$8
 
   local l_packageIndex
   local l_images
@@ -1037,17 +1059,16 @@ function _pushDockerImageForDeployStage() {
   # shellcheck disable=SC2206
   l_images=(${gDefaultRetVal//,/ })
 
-  info "common.deploy.extend.point.checking.server.arch" "${l_ip}"
-  invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
-  # shellcheck disable=SC2015
-  [[ "${gDefaultRetVal}" == "false" ]] && error "common.deploy.extend.point.read.server.arch.failed" "${l_ip}"
-  info "common.deploy.extend.point.read.server.arch.success" "${l_ip}#${gDefaultRetVal}"
-  l_archType="${gDefaultRetVal}"
-
-  l_array=("${gOfflineArchTypes//,/}")
-  l_targetArchType="${l_array[0]}"
-
-  echo "----------l_targetArchType=${l_targetArchType}-------------------"
+  if [ ! "${l_forceDeployArchType}" ];then
+    info "common.deploy.extend.point.checking.server.arch" "${l_ip}"
+    invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
+    # shellcheck disable=SC2015
+    [[ "${gDefaultRetVal}" == "false" ]] && error "common.deploy.extend.point.read.server.arch.failed" "${l_ip}"
+    info "common.deploy.extend.point.read.server.arch.success" "${l_ip}#${gDefaultRetVal}"
+    l_archType="${gDefaultRetVal}"
+  else
+    l_archType="${l_forceDeployArchType}"
+  fi
 
   #获取到需要推送的镜像
   # shellcheck disable=SC2206
@@ -1074,8 +1095,7 @@ function _pushDockerImageForDeployStage() {
       l_tmpFile="${gImageCacheDir}/${l_dockerOutDir}-${l_archType//\//-}.tar"
       warn "common.deploy.extend.point.finding.docker.image.export.file.in.cache" "${l_tmpFile}" "-n"
       if [ ! -f "${l_tmpFile}" ];then
-        warn "common.deploy.extend.point.failed" "" "*"
-        continue
+        error "common.deploy.extend.point.failed" "" "*"
       fi
     fi
     warn "common.deploy.extend.point.success" "" "*"
