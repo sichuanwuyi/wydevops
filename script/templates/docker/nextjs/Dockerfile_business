@@ -25,7 +25,7 @@ RUN corepack enable npm && npm run build
 RUN cd ./_DOT-NEXT_/_OUTPUT_ && rm -rf ./node_modules
 
 # Production image, copy all the files and run next
-FROM --platform=_PLATFORM_ scratch
+FROM --platform=_PLATFORM_ alpine:latest
 USER root
 
 RUN mkdir -p _APP-DIR-IN-CONTAINER_/public _APP-DIR-IN-CONTAINER_/_DOT-NEXT_

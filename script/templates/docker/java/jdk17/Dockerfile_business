@@ -1,5 +1,5 @@
-
-FROM --platform=_PLATFORM_ scratch
+# 使用一个包含 shell 的轻量级基础镜像 (alpine)
+FROM --platform=_PLATFORM_ alpine:latest
 USER root
 
 RUN mkdir -p _APP-DIR-IN-CONTAINER_

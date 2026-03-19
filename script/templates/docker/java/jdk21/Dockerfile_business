@@ -1,5 +1,5 @@
-
-FROM --platform=${TARGETPLATFORM:-_PLATFORM_} scratch
+# 使用一个包含 shell 的轻量级基础镜像 (alpine)
+FROM --platform=${TARGETPLATFORM:-_PLATFORM_} alpine:latest
 
 COPY ./dependencies/ ./spring-boot-loader/ ./snapshot-dependencies/ ./application/ _APP-DIR-IN-CONTAINER_/
 
