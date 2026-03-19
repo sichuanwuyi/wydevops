@@ -84,6 +84,9 @@ function _overwrite_move() {
   local source_dir=$1
   local dest_dir=$2
 
+  local base_name
+  local destination_path
+
   # 检查源目录是否存在
   if [ ! -d "$source_dir" ]; then
     return
@@ -94,9 +97,9 @@ function _overwrite_move() {
   for item in "$source_dir"/*; do
     # 检查项目是否存在，以防源目录为空
     if [ -e "$item" ]; then
-      local base_name
+
       base_name=$(basename "$item")
-      local destination_path="${dest_dir}/${base_name}"
+      destination_path="${dest_dir}/${base_name}"
 
       # 如果目标路径已经存在一个同名的目录，则先删除它
       if [ -d "$destination_path" ]; then
