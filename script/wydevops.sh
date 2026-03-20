@@ -124,6 +124,7 @@ parseOptions2 "${@}"
 invokeExtendPointFunc "onValidateGlobalParams" "wydevops.sh.validate.global.params.extend.point"
 
 info "wydevops.sh.executing.cicd.standard.flow"
+#执行cicd标准流程
 source "${_selfRootDir}/cicd-entry.sh"
 
 exit 0
