@@ -610,6 +610,7 @@ function _deployServiceInK8S() {
   local l_forceDeployArchTypes
   local l_forceDeployArchTypeCount=0
   local l_forceDeployArchType
+  local l_localArchType
 
   local l_errorLog
   local l_offlinePackage
@@ -738,25 +739,34 @@ function _deployServiceInK8S() {
     #如果dockerRepo参数配置有值且与当前使用的docker镜像仓库不是同一个，则需要推送docker镜像到新的仓库中。
     readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.dockerRepo"
     if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
+      l_repoInfos="${gDefaultRetVal}"
+      #调用解密接口解密l_repoInfo参数值。
+      invokeExtendPointFunc "decodeSecretInfo" "common.deploy.extend.point.decoding.secret.info" \
+        "dockerRepo#${l_repoInfos}" "dockerRepo" "${l_repoInfos}"
+      l_repoInfos="${gDefaultRetVal}"
+      warn "common.deploy.extend.point.decoded.secret.info" "dockerRepo#${l_repoInfos}"
+
       # shellcheck disable=SC2206
-      l_array=(${gDefaultRetVal//,/ })
+      l_array=(${l_repoInfos//,/ })
       warn "common.deploy.extend.point.updating.image.repo.address" "${l_array[2]}"
 
       info "common.deploy.extend.point.pushing.images.to.k8s.repo"
-      l_repoInfos="${gDefaultRetVal}"
       readParam "${gCiCdYamlFile}" "deploy[${l_index}].packageName"
       _pushDockerImageForDeployStage "${gDefaultRetVal}" "${l_repoInfos}" "${l_chartFile}" "${l_ip}" "${l_port}" \
         "${l_account}" "${l_password}" "${l_forceDeployArchType}"
+
+      l_localArchType="${gDefaultRetVal}"
+
+      if [ "${l_localArchType}" != "${l_forceDeployArchType}" ];then
+        _install_tonistiigi_binfmt
+        l_settingParams=$(echo "${l_settingParams}" | sed 's/image\.archType=,//g')
+        [[ "${l_settingParams}" == *"image.archType="* ]] || l_settingParams="${l_settingParams},image.archType=-${l_forceDeployArchType//\//-}"
+      fi
 
       # 使用正则表达式替换已存在的参数
       # shellcheck disable=SC2001
       l_settingParams=$(echo "${l_settingParams}" | sed "s/\(image\.registry\)=[^,]*\(,\|\\n\|$\)/\1=${l_array[2]//\//\\\/}\2/g")
       [[ "${l_settingParams}" == *"image.registry="* ]] || l_settingParams="${l_settingParams},image.registry=${l_array[2]}"
-    fi
-
-    if [ "${l_forceDeployArchType}" ];then
-      l_settingParams=$(echo "${l_settingParams}" | sed 's/image\.archType=,//g')
-      [[ "${l_settingParams}" == *"image.archType="* ]] || l_settingParams="${l_settingParams},image.archType=-${l_forceDeployArchType//\//-}"
     fi
 
     #如果routeHosts参数配置有值，则需要更新gatewayRoute.host参数的值。
@@ -1041,7 +1051,7 @@ function _pushDockerImageForDeployStage() {
   local l_images
   local l_image
   local l_archType
-  local l_targetArchType
+  local l_localArchType
   local l_array
   local l_dockerOutDir
   local l_tmpFile
@@ -1066,13 +1076,15 @@ function _pushDockerImageForDeployStage() {
   # shellcheck disable=SC2206
   l_images=(${gDefaultRetVal//,/ })
 
-  if [ ! "${l_forceDeployArchType}" ];then
-    info "common.deploy.extend.point.checking.server.arch" "${l_ip}"
-    invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
-    # shellcheck disable=SC2015
-    [[ "${gDefaultRetVal}" == "false" ]] && error "common.deploy.extend.point.read.server.arch.failed" "${l_ip}"
-    info "common.deploy.extend.point.read.server.arch.success" "${l_ip}#${gDefaultRetVal}"
-    l_archType="${gDefaultRetVal}"
+  info "common.deploy.extend.point.checking.server.arch" "${l_ip}"
+  invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
+  # shellcheck disable=SC2015
+  [[ "${gDefaultRetVal}" == "false" ]] && error "common.deploy.extend.point.read.server.arch.failed" "${l_ip}"
+  info "common.deploy.extend.point.read.server.arch.success" "${l_ip}#${gDefaultRetVal}"
+  l_localArchType="${gDefaultRetVal}"
+
+  if [[ ! "${l_forceDeployArchType}" || "${l_localArchType}" == "${l_forceDeployArchType}" ]];then
+    l_archType="${l_localArchType}"
   else
     l_archType="${l_forceDeployArchType}"
   fi
@@ -1148,6 +1160,8 @@ function _pushDockerImageForDeployStage() {
     fi
 
   done
+
+  gDefaultRetVal="${l_localArchType}"
 }
 
 function _getDockerImageInChart() {

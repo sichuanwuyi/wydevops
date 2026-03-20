@@ -29,6 +29,7 @@ source "${_selfRootDir}/helper/docker-helper.sh"
 source "${_selfRootDir}/helper/helm-helper.sh"
 source "${_selfRootDir}/helper/map-loader.sh"
 #3.引入全局变量及其默认值定义文件。
+source "${_selfRootDir}/pipeline-stages/common/secret-extend-point.sh"
 source "${_selfRootDir}/global-params.sh"
 
 info "wydevops.sh.detecting.helm" "" "-n"

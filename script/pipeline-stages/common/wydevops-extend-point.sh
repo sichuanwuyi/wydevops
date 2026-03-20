@@ -1032,7 +1032,11 @@ function _loadGlobalParamsFromCiCdYaml() {
   #初始化gTargetApiServer参数。
   readParam "${l_cicdYaml}" "globalParams.targetApiServer"
   if [ "${gDefaultRetVal}" != "null" ];then
+    #调用解密接口解密gTargetApiServer参数值。
+    invokeExtendPointFunc "decodeSecretInfo" "common.wydevops.extend.point.decoding.secret.info" \
+      "gTargetApiServer#${gDefaultRetVal}" "gTargetApiServer" "${gDefaultRetVal}"
     gTargetApiServer="${gDefaultRetVal}"
+    warn "common.wydevops.extend.point.decoded.secret.info" "gTargetApiServer#${gTargetApiServer}"
   else
     gTargetApiServer=""
   fi
