@@ -31,6 +31,7 @@ source "${_selfRootDir}/helper/map-loader.sh"
 #3.引入全局变量及其默认值定义文件。
 source "${_selfRootDir}/global-params.sh"
 
+export gDebugMode
 export gBuildPath
 export gPipelineScriptsDir
 export gLanguage

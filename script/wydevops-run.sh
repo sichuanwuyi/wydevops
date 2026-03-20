@@ -14,28 +14,36 @@ if [ -z "${WYDEVOPS_WORK_MODE}" ];then
   export WYDEVOPS_WORK_MODE="local"
 fi
 
+_SPLIT_CHAR="\\"
+if [[ "${_SCRIPTS_ROOT_DIR}" =~ ^/ ]];then
+  _SPLIT_CHAR="/"
+fi
+
 # The home directory for all wydevops related files and scripts.
-_WYDEVOPS_HOME="${WYDEVOPS_HOME:=$HOME/.wydevops}"
+_WYDEVOPS_HOME="${WYDEVOPS_HOME:=${HOME}${_SPLIT_CHAR}.wydevops}"
 echo -e "${BBlue}_WYDEVOPS_HOME=${_WYDEVOPS_HOME}${Color_Off}"
 # The shared local directory where the scripts will be cloned.
-_SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}/wydevops"
+_SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}${_SPLIT_CHAR}wydevops"
 echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
-_SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
+_SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}${_SPLIT_CHAR}script"
 echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 
 _selfRootDir="${_SCRIPTS_ROOT_DIR}"
 export g_update_occurred=false
 
-source "${_SCRIPTS_ROOT_DIR}/helper/log-helper.sh"
-source "${_SCRIPTS_ROOT_DIR}/helper/yaml-helper.sh"
-source "${_SCRIPTS_ROOT_DIR}/wydevops-update.sh"
+# shellcheck disable=SC1090
+source "${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}helper${_SPLIT_CHAR}log-helper.sh"
+# shellcheck disable=SC1090
+source "${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}helper${_SPLIT_CHAR}yaml-helper.sh"
+# shellcheck disable=SC1090
+source "${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}wydevops-update.sh"
 
 # --- Self-update logic (Final Intelligent Merge) ---
 # This logic runs if the `wydevops-update.sh` script detected a git update.
 if [[ "${g_update_occurred}" == "true" ]]; then
     info "Git update detected. Merging local configurations into the latest wydevops-run.sh..."
 
-    l_latest_run_script="${_SCRIPTS_ROOT_DIR}/wydevops-run.sh"
+    l_latest_run_script="${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}wydevops-run.sh"
     l_current_run_script=$(readlink -f "${BASH_SOURCE[0]}")
 
     # Find the boundary line (last line starting with "bash ") in the template script.
@@ -98,9 +106,11 @@ echo -e "${BBlue}_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}${Color_Off}"
 
 #允许传入两个参数：第一个参数为项目目录，第二个参数为本地配置文件名称
 
-source "${_SCRIPTS_ROOT_DIR}/helper/path-helper.sh"
+# shellcheck disable=SC1090
+source "${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}helper${_SPLIT_CHAR}path-helper.sh"
+
 #定义当前项目主模块目录路径:
-_PROJECT_MAIN_MODULE_DIR=$(realpath -m -- "${1:-$_SELF_SCRIPT_DIR}")
+_PROJECT_MAIN_MODULE_DIR=$(realpath -m -- "${1:-$_SELF_SCRIPT_DIR}")``
 
 bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" \
 -e -f -m \
