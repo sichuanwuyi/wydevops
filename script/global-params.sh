@@ -492,14 +492,14 @@ function parseOptions0() {
       -P|--buildPath)
         l_param="${2}"
         if [ "${l_param}" ];then
-          gBuildPath="${l_param}"
+          gBuildPath=$(win2linux "${l_param}")
         fi
         shift 2
         ;;
       -W|--workDir)
         l_param="${2}"
         if [ "${l_param}" ];then
-          gBuildScriptRootDir="${l_param}"
+          gBuildScriptRootDir=$(win2linux "${l_param}")
         fi
         shift 2
         ;;
@@ -711,7 +711,7 @@ function parseOptions2() {
       -I|--imageCacheDir)
         l_param="${2}"
         if [ "${l_param}" ];then
-          gImageCacheDir="${l_param}"
+          gImageCacheDir=$(win2linux "${l_param}")
         fi
         shift 2
         ;;
