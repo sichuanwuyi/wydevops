@@ -30,7 +30,19 @@ source "${_selfRootDir}/helper/helm-helper.sh"
 source "${_selfRootDir}/helper/map-loader.sh"
 #3.引入全局变量及其默认值定义文件。
 source "${_selfRootDir}/global-params.sh"
-source "${_selfRootDir}/pipeline-stages/common/secret-extend-point.sh"
+
+export gBuildPath
+export gPipelineScriptsDir
+export gLanguage
+
+info "wydevops.sh.first.parse.options"
+parseOptions0 "${@}"
+
+#读取Jenkins环境变量BUILD_SCRIPT_ROOT。
+[[ ! "${gBuildScriptRootDir}" ]] && gBuildScriptRootDir="${BUILD_SCRIPT_ROOT}"
+info "wydevops.sh.gBuildScriptRootDir.value" "${gBuildScriptRootDir}"
+
+source "${gPipelineScriptsDir}/common/secret-extend-point.sh"
 
 info "wydevops.sh.detecting.helm" "" "-n"
 if command -v helm &> /dev/null; then
@@ -56,25 +68,18 @@ if [[ "${gTempFileDir}" && ! -d "${gTempFileDir}" ]];then
 fi
 
 export gWorkMode
-export gBuildPath
 export gClearCachedParams
 export gGlobalParamCacheFileName
 export gArchTypes
-export gPipelineScriptsDir
-export gLanguage
 export gCiCdYamlFileName
 export gHelmBuildOutDir
 
+info "wydevops.sh.second.parse.options"
 parseOptions1 "${@}"
 
 partLog "wydevops.sh.part1.init.global.params"
 
-info "wydevops.sh.first.parse.options"
-#读取Jenkins环境变量BUILD_SCRIPT_ROOT。
-[[ ! "${gBuildScriptRootDir}" ]] && gBuildScriptRootDir="${BUILD_SCRIPT_ROOT}"
-info "wydevops.sh.gBuildScriptRootDir.value" "${gBuildScriptRootDir}"
-
-source "${_selfRootDir}/plugins/plugin-manager.sh"
+source "${gBuildScriptRootDir}/plugins/plugin-manager.sh"
 
 #流水线脚本所在的目录名称
 gPipelineScriptsDir="${gBuildScriptRootDir}/pipeline-stages"
@@ -111,7 +116,7 @@ fi
 info "wydevops.sh.delete.pushed.images.file" "${gHelmBuildOutDir}" "${gArchTypes//\//-}"
 rm -f "${gHelmBuildOutDir}/${gArchTypes//\//-}/pushed-images.yaml"
 
-info "wydevops.sh.second.parse.options"
+info "wydevops.sh.third.parse.options"
 parseOptions2 "${@}"
 
 invokeExtendPointFunc "onValidateGlobalParams" "wydevops.sh.validate.global.params.extend.point"

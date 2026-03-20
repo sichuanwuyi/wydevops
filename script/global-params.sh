@@ -461,14 +461,68 @@ function loadExtendScriptFileForLanguage() {
 
 #首次解析输入参数，关注初始化过程需要的参数：
 #工作模式、语言类型、构建类型、是否是多模块项目、模块主目录、脚本工作目录
-function parseOptions1() {
+function parseOptions0() {
   export gDebugMode
-  export gBuildType
+  export gBuildPath
   export gLanguage
+  export gBuildScriptRootDir
+
+  local l_param
+  local getOpt_cmd
+
+  gDebugMode="false"
+
+  #解析命令行参数
+  getOpt_cmd=$(getopt -o cdefhmrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+
+  # shellcheck disable=SC2181
+  if [ "$?" -ne 0 ];then
+    error "global.params.sh.get.script.params.exception" "$?"
+  fi
+  eval set -- "${getOpt_cmd}"
+
+  #解析选项
+  while [ -n "${1}" ]
+  do
+    case "${1}" in
+      -d|--debug)
+        gDebugMode="true"
+        shift ;;
+      -L|--language)
+        l_param="${2}"
+        if [ "${l_param}" ];then
+          gLanguage="${l_param}"
+        fi
+        shift 2
+        ;;
+      -P|--buildPath)
+        l_param="${2}"
+        if [ "${l_param}" ];then
+          gBuildPath="${l_param}"
+        fi
+        shift 2
+        ;;
+      -W|--workDir)
+        l_param="${2}"
+        if [ "${l_param}" ];then
+          gBuildScriptRootDir="${l_param}"
+        fi
+        shift 2
+        ;;
+      *)
+        shift 2
+        ;;
+    esac
+  done
+  }
+
+#首次解析输入参数，关注初始化过程需要的参数：
+#工作模式、语言类型、构建类型、是否是多模块项目、模块主目录、脚本工作目录
+function parseOptions1() {
   export gWorkMode
+  export gBuildType
   export gArchTypes
   export gOfflineArchTypes
-  export gBuildScriptRootDir
   export gForceCoverage
   export gMultipleModelProject
   export gClearCachedParams
@@ -476,7 +530,6 @@ function parseOptions1() {
   local l_param
   local getOpt_cmd
 
-  gDebugMode="false"
   gClearCachedParams="false"
   gForceCoverage="false"
   gMultipleModelProject="false"
@@ -496,9 +549,6 @@ function parseOptions1() {
     case "${1}" in
       -c|--clearCachedParams)
         gClearCachedParams="true"
-        shift ;;
-      -d|--debug)
-        gDebugMode="true"
         shift ;;
       -e|--enableNotify)
         shift ;;
@@ -554,13 +604,6 @@ function parseOptions1() {
       -I|--imageCacheDir)
         shift 2
         ;;
-      -L|--language)
-        l_param="${2}"
-        if [ "${l_param}" ];then
-          gLanguage="${l_param}"
-        fi
-        shift 2
-        ;;
       --localConfigFile)
         l_param="${2}"
         if [ "${l_param}" ];then
@@ -588,24 +631,10 @@ function parseOptions1() {
         fi
         shift 2
         ;;
-      -P|--buildPath)
-        l_param="${2}"
-        if [ "${l_param}" ];then
-          gBuildPath="${l_param}"
-        fi
-        shift 2
-        ;;
       -S|--buildStages)
         shift 2
         ;;
       -T|--enableTemplate)
-        shift 2
-        ;;
-      -W|--workDir)
-        l_param="${2}"
-        if [ "${l_param}" ];then
-          gBuildScriptRootDir="${l_param}"
-        fi
         shift 2
         ;;
       --)
@@ -613,7 +642,7 @@ function parseOptions1() {
         shift
         break ;;
       *)
-        error "global.params.sh.invalid.option" "${1}"
+        shift 2
         ;;
     esac
   done
