@@ -76,31 +76,31 @@ BGreen='\033[1;32m'
 BRed='\033[1;31m'
 BBlue='\033[1;34m'
 
-_SPLIT_CHAR="\\"
-if [[ "${HOME}" =~ ^/ ]];then
-  _SPLIT_CHAR="/"
-fi
-
 # --- Configuration ---
 # The home directory for all wydevops related files and scripts.
 if [ ! "${_WYDEVOPS_HOME}" ];then
-  _WYDEVOPS_HOME="${WYDEVOPS_HOME:=${HOME}${_SPLIT_CHAR}.wydevops}"
+  _WYDEVOPS_HOME="${WYDEVOPS_HOME:=${HOME}/.wydevops}"
+  _WYDEVOPS_HOME="${_WYDEVOPS_HOME//\\//}"
+  _WYDEVOPS_HOME="${_WYDEVOPS_HOME//:/}"
+  if [[ ! "${_WYDEVOPS_HOME}" =~ ^\/ ]];then
+    _WYDEVOPS_HOME="/${_WYDEVOPS_HOME}"
+  fi
   echo -e "${BBlue}_WYDEVOPS_HOME=${_WYDEVOPS_HOME}${Color_Off}"
 fi
 
 if [ ! "${_SCRIPTS_PROJECT_DIR}" ];then
   # The shared local directory where the scripts will be cloned.
-  _SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}${_SPLIT_CHAR}wydevops"
+  _SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}/wydevops"
   echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
 fi
 
 if [ ! "${_SCRIPTS_ROOT_DIR}" ];then
-  _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}${_SPLIT_CHAR}script"
+  _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
   echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 fi
 
 # The local configuration file that specifies the git repo and branch.
-_CLIENT_CONFIG_FILE="${_WYDEVOPS_HOME}${_SPLIT_CHAR}client-config.yaml"
+_CLIENT_CONFIG_FILE="${_WYDEVOPS_HOME}/client-config.yaml"
 echo -e "${BBlue}_CLIENT_CONFIG_FILE=${_CLIENT_CONFIG_FILE}${Color_Off}"
 
 # --- Check for client configuration ---
@@ -129,7 +129,7 @@ echo "  - Branch:     $BRANCH"
 export g_update_occurred=false
 
 # --- Sync the scripts from Git repository ---
-if [ -d "${_SCRIPTS_PROJECT_DIR}${_SPLIT_CHAR}.git" ]; then
+if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
     # If directory exists and is a git repo, pull the latest changes.
     info "Syncing existing scripts..."
     cd "${_SCRIPTS_PROJECT_DIR}" || exit
