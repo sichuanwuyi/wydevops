@@ -229,6 +229,7 @@ function deployServicePackage_ex() {
   local l_shellOrYamlFile=$9
   local l_remoteInstallProxyShell=${10}
 
+  gCurrentStageResult=""
   if [ "${l_deployType}" == "docker" ];then
     #调用标准发布流程
     _deployServiceByDocker "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_shellOrYamlFile}" \
@@ -237,8 +238,10 @@ function deployServicePackage_ex() {
     #调用标准发布流程
     _deployServiceInK8S "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_localBaseDir}" "${l_installMode}"
   fi
-  convertI18NText "common.deploy.extend.point.package.deployed.successfully" "${l_packageName}"
-  gCurrentStageResult="INFO|${gLogI18NRetVal}"
+  if [ ! "${gCurrentStageResult}" ];then
+    convertI18NText "common.deploy.extend.point.package.deployed.successfully" "${l_packageName}"
+    gCurrentStageResult="INFO|${gLogI18NRetVal}"
+  fi
 }
 
 function onBeforeDeployingServicePackageByDockerMode_ex() {
