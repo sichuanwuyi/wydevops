@@ -1042,6 +1042,7 @@ function _pushDockerImageForDeployStage() {
   local l_array
   local l_dockerOutDir
   local l_tmpFile
+  local l_executeResult
 
   #aws-ecr,ylzt,749059848629.dkr.ecr.us-east-2.amazonaws.com,ec2-user,Ylzt-Mall-Key.pem,80
   local l_repoType
@@ -1104,8 +1105,9 @@ function _pushDockerImageForDeployStage() {
     info "common.deploy.extend.point.success" "" "*"
 
     info "common.deploy.extend.point.loading.docker.image.from.file" "${l_tmpFile##*/}#${l_image}" "-n"
-    if ! docker load -i "${l_tmpFile}" >/dev/null;then
-      error "common.deploy.extend.point.failed" "" "*"
+    l_executeResult=$(docker load -i "${l_tmpFile}" 2>&1)
+    if [ "$?" -ne 0 ];then
+      error "common.deploy.extend.point.execute.command.failed" "${l_executeResult}" "*"
     fi
     info "common.deploy.extend.point.success" "" "*"
 
