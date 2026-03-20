@@ -15,7 +15,7 @@ if [ -z "${WYDEVOPS_WORK_MODE}" ];then
 fi
 
 _SPLIT_CHAR="\\"
-if [[ "${_SCRIPTS_ROOT_DIR}" =~ ^/ ]];then
+if [[ "${HOME}" =~ ^/ ]];then
   _SPLIT_CHAR="/"
 fi
 
