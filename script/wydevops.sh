@@ -28,6 +28,7 @@ fi
 source "${_selfRootDir}/helper/docker-helper.sh"
 source "${_selfRootDir}/helper/helm-helper.sh"
 source "${_selfRootDir}/helper/map-loader.sh"
+source "${_selfRootDir}/helper/path-helper.sh"
 #3.引入全局变量及其默认值定义文件。
 source "${_selfRootDir}/global-params.sh"
 
