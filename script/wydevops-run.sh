@@ -15,16 +15,23 @@ if [ -z "${WYDEVOPS_WORK_MODE}" ];then
 fi
 
 _SPLIT_CHAR="\\"
-if [[ "${HOME}" =~ ^/ ]];then
+if [[ "${HOME}" =~ ^\/ ]];then
   _SPLIT_CHAR="/"
 fi
 
 # The home directory for all wydevops related files and scripts.
 _WYDEVOPS_HOME="${WYDEVOPS_HOME:=${HOME}${_SPLIT_CHAR}.wydevops}"
+_WYDEVOPS_HOME="${_WYDEVOPS_HOME//\\//}"
+_WYDEVOPS_HOME="${_WYDEVOPS_HOME//:/}"
+if [[ ! "${_WYDEVOPS_HOME}" =~ ^\/ ]];then
+  _WYDEVOPS_HOME="/${_WYDEVOPS_HOME}"
+fi
 echo -e "${BBlue}_WYDEVOPS_HOME=${_WYDEVOPS_HOME}${Color_Off}"
+
 # The shared local directory where the scripts will be cloned.
 _SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}${_SPLIT_CHAR}wydevops"
 echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
+
 _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}${_SPLIT_CHAR}script"
 echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 
