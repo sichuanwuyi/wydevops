@@ -441,14 +441,20 @@ function cacheGlobalParamsToFile() {
 function loadExtendScriptFileForLanguage() {
   export gPipelineScriptsDir
   export gLanguage
+  export _selfRootDir
 
   local l_currentStage=$1
 
+  local l_tmpDir="${gPipelineScriptsDir}"
+  if [ ! "${l_tmpDir}" ];then
+    l_tmpDir="${_selfRootDir}/pipeline-stages"
+  fi
+
   #是否存在语言级功能扩展,如果存在则加载之
-  if [ -f "${gPipelineScriptsDir}/${gLanguage}/${l_currentStage}-extend-point.sh" ];then
+  if [ -f "${l_tmpDir}/${gLanguage}/${l_currentStage}-extend-point.sh" ];then
     info "global.params.sh.loading.language.extend.file" "${gLanguage}#${l_currentStage}"
     # shellcheck disable=SC1090
-    source "${gPipelineScriptsDir}/${gLanguage}/${l_currentStage}-extend-point.sh"
+    source "${l_tmpDir}/${gLanguage}/${l_currentStage}-extend-point.sh"
   fi
 
 }
