@@ -48,7 +48,7 @@ source "${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}wydevops-update.sh"
 # --- Self-update logic (Final Intelligent Merge) ---
 # This logic runs if the `wydevops-update.sh` script detected a git update.
 if [[ "${g_update_occurred}" == "true" ]]; then
-  combineCurrentFile "${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}wydevops-run.sh" "$@"
+  combineCurrentFile "${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}wydevops-run.sh" "${BASH_SOURCE[0]}" "$@"
 fi
 # --- End of self-update logic ---
 

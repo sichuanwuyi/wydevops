@@ -3,7 +3,7 @@
 function combineCurrentFile() {
   info "Git update detected. Merging local configurations into the latest wydevops-run.sh..."
   l_latest_run_script="$1"
-  l_current_run_script=$(readlink -f "${BASH_SOURCE[0]}")
+  l_current_run_script=$(readlink -f "$2")
 
   # Find the boundary line (last line starting with "bash ") in the template script.
   l_latest_boundary_line=$(grep -n "^bash " "${l_latest_run_script}" | tail -1 | cut -d: -f1)
@@ -58,8 +58,8 @@ function combineCurrentFile() {
       l_params=("${@}")
       l_param_count=${#l_params[@]}
       l_remaining_params=()
-      if [ "${l_param_count}" -gt 1 ];then
-        l_remaining_params=("${l_params[@]:1}")
+      if [ "${l_param_count}" -gt 2 ];then
+        l_remaining_params=("${l_params[@]:2}")
       fi
       exec "${l_current_run_script}" "${l_remaining_params[@]}"
   fi
