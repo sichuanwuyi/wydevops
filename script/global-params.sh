@@ -451,20 +451,6 @@ function loadExtendScriptFileForLanguage() {
     source "${gPipelineScriptsDir}/${gLanguage}/${l_currentStage}-extend-point.sh"
   fi
 
-  if ! type -t "_sendNotify_ex" > /dev/null; then
-    if [ -f "${gPipelineScriptsDir}/${gLanguage}/notify-extend-point.sh" ];then
-      # shellcheck disable=SC1090
-      source "${gPipelineScriptsDir}/${gLanguage}/notify-extend-point.sh"
-    fi
-  fi
-
-  if ! type -t "_decodeSecretInfo_ex" > /dev/null; then
-    if [ -f "${gPipelineScriptsDir}/${gLanguage}/secret-extend-point.sh" ];then
-      # shellcheck disable=SC1090
-      source "${gPipelineScriptsDir}/${gLanguage}/secret-extend-point.sh"
-    fi
-  fi
-
 }
 
 #首次解析输入参数，关注初始化过程需要的参数：

@@ -11,3 +11,5 @@ function decodeSecretInfo_ex() {
 
   gDefaultRetVal="${l_paramValue}"
 }
+
+loadExtendScriptFileForLanguage "secret"
