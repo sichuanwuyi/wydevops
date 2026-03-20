@@ -503,6 +503,10 @@ function parseOptions0() {
         fi
         shift 2
         ;;
+      --)
+        #遇到--，直接跳过
+        shift
+        break ;;
       *)
         shift 2
         ;;
