@@ -14,41 +14,42 @@ if [ -z "${WYDEVOPS_WORK_MODE}" ];then
   export WYDEVOPS_WORK_MODE="local"
 fi
 
-_SPLIT_CHAR="\\"
-if [[ "${HOME}" =~ ^\/ ]];then
-  _SPLIT_CHAR="/"
-fi
 
 # The home directory for all wydevops related files and scripts.
-_WYDEVOPS_HOME="${WYDEVOPS_HOME:=${HOME}${_SPLIT_CHAR}.wydevops}"
+# In a cross-platform Bash environment (like Git Bash), always use forward slashes for internal logic.
+_WYDEVOPS_HOME="${WYDEVOPS_HOME:=${HOME}/.wydevops}"
+# Normalize the path to handle various inputs (e.g., from Windows env vars)
+# 1. Replace all backslashes with forward slashes.
 _WYDEVOPS_HOME="${_WYDEVOPS_HOME//\\//}"
+# 2. Remove the drive letter colon (e.g., C:) to create a POSIX-style path (/c/...).
 _WYDEVOPS_HOME="${_WYDEVOPS_HOME//:/}"
+# 3. Ensure the path is absolute in the context of MSYS/Git Bash.
 if [[ ! "${_WYDEVOPS_HOME}" =~ ^\/ ]];then
   _WYDEVOPS_HOME="/${_WYDEVOPS_HOME}"
 fi
 echo -e "${BBlue}_WYDEVOPS_HOME=${_WYDEVOPS_HOME}${Color_Off}"
 
 # The shared local directory where the scripts will be cloned.
-_SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}${_SPLIT_CHAR}wydevops"
+_SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}/wydevops"
 echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
 
-_SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}${_SPLIT_CHAR}script"
+_SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
 echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 
 _selfRootDir="${_SCRIPTS_ROOT_DIR}"
 export g_update_occurred=false
 
 # shellcheck disable=SC1090
-source "${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}helper${_SPLIT_CHAR}log-helper.sh"
+source "${_SCRIPTS_ROOT_DIR}/helper/log-helper.sh"
 # shellcheck disable=SC1090
-source "${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}helper${_SPLIT_CHAR}yaml-helper.sh"
+source "${_SCRIPTS_ROOT_DIR}/helper/yaml-helper.sh"
 # shellcheck disable=SC1090
-source "${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}wydevops-update.sh"
+source "${_SCRIPTS_ROOT_DIR}/wydevops-update.sh"
 
 # --- Self-update logic (Final Intelligent Merge) ---
 # This logic runs if the `wydevops-update.sh` script detected a git update.
 if [[ "${g_update_occurred}" == "true" ]]; then
-  combineCurrentFile "${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}wydevops-run.sh" "${BASH_SOURCE[0]}" "$@"
+  combineCurrentFile "${_SCRIPTS_ROOT_DIR}/wydevops-run.sh" "${BASH_SOURCE[0]}" "$@"
 fi
 # --- End of self-update logic ---
 
