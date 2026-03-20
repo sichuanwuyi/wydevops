@@ -44,6 +44,9 @@ parseOptions0 "${@}"
 [[ ! "${gBuildScriptRootDir}" ]] && gBuildScriptRootDir="${BUILD_SCRIPT_ROOT}"
 info "wydevops.sh.gBuildScriptRootDir.value" "${gBuildScriptRootDir}"
 
+gPipelineScriptsDir="${gBuildScriptRootDir}/pipeline-stages"
+info "wydevops.sh.gPipelineScriptsDir.value" "${gPipelineScriptsDir}"
+
 source "${gPipelineScriptsDir}/common/secret-extend-point.sh"
 
 info "wydevops.sh.detecting.helm" "" "-n"
@@ -83,10 +86,7 @@ partLog "wydevops.sh.part1.init.global.params"
 
 source "${gBuildScriptRootDir}/plugins/plugin-manager.sh"
 
-#流水线脚本所在的目录名称
-gPipelineScriptsDir="${gBuildScriptRootDir}/pipeline-stages"
-info "wydevops.sh.gPipelineScriptsDir.value" "${gPipelineScriptsDir}"
-
+#加载需要的shell脚本文件
 source "${gPipelineScriptsDir}/common/wydevops-extend-point.sh"
 source "${gPipelineScriptsDir}/common/notify-extend-point.sh"
 source "${gPipelineScriptsDir}/chain/dockerDeployParamReader.sh"
