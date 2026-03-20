@@ -1,5 +1,63 @@
 #!/usr/bin/env bash
 
+function combineCurrentFile() {
+  info "Git update detected. Merging local configurations into the latest wydevops-run.sh..."
+  l_latest_run_script="$1"
+  l_current_run_script=$(readlink -f "${BASH_SOURCE[0]}")
+
+  # Find the boundary line (last line starting with "bash ") in the template script.
+  l_latest_boundary_line=$(grep -n "^bash " "${l_latest_run_script}" | tail -1 | cut -d: -f1)
+
+  # Proceed only if the boundary is found in the latest script (the template).
+  if [[ -n "${l_latest_boundary_line}" ]]; then
+      l_merged_script="${l_current_run_script}.merged.tmp"
+
+      # 1. Write the header from the template (up to and including the bash line).
+      sed -n "1,${l_latest_boundary_line}p" "${l_latest_run_script}" > "${l_merged_script}"
+
+      # 2. Prepare parameter blocks for merging.
+      l_template_params=$(sed "1,${l_latest_boundary_line}d" "${l_latest_run_script}")
+      l_current_boundary_line=$(grep -n "^bash " "${l_current_run_script}" | tail -1 | cut -d: -f1)
+      l_local_params=$(sed "1,${l_current_boundary_line}d" "${l_current_run_script}")
+
+      # 3. Iterate through the TEMPLATE's parameter block to build the new parameter section.
+      echo "${l_template_params}" | while IFS= read -r l_template_line; do
+          # Handle empty lines in the template by preserving them.
+          if ! [[ "${l_template_line}" =~ [^[:space:]] ]]; then
+              echo "" >> "${l_merged_script}"
+              continue
+          fi
+
+          # If the template line is a comment, keep it as is.
+          if [[ "${l_template_line}" =~ ^[[:space:]]*# ]]; then
+              echo "${l_template_line}" >> "${l_merged_script}"
+              continue
+          fi
+
+          # It's a parameter line. Get the key (e.g., -P, --localConfigFile).
+          l_param_key=$(echo "${l_template_line}" | awk '{print $1}')
+
+          # Search for a NON-COMMENTED line in the LOCAL params that starts with this key.
+          l_local_line=$(echo "${l_local_params}" | grep -m 1 -E "^[[:space:]]*${l_param_key}[[:space:]]")
+
+          if [[ -n "${l_local_line}" ]]; then
+              # FOUND: Use the local line to preserve the user's custom value.
+              echo "${l_local_line}" >> "${l_merged_script}"
+          else
+              # NOT FOUND: This is a new or unchanged parameter. Use the template's line.
+              echo "${l_template_line}" >> "${l_merged_script}"
+          fi
+      done
+
+      # 4. Atomically replace the current script with the newly merged one.
+      mv "${l_merged_script}" "${l_current_run_script}"
+      chmod +x "${l_current_run_script}"
+
+      info "wydevops-run.sh has been intelligently updated. Restarting script..."
+      exec "${l_current_run_script}" "$@"
+  fi
+}
+
 # --- wydevops-bootstrap.sh ---
 # This script acts as a smart bootstrapper. It ensures the correct version
 # of the wydevops scripts for the specific client is available locally
