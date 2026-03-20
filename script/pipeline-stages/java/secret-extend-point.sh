@@ -7,6 +7,7 @@ function _decodeSecretInfo_ex() {
   local l_paramValue="$2"
 
   echo "----------_decodeSecretInfo_ex-----------"
+  warn "global.params.sh.decoded.secret.info" "${l_paramName}#${l_paramValue}"
 
   gDefaultRetVal="${l_paramValue}"
 }

@@ -741,10 +741,9 @@ function _deployServiceInK8S() {
     if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
       l_repoInfos="${gDefaultRetVal}"
       #调用解密接口解密l_repoInfo参数值。
-      invokeExtendPointFunc "decodeSecretInfo" "common.deploy.extend.point.decoding.secret.info" \
-        "dockerRepo#${l_repoInfos}" "dockerRepo" "${l_repoInfos}"
+      invokeExtendPointFunc "decodeSecretInfo" "common.secret.extend.point.decoding.secret.info" \
+        "dockerRepo" "dockerRepo" "${l_repoInfos}"
       l_repoInfos="${gDefaultRetVal}"
-      warn "common.deploy.extend.point.decoded.secret.info" "dockerRepo#${l_repoInfos}"
 
       # shellcheck disable=SC2206
       l_array=(${l_repoInfos//,/ })

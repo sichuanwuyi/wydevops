@@ -318,10 +318,9 @@ function parseDockerRepoInfo() {
   export gRegistryConfigFile
 
   #调用解密接口解密l_repoInfo参数值。
-  invokeExtendPointFunc "decodeSecretInfo" "global.params.sh.decoding.secret.info" \
-    "dockerRepo#${l_repoInfo}" "dockerRepo" "${l_repoInfo}"
+  invokeExtendPointFunc "decodeSecretInfo" "common.secret.extend.point.decoding.secret.info" \
+    "dockerRepo" "dockerRepo" "${l_repoInfo}"
   l_repoInfo="${gDefaultRetVal}"
-  warn "global.params.sh.decoded.secret.info" "dockerRepo#${l_repoInfo}"
 
   # shellcheck disable=SC2206
   l_array=(${l_repoInfo//,/ })
@@ -358,10 +357,9 @@ function parseChartRepoInfo() {
   export gChartRepoWebPort
 
   #调用解密接口解密l_repoInfo参数值。
-  invokeExtendPointFunc "decodeSecretInfo" "global.params.sh.decoding.secret.info" \
-    "chartRepo#${l_repoInfo}" "chartRepo" "${l_repoInfo}"
+  invokeExtendPointFunc "decodeSecretInfo" "common.secret.extend.point.decoding.secret.info" \
+    "chartRepo" "chartRepo" "${l_repoInfo}"
   l_repoInfo="${gDefaultRetVal}"
-  warn "global.params.sh.decoded.secret.info" "chartRepo#${l_repoInfo}"
 
   # shellcheck disable=SC2206
   l_array=(${l_repoInfo//,/ })
