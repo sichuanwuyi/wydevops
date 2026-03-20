@@ -113,9 +113,6 @@ echo -e "${BBlue}_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}${Color_Off}"
 
 #允许传入两个参数：第一个参数为项目目录，第二个参数为本地配置文件名称
 
-# shellcheck disable=SC1090
-source "${_SCRIPTS_ROOT_DIR}${_SPLIT_CHAR}helper${_SPLIT_CHAR}path-helper.sh"
-
 #定义当前项目主模块目录路径:
 _PROJECT_MAIN_MODULE_DIR=$(realpath -m -- "${1:-$_SELF_SCRIPT_DIR}")``
 
