@@ -52,13 +52,13 @@ source "${gPipelineScriptsDir}/common/secret-extend-point.sh"
 info "wydevops.sh.detecting.helm" "" "-n"
 if command -v helm &> /dev/null; then
   info "wydevops.sh.helm.installed" "" "*"
-elif [[ ! "${PATH}" =~ ^(.*)(:${HOME}/helm)(:|$) ]];then
+elif [[ ! ":${PATH}:" =~ :${HOME}/helm: ]]; then
   info "wydevops.sh.helm.not.installed" "" "*"
   warn "wydevops.sh.helm.install.later" "${HOME}"
   export PATH=${PATH}:${HOME}/helm
   info "wydevops.sh.reloading.script"
   #shellcheck disable=SC1090
-  source "$0"
+  exec "$0" "$@"
 else
   info "wydevops.sh.helm.auto.install.later" "" "*"
 fi

@@ -54,7 +54,14 @@ function combineCurrentFile() {
       chmod +x "${l_current_run_script}"
 
       info "wydevops-run.sh has been intelligently updated. Restarting script..."
-      exec "${l_current_run_script}" "$@"
+
+      l_params=("${@}")
+      l_param_count=${#l_params[@]}
+      l_remaining_params=()
+      if [ "${l_param_count}" -gt 1 ];then
+        l_remaining_params=("${l_params[@]:1}")
+      fi
+      exec "${l_current_run_script}" "${l_remaining_params[@]}"
   fi
 }
 
