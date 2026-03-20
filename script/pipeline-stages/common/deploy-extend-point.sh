@@ -757,7 +757,7 @@ function _deployServiceInK8S() {
       l_localArchType="${gDefaultRetVal}"
 
       if [ "${l_localArchType}" != "${l_forceDeployArchType}" ];then
-        _install_tonistiigi_binfmt
+        _install_tonistiigi_binfmt "${l_localArchType}"
         l_settingParams=$(echo "${l_settingParams}" | sed 's/image\.archType=,//g')
         [[ "${l_settingParams}" == *"image.archType="* ]] || l_settingParams="${l_settingParams},image.archType=-${l_forceDeployArchType//\//-}"
       fi
@@ -1270,6 +1270,50 @@ function _getDockerImageInChart() {
     gDefaultRetVal="${l_images:1}"
   fi
 
+}
+
+function _install_tonistiigi_binfmt() {
+  export gImageCacheDir
+
+  local l_localArchType=$1
+
+  docker image inspect tonistiigi/binfmt:latest >/dev/null 2>&1
+  # shellcheck disable=SC2181
+  if [ "$?" -eq 0 ];then
+    info "common.deploy.extend.point.install.qemu.image.success" "tonistiigi/binfmt:latest"
+    return
+  fi
+
+  if [ "${gDockerRepoName}" ];then
+   docker run --rm --privileged "${gDockerRepoName}/tonistiigi/binfmt:latest" --install all
+   if [ "$?" -eq 0 ];then
+     warn "common.deploy.extend.point.install.qemu.image.from.local.repo.success" "${gDockerRepoName}/tonistiigi/binfmt:latest"
+     return
+   fi
+  fi
+
+  if [ -f "${gImageCacheDir}/tonistiigi_binfmt-latest-${l_localArchType//\//-}.tar" ];then
+    docker load -i "${gImageCacheDir}/tonistiigi_binfmt-latest-${l_localArchType//\//-}.tar"
+    if [ "$?" -eq 0 ];then
+      warn "common.deploy.extend.point.load.qemu.image.from.local.cache.success" "tonistiigi_binfmt:latest"
+    fi
+  fi
+
+  docker run --rm --privileged tonistiigi/binfmt:latest --install all
+  if [ "$?" -ne 0 ];then
+    error "common.deploy.extend.point.install.qemu.image.failed" "tonistiigi/binfmt:latest"
+  fi
+  info "common.deploy.extend.point.install.qemu.image.success" "tonistiigi/binfmt:latest"
+
+  if [ "${gDockerRepoName}" ];then
+    info "common.deploy.extend.point.pushing.qemu.image" "tonistiigi/binfmt:latest#${gDockerRepoName}"
+    pushImage "tonistiigi/binfmt:latest" "linux/${l_localArchType##*/}" "${gDockerRepoName}"
+  fi
+
+  if [ ! -f "${gImageCacheDir}/tonistiigi_binfmt-latest-${l_localArchType//\//-}.tar" ];then
+    info "common.deploy.extend.point.saving.qemu.image" "tonistiigi/binfmt:latest#${gImageCacheDir}"
+    saveImage "tonistiigi/binfmt:latest" "linux/${l_localArchType##*/}" "${gImageCacheDir}"
+  fi
 }
 
 #**********************私有方法-结束***************************#
