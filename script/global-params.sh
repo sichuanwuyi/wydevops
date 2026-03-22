@@ -150,6 +150,7 @@ function usage() {
   if [ "${#gMessagePropertiesMap[@]}" -eq 0 ]; then
     #没有加载到消息属性文件，则加载之。
     _selfRootDir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
+    echo "-------_selfRootDir=${_selfRootDir}-----------"
     source "${_selfRootDir}/helper/log-helper.sh"
   fi
 
