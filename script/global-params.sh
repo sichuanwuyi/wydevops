@@ -175,7 +175,7 @@ function usage() {
   local l_templateStringParam="${gMessagePropertiesMap['global.params.sh.usage.template.string']}"
   local l_workDirParam="${gMessagePropertiesMap['global.params.sh.usage.workDir']}"
 
-  echo "
+  echo -e "
     ${l_title}:
     [${l_switches}]
     -c, --clearCachedParams  ${l_clearCachedParam}
