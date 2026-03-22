@@ -37,12 +37,13 @@ _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
 echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 
 _selfRootDir="${_SCRIPTS_ROOT_DIR}"
-export g_update_occurred=false
 
 # shellcheck disable=SC1090
 source "${_SCRIPTS_ROOT_DIR}/helper/log-helper.sh"
 # shellcheck disable=SC1090
 source "${_SCRIPTS_ROOT_DIR}/helper/yaml-helper.sh"
+
+export g_update_occurred="false"
 # shellcheck disable=SC1090
 source "${_SCRIPTS_ROOT_DIR}/wydevops-update.sh"
 
