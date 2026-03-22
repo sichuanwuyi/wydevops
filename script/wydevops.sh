@@ -38,6 +38,8 @@ export gPipelineScriptsDir
 export gLanguage
 
 info "wydevops.sh.first.parse.options"
+# shellcheck disable=SC2145
+echo "------------qqq=${@}---------"
 parseOptions0 "${@}"
 
 #读取Jenkins环境变量BUILD_SCRIPT_ROOT。
