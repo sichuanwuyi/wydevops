@@ -478,7 +478,7 @@ function parseOptions0() {
   #解析选项
   while [ -n "${1}" ]
   do
-    echo "------param---|${2}|--------"
+    echo "------param---|${1}|---|${2}|---|${3}|--"
     case "${1}" in
       -d|--debug)
         gDebugMode="true"
