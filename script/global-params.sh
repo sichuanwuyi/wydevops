@@ -208,7 +208,7 @@ function usage() {
 }
 
 function version() {
-  echo "1.0.0"
+  echo "1.2.0"
 }
 
 #定义
