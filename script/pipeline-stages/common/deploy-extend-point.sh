@@ -1318,7 +1318,7 @@ function _install_tonistiigi_binfmt_in_k8s() {
   if [ ! "${l_result}" ];then
     #尝试从本地镜像仓库中拉取目标镜像
     if [ "${gDockerRepoName}" ];then
-     info "common.deploy.extend.point.pull.qemu.image.from.local.repo" "${gDockerRepoName}#${l_targetArchType}#tonistiigi/binfmt:latest"
+     info "common.deploy.extend.point.pull.qemu.image.from.local.repo" "${gDockerRepoName}#${l_targetArchType}#tonistiigi/binfmt:latest" "-n"
      l_result=$(docker pull --platform "${l_targetArchType}" "${gDockerRepoName}/tonistiigi/binfmt:latest" 2>&1)
      if [ "$?" -eq 0 ];then
        warn "common.deploy.extend.point.command.execute.success" "" "*"
@@ -1333,7 +1333,7 @@ function _install_tonistiigi_binfmt_in_k8s() {
 
   l_result=$(docker image list | grep "tonistiigi/binfmt")
   if [ ! "${l_result}" ];then
-    info "common.deploy.extend.point.pull.qemu.image.from.official.repo" "${l_targetArchType}#tonistiigi/binfmt:latest"
+    info "common.deploy.extend.point.pull.qemu.image.from.official.repo" "${l_targetArchType}#tonistiigi/binfmt:latest" "-n"
     l_result=$(docker pull --platform "${l_targetArchType}" "tonistiigi/binfmt:latest" 2>&1)
     if [ "$?" -ne 0 ];then
       error "common.deploy.extend.point.command.execute.failed" "${l_result}" "*"
