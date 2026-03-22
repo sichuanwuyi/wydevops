@@ -478,6 +478,7 @@ function parseOptions0() {
   #解析选项
   while [ -n "${1}" ]
   do
+    echo "------param---|${2}|--------"
     case "${1}" in
       -d|--debug)
         gDebugMode="true"
@@ -512,7 +513,7 @@ function parseOptions0() {
         ;;
     esac
   done
-  }
+}
 
 #首次解析输入参数，关注初始化过程需要的参数：
 #工作模式、语言类型、构建类型、是否是多模块项目、模块主目录、脚本工作目录
