@@ -170,25 +170,27 @@ function pushImage() {
   local l_tmpFile
   local l_errorLog
   local l_tmpImage
+  local l_result
 
   l_tmpImage="${l_repoName}/${l_image}-${l_archType//\//-}"
 
   info "docker.helper.executing.command" "docker tag ${l_image} ${l_tmpImage}" "-n"
-  docker tag "${l_image}" "${l_tmpImage}" 2>&1
+  l_result=$(docker tag "${l_image}" "${l_tmpImage}" 2>&1)
   if [ "$?" -ne 0 ];then
     error "docker.helper.common.fail" "" "*"
   else
     info "docker.helper.common.success" "" "*"
   fi
 
-  info "docker.helper.executing.command" "docker push -q ${l_tmpImage}"
+  info "docker.helper.executing.command" "docker push -q ${l_tmpImage}" "-n"
 
-  docker push -q "${l_tmpImage}" 2>&1
+  l_result=$(docker push -q "${l_tmpImage}" 2>&1)
   if [ "$?" -ne 0 ];then
     #报错前删除刚定义的镜像。
     docker rmi -f "${l_tmpImage}"
     error "docker.helper.push.fail.reason"
   fi
+  info "docker.helper.push.success" "" "*"
 
   _createDockerManifest "${l_image}" "${l_archType}" "${l_repoName}"
 
