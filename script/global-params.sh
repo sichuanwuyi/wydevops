@@ -498,7 +498,6 @@ function parseOptions0() {
         ;;
       -W|--workDir)
         l_param="${2}"
-        echo "--------l_param=${l_param}-----------"
         if [ "${l_param}" ];then
           gBuildScriptRootDir=$(win2linux "${l_param}")
         fi
