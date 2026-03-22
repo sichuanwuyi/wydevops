@@ -1150,10 +1150,10 @@ function _pushDockerImageForDeployStage() {
       continue
     fi
 
-    info "common.deploy.extend.point.pushing.image.to.repo" "${l_image}#${l_repoName}"
+    info "common.deploy.extend.point.pushing.image.to.repo" "${l_image}#${l_repoName}" "-n"
     invokeExtendChain "onPushDockerImage" "${l_repoType}" "${l_image}" "${l_archType}" "${l_repoName}" "${l_instanceName}"
     #删除之前加载的docker镜像
-    docker rmi -f "${l_image}"
+    l_executeResult=$(docker rmi -f "${l_image}" 2>&1)
     if [ "${gDefaultRetVal}" != "true" ];then
       error "common.deploy.extend.point.image.push.failed" "${l_image}" "*"
     else
