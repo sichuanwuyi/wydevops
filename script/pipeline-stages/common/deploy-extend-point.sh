@@ -1433,5 +1433,3 @@ export gUninstallMode
 
 #加载build阶段脚本库文件
 loadExtendScriptFileForLanguage "deploy"
-
-}
