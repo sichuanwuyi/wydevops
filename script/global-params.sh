@@ -478,11 +478,28 @@ function parseOptions0() {
   #解析选项
   while [ -n "${1}" ]
   do
-    echo "------param---|${1}|---|${2}|---|${3}|--"
     case "${1}" in
+      -c|--clearCachedParams)
+        shift ;;
       -d|--debug)
         gDebugMode="true"
         shift ;;
+      -e|--enableNotify)
+        shift ;;
+      -f|--forceCoverage)
+        shift ;;
+      -h|--help)
+        usage
+        exit ;;
+      -m|--multipleModel)
+        shift ;;
+      -r|--removeImage)
+        shift ;;
+      -t|--template)
+        shift ;;
+      -v|--version)
+        version
+        exit ;;
       -L|--language)
         l_param="${2}"
         if [ "${l_param}" ];then
@@ -548,6 +565,8 @@ function parseOptions1() {
     case "${1}" in
       -c|--clearCachedParams)
         gClearCachedParams="true"
+        shift ;;
+      -d|--debug)
         shift ;;
       -e|--enableNotify)
         shift ;;
