@@ -1298,6 +1298,7 @@ function _install_tonistiigi_binfmt_in_k8s() {
   if [ "${l_result}" == "${l_targetArchType}" ];then
     info "common.deploy.extend.point.image.already.exists" "" "*"
   else
+    l_result=$(docker rmi tonistiigi/binfmt:latest 2>&1)
     warn "common.deploy.extend.point.image.not.exists" "" "*"
   fi
 
