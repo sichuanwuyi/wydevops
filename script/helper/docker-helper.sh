@@ -200,6 +200,7 @@ function pushImage() {
 
 #将镜像导出到指定目录的文件中
 function saveImage(){
+  export gDefaultRetVal
   export gTempFileDir
 
   local l_image=$1
@@ -255,6 +256,7 @@ function saveImage(){
   else
     info "docker.helper.common.success" "" "*"
   fi
+  gDefaultRetVal="true"
 }
 #**********************私有方法-开始******************************#
 

@@ -756,8 +756,8 @@ function _deployServiceInK8S() {
 
       l_localArchType="${gDefaultRetVal}"
 
-      if [ "${l_localArchType}" != "${l_forceDeployArchType}" ];then
-        _install_tonistiigi_binfmt "${l_localArchType}"
+      if [[ "${l_forceDeployArchType}" && "${l_localArchType}" != "${l_forceDeployArchType}" ]];then
+        _install_tonistiigi_binfmt_in_k8s "${l_forceDeployArchType}" "${l_array[2]}"
         l_settingParams=$(echo "${l_settingParams}" | sed 's/image\.archType=,//g')
         [[ "${l_settingParams}" == *"image.archType="* ]] || l_settingParams="${l_settingParams},image.archType=-${l_forceDeployArchType//\//-}"
       fi
@@ -1066,15 +1066,6 @@ function _pushDockerImageForDeployStage() {
   local l_pushedImageFile
   local l_key
 
-  #获取需要推送的镜像名称信息。
-  _getDockerImageInChart "${l_packageName}" "${l_chartFile}"
-  if [ ! "${gDefaultRetVal}" ];then
-    warn "common.deploy.extend.point.docker.image.not.found"
-  fi
-
-  # shellcheck disable=SC2206
-  l_images=(${gDefaultRetVal//,/ })
-
   info "common.deploy.extend.point.checking.server.arch" "${l_ip}"
   invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
   # shellcheck disable=SC2015
@@ -1082,11 +1073,22 @@ function _pushDockerImageForDeployStage() {
   info "common.deploy.extend.point.read.server.arch.success" "${l_ip}#${gDefaultRetVal}"
   l_localArchType="${gDefaultRetVal}"
 
+  #获取需要推送的镜像名称信息。
+  _getDockerImageInChart "${l_packageName}" "${l_chartFile}"
+  if [ ! "${gDefaultRetVal}" ];then
+    warn "common.deploy.extend.point.docker.image.not.found"
+    gDefaultRetVal="${l_localArchType}"
+    return
+  fi
+
   if [[ ! "${l_forceDeployArchType}" || "${l_localArchType}" == "${l_forceDeployArchType}" ]];then
     l_archType="${l_localArchType}"
   else
     l_archType="${l_forceDeployArchType}"
   fi
+
+  # shellcheck disable=SC2206
+  l_images=(${gDefaultRetVal//,/ })
 
   #获取到需要推送的镜像
   # shellcheck disable=SC2206
@@ -1272,6 +1274,110 @@ function _getDockerImageInChart() {
 
 }
 
+function _install_tonistiigi_binfmt_in_k8s() {
+  export gImageCacheDir
+  export gBuildScriptRootDir
+  export gDefaultRetVal
+
+  local l_targetArchType=$1
+  local l_k8sDockerRepo=$2
+
+  local l_result
+  local l_templateFile
+  local l_content
+  local l_fromLocalRepo="false"
+
+  l_result=$(kubectl get pods --all-namespaces | grep binfmt)
+  if [ "${l_result}" ];then
+    warn "common.deploy.extend.point.image.already.installed" "tonistiigi/binfmt:latest"
+    return
+  fi
+
+  info "common.deploy.extend.point.checking.qemu.image.exists" "${l_targetArchType}#tonistiigi/binfmt:latest" "-n"
+  l_result=$(docker image inspect tonistiigi/binfmt:latest --format '{{.Os}}/{{.Architecture}}' 2>&1)
+  if [ "${l_result}" == "${l_targetArchType}" ];then
+    info "common.deploy.extend.point.image.already.exists" "" "*"
+  else
+    warn "common.deploy.extend.point.image.not.exists" "" "*"
+  fi
+
+  #先看本地是否存在缓存镜像
+  if [ -f "${gImageCacheDir}/tonistiigi_binfmt-latest-${l_targetArchType//\//-}.tar" ];then
+    info "common.deploy.extend.point.load.qemu.image.from.local.cache" "${gImageCacheDir}#${l_targetArchType}#tonistiigi_binfmt:latest" "-n"
+    l_result=$(docker load -i "${gImageCacheDir}/tonistiigi_binfmt-latest-${l_targetArchType//\//-}.tar" 2>&1)
+    if [ "$?" -eq 0 ];then
+      info "common.deploy.extend.point.command.execute.success" "" "*"
+    else
+      rm -f "${gImageCacheDir}/tonistiigi_binfmt-latest-${l_targetArchType//\//-}.tar"
+      warn "common.deploy.extend.point.command.execute.failed" "${l_result}" "*"
+    fi
+  fi
+
+  l_result=$(docker image list | grep "tonistiigi/binfmt")
+  if [ ! "${l_result}" ];then
+    #尝试从本地镜像仓库中拉取目标镜像
+    if [ "${gDockerRepoName}" ];then
+     info "common.deploy.extend.point.pull.qemu.image.from.local.repo" "${gDockerRepoName}#${l_targetArchType}#tonistiigi/binfmt:latest"
+     l_result=$(docker pull --platform "${l_targetArchType}" "${gDockerRepoName}/tonistiigi/binfmt:latest" 2>&1)
+     if [ "$?" -eq 0 ];then
+       warn "common.deploy.extend.point.command.execute.success" "" "*"
+       # 为了后续的使用，这里需要将镜像tag为tonistiigi/binfmt:latest
+       docker tag "${gDockerRepoName}/tonistiigi/binfmt:latest" "tonistiigi/binfmt:latest"
+       l_fromLocalRepo="true"
+     else
+       warn "common.deploy.extend.point.command.execute.failed" "${l_result}" "*"
+     fi
+    fi
+  fi
+
+  l_result=$(docker image list | grep "tonistiigi/binfmt")
+  if [ ! "${l_result}" ];then
+    info "common.deploy.extend.point.pull.qemu.image.from.official.repo" "${l_targetArchType}#tonistiigi/binfmt:latest"
+    l_result=$(docker pull --platform "${l_targetArchType}" "tonistiigi/binfmt:latest" 2>&1)
+    if [ "$?" -ne 0 ];then
+      error "common.deploy.extend.point.command.execute.failed" "${l_result}" "*"
+    else
+      info "common.deploy.extend.point.command.execute.success" "" "*"
+    fi
+  fi
+
+  if [[ "${l_fromLocalRepo}" == "false" && "${gDockerRepoName}" ]];then
+    info "common.deploy.extend.point.pushing.qemu.image.to.local.repo" "${l_targetArchType}#tonistiigi/binfmt:latest#${gDockerRepoName}"
+    pushImage "tonistiigi/binfmt:latest" "${l_targetArchType}" "${gDockerRepoName}"
+    if [ "${gDefaultRetVal}" == "true" ];then
+      info "common.deploy.extend.point.pushing.qemu.image.success" "tonistiigi/binfmt:latest"
+    fi
+  fi
+
+  if [[ "${l_k8sDockerRepo}" && "${gDockerRepoName}" != "${l_k8sDockerRepo}" ]];then
+    info "common.deploy.extend.point.pushing.qemu.image.to.k8s.docker.repo" "${l_targetArchType}#tonistiigi/binfmt:latest#${l_k8sDockerRepo}"
+    pushImage "tonistiigi/binfmt:latest" "${l_targetArchType}" "${l_k8sDockerRepo}"
+    if [ "${gDefaultRetVal}" == "true" ];then
+      info "common.deploy.extend.point.pushing.qemu.image.success" "tonistiigi/binfmt:latest"
+    fi
+  fi
+
+  info "common.deploy.extend.point.save.qemu.image.to.local.cache" "${l_targetArchType}#tonistiigi/binfmt:latest#${gImageCacheDir}"
+  saveImage "tonistiigi/binfmt:latest" "${l_targetArchType}" "${gImageCacheDir}"
+  if [ "${gDefaultRetVal}" == "true" ];then
+    info "common.deploy.extend.point.save.qemu.image.success" "tonistiigi/binfmt:latest"
+  fi
+
+  #使用kubectl apply -f 部署到k8s集群
+  info "common.deploy.extend.point.apply.qemu.image.to.k8s.cluster" "${l_targetArchType}#tonistiigi/binfmt:latest" "-n"
+  l_templateFile="${gBuildScriptRootDir}/templates/k8s/tonistiigi_binfmt-daemonset-install.yaml"
+  #读取模板文件内容。
+  l_content=$(cat "${l_templateFile}")
+  #替换模板中的变量后安装资源。
+  l_result=$(echo -e "${l_content}" | kubectl apply -f -)
+  if [ "$?" -ne 0 ];then
+    error "common.deploy.extend.point.command.execute.failed" "${l_result}" "*"
+  else
+    info "common.deploy.extend.point.command.execute.success" "" "*"
+  fi
+
+}
+
 function _install_tonistiigi_binfmt() {
   export gImageCacheDir
 
@@ -1326,3 +1432,5 @@ export gUninstallMode
 
 #加载build阶段脚本库文件
 loadExtendScriptFileForLanguage "deploy"
+
+}

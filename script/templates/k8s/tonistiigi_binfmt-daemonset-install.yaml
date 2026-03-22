@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: binfmt-support
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: binfmt-support
+  template:
+    metadata:
+      labels:
+        app: binfmt-support
+    spec:
+      # 允许 Pod 在所有类型的节点上运行，包括 master 节点
+      tolerations:
+        - operator: "Exists"
+      containers:
+        - name: binfmt-installer
+          image: ${l_k8sDockerRepo}/tonistiigi/binfmt:latest
+          # 镜像的入口点是 /binfmt，我们给它传递 --install all 参数
+          # 这会为所有支持的架构（包括 arm64, ppc64le, s390x 等）安装模拟器
+          command: ["--install", "all"]
+          # 这是关键：必须以特权模式运行，因为它需要修改宿主机的内核配置
+          securityContext:
+            privileged: true
