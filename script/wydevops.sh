@@ -37,8 +37,8 @@ export gBuildPath
 export gPipelineScriptsDir
 export gLanguage
 
-info "wydevops.sh.first.parse.options"
 parseOptions0 "${@}"
+info "wydevops.sh.first.parse.options"
 
 #读取Jenkins环境变量BUILD_SCRIPT_ROOT。
 [[ ! "${gBuildScriptRootDir}" ]] && gBuildScriptRootDir="${BUILD_SCRIPT_ROOT}"
