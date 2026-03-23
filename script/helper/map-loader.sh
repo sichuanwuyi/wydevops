@@ -272,7 +272,7 @@ function _processProjectParamMapping() {
 
   #显示读取失败的参数
   if [ "${l_paramCount}" -ne "${l_paramTotal}" ];then
-    convertI18NText "map.loader.read.param.fail.summary" "${l_shortFileNames}"
+    convertI18NText "map.loader.read.param.fail.summary" "${l_shortFileNames//\"/}"
     l_error="${gLogI18NRetVal}"
     # shellcheck disable=SC2068
     for l_key in ${l_orderedKeyArray[@]}; do
