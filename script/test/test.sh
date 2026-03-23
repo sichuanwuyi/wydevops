@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # shellcheck disable=SC2164
-_selfRootDir=$(cd "$(dirname "$0")"; pwd)
+_selfRootDir=$(cd "$(dirname "$0")"; pwd -L)
 
 _selfRootDir="${_selfRootDir//test/}"
 

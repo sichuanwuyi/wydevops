@@ -366,7 +366,7 @@ function zipOfflinePackage_ex() {
   local l_curDir
 
   # shellcheck disable=SC2154
-  l_curDir=${pwd}
+  l_curDir=${PWD}
   # shellcheck disable=SC2164
   cd "${l_targetDir}"
 

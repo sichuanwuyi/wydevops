@@ -602,7 +602,7 @@ export _selfRootDir
 if type -t "info" > /dev/null; then
   if [ ! "${_selfRootDir}" ];then
     # shellcheck disable=SC2164
-    _selfRootDir=$(cd "$(dirname "$0")"; pwd)
+    _selfRootDir=$(cd "$(dirname "$0")"; pwd -L)
   fi
   source "${_selfRootDir}/helper/log-helper.sh"
 fi
