@@ -246,7 +246,6 @@ function saveImage(){
   l_tmpFile="${gTempFileDir}/docker-save-${RANDOM}.tmp"
   registerTempFile "${l_tmpFile}"
   docker save --platform "${l_archType}" -o "${l_fileName}" "${l_image}" 2>&1 | tee "${l_tmpFile}"
-  exit 0
   # shellcheck disable=SC2002
   if [ "$?" -ne 0 ];then
     l_errorLog=$(grep -oE "^.*(Error|failed).*$" "${l_tmpFile}")
