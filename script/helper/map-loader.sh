@@ -135,11 +135,11 @@ function _processProjectParamMapping() {
   eval "l_paramTotal=\${#${l_targetMapName}[@]}"
 
   #读取Map对象的所有Key赋值给l_targetMapKey变量。
-  eval "l_targetMapKey=\${${l_orderedKeys}}"
+  eval "l_targetMapKey=\${!${l_targetMapName}[@]}"
   ((l_paramCount = 0))
 
   # shellcheck disable=SC2154
-  for l_key in ${l_targetMapKey}; do
+  for l_key in ${_orderedKeys}; do
     info "map.loader.read.param.from.files" "${l_shortFileNames//\"/}#${l_key}"
     #读取需要设置的l_cicdConfigFile文件中的参数名称列表。
     l_value=$(eval "echo -e \${${l_targetMapName}[\"${l_key}\"]}")
