@@ -510,14 +510,14 @@ function parseOptions0() {
       -P|--buildPath)
         l_param="${2}"
         if [ "${l_param}" ];then
-          gBuildPath=$(win2linux "${l_param}")
+          gBuildPath="${l_param}" #$(win2linux "${l_param}")
         fi
         shift 2
         ;;
       -W|--workDir)
         l_param="${2}"
         if [ "${l_param}" ];then
-          gBuildScriptRootDir=$(win2linux "${l_param}")
+          gBuildScriptRootDir="${l_param}" #$(win2linux "${l_param}")
         fi
         shift 2
         ;;
