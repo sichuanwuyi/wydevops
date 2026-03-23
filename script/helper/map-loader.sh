@@ -147,7 +147,7 @@ function _processProjectParamMapping() {
   ((l_paramCount = 0))
 
   # shellcheck disable=SC2128
-  for l_key in ${l_orderedKeyArray}; do
+  for l_key in "${l_orderedKeyArray[@]}"; do
     echo "-----l_key=${l_key}--------"
     info "map.loader.read.param.from.files" "${l_shortFileNames//\"/}#${l_key}"
     #读取需要设置的l_cicdConfigFile文件中的参数名称列表。
