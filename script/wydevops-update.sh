@@ -111,7 +111,7 @@ else
 fi
 
 # Initialize a flag to track if an update occurred.
-export g_update_occurred=false
+export g_update_occurred="false"
 
 # --- Sync the scripts from Git repository ---
 if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
@@ -131,12 +131,11 @@ if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
         l_after_hash=$(git rev-parse HEAD)
         if [[ "${l_before_hash}" != "${l_after_hash}" ]]; then
             info "Git repository was updated."
-            g_update_occurred=true
+            g_update_occurred="true"
         fi
     else
         # git pull failed (e.g., network error).
         warn "Failed to pull from git repository. Continuing with the local version."
-        g_update_occurred=false
     fi
 
     # shellcheck disable=SC2164
@@ -145,4 +144,3 @@ if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
 fi
 
 echo -e "${BGreen}Scripts are up to date.${Color_Off}"
-echo "---------------------restart-----------------------------"
