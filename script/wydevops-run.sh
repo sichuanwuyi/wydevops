@@ -60,9 +60,6 @@ echo -e "${BBlue}_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}${Color_Off}"
 
 #允许传入两个参数：第一个参数为项目目录，第二个参数为本地配置文件名称
 
-#定义当前项目主模块目录路径:
-_PROJECT_MAIN_MODULE_DIR=$(realpath -m -- "${1:-$_SELF_SCRIPT_DIR}")
-
 bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" \
 -e -f -m \
 --localConfigFile "${2:-ci-cd-config.yaml}" \
@@ -74,7 +71,7 @@ bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" \
 -S build,docker,chart,package,deploy \
 -M "${WYDEVOPS_WORK_MODE}" \
 -T true \
--P "${_PROJECT_MAIN_MODULE_DIR}" \
+-P "${_SELF_SCRIPT_DIR}" \
 -W "${_SCRIPTS_ROOT_DIR}"
 #-C "harbor,chartmuseum,192.168.1.214:80,admin,Harbor12345,80" \
 #-D "harbor,registry.docker.home,192.168.1.214:80,admin,Harbor12345,80"
