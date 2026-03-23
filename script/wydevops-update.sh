@@ -70,10 +70,6 @@ function combineCurrentFile() {
 # of the wydevops scripts for the specific client is available locally
 # before executing the main pipeline.
 
-# --- Helper for colored output ---
-Color_Off='\033[0m'
-BGreen='\033[1;32m'
-
 # --- Configuration ---
 # The home directory for all wydevops related files and scripts.
 if [ ! "${_WYDEVOPS_HOME}" ];then
@@ -131,10 +127,10 @@ if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
     # Pull was successful, now check if the content actually changed.
     l_after_hash=$(git rev-parse HEAD)
     if [[ "${l_before_hash}" != "${l_after_hash}" ]]; then
-        info "wydevops.update.sh.scripts.already.changed" "" "*"
+        info "wydevops.update.sh.scripts.already.changed"
         g_update_occurred="true"
     else
-      info "wydevops.update.sh.scripts.is.latest" "" "*"
+      info "wydevops.update.sh.scripts.is.latest"
     fi
   else
     # git pull failed (e.g., network error).
