@@ -134,9 +134,11 @@ if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
     # Get the commit hash before pulling.
     l_before_hash=$(git rev-parse HEAD)
 
-    git checkout "$BRANCH" --quiet
+    l_result=$(git checkout "$BRANCH" --quiet)
     # Execute git pull and check its exit code for robustness.
-    if git pull origin "$BRANCH" --quiet; then
+    # shellcheck disable=SC2034
+    l_result=$(git pull origin "$BRANCH" --quiet)
+    if [ "$?" -eq 0 ]; then
         # Pull was successful, now check if the content actually changed.
         l_after_hash=$(git rev-parse HEAD)
         if [[ "${l_before_hash}" != "${l_after_hash}" ]]; then
