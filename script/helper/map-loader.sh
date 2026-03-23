@@ -137,19 +137,13 @@ function _processProjectParamMapping() {
   eval "l_paramTotal=\${#${l_targetMapName}[@]}"
 
   eval "l_orderedKeys=\"\${${l_orderedKeyNames}}\""
-  echo "---------l_orderedKeys=${l_orderedKeys}----"
-
   # shellcheck disable=SC2206
   l_orderedKeyArray=(${l_orderedKeys//#/ })
 
-  #读取Map对象的所有Key赋值给l_targetMapKey变量。
-  eval "l_targetMapKey=\${!${l_targetMapName}[@]}"
   ((l_paramCount = 0))
-
   # shellcheck disable=SC2128
   for l_key in "${l_orderedKeyArray[@]}"; do
-    echo "-----l_key=${l_key}--------"
-    info "map.loader.read.param.from.files" "${l_shortFileNames//\"/}#${l_key}"
+    info "map.loader.read.param.from.files" "${l_shortFileNames//\"/}#${l_key%%|*}"
     #读取需要设置的l_cicdConfigFile文件中的参数名称列表。
     l_value=$(eval "echo -e \${${l_targetMapName}[\"${l_key}\"]}")
     if [ ! "${l_value}" ];then
@@ -278,14 +272,14 @@ function _processProjectParamMapping() {
 
   #显示读取失败的参数
   if [ "${l_paramCount}" -ne "${l_paramTotal}" ];then
-    l_error=""
+    convertI18NText "map.loader.read.param.fail.summary" "${l_shortFileNames}"
+    l_error="${gLogI18NRetVal}"
     # shellcheck disable=SC2068
-    for l_key in ${l_targetMapKey}; do
+    for l_key in ${l_orderedKeyArray[@]}; do
       l_value=$(eval "echo -e \${${l_targetMapName}[\"${l_key}\"]}")
       #从l_value中读取参数的默认值。如果没有默认值(没有“|”符号)，则认定为错误。
       if [ "${l_value}" ];then
-        convertI18NText "map.loader.read.param.fail.summary" "${l_shortFileNames}#${l_key}"
-        l_error="${l_error}\n${gLogI18NRetVal}"
+        l_error="${l_error}\n${l_key}"
       fi
     done
 
