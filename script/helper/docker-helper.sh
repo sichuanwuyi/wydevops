@@ -247,7 +247,7 @@ function saveImage(){
   registerTempFile "${l_tmpFile}"
   docker save --platform "${l_archType}" -o "${l_fileName}" "${l_image}" 2>&1 | tee "${l_tmpFile}"
   # shellcheck disable=SC2002
-  l_errorLog=$(grep -oE "^.*(Error|failed).*$" "${l_tmpFile}")
+  [[ "$?" -ne 0 ]] && l_errorLog=$(grep -oE "^.*(Error|failed).*$" "${l_tmpFile}") || l_errorLog=""
   unregisterTempFile "${l_tmpFile}"
 
   # shellcheck disable=SC2164
