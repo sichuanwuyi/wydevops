@@ -37,6 +37,8 @@ export gBuildPath
 export gPipelineScriptsDir
 export gLanguage
 
+# shellcheck disable=SC2145
+echo "-------@=|${@}|-- -----"
 parseOptions0 "${@}"
 info "wydevops.sh.first.parse.options"
 
