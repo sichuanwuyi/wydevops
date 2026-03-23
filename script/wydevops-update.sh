@@ -136,7 +136,7 @@ if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
 
     git checkout "$BRANCH" --quiet
     # Execute git pull and check its exit code for robustness.
-    if git pull origin "$BRANCH"; then
+    if git pull origin "$BRANCH" --quiet; then
         # Pull was successful, now check if the content actually changed.
         l_after_hash=$(git rev-parse HEAD)
         if [[ "${l_before_hash}" != "${l_after_hash}" ]]; then
