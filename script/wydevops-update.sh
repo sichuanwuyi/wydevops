@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function combineCurrentFile() {
-  info "Git update detected. Merging local configurations into the latest wydevops-run.sh..."
+  info "wydevops.update.sh.updating.wydevops-run.sh" "" "-n"
   l_latest_run_script="$1"
   l_current_run_script=$(readlink -f "$2")
 
@@ -49,11 +49,13 @@ function combineCurrentFile() {
           fi
       done
 
+      info "wydevops.update.sh.sync.scripts.success" "" "*"
+
       # 4. Atomically replace the current script with the newly merged one.
       mv "${l_merged_script}" "${l_current_run_script}"
       chmod +x "${l_current_run_script}"
 
-      info "wydevops-run.sh has been intelligently updated. Restarting script..."
+      info "wydevops.update.sh.restart.wydevops-run.sh"
 
       l_params=("${@}")
       l_param_count=${#l_params[@]}
@@ -63,6 +65,8 @@ function combineCurrentFile() {
       fi
       exec "${l_current_run_script}" "${l_remaining_params[@]}"
   fi
+
+  info "wydevops.update.sh.sync.scripts.fail" "" "*"
 }
 
 # --- wydevops-bootstrap.sh ---
