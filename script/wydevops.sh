@@ -18,13 +18,8 @@ export gWorkMode="${WYDEVOPS_WORK_MODE}"
 
 #1.进入获取脚本所在的目录。
 #载入yaml-helper.sh文件时会载入log-helper.sh, _selfRootDir在log-helper.sh文件中被引用了。
-export _selfRootDir
-
-if [ "${_selfRootDir}" ];then
-  echo "----------_selfRootDir---11-----------------"
-  # shellcheck disable=SC2164
-  _selfRootDir=$(cd "$(dirname "$0")"; pwd)
-fi
+# shellcheck disable=SC2164
+_selfRootDir=$(cd "$(dirname "$0")"; pwd)
 
 #2.导入yaml函数库文件。
 if ! type -t "readParam" > /dev/null; then
@@ -43,7 +38,6 @@ export gPipelineScriptsDir
 export gLanguage
 
 # shellcheck disable=SC2145
-echo "-----_selfRootDir=${_selfRootDir}----@=|${@}|-- -----"
 parseOptions0 "${@}"
 info "wydevops.sh.first.parse.options"
 
