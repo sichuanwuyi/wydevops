@@ -6,7 +6,7 @@ function initialMapFromConfigFile() {
 
   local l_configFile=$1
   local l_mapName=$2
-  local l_orderedKeys=$3
+  local l_orderedKeyName=$3
 
   local l_content
   local l_lines
@@ -52,7 +52,7 @@ function initialMapFromConfigFile() {
           fi
         fi
       else
-        eval "${l_orderedKeys}+=(\"${l_key}\")"
+        eval "${l_orderedKeyName}=\"\${${l_orderedKeyName}}#${l_key}\""
         eval "${l_mapName}[\"${l_key}\"]=${l_value}"
       fi
     fi
@@ -135,7 +135,7 @@ function _processProjectParamMapping() {
 
   eval "l_paramTotal=\${#${l_targetMapName}[@]}"
 
-  eval "l_orderedKeys=\${${l_orderedKeyNames}}"
+  eval "l_orderedKeys=\"\${${l_orderedKeyNames}}\""
   echo "---------l_orderedKeys=${l_orderedKeys}----"
 
   #读取Map对象的所有Key赋值给l_targetMapKey变量。
@@ -143,7 +143,7 @@ function _processProjectParamMapping() {
   ((l_paramCount = 0))
 
   # shellcheck disable=SC2154
-  for l_key in ${_orderedKeys}; do
+  for l_key in ${l_targetMapKey}; do
     echo "-----l_key=${l_key}--------"
     info "map.loader.read.param.from.files" "${l_shortFileNames//\"/}#${l_key}"
     #读取需要设置的l_cicdConfigFile文件中的参数名称列表。

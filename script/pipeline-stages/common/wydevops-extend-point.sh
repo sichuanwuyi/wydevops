@@ -220,6 +220,8 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
   local l_index
   local l_content
 
+  local _orderedKeys
+
   #文件及其已经处理过的参数Map。
   # shellcheck disable=SC2034
   declare -A _alreadyProcessedParamMap
@@ -244,9 +246,9 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
       l_paramMappingFiles=$(find "${l_mappingFileDir}" -maxdepth 1 -type f -name "*.config")
       if [ "${l_paramMappingFiles}" ];then
         # shellcheck disable=SC2068
+        _orderedKeys=""
         for l_mappingFile in ${l_paramMappingFiles[@]};do
           declare -A _paramMappingMap
-          declare -a _orderedKeys
           #将参数映射文件中的配置读取到_paramMappingMap变量中。
           initialMapFromConfigFile "${l_mappingFile}" "_paramMappingMap" "_orderedKeys"
 
