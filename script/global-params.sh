@@ -478,7 +478,6 @@ function parseOptions0() {
   #解析选项
   while [ -n "${1}" ]
   do
-    echo "-----2=|${2}|-------"
     case "${1}" in
       -c|--clearCachedParams)
         shift ;;
