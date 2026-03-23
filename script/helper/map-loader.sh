@@ -144,6 +144,7 @@ function _processProjectParamMapping() {
 
   # shellcheck disable=SC2154
   for l_key in ${l_targetMapKey}; do
+    echo "-----l_key=${l_key}--------"
     info "map.loader.read.param.from.files" "${l_shortFileNames//\"/}#${l_key}"
     #读取需要设置的l_cicdConfigFile文件中的参数名称列表。
     l_value=$(eval "echo -e \${${l_targetMapName}[\"${l_key}\"]}")
