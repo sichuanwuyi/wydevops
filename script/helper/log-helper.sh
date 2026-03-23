@@ -465,8 +465,6 @@ function loadMessageProperties(){
   local l_language
   local l_matchedFile="true"
 
-  echo "------count=${#gMessagePropertiesMap[@]}---"
-
   if [ "${#gMessagePropertiesMap[@]}" -ne 0 ]; then
     #已经加载过了就直接返回。
     return
@@ -502,8 +500,8 @@ function loadMessageProperties(){
     if [ "${l_matchedFile}" == "false" ];then
       warn "log.helper.no.message.properties.file" "${WYDEVOPS_LOG_LANGUAGE}"
       warn "log.helper.use.default.message.properties.file" "${l_language}#message_${l_language}.properties"
-    else
-      warn "log.helper.use.target.message.properties.file" "${l_language}#message_${l_language}.properties"
+    #else
+      #warn "log.helper.use.target.message.properties.file" "${l_language}#message_${l_language}.properties"
     fi
   fi
 
