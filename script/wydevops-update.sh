@@ -127,8 +127,8 @@ if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
     # Pull was successful, now check if the content actually changed.
     l_after_hash=$(git rev-parse HEAD)
     if [[ "${l_before_hash}" != "${l_after_hash}" ]]; then
-        info "wydevops.update.sh.scripts.already.changed"
-        g_update_occurred="true"
+      info "wydevops.update.sh.scripts.already.changed"
+      g_update_occurred="true"
     else
       info "wydevops.update.sh.scripts.is.latest"
     fi
