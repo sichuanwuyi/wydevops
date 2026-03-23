@@ -100,6 +100,7 @@ function _processProjectParamMapping() {
 
   local l_orderedKeyNames
   local l_orderedKeys
+  local l_orderedKeyArray
   local l_shortFileNames
   local l_paramTotal
   local l_key
@@ -138,12 +139,15 @@ function _processProjectParamMapping() {
   eval "l_orderedKeys=\"\${${l_orderedKeyNames}}\""
   echo "---------l_orderedKeys=${l_orderedKeys}----"
 
+  # shellcheck disable=SC2206
+  l_orderedKeyArray=(${l_orderedKeys//#/ })
+
   #读取Map对象的所有Key赋值给l_targetMapKey变量。
   eval "l_targetMapKey=\${!${l_targetMapName}[@]}"
   ((l_paramCount = 0))
 
-  # shellcheck disable=SC2154
-  for l_key in ${l_targetMapKey}; do
+  # shellcheck disable=SC2128
+  for l_key in ${l_orderedKeyArray}; do
     echo "-----l_key=${l_key}--------"
     info "map.loader.read.param.from.files" "${l_shortFileNames//\"/}#${l_key}"
     #读取需要设置的l_cicdConfigFile文件中的参数名称列表。
