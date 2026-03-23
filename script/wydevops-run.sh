@@ -36,7 +36,7 @@ echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
 _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
 echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 
-_selfRootDir="${_SCRIPTS_ROOT_DIR}"
+export _selfRootDir="${_SCRIPTS_ROOT_DIR}"
 
 # shellcheck disable=SC1090
 source "${_SCRIPTS_ROOT_DIR}/helper/log-helper.sh"
