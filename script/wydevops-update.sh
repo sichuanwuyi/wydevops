@@ -115,30 +115,35 @@ export g_update_occurred="false"
 
 # --- Sync the scripts from Git repository ---
 if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
-    # If directory exists and is a git repo, pull the latest changes.
-    info "wydevops.update.sh.sync.scripts.from.git.repository"
-    cd "${_SCRIPTS_PROJECT_DIR}" || exit
+  # If directory exists and is a git repo, pull the latest changes.
+  info "wydevops.update.sh.sync.scripts.from.git.repository" "" "-n"
+  cd "${_SCRIPTS_PROJECT_DIR}" || exit
 
-    # Get the commit hash before pulling.
-    l_before_hash=$(git rev-parse HEAD)
+  # Get the commit hash before pulling.
+  l_before_hash=$(git rev-parse HEAD)
 
-    l_result=$(git checkout "$BRANCH" --quiet)
-    # Execute git pull and check its exit code for robustness.
-    # shellcheck disable=SC2034
-    l_result=$(git pull origin "$BRANCH" --quiet)
-    if [ "$?" -eq 0 ]; then
-        # Pull was successful, now check if the content actually changed.
-        l_after_hash=$(git rev-parse HEAD)
-        if [[ "${l_before_hash}" != "${l_after_hash}" ]]; then
-            info "wydevops.update.sh.sync.scripts.successfully"
-            g_update_occurred="true"
-        fi
+  l_result=$(git checkout "$BRANCH" --quiet)
+  # Execute git pull and check its exit code for robustness.
+  # shellcheck disable=SC2034
+  l_result=$(git pull origin "$BRANCH" --quiet)
+  if [ "$?" -eq 0 ]; then
+    info "wydevops.update.sh.sync.scripts.success" "" "*"
+    # Pull was successful, now check if the content actually changed.
+    l_after_hash=$(git rev-parse HEAD)
+    if [[ "${l_before_hash}" != "${l_after_hash}" ]]; then
+        info "wydevops.update.sh.scripts.already.changed" "" "*"
+        g_update_occurred="true"
     else
-        # git pull failed (e.g., network error).
-        warn "wydevops.update.sh.sync.scripts.failed"
+      info "wydevops.update.sh.scripts.is.latest" "" "*"
     fi
+  else
+    # git pull failed (e.g., network error).
+    warn "wydevops.update.sh.sync.scripts.failed" "" "*"
+  fi
 
-    # shellcheck disable=SC2164
-    # shellcheck disable=SC2103
-    cd - > /dev/null
+  # shellcheck disable=SC2164
+  # shellcheck disable=SC2103
+  cd - > /dev/null
+else
+  warn "wydevops.update.sh.can.not.sync.scripts"
 fi
