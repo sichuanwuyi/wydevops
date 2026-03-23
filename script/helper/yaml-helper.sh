@@ -708,7 +708,7 @@ function __readOrWriteYamlFile() {
     #初始化文件内容在内存中的缓存。
     _yamlFileContent=$(<"${l_yamlFile}")
     gFileContentMap["${l_yamlFile}"]="${_yamlFileContent}"
-    info "yaml.helper.read.and.cache.file" "${l_yamlFile##*/}"
+    #info "yaml.helper.read.and.cache.file" "${l_yamlFile##*/}"
   fi
 
   #如果数据块截止行号无效，则从文件中读取数据块的起止行号。

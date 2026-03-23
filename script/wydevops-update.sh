@@ -85,45 +85,42 @@ if [ ! "${_WYDEVOPS_HOME}" ];then
   if [[ ! "${_WYDEVOPS_HOME}" =~ ^\/ ]];then
     _WYDEVOPS_HOME="/${_WYDEVOPS_HOME}"
   fi
-  echo -e "${BBlue}_WYDEVOPS_HOME=${_WYDEVOPS_HOME}${Color_Off}"
+  #echo -e "${BBlue}_WYDEVOPS_HOME=${_WYDEVOPS_HOME}${Color_Off}"
 fi
 
 if [ ! "${_SCRIPTS_PROJECT_DIR}" ];then
   # The shared local directory where the scripts will be cloned.
   _SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}/wydevops"
-  echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
+  #echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
 fi
 
 if [ ! "${_SCRIPTS_ROOT_DIR}" ];then
   _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
-  echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
+  #echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 fi
 
 # The local configuration file that specifies the git repo and branch.
 _CLIENT_CONFIG_FILE="${_WYDEVOPS_HOME}/client-config.yaml"
-echo -e "${BBlue}_CLIENT_CONFIG_FILE=${_CLIENT_CONFIG_FILE}${Color_Off}"
+#echo -e "${BBlue}_CLIENT_CONFIG_FILE=${_CLIENT_CONFIG_FILE}${Color_Off}"
 
 # --- Check for client configuration ---
-if [ ! -f "$_CLIENT_CONFIG_FILE" ]; then
-    echo -e "${BRed}Error: Client configuration not found at '$_CLIENT_CONFIG_FILE'.${Color_Off}"
-    echo "Please create it with your repository URL and branch name. Example:"
-    echo 'git:'
-    echo '  repoUrl: https://gitee.com/tmt_china/wydevops.git'
-    echo '  branch: master'
-    exit 1
+if [ -f "$_CLIENT_CONFIG_FILE" ]; then
+  #    echo -e "${BRed}Error: Client configuration not found at '$_CLIENT_CONFIG_FILE'.${Color_Off}"
+  #    echo "Please create it with your repository URL and branch name. Example:"
+  #    echo 'git:'
+  #    echo '  repoUrl: https://gitee.com/tmt_china/wydevops.git'
+  #    echo '  branch: master'
+  #    exit 1
+  export gDefaultRetVal
+  readParam "$_CLIENT_CONFIG_FILE" "git.repoUrl"
+  REPO_URL="${gDefaultRetVal}"
+  readParam "$_CLIENT_CONFIG_FILE" "git.branch"
+  BRANCH="${gDefaultRetVal}"
+else
+  # shellcheck disable=SC2034
+  REPO_URL="https://gitee.com/tmt_china/wydevops.git"
+  BRANCH="master"
 fi
-
-export gDefaultRetVal
-
-readParam "$_CLIENT_CONFIG_FILE" "git.repoUrl"
-REPO_URL="${gDefaultRetVal}"
-
-readParam "$_CLIENT_CONFIG_FILE" "git.branch"
-BRANCH="${gDefaultRetVal}"
-
-echo -e "${BBlue}Bootstrapper: Preparing to run wydevops...${Color_Off}"
-echo "  - Repository: $REPO_URL"
-echo "  - Branch:     $BRANCH"
 
 # Initialize a flag to track if an update occurred.
 export g_update_occurred=false
