@@ -40,6 +40,10 @@ export gLanguage
 parseOptions0 "${@}"
 info "wydevops.sh.first.parse.options"
 
+info "wydevops.sh.gDebugMode.value" "${gDebugMode}"
+info "wydevops.sh.gBuildPath.value" "${gBuildPath}"
+info "wydevops.sh.gLanguage.value" "${gLanguage}"
+
 #读取Jenkins环境变量BUILD_SCRIPT_ROOT。
 [[ ! "${gBuildScriptRootDir}" ]] && gBuildScriptRootDir="${BUILD_SCRIPT_ROOT}"
 info "wydevops.sh.gBuildScriptRootDir.value" "${gBuildScriptRootDir}"
