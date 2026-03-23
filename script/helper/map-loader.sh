@@ -285,9 +285,9 @@ function _processProjectParamMapping() {
 
     if [ "${l_error}" ];then
       if [ "${l_exitOnFailure}" == "true" ];then
-        error "${l_error:2}"
+        error "${l_error}"
       else
-        warn "${l_error:2}"
+        warn "${l_error}"
       fi
     fi
   fi
