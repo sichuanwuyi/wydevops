@@ -3,7 +3,7 @@
 # 将 Windows 路径转为 Linux 风格路径
 # 用法: linux_path=$(win2linux "$PWD")
 function win2linux() {
-  local p="${1:-$PWD}"
+  local p="${1:-$PWD -L}"
 
   if command -v wslpath >/dev/null 2>&1; then
     # 如果已经是 WSL 路径（wslpath -w 能成功），则直接输出
