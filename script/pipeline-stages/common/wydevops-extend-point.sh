@@ -246,8 +246,9 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
         # shellcheck disable=SC2068
         for l_mappingFile in ${l_paramMappingFiles[@]};do
           declare -A _paramMappingMap
+          declare -a _orderedKeys
           #将参数映射文件中的配置读取到_paramMappingMap变量中。
-          initialMapFromConfigFile "${l_mappingFile}" "_paramMappingMap"
+          initialMapFromConfigFile "${l_mappingFile}" "_paramMappingMap" "_orderedKeys"
 
           if [ "${#_paramMappingMap[@]}" -gt 0 ];then
             # shellcheck disable=SC2206
@@ -270,7 +271,7 @@ function initialCiCdConfigFileByParamMappingFiles_ex() {
             if [ "${#_paramMappingMap[@]}" -gt 0 ];then
               info "common.wydevops.extend.point.init.param.by.mapping.config.files" "${l_array[1]}#${l_cicdTargetFile}"
               initialParamValueByMappingConfigFiles "${gBuildPath}" "${l_cicdTargetFile}" \
-                "_paramMappingMap|${l_array[0]}" "${l_array[1]}" "_alreadyProcessedParamMap"
+                "_orderedKeys|_paramMappingMap|${l_array[0]}" "${l_array[1]}" "_alreadyProcessedParamMap"
               l_loadOk="true"
             fi
           fi

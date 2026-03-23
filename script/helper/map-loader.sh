@@ -6,6 +6,7 @@ function initialMapFromConfigFile() {
 
   local l_configFile=$1
   local l_mapName=$2
+  local l_orderedKeys=$3
 
   local l_content
   local l_lines
@@ -51,6 +52,7 @@ function initialMapFromConfigFile() {
           fi
         fi
       else
+        eval "${l_orderedKeys}+=(\"${l_key}\")"
         eval "${l_mapName}[\"${l_key}\"]=${l_value}"
       fi
     fi
@@ -70,13 +72,13 @@ function initialParamValueByMappingConfigFiles() {
   if [ "${l_value}" ];then
     info "map.loader.read.global.params" "${l_value//\"/}"
     if [[ "${l_key}" =~ ^(.*)\|(.*)$ ]];then
-      l_exitFlag="${l_key#*|}"
+      l_exitFlag="${l_key##*|}"
     else
       l_exitFlag="false"
     fi
 
     #将项目参数映射到wydevops对应的参数。
-    _processProjectParamMapping "${l_buildPath}" "${l_value}" "${l_yamlFile}" "${l_key%%|*}" "${l_exitFlag}" "${l_mapName}"
+    _processProjectParamMapping "${l_buildPath}" "${l_value}" "${l_yamlFile}" "${l_key%|*}" "${l_exitFlag}" "${l_mapName}"
 
   fi
 }
@@ -96,9 +98,9 @@ function _processProjectParamMapping() {
   local l_exitOnFailure=$5
   local l_mapName=$6
 
+  local l_orderedKeys
   local l_shortFileNames
   local l_paramTotal
-  local l_targetMapKey
   local l_key
   local l_value
 
@@ -118,6 +120,9 @@ function _processProjectParamMapping() {
   local l_hasError
   local l_array
 
+  l_orderedKeys="${l_targetMapName%%|*}"
+  l_targetMapName="${l_targetMapName##*|}"
+
   # shellcheck disable=SC2206
   l_keyItems=(${l_sourceFiles//,/ })
   l_shortFileNames=""
@@ -130,9 +135,10 @@ function _processProjectParamMapping() {
   eval "l_paramTotal=\${#${l_targetMapName}[@]}"
 
   #读取Map对象的所有Key赋值给l_targetMapKey变量。
-  eval "l_targetMapKey=\${!${l_targetMapName}[@]}"
+  eval "l_targetMapKey=\${${l_orderedKeys}}"
   ((l_paramCount = 0))
 
+  # shellcheck disable=SC2154
   for l_key in ${l_targetMapKey}; do
     info "map.loader.read.param.from.files" "${l_shortFileNames//\"/}#${l_key}"
     #读取需要设置的l_cicdConfigFile文件中的参数名称列表。
