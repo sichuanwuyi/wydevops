@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-# --- Helper for colored output ---
-Color_Off='\033[0m'
-BBlue='\033[1;34m'
-
 if [ -z "${WYDEVOPS_LOG_LANGUAGE}" ];then
   #define language in log as en
   export WYDEVOPS_LOG_LANGUAGE="en"
@@ -13,7 +9,6 @@ if [ -z "${WYDEVOPS_WORK_MODE}" ];then
   #define work mode as local
   export WYDEVOPS_WORK_MODE="local"
 fi
-
 
 # The home directory for all wydevops related files and scripts.
 # In a cross-platform Bash environment (like Git Bash), always use forward slashes for internal logic.
@@ -27,14 +22,10 @@ _WYDEVOPS_HOME="${_WYDEVOPS_HOME//:/}"
 if [[ ! "${_WYDEVOPS_HOME}" =~ ^\/ ]];then
   _WYDEVOPS_HOME="/${_WYDEVOPS_HOME}"
 fi
-#echo -e "${BBlue}_WYDEVOPS_HOME=${_WYDEVOPS_HOME}${Color_Off}"
 
 # The shared local directory where the scripts will be cloned.
 _SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}/wydevops"
-#echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
-
 _SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
-#echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
 
 export _selfRootDir="${_SCRIPTS_ROOT_DIR}"
 
