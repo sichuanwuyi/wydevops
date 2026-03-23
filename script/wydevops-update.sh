@@ -116,7 +116,7 @@ export g_update_occurred="false"
 # --- Sync the scripts from Git repository ---
 if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
     # If directory exists and is a git repo, pull the latest changes.
-    info "Syncing existing scripts..."
+    info "wydevops.update.sh.sync.scripts.from.git.repository"
     cd "${_SCRIPTS_PROJECT_DIR}" || exit
 
     # Get the commit hash before pulling.
@@ -130,17 +130,15 @@ if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
         # Pull was successful, now check if the content actually changed.
         l_after_hash=$(git rev-parse HEAD)
         if [[ "${l_before_hash}" != "${l_after_hash}" ]]; then
-            info "Git repository was updated."
+            info "wydevops.update.sh.sync.scripts.successfully"
             g_update_occurred="true"
         fi
     else
         # git pull failed (e.g., network error).
-        warn "Failed to pull from git repository. Continuing with the local version."
+        warn "wydevops.update.sh.sync.scripts.failed"
     fi
 
     # shellcheck disable=SC2164
     # shellcheck disable=SC2103
     cd - > /dev/null
 fi
-
-echo -e "${BGreen}Scripts are up to date.${Color_Off}"
