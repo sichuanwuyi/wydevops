@@ -18,22 +18,23 @@ function tryConnectByPasswordless() {
     info "ssh.helper.execute.command.ssh-keygen"
     l_result=$(ssh-keygen -t rsa -b 4096 -f "${l_idRSAFile}" -N "" -C "wydevops@wydevops.com" 2>&1)
     if [ "$?" -ne 0 ];then
-      warn "ssh.helper.execute.ssh-keygen.failed" "${l_result}"
+      warn "ssh.helper.execute.ssh-keygen.failed" "\n${l_result}"
       gDefaultRetVal="false"
       return
     fi
   fi
 
-  info "ssh.helper.execute.command.ssh-copy-id" "${l_host}"
   l_result=$(ssh-copy-id -o "BatchMode=yes" "${l_user}@${l_host}" 2>&1)
   if [ "$?" -ne 0 ];then
     l_result=$(ssh-copy-id "${l_user}@${l_host}")
     if [ "$?" -ne 0 ];then
-      warn "ssh.helper.execute.ssh-copy-id.failed" "\n${l_result}"
+      warn "ssh.helper.execute.ssh-copy-id.failed" "${l_host}#\n${l_result}"
       gDefaultRetVal="false"
       return
+    else
+      info "ssh.helper.execute.ssh-copy-id.success" "${l_host}"
     fi
   fi
-  warn "ssh.helper.execute.ssh-copy-id.success"
+  warn "ssh.helper.config.passwordless.success" "${l_host}"
 
 }
