@@ -24,7 +24,7 @@ function clearDeprecatedFiles_ex(){
   l_array=(${gArchTypes//,/ })
   # shellcheck disable=SC2068
   for l_archType in ${l_array[@]};do
-    info "wydevops.sh.delete.pushed.images.file" "${gHelmBuildOutDir}" "${l_archType//\//-}"
+    info "wydevops.sh.delete.pushed.images.file" "${gHelmBuildOutDir}#${l_archType//\//-}"
     rm -f "${gHelmBuildOutDir}/${l_archType//\//-}/pushed-images.yaml"
   done
 }
