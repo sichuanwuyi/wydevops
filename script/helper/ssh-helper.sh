@@ -12,7 +12,7 @@ function tryConnectByPasswordless() {
   gDefaultRetVal="true"
 
   # shellcheck disable=SC2088
-  l_idRSAFile=$(realpath -m "~/.ssh/id_rsa")
+  l_idRSAFile="${HOME}/.ssh/id_rsa"
   # shellcheck disable=SC2088
   if [ ! -f "${l_idRSAFile}" ];then
     info "ssh.helper.execute.command.ssh.keygen"
