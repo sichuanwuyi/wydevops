@@ -24,16 +24,16 @@ function tryConnectByPasswordless() {
     fi
   fi
 
-  info "ssh.helper.execute.command.ssh-copy-id" "${l_host}" "-n"
+  info "ssh.helper.execute.command.ssh-copy-id" "${l_host}"
   l_result=$(ssh-copy-id -o "BatchMode=yes" "${l_user}@${l_host}")
   if [ "$?" -ne 0 ];then
     l_result=$(ssh-copy-id "${l_user}@${l_host}")
     if [ "$?" -ne 0 ];then
-      warn "ssh.helper.execute.ssh-copy-id.failed" "\n${l_result}" "*"
+      warn "ssh.helper.execute.ssh-copy-id.failed" "\n${l_result}"
       gDefaultRetVal="false"
       return
     fi
   fi
-  warn "ssh.helper.execute.ssh-copy-id.success" "" "*"
+  warn "ssh.helper.execute.ssh-copy-id.success"
 
 }
