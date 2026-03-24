@@ -6,14 +6,17 @@ function tryConnectByPasswordless() {
   local l_user=$1
   local l_host=$2
 
+  local l_idRSAFile
   local l_result
 
   gDefaultRetVal="true"
 
   # shellcheck disable=SC2088
-  if [ ! -f "~/.ssh/id_rsa.pub" ];then
+  l_idRSAFile="~/.ssh/id_rsa.pub"
+  # shellcheck disable=SC2088
+  if [ ! -f "${l_idRSAFile}" ];then
     info "ssh.helper.execute.command.ssh.keygen"
-    ssh-keygen -t rsa -b 4096 -C "wydevops@wydevops.com"
+    ssh-keygen -t rsa -b 4096 -f "${l_idRSAFile}" -N "" -C "wydevops@wydevops.com"
     if [ "$?" -ne 0 ];then
       warn "ssh.helper.execute.command.failed" "unknown"
       gDefaultRetVal="false"
