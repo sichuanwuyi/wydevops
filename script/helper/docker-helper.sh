@@ -14,17 +14,17 @@ function dockerLogin(){
   if [ "${l_repoName}" ];then
     info "docker.helper.executing.command" "docker logout ${l_repoName} && echo ${l_password} | docker login ${l_repoName} -u ${l_account} --password-stdin"
     # shellcheck disable=SC2088
-    l_tmpFile="${gTempFileDir}/docker-${RANDOM}.tmp"
-    registerTempFile "${l_tmpFile}"
+    #l_tmpFile="${gTempFileDir}/docker-${RANDOM}.tmp"
+    #registerTempFile "${l_tmpFile}"
     #先执行登出（避免某些情况下直接登入失败）,再执行登入。
-    docker logout "${l_repoName}" && echo "${l_password}" | docker login "${l_repoName}" -u "${l_account}" --password-stdin  2>&1 | tee "${l_tmpFile}"
-    # shellcheck disable=SC2002
-    l_tmpFileContent=$(cat "${l_tmpFile}")
-    l_errorLog=$(grep -E "^.*(Error|failed|panic).*$" <<< "${l_tmpFileContent}")
-    unregisterTempFile "${l_tmpFile}"
+    l_errorLog=$(docker logout "${l_repoName}" && echo "${l_password}" | docker login "${l_repoName}" -u "${l_account}" --password-stdin  2>&1) # | tee "${l_tmpFile}"
+    #l_tmpFileContent=$(cat "${l_tmpFile}")
+    #l_errorLog=$(grep -E "^.*(Error|failed|panic).*$" <<< "${l_tmpFileContent}")
+    #unregisterTempFile "${l_tmpFile}"
     # shellcheck disable=SC2015
-    if [[ "${l_errorLog}" ]];then
-      error "docker.helper.login.fail" "${l_repoName}#${l_tmpFileContent}"
+    if [ "$?" -ne 0 ];then
+      # shellcheck disable=SC2002
+      error "docker.helper.login.fail" "${l_repoName}#${l_errorLog}"
     else
       info "docker.helper.login.success"
     fi
