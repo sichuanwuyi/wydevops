@@ -120,16 +120,16 @@ if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
   cd "${_SCRIPTS_PROJECT_DIR}" || exit
 
   # Get the commit hash before pulling.
-  l_before_hash=$(git rev-parse HEAD)
+  l_before_hash=$(git rev-parse HEAD 2>&1)
 
-  l_result=$(git checkout "$BRANCH" --quiet)
+  l_result=$(git checkout "$BRANCH" --quiet 2>&1)
   # Execute git pull and check its exit code for robustness.
   # shellcheck disable=SC2034
-  l_result=$(git pull origin "$BRANCH" --quiet)
+  l_result=$(git pull origin "$BRANCH" --quiet 2>&1)
   if [ "$?" -eq 0 ]; then
     info "wydevops.update.sh.sync.scripts.success" "" "*"
     # Pull was successful, now check if the content actually changed.
-    l_after_hash=$(git rev-parse HEAD)
+    l_after_hash=$(git rev-parse HEAD 2>&1)
     if [[ "${l_before_hash}" != "${l_after_hash}" ]]; then
       info "wydevops.update.sh.scripts.already.changed"
       g_update_occurred="true"
