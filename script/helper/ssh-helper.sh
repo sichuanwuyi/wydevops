@@ -19,7 +19,6 @@ function tryConnectByPasswordless() {
       gDefaultRetVal="false"
       return
     fi
-    warn "ssh.helper.execute.command.success"
   fi
 
   info "ssh.helper.execute.command.ssh.copy.id" "${l_host}" "-n"
