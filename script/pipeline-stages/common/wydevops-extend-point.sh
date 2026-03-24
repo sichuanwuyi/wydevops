@@ -667,7 +667,7 @@ function _checkGlobalDirectory() {
     info "common.wydevops.extend.point.init.temp.file.dir" "${gTempFileDir}"
     mkdir -p "${gTempFileDir}"
   else
-    info "common.wydevops.extend.point.clear.temp.file.dir"
+    info "common.wydevops.extend.point.clear.temp.file.dir" "${gTempFileDir:-?}"
     rm -rf "${gTempFileDir:?}/*"
   fi
 
