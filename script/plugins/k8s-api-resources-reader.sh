@@ -20,14 +20,15 @@ function tryLoadApiResources() {
   l_ip="${l_array[0]}"
   l_port="${l_array[1]}"
   l_account="${l_array[2]}"
+
+  #尝试先完成免密登录配置
+  tryConnectByPasswordless "${l_account}" "${l_ip}"
+
   #从ApiServer服务器读取各类资源的Api版本，将信息缓存到gApiResourcesInfo变量中。
   gApiResourcesInfo=$(ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "kubectl api-resources")
   # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
     error "k8s.api.resources.reader.sh.command.failed" "ssh -o \"StrictHostKeyChecking no\" -p ${l_port} ${l_account}@${l_ip} \"kubectl api-resources\""
-  else
-    #尝试先完成免密登录配置
-    tryConnectByPasswordless "${l_account}" "${l_ip}"
   fi
 }
 
