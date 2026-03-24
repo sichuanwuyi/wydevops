@@ -26,6 +26,7 @@ function tryLoadApiResources() {
   if [[ $? -ne 0 ]]; then
     error "k8s.api.resources.reader.sh.command.failed" "ssh -o \"StrictHostKeyChecking no\" -p ${l_port} ${l_account}@${l_ip} \"kubectl api-resources\""
   else
+    #执行免密配置
     tryConnectByPasswordless "${l_account}" "${l_ip}"
   fi
 }
