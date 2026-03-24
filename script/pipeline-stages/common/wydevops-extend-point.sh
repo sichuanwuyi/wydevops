@@ -20,8 +20,11 @@ function clearDeprecatedFiles_ex(){
   local l_array
   local l_archType
 
+  echo "---1----gArchTypes=${gArchTypes}-------"
+
   # shellcheck disable=SC2206
   l_array=(${gArchTypes//,/ })
+   echo "---1----l_array[0]=${l_array[0]}-------"
   # shellcheck disable=SC2068
   for l_archType in ${l_array[@]};do
     info "wydevops.sh.delete.pushed.images.file" "${gHelmBuildOutDir}#${l_archType//\//-}"
