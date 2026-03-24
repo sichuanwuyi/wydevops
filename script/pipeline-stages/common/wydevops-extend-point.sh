@@ -13,6 +13,22 @@ function onAfterInitGlobalParams_ex() {
   _onAfterInitGlobalParams
 }
 
+function clearDeprecatedFiles_ex(){
+  export gHelmBuildOutDir
+  export gArchTypes
+
+  local l_array
+  local l_archType
+
+  # shellcheck disable=SC2206
+  l_array=(${gArchTypes//,/ })
+  # shellcheck disable=SC2068
+  for l_archType in ${l_array[@]};do
+    info "wydevops.sh.delete.pushed.images.file" "${gHelmBuildOutDir}" "${l_archType//\//-}"
+    rm -f "${gHelmBuildOutDir}/${l_archType//\//-}/pushed-images.yaml"
+  done
+}
+
 function onBeforeReplaceParamPlaceholder_ex() {
   export gBuildType
   export gDockerImageNameWithInstance

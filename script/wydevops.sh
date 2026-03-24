@@ -120,8 +120,7 @@ elif [[ "${gLanguage}" != "shell" ]];then
   cacheGlobalParamsToFile
 fi
 
-info "wydevops.sh.delete.pushed.images.file" "${gHelmBuildOutDir}" "${gArchTypes//\//-}"
-rm -f "${gHelmBuildOutDir}/${gArchTypes//\//-}/pushed-images.yaml"
+invokeExtendPointFunc "clearDeprecatedFiles" "wydevops.sh.clear.deprecated.files.extend.point"
 
 info "wydevops.sh.third.parse.options"
 parseOptions2 "${@}"
