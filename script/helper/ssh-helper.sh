@@ -13,9 +13,9 @@ function tryConnectByPasswordless() {
   # shellcheck disable=SC2088
   if [ ! -f "~/.ssh/id_rsa.pub" ];then
     info "ssh.helper.execute.command.ssh.keygen" "" "-n"
-    l_result=$(ssh-keygen -t rsa -b 4096 -C "wydevops@wydevops.com")
+    ssh-keygen -t rsa -b 4096 -C "wydevops@wydevops.com"
     if [ "$?" -ne 0 ];then
-      warn "ssh.helper.execute.command.failed" "${l_result}" "*"
+      warn "ssh.helper.execute.command.failed" "timeout" "*"
       gDefaultRetVal="false"
       return
     fi
