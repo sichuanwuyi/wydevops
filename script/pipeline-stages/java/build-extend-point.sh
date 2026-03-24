@@ -13,6 +13,7 @@ function _onBeforeProjectBuilding_ex() {
   fi
 
   # --- Check and set JAVA_HOME if not defined ---
+  echo "---------JAVA_HOME=$JAVA_HOME------------------"
   if [ -z "$JAVA_HOME" ] || [ ! -d "$JAVA_HOME" ]; then
     # A more generic search could be added here if needed
     #error "Could not find a valid JDK installation. \n" \
