@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#本脚本允许传入两个参数：第一个参数为wydevops源码目录, 第二个参数为需要打包的项目目录，第三个参数为项目中的wydevops本地配置文件名称
+
 if [ -z "${WYDEVOPS_LOG_LANGUAGE}" ];then
   #define language in log as en
   export WYDEVOPS_LOG_LANGUAGE="en"
@@ -12,7 +14,10 @@ fi
 
 # The home directory for all wydevops related files and scripts.
 # In a cross-platform Bash environment (like Git Bash), always use forward slashes for internal logic.
-_WYDEVOPS_HOME="${WYDEVOPS_HOME:=${HOME}/.wydevops}"
+_WYDEVOPS_HOME="${1}"
+if [ ! "${_WYDEVOPS_HOME}" ];then
+  _WYDEVOPS_HOME="${WYDEVOPS_HOME:=${HOME}/.wydevops}"
+fi
 # Normalize the path to handle various inputs (e.g., from Windows env vars)
 # 1. Replace all backslashes with forward slashes.
 _WYDEVOPS_HOME="${_WYDEVOPS_HOME//\\//}"
@@ -24,8 +29,8 @@ if [[ ! "${_WYDEVOPS_HOME}" =~ ^\/ ]];then
 fi
 
 # The shared local directory where the scripts will be cloned.
-_SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}/wydevops"
-_SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
+_WYDEVOPS_SOURCE_DIR="${_WYDEVOPS_HOME}/wydevops"
+_SCRIPTS_ROOT_DIR="${_WYDEVOPS_SOURCE_DIR}/script"
 
 export _selfRootDir="${_SCRIPTS_ROOT_DIR}"
 
@@ -46,17 +51,15 @@ fi
 # --- End of self-update logic ---
 
 # 获取当前脚本所在目录的绝对路径（解析符号链接）。实际就是目标项目的根目录。
-_SELF_SCRIPT_DIR="${1}"
+_SELF_SCRIPT_DIR="${2}"
 if [ ! "${_SELF_SCRIPT_DIR}" ];then
   _SELF_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -L)"
   #echo -e "${BBlue}_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}${Color_Off}"
 fi
 
-#允许传入两个参数：第一个参数为项目目录，第二个参数为本地配置文件名称
-
 bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" \
 -e -f -m \
---localConfigFile "${2:-ci-cd-config.yaml}" \
+--localConfigFile "${3:-ci-cd-config.yaml}" \
 -A linux/amd64 \
 -O linux/amd64 \
 -B single \
