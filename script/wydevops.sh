@@ -87,6 +87,8 @@ export gHelmBuildOutDir
 info "wydevops.sh.second.parse.options"
 parseOptions1 "${@}"
 
+echo "---1----gArchTypes=${gArchTypes}-------"
+
 partLog "wydevops.sh.part1.init.global.params"
 
 source "${gBuildScriptRootDir}/plugins/plugin-manager.sh"
@@ -120,6 +122,7 @@ elif [[ "${gLanguage}" != "shell" ]];then
   cacheGlobalParamsToFile
 fi
 
+echo "----2---gArchTypes=${gArchTypes}-------"
 invokeExtendPointFunc "clearDeprecatedFiles" "wydevops.sh.clear.deprecated.files.extend.point"
 
 info "wydevops.sh.third.parse.options"

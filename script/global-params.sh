@@ -589,7 +589,6 @@ function parseOptions1() {
         exit ;;
       -A|--archTypes)
         l_param="${2}"
-        echo "-------l_param=${l_param}-----------"
         if [[ "${l_param}" &&  "${l_param}" != "undefine" ]];then
           # shellcheck disable=SC2206
           gArchTypes="${l_param}"
