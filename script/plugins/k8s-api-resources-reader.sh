@@ -26,7 +26,7 @@ function tryLoadApiResources() {
   if [[ $? -ne 0 ]]; then
     error "k8s.api.resources.reader.sh.command.failed" "ssh -o \"StrictHostKeyChecking no\" -p ${l_port} ${l_account}@${l_ip} \"kubectl api-resources\""
   else
-    #执行免密配置
+    #尝试先完成免密登录配置
     tryConnectByPasswordless "${l_account}" "${l_ip}"
   fi
 }
@@ -42,13 +42,5 @@ function getApiVersion() {
   #从gApiResourcesInfo变量中提取l_resourceType资源的Api版本
   gDefaultRetVal=$(echo "${gApiResourcesInfo}" | awk -v var="${l_resourceType}" '$NF == var {print $3}')
 }
-
-export _selfRootDir
-
-if [ ! "${_selfRootDir}" ];then
-  # shellcheck disable=SC2164
-  _selfRootDir=$(cd "$(dirname "$0")"; pwd -L)
-fi
-source "${_selfRootDir}/helper/ssh-helper.sh"
 
 export gApiResourcesInfo

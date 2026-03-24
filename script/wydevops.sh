@@ -90,6 +90,7 @@ parseOptions1 "${@}"
 partLog "wydevops.sh.part1.init.global.params"
 
 source "${gBuildScriptRootDir}/plugins/plugin-manager.sh"
+source "${gBuildScriptRootDir}/helper/ssh-helper.sh"
 
 #加载需要的shell脚本文件
 source "${gPipelineScriptsDir}/common/wydevops-extend-point.sh"

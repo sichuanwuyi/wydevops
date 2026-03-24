@@ -14,6 +14,9 @@ function onGetSystemArchInfo_ubuntu() {
 
   gDefaultRetVal="false|"
 
+  #尝试先完成免密登录配置
+  tryConnectByPasswordless "${l_account}" "${l_ip}"
+
   #先判断是否是linux系统
   if [ "${l_ip}" ];then
     #使用*.pem文件登录，例如登录AWS EC2服务器
