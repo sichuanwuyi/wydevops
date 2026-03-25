@@ -154,7 +154,7 @@ function execute(){
   #先确保本地拉起Docker镜像。
   if [ -f "${l_selfRootDir}/docker-run.sh" ];then
     echo "执行\"docker run\"命令,拉起发布的服务..."
-    bash "${l_selfRootDir}/docker-run.sh" &
+    bash "${l_selfRootDir}/docker-run.sh" "${l_forceDeployArchType}" &
   elif [ -f "${l_selfRootDir}/docker-compose.yaml" ];then
     echo "执行\"docker compose\"命令,拉起发布的服务..."
     docker-compose -d -f "${l_selfRootDir}/docker-compose.yaml" up &
