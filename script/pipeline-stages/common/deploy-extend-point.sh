@@ -268,13 +268,11 @@ function onBeforeDeployingServicePackageByDockerMode_ex() {
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].docker.mode"
   if [ "${gDefaultRetVal}" == "docker" ];then
     #获取docker-run.sh文件，该脚本文件的功能是执行docker run命令拉起服务。
-    invokeExtendChain "onGenerateDockerRunShellFile" "${gBuildPath}" "${gBuildType}" "${l_index}" "${l_chartName}" \
-      "${l_chartVersion}" "${l_images}" "${l_remoteDir}" "${gDockerRepoName}" "${gDockerRepoAccount}" "${gDockerRepoPassword}"
+    invokeExtendChain "onGenerateDockerRunShellFile" "${gBuildPath}" "${gBuildType}" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_images}" "${l_remoteDir}" "${gDockerRepoName}" "${gDockerRepoAccount}" "${gDockerRepoPassword}"
     l_shellOrYamlFile="${gDefaultRetVal}"
   else
     #获取docker-compose.yaml文件，该文件是docker-compose命令的配置文件。
-    invokeExtendChain "onGenerateDockerComposeYamlFile" "${gBuildPath}" "${gBuildType}" "${l_index}" "${l_chartName}" \
-      "${l_chartVersion}" "${l_images}" "${l_remoteDir}"
+    invokeExtendChain "onGenerateDockerComposeYamlFile" "${gBuildPath}" "${gBuildType}" "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_images}" "${l_remoteDir}"
     l_shellOrYamlFile="${gDefaultRetVal}"
   fi
 
