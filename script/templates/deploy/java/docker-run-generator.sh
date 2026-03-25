@@ -7,9 +7,9 @@ function generateDockerRunShellFile() {
   export gBuildPath
   export gTempFileDir
 
-  local l_index=$1
-  local l_chartName=$2
-  local l_chartVersion=$3
+  local l_chartName=$1
+  local l_chartVersion=$2
+  local l_curArchType=$3
   local l_forceDeployArchType=$4
   local l_images=$5
   local l_remoteDir=$6
@@ -33,7 +33,7 @@ function generateDockerRunShellFile() {
   done
 
   #读取第一个镜像。
-  l_mainImage=${l_images%%,*}
+  l_mainImage="${l_images%%,*}"
   #删除镜像名称中可能存在的_base后缀(docker发布模式只能使用single模式构建的镜像)。
   l_mainImage="${l_mainImage//-base:/:}"
 
