@@ -10,11 +10,12 @@ function generateDockerRunShellFile() {
   local l_index=$1
   local l_chartName=$2
   local l_chartVersion=$3
-  local l_images=$4
-  local l_remoteDir=$5
-  local l_repoName=$6
-  local l_account=$7
-  local l_password=$8
+  local l_forceDeployArchType=$4
+  local l_images=$5
+  local l_remoteDir=$6
+  local l_repoName=$7
+  local l_account=$8
+  local l_password=$9
 
   local l_array
   local l_port
@@ -46,15 +47,15 @@ function generateDockerRunShellFile() {
   # shellcheck disable=SC2027
   echo \"echo ${l_password} | docker login ${l_repoName} -u ${l_account} --password-stdin\"
   echo \"${l_password}\" | docker login \"${l_repoName}\" -u \"${l_account}\" --password-stdin
-  echo \"docker rm -f ${l_chartName}\"
-  docker rm -f \"${l_chartName}\"
-  echo \"docker run -d ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}\"
+  echo \"docker rm -f ${l_mainImage}\"
+  docker rm -f \"${l_mainImage}\"
+  echo \"docker run -d --platform ${l_forceDeployArchType} ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}\"
   docker run -d ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}" > "${gBuildPath}/docker-run.sh"
   else
   echo "#!/usr/bin/env bash
-  echo \"docker rm -f ${l_chartName}\"
-  docker rm -f \"${l_chartName}\"
-  echo \"docker run -d ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}\"
+  echo \"docker rm -f ${l_mainImage}\"
+  docker rm -f \"${l_mainImage}\"
+  echo \"docker run -d --platform ${l_forceDeployArchType} ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}\"
   docker run -d ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}" > "${gBuildPath}/docker-run.sh"
   fi
 }

@@ -259,8 +259,12 @@ function onBeforeDeployingServicePackageByDockerMode_ex() {
   local l_images=$4
   local l_remoteDir=$5
 
+  local l_activeProfile
   local l_shellOrYamlFile
   local l_remoteInstallProxyShell
+
+  readParam "${gCiCdYamlFile}" "deploy[${l_index}].activeProfile"
+  l_activeProfile="${gDefaultRetVal}"
 
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].docker.mode"
   if [ "${gDefaultRetVal}" == "docker" ];then
@@ -439,6 +443,7 @@ function _deployServiceByDocker(){
   local l_remoteDir=$7
 
   local l_activeProfile
+  local l_forceDeployArchType
   local l_enableProxy
   local l_mode
 
@@ -452,6 +457,7 @@ function _deployServiceByDocker(){
   local l_password
 
   local l_content
+  local l_curArchType
   local l_archType
   declare -A l_archTypeMap
 
@@ -487,6 +493,9 @@ function _deployServiceByDocker(){
     l_port="${l_array[1]}"
     l_account="${l_array[2]}"
     l_password="${l_array[3]}"
+    if [ "${#l_array[@]}" -gt 4 ];then
+      l_forceDeployArchType="${l_array[4]}"
+    fi
 
     info "common.deploy.extend.point.checking.server.arch" "${l_ip}"
     invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
@@ -502,7 +511,12 @@ function _deployServiceByDocker(){
   done
 
   # shellcheck disable=SC2068
-  for l_archType in ${!l_archTypeMap[@]};do
+  for l_curArchType in ${!l_archTypeMap[@]};do
+    if [ "${l_forceDeployArchType}" ];then
+      l_archType="${l_forceDeployArchType}"
+    else
+      l_archType="${l_curArchType}"
+    fi
     #取同架构的第一个节点作为部署代理节点，将文件都上传到该节点上。
     #该节点应能免密SSH连接到其他节点上。该节点上应安装有ansible工具，可同时向多个服务器部署应用。
     l_proxyNode="${l_archTypeMap[${l_archType}]:1}"
@@ -521,16 +535,26 @@ function _deployServiceByDocker(){
         mkdir -p "${l_localDir}/config"
       fi
 
-      l_offlinePackage="${l_chartName}-${l_chartVersion}-${l_archType//\//-}.tar.gz"
-      if [ ! -f "${gHelmBuildOutDir}/${l_offlinePackage}" ];then
-        if [ "${gDockerRepoName}" ];then
-          warn "common.deploy.extend.point.offline.package.not.found.pull" "${gHelmBuildOutDir}#${l_offlinePackage}#${gDockerRepoName}"
+      l_offlinePackage="${l_chartName}-${l_chartVersion}-${l_archType//\//-}.tar"
+      if [ ! -f "${gHelmBuildOutDir}/${l_archType//\//-}/${l_offlinePackage}" ];then
+        #如果没有找到docker镜像导出文件，则继续查找是否存在离线安装包。
+        l_offlinePackage="${l_chartName}-${l_chartVersion}-${l_archType//\//-}.tar.gz"
+        if [ ! -f "${gHelmBuildOutDir}/${l_offlinePackage}" ];then
+          #如果没有离线安装包，则继续判断是否设置了镜像仓库。如果设置了镜像仓库则后续可以在目标主机中拉取镜像。
+          if [ "${gDockerRepoName}" ];then
+            warn "common.deploy.extend.point.offline.package.not.found.pull" "${gHelmBuildOutDir}#${l_offlinePackage}#${gDockerRepoName}"
+          else
+            #如果没有设置镜像仓库，则报错退出。
+            error "common.deploy.extend.point.offline.package.not.found.error" "${gHelmBuildOutDir}#${l_offlinePackage}"
+          fi
         else
-          error "common.deploy.extend.point.offline.package.not.found.error" "${gHelmBuildOutDir}#${l_offlinePackage}"
+          #如果找到了离线安装包，则复制离线安装包到${l_localDir}目录中。
+          info "common.deploy.extend.point.copying.offline.package"
+          cp -f "${gHelmBuildOutDir}/${l_offlinePackage}" "${l_localDir}/${l_offlinePackage}"
         fi
       else
-        info "common.deploy.extend.point.copying.offline.package"
-        cp -f "${gHelmBuildOutDir}/${l_offlinePackage}" "${l_localDir}/${l_offlinePackage}"
+        #如果存在docker镜像导出文件，则复制到${l_localDir}目录中。
+        cp -f "${gHelmBuildOutDir}/${l_archType//\//-}/${l_offlinePackage}" "${l_localDir}/${l_offlinePackage}"
       fi
 
       info "common.deploy.extend.point.checking.docker.installed" "${l_ip}" "-n"
@@ -563,7 +587,7 @@ function _deployServiceByDocker(){
 
       info "common.deploy.extend.point.creating.install.sh" "${l_localBaseDir##*/}#install.sh"
       l_nodeIps="${l_archTypeMap[${l_archType}]//,${l_proxyNode}/}"
-      echo -e "#!/usr/bin/env bash\n source ${l_remoteDir}/${l_remoteInstallProxyShell##*/} \"${l_chartName}\" \"${l_chartVersion}\" \"${l_offlinePackage}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \"${gDockerRepoPassword}\" \"${l_nodeIps}\"" > "${l_localDir}/install.sh"
+      echo -e "#!/usr/bin/env bash\n source ${l_remoteDir}/${l_remoteInstallProxyShell##*/} \"${l_chartName}\" \"${l_chartVersion}\" \"${l_curArchType}\" \"${l_archType}\" \"${l_offlinePackage}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \"${gDockerRepoPassword}\" \"${l_nodeIps}\"" > "${l_localDir}/install.sh"
 
       info "common.deploy.extend.point.creating.remote.dir" "${l_ip}#${l_remoteDir}"
       timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "rm -rf ${l_remoteDir} && mkdir -p ${l_remoteDir}"
@@ -607,8 +631,6 @@ function _deployServiceInK8S() {
   local l_namespaceCount
   local l_namespace
 
-  local l_forceDeployArchTypes
-  local l_forceDeployArchTypeCount=0
   local l_forceDeployArchType
   local l_localArchType
 
@@ -650,15 +672,6 @@ function _deployServiceInK8S() {
   l_namespaceCount="${#l_namespaces[@]}"
   ((l_maxIndex = l_namespaceCount - 1))
 
-  readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.forceDeployArchType"
-  if [ "${gDefaultRetVal}" ];then
-    # shellcheck disable=SC2206
-    l_forceDeployArchTypes=(${gDefaultRetVal//,/ })
-    l_forceDeployArchTypeCount="${#l_forceDeployArchTypes[@]}"
-  else
-    warn "common.deploy.extend.point.param.missing" "${gCiCdYamlFile##*/}#deploy[${l_index}].k8s.${l_activeProfile}.forceDeployArchType"
-  fi
-
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.apiServer"
   [[ ! "${gDefaultRetVal}" || "${gDefaultRetVal}" == null ]] \
     && error "common.deploy.extend.point.param.missing" "${gCiCdYamlFile##*/}#deploy[${l_index}].k8s.${l_activeProfile}.apiServer"
@@ -674,18 +687,16 @@ function _deployServiceInK8S() {
       l_namespace="${l_namespaces[${l_apiServerIndex}]}"
     fi
 
-    #确定要发布的目标架构类型
-    l_forceDeployArchType=""
-    if [ "${l_apiServerIndex}" -lt "${l_forceDeployArchTypeCount}" ];then
-      l_forceDeployArchType="${l_forceDeployArchTypes[${l_apiServerIndex}]}"
-    fi
-
     # shellcheck disable=SC2206
     l_array=(${l_apiServer//\|/ })
     l_ip="${l_array[0]}"
     l_port="${l_array[1]}"
     l_account="${l_array[2]}"
     l_password="${l_array[3]}"
+    #确定要发布的目标架构类型
+    if [ "${#l_array[@]}" -gt 4 ];then
+      l_forceDeployArchType="${l_array[4]}"
+    fi
 
     info "common.deploy.extend.point.finding.chart.image.and.settings"
     _findChartImage "${l_chartName}" "${l_chartVersion}"
@@ -739,10 +750,9 @@ function _deployServiceInK8S() {
     #如果dockerRepo参数配置有值且与当前使用的docker镜像仓库不是同一个，则需要推送docker镜像到新的仓库中。
     readParam "${gCiCdYamlFile}" "deploy[${l_index}].k8s.${l_activeProfile}.dockerRepo"
     if [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]];then
-      l_repoInfos="${gDefaultRetVal}"
       #调用解密接口解密l_repoInfo参数值。
       invokeExtendPointFunc "decodeSecretInfo" "common.secret.extend.point.decoding.secret.info" \
-        "dockerRepo" "dockerRepo" "${l_repoInfos}"
+        "dockerRepo" "dockerRepo" "${gDefaultRetVal}"
       l_repoInfos="${gDefaultRetVal}"
 
       # shellcheck disable=SC2206
