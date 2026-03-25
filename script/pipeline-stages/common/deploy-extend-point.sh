@@ -234,7 +234,8 @@ function deployServicePackage_ex() {
     #调用标准发布流程
     echo "------l_index=${l_index}-----------"
     echo "------${l_chartName}:${l_chartVersion}----|${l_shellOrYamlFile}|----|${l_remoteInstallProxyShell}|----|${l_localBaseDir}|-----|${l_remoteDir}|----${l_installMode}----"
-    _deployServiceByDocker "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_shellOrYamlFile}" "${l_remoteInstallProxyShell}" "${l_localBaseDir}" "${l_remoteDir}" "${l_installMode}"
+    _deployServiceByDocker "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_shellOrYamlFile}" "${l_remoteInstallProxyShell}" \
+      "${l_localBaseDir}" "${l_remoteDir}" "${l_installMode}"
   else
     #调用标准发布流程
     _deployServiceInK8S "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_localBaseDir}" "${l_installMode}"
@@ -492,9 +493,6 @@ function _deployServiceByDocker(){
     l_port="${l_array[1]}"
     l_account="${l_array[2]}"
     l_password="${l_array[3]}"
-    if [ "${#l_array[@]}" -gt 4 ];then
-      l_forceDeployArchType="${l_array[4]}"
-    fi
 
     info "common.deploy.extend.point.checking.server.arch" "${l_ip}"
     invokeExtendChain "onGetSystemArchInfo" "${l_ip}" "${l_port}" "${l_account}" "${l_password}"
@@ -511,15 +509,9 @@ function _deployServiceByDocker(){
 
   # shellcheck disable=SC2068
   for l_curArchType in ${!l_archTypeMap[@]};do
-    if [ "${l_forceDeployArchType}" ];then
-      l_archType="${l_forceDeployArchType}"
-    else
-      l_archType="${l_curArchType}"
-      l_forceDeployArchType="${l_curArchType}"
-    fi
     #取同架构的第一个节点作为部署代理节点，将文件都上传到该节点上。
     #该节点应能免密SSH连接到其他节点上。该节点上应安装有ansible工具，可同时向多个服务器部署应用。
-    l_proxyNode="${l_archTypeMap[${l_archType}]:1}"
+    l_proxyNode="${l_archTypeMap[${l_curArchType}]:1}"
     # shellcheck disable=SC2206
     l_nodeItems=(${l_proxyNode//,/ })
     for l_nodeItem in ${l_nodeItems[@]};do
@@ -528,6 +520,14 @@ function _deployServiceByDocker(){
       l_ip="${l_array[0]}"
       l_port="${l_array[1]}"
       l_account="${l_array[2]}"
+      l_password="${l_array[3]}"
+      if [ "${#l_array[@]}" -gt 4 ];then
+        l_forceDeployArchType="${l_array[4]}"
+        l_archType="${l_forceDeployArchType}"
+      else
+        l_archType="${l_curArchType}"
+        l_forceDeployArchType="${l_curArchType}"
+      fi
 
       # shellcheck disable=SC2088
       l_localDir="${l_localBaseDir}/${l_chartName}-${l_chartVersion}"
@@ -588,6 +588,8 @@ function _deployServiceByDocker(){
 
       info "common.deploy.extend.point.copying.file.to.local.dir" "${l_shellOrYamlFile}#${l_localDir}"
       timeout 60s scp "${l_shellOrYamlFile}" "${l_localDir}/${l_shellOrYamlFile##*/}"
+      #删除项目根目录下的docker-run.sh文件。
+      rm -f "${l_shellOrYamlFile}"
 
       info "common.deploy.extend.point.copying.file.to.local.dir" "${l_remoteInstallProxyShell##*/}#${l_localDir##*/}"
       timeout 60s scp "${l_remoteInstallProxyShell}" "${l_localDir}/${l_remoteInstallProxyShell##*/}"
