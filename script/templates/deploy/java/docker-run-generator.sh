@@ -55,7 +55,7 @@ function generateDockerRunShellFile() {
   echo \"docker rm -f ${l_mainImage}\"
   docker rm -f \"${l_mainImage}\"
   echo \"docker run -d --platform \$1 ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}\"
-  docker run -d --platform \$ ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}" > "${gBuildPath}/docker-run.sh"
+  docker run -d --platform \$1 ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}" > "${gBuildPath}/docker-run.sh"
   fi
 }
 
