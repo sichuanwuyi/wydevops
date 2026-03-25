@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-# --- Helper for colored output ---
-Color_Off='\033[0m'
-BBlue='\033[1;34m'
+#本脚本允许传入两个参数：第一个参数为wydevops源码目录, 第二个参数为需要打包的项目目录，第三个参数为项目中的wydevops本地配置文件名称
 
 if [ -z "${WYDEVOPS_LOG_LANGUAGE}" ];then
   #define language in log as en
@@ -14,10 +12,12 @@ if [ -z "${WYDEVOPS_WORK_MODE}" ];then
   export WYDEVOPS_WORK_MODE="local"
 fi
 
-
 # The home directory for all wydevops related files and scripts.
 # In a cross-platform Bash environment (like Git Bash), always use forward slashes for internal logic.
-_WYDEVOPS_HOME="${WYDEVOPS_HOME:=${HOME}/.wydevops}"
+_WYDEVOPS_HOME="${1}"
+if [ ! "${_WYDEVOPS_HOME}" ];then
+  _WYDEVOPS_HOME="${WYDEVOPS_HOME:=${HOME}/.wydevops}"
+fi
 # Normalize the path to handle various inputs (e.g., from Windows env vars)
 # 1. Replace all backslashes with forward slashes.
 _WYDEVOPS_HOME="${_WYDEVOPS_HOME//\\//}"
@@ -27,22 +27,19 @@ _WYDEVOPS_HOME="${_WYDEVOPS_HOME//:/}"
 if [[ ! "${_WYDEVOPS_HOME}" =~ ^\/ ]];then
   _WYDEVOPS_HOME="/${_WYDEVOPS_HOME}"
 fi
-echo -e "${BBlue}_WYDEVOPS_HOME=${_WYDEVOPS_HOME}${Color_Off}"
 
 # The shared local directory where the scripts will be cloned.
-_SCRIPTS_PROJECT_DIR="${_WYDEVOPS_HOME}/wydevops"
-echo -e "${BBlue}_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}${Color_Off}"
+_WYDEVOPS_SOURCE_DIR="${_WYDEVOPS_HOME}/wydevops"
+_SCRIPTS_ROOT_DIR="${_WYDEVOPS_SOURCE_DIR}/script"
 
-_SCRIPTS_ROOT_DIR="${_SCRIPTS_PROJECT_DIR}/script"
-echo -e "${BBlue}_SCRIPTS_ROOT_DIR=${_SCRIPTS_ROOT_DIR}${Color_Off}"
-
-_selfRootDir="${_SCRIPTS_ROOT_DIR}"
-export g_update_occurred=false
+export _selfRootDir="${_SCRIPTS_ROOT_DIR}"
 
 # shellcheck disable=SC1090
 source "${_SCRIPTS_ROOT_DIR}/helper/log-helper.sh"
 # shellcheck disable=SC1090
 source "${_SCRIPTS_ROOT_DIR}/helper/yaml-helper.sh"
+
+export g_update_occurred="false"
 # shellcheck disable=SC1090
 source "${_SCRIPTS_ROOT_DIR}/wydevops-update.sh"
 
@@ -54,17 +51,15 @@ fi
 # --- End of self-update logic ---
 
 # 获取当前脚本所在目录的绝对路径（解析符号链接）。实际就是目标项目的根目录。
-_SELF_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -L)"
-echo -e "${BBlue}_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}${Color_Off}"
-
-#允许传入两个参数：第一个参数为项目目录，第二个参数为本地配置文件名称
-
-#定义当前项目主模块目录路径:
-_PROJECT_MAIN_MODULE_DIR=$(realpath -m -- "${1:-$_SELF_SCRIPT_DIR}")
+_SELF_SCRIPT_DIR="${2}"
+if [ ! "${_SELF_SCRIPT_DIR}" ];then
+  _SELF_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -L)"
+  #echo -e "${BBlue}_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}${Color_Off}"
+fi
 
 bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" \
 -e -f -m \
---localConfigFile "${2:-ci-cd-config.yaml}" \
+--localConfigFile "${3:-ci-cd-config.yaml}" \
 -A linux/amd64 \
 -O linux/amd64 \
 -B single \
@@ -73,10 +68,10 @@ bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" \
 -S build,docker,chart,package,deploy \
 -M "${WYDEVOPS_WORK_MODE}" \
 -T true \
--P "${_PROJECT_MAIN_MODULE_DIR}" \
+-P "${_SELF_SCRIPT_DIR}" \
 -W "${_SCRIPTS_ROOT_DIR}"
 #-C "harbor,chartmuseum,192.168.1.214:80,admin,Harbor12345,80" \
-#-D "harbor,registry.docker.home,192.168.1.214:80,admin,Harbor12345,80"
+#-D "harbor,wydevops,192.168.1.214:80,admin,Harbor12345,80"
 #-C "nexus,chartmuseum,192.168.1.214:8081,admin,Wpl118124,8081" \
-#-D "nexus,registry.docker.home,192.168.1.214:8002,admin,Wpl118124,8081"
+#-D "nexus,wydevops,192.168.1.214:8002,admin,Wpl118124,8081"
 #-D "registry,wydevops,192.168.1.218:30783,admin,admin123,30784,true,docker-registry /etc/docker/registry/config.yml"
