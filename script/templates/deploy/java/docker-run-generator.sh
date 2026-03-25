@@ -18,6 +18,9 @@ function generateDockerRunShellFile() {
   local l_account=$9
   local l_password=${10}
 
+  echo "----|${l_index}|---|${l_chartName}|---|${l_chartVersion}|----|${l_curArchType}|----|${l_forceDeployArchType}|----|${l_images}|---------"
+  echo "----|${l_remoteDir}|----|${l_repoName}|----|${l_account}|----|${l_password}|----"
+
   local l_array
   local l_port
   local l_exposePorts
