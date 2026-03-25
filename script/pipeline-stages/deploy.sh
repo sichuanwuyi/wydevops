@@ -108,7 +108,8 @@ function executePackageStage() {
     #服务安装包部署前扩展
     invokeExtendPointFunc "onBeforeDeployingServicePackage" "deploy.sh.before.deploying.service.package" "" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
       "${l_deployType}" "${l_images}" "${l_remoteDir}" "${l_localBaseDir}"
-    l_array=("${gDefaultRetVal}")
+    # shellcheck disable=SC2206
+    l_array=(${gDefaultRetVal})
     l_shellOrYamlFile="${l_array[0]}"
     l_remoteInstallProxyShell="${l_array[1]}"
     #发布服务安装包
