@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-function executePackageStage() {
+function executeDeployStage() {
   export gDefaultRetVal
   export gPipelineScriptsDir
   export gCiCdYamlFile
@@ -23,6 +23,7 @@ function executePackageStage() {
   local l_remoteBaseDir
   local l_localBaseDir
   local l_deployType
+  local l_activeProfile
   local l_installMode
   local l_deployDockerRepo
 
@@ -95,7 +96,10 @@ function executePackageStage() {
       l_installMode="install"
     fi
 
-    readParam "${gCiCdYamlFile}" "deploy[${l_i}].k8s.dockerRepo"
+    readParam "${gCiCdYamlFile}" "deploy[${l_i}].activeProfile"
+    l_activeProfile="${gDefaultRetVal}"
+
+    readParam "${gCiCdYamlFile}" "deploy[${l_i}].k8s.${l_activeProfile}.dockerRepo"
     l_deployDockerRepo="${gDefaultRetVal}"
 
     if [[ "${l_deployType}" == "k8s" && ! "${gDockerRepoName}" && ! "${l_deployDockerRepo}" ]];then
@@ -174,4 +178,4 @@ function _getChartVersion() {
 
 #**********************私有方法-结束***************************#
 
-executePackageStage
+executeDeployStage

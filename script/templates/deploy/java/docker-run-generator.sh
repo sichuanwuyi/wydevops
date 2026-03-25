@@ -10,16 +10,11 @@ function generateDockerRunShellFile() {
   local l_index=$1
   local l_chartName=$2
   local l_chartVersion=$3
-  local l_curArchType=$4
-  local l_forceDeployArchType=$5
-  local l_images=$6
-  local l_remoteDir=$7
-  local l_repoName=$8
-  local l_account=$9
-  local l_password=${10}
-
-  echo "----|${l_index}|---|${l_chartName}|---|${l_chartVersion}|----|${l_curArchType}|----|${l_forceDeployArchType}|----|${l_images}|---------"
-  echo "----|${l_remoteDir}|----|${l_repoName}|----|${l_account}|----|${l_password}|----"
+  local l_images=$4
+  local l_remoteDir=$5
+  local l_repoName=$6
+  local l_account=$7
+  local l_password=$8
 
   local l_array
   local l_port
@@ -53,14 +48,14 @@ function generateDockerRunShellFile() {
   echo \"${l_password}\" | docker login \"${l_repoName}\" -u \"${l_account}\" --password-stdin
   echo \"docker rm -f ${l_mainImage}\"
   docker rm -f \"${l_mainImage}\"
-  echo \"docker run -d --platform ${l_forceDeployArchType} ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}\"
-  docker run -d --platform ${l_forceDeployArchType} ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}" > "${gBuildPath}/docker-run.sh"
+  echo \"docker run -d --platform \$1 ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}\"
+  docker run -d --platform \$1 ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}" > "${gBuildPath}/docker-run.sh"
   else
   echo "#!/usr/bin/env bash
   echo \"docker rm -f ${l_mainImage}\"
   docker rm -f \"${l_mainImage}\"
-  echo \"docker run -d --platform ${l_forceDeployArchType} ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}\"
-  docker run -d --platform ${l_forceDeployArchType} ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}" > "${gBuildPath}/docker-run.sh"
+  echo \"docker run -d --platform \$1 ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}\"
+  docker run -d --platform \$ ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}" > "${gBuildPath}/docker-run.sh"
   fi
 }
 
