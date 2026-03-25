@@ -129,7 +129,12 @@ function execute(){
   # shellcheck disable=SC2164
   l_selfRootDir=$(cd "$(dirname "$0")"; pwd)
 
-  if [  -f "${l_selfRootDir}/${l_offlinePackage}" ];then
+  if [ "${l_dockerRepoName}" ];then
+    #从Docker镜像仓库拉取Docker镜像
+    pullDockerImage "${l_dockerRepoName}" "${l_chartName}:${l_chartVersion}" "${l_forceDeployArchType}" \
+      "${l_dockerRepoAccount}" "${l_dockerRepoPassword}"
+    [[ "${resultVal}" == "false" ]] && return
+  elif [ -f "${l_selfRootDir}/${l_offlinePackage}" ];then
     l_dockerFilePath="${l_selfRootDir}"
     if [[ "${l_offlinePackage}" =~ ^(.*).tar.gz$ ]];then
       #解压缩离线安装包
@@ -139,10 +144,6 @@ function execute(){
     fi
     #导入离线安装包中的docker镜像，并如果存在Docker镜像仓库则推送到Docker镜像仓库中
     loadAndPushDockerImage "${l_dockerFilePath}" "${l_dockerRepoName}" "${l_dockerRepoAccount}" "${l_dockerRepoPassword}"
-    [[ "${resultVal}" == "false" ]] && return
-  elif [ "${l_dockerRepoName}" ];then
-    #从Docker镜像仓库拉取Docker镜像
-    pullDockerImage "${l_dockerRepoName}" "${l_chartName}:${l_chartVersion}" "${l_dockerRepoAccount}" "${l_dockerRepoPassword}"
     [[ "${resultVal}" == "false" ]] && return
   else
     echo "找不到Docker镜像"

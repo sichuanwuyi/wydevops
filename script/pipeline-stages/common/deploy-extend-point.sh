@@ -535,26 +535,33 @@ function _deployServiceByDocker(){
         mkdir -p "${l_localDir}/config"
       fi
 
-      l_offlinePackage="${l_chartName}-${l_chartVersion}-${l_archType//\//-}.tar"
-      if [ ! -f "${gHelmBuildOutDir}/${l_archType//\//-}/${l_offlinePackage}" ];then
-        #如果没有找到docker镜像导出文件，则继续查找是否存在离线安装包。
-        l_offlinePackage="${l_chartName}-${l_chartVersion}-${l_archType//\//-}.tar.gz"
-        if [ ! -f "${gHelmBuildOutDir}/${l_offlinePackage}" ];then
-          #如果没有离线安装包，则继续判断是否设置了镜像仓库。如果设置了镜像仓库则后续可以在目标主机中拉取镜像。
-          if [ "${gDockerRepoName}" ];then
-            warn "common.deploy.extend.point.offline.package.not.found.pull" "${gHelmBuildOutDir}#${l_offlinePackage}#${gDockerRepoName}"
+      if [ "${gDockerRepoName}" ];then
+        warn "common.deploy.extend.point.docker.repo.exists" "${gDockerRepoName}"
+      else
+        #如果没有设置镜像仓库，则继续尝试使用镜像导出文件或离线安装包进行部署。
+        l_offlinePackage="${l_chartName}-${l_chartVersion}-${l_archType//\//-}.tar"
+        info "common.deploy.extend.point.checking.image.export.file.exists" "${gHelmBuildOutDir}/${l_archType//\//-}#${l_offlinePackage}" "-n"
+        if [ ! -f "${gHelmBuildOutDir}/${l_archType//\//-}/${l_offlinePackage}" ];then
+          warn "common.deploy.extend.point.image.not.exists" "" "*"
+          #如果没有找到docker镜像导出文件，则继续查找是否存在离线安装包。
+          l_offlinePackage="${l_chartName}-${l_chartVersion}-${l_archType//\//-}.tar.gz"
+          info "common.deploy.extend.point.checking.offline.package.file.exists" "${gHelmBuildOutDir}#${l_offlinePackage}" "-n"
+          if [ ! -f "${gHelmBuildOutDir}/${l_offlinePackage}" ];then
+            error "common.deploy.extend.point.image.not.exists" "" "*"
           else
-            #如果没有设置镜像仓库，则报错退出。
-            error "common.deploy.extend.point.offline.package.not.found.error" "${gHelmBuildOutDir}#${l_offlinePackage}"
+            warn "common.deploy.extend.point.image.already.exists" "" "*"
+            info "common.deploy.extend.point.copying.offline.package" "${l_offlinePackage}#${l_localDir}" "-n"
+            #如果找到了离线安装包，则复制离线安装包到${l_localDir}目录中。
+            l_errorLog=$(cp -f "${gHelmBuildOutDir}/${l_offlinePackage}" "${l_localDir}/${l_offlinePackage}" 2>&1)
+            [[ "$?" -ne 0 ]] && error "common.deploy.extend.point.execute.command.failed" "${l_errorLog}" "*" || warn "common.deploy.extend.point.success" "" "*"
           fi
         else
-          #如果找到了离线安装包，则复制离线安装包到${l_localDir}目录中。
-          info "common.deploy.extend.point.copying.offline.package"
-          cp -f "${gHelmBuildOutDir}/${l_offlinePackage}" "${l_localDir}/${l_offlinePackage}"
+          warn "common.deploy.extend.point.image.already.exists" "" "*"
+          info "common.deploy.extend.point.copying.image.export.file" "${l_offlinePackage}#${l_localDir}" "-n"
+          #如果存在docker镜像导出文件，则复制到${l_localDir}目录中。
+          l_errorLog=$(cp -f "${gHelmBuildOutDir}/${l_archType//\//-}/${l_offlinePackage}" "${l_localDir}/${l_offlinePackage}" 2>&1)
+          [[ "$?" -ne 0 ]] && error "common.deploy.extend.point.execute.command.failed" "${l_errorLog}" "*" || warn "common.deploy.extend.point.success" "" "*"
         fi
-      else
-        #如果存在docker镜像导出文件，则复制到${l_localDir}目录中。
-        cp -f "${gHelmBuildOutDir}/${l_archType//\//-}/${l_offlinePackage}" "${l_localDir}/${l_offlinePackage}"
       fi
 
       info "common.deploy.extend.point.checking.docker.installed" "${l_ip}" "-n"
