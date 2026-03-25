@@ -7,15 +7,16 @@ function generateDockerRunShellFile() {
   export gBuildPath
   export gTempFileDir
 
-  local l_chartName=$1
-  local l_chartVersion=$2
-  local l_curArchType=$3
-  local l_forceDeployArchType=$4
-  local l_images=$5
-  local l_remoteDir=$6
-  local l_repoName=$7
-  local l_account=$8
-  local l_password=$9
+  local l_index=$1
+  local l_chartName=$2
+  local l_chartVersion=$3
+  local l_curArchType=$4
+  local l_forceDeployArchType=$5
+  local l_images=$6
+  local l_remoteDir=$7
+  local l_repoName=$8
+  local l_account=$9
+  local l_password=${10}
 
   local l_array
   local l_port
