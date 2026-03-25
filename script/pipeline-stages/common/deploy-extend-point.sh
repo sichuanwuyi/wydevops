@@ -232,6 +232,8 @@ function deployServicePackage_ex() {
   gCurrentStageResult=""
   if [ "${l_deployType}" == "docker" ];then
     #调用标准发布流程
+    echo "------l_index=${l_index}-----------"
+    echo "------${l_chartName}:${l_chartVersion}----|${l_shellOrYamlFile}|----|${l_remoteInstallProxyShell}|----|${l_localBaseDir}|-----|${l_remoteDir}|----${l_installMode}----"
     _deployServiceByDocker "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_shellOrYamlFile}" "${l_remoteInstallProxyShell}" "${l_localBaseDir}" "${l_remoteDir}" "${l_installMode}"
   else
     #调用标准发布流程
@@ -597,7 +599,7 @@ function _deployServiceByDocker(){
       timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "rm -rf ${l_remoteDir} && mkdir -p ${l_remoteDir}"
 
       info "common.deploy.extend.point.copying.local.to.remote" "${l_localBaseDir##*/}#${l_ip}#${l_remoteDir}"
-      timeout 60s scp -o \"StrictHostKeyChecking no\" -P "${l_port}" -r "${l_localDir}/" "${l_account}@${l_ip}:${l_remoteDir%/*}/"
+      timeout 60s scp -o "StrictHostKeyChecking no" -P "${l_port}" -r "${l_localDir}/" "${l_account}@${l_ip}:${l_remoteDir%/*}/"
 
       info "common.deploy.extend.point.executing.remote.script" "${l_ip}#${l_remoteDir}/install.sh"
       # shellcheck disable=SC2088
