@@ -1458,10 +1458,9 @@ function _generateInstallShellFile() {
 
   echo -e "#!/usr/bin/env bash
 # source ${l_remoteDir}/${l_remoteInstallProxyShell/}
-source ${l_remoteDir}/${l_remoteInstallProxyShell/} ${l_chartName} ${l_chartVersion} \\
-  ${l_curArchType} ${l_archType} ${l_offlinePackage} ${gDockerRepoName} ${gDockerRepoAccount} \\
-  ${gDockerRepoPassword} ${l_nodeIps}
-" > "${l_localDir}/install.sh"
+source ${l_remoteDir}/${l_remoteInstallProxyShell/} \"${l_chartName}\" \"${l_chartVersion}\" \\
+  \"${l_curArchType}\" \"${l_archType}\" \"${l_offlinePackage}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \\
+  \"${gDockerRepoPassword}\" \"${l_nodeIps}\"" > "${l_localDir}/install.sh"
 
 }
 
