@@ -50,13 +50,13 @@ function generateDockerRunShellFile() {
   echo \"docker rm -f ${l_mainImage}\"
   docker rm -f \"${l_mainImage}\"
   echo \"docker run -d --platform ${l_forceDeployArchType} ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}\"
-  docker run -d ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}" > "${gBuildPath}/docker-run.sh"
+  docker run -d --platform ${l_forceDeployArchType} ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}" > "${gBuildPath}/docker-run.sh"
   else
   echo "#!/usr/bin/env bash
   echo \"docker rm -f ${l_mainImage}\"
   docker rm -f \"${l_mainImage}\"
   echo \"docker run -d --platform ${l_forceDeployArchType} ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}\"
-  docker run -d ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}" > "${gBuildPath}/docker-run.sh"
+  docker run -d --platform ${l_forceDeployArchType} ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}" > "${gBuildPath}/docker-run.sh"
   fi
 }
 

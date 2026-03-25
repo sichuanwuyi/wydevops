@@ -27,6 +27,7 @@ function onGenerateDockerRunShellFile_default() {
     info "on.generate.docker.run.shell.file.generating" "${l_generatorFile##*/}"
 
     #在gBuildPath目录下生成docker-run.sh文件。
+    #l_generatorFile=docker-run-generator.sh
     # shellcheck disable=SC1090
     source "${l_generatorFile}" "${l_remaining_params[@]}"
     gDefaultRetVal="${l_buildPath}/docker-run.sh"
