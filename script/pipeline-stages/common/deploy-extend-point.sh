@@ -586,7 +586,7 @@ function _deployServiceByDocker(){
         info "common.deploy.extend.point.installed" "" "*"
       fi
 
-      info "common.deploy.extend.point.copying.file.to.local.dir" "${l_shellOrYamlFile##*/}#${l_localDir##*/}"
+      info "common.deploy.extend.point.copying.file.to.local.dir" "${l_shellOrYamlFile}#${l_localDir}"
       timeout 60s scp "${l_shellOrYamlFile}" "${l_localDir}/${l_shellOrYamlFile##*/}"
 
       info "common.deploy.extend.point.copying.file.to.local.dir" "${l_remoteInstallProxyShell##*/}#${l_localDir##*/}"
