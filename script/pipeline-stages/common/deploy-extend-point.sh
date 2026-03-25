@@ -515,6 +515,7 @@ function _deployServiceByDocker(){
       l_archType="${l_forceDeployArchType}"
     else
       l_archType="${l_curArchType}"
+      l_forceDeployArchType="${l_curArchType}"
     fi
     #取同架构的第一个节点作为部署代理节点，将文件都上传到该节点上。
     #该节点应能免密SSH连接到其他节点上。该节点上应安装有ansible工具，可同时向多个服务器部署应用。
