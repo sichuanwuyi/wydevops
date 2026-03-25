@@ -232,8 +232,7 @@ function deployServicePackage_ex() {
   gCurrentStageResult=""
   if [ "${l_deployType}" == "docker" ];then
     #调用标准发布流程
-    _deployServiceByDocker "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_shellOrYamlFile}" \
-      "${l_remoteInstallProxyShell}" "${l_localBaseDir}" "${l_remoteDir}" "${l_installMode}"
+    _deployServiceByDocker "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_shellOrYamlFile}" "${l_remoteInstallProxyShell}" "${l_localBaseDir}" "${l_remoteDir}" "${l_installMode}"
   else
     #调用标准发布流程
     _deployServiceInK8S "${l_index}" "${l_chartName}" "${l_chartVersion}" "${l_localBaseDir}" "${l_installMode}"
