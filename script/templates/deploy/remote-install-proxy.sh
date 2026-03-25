@@ -25,8 +25,9 @@ function loadAndPushDockerImage() {
 
   local l_targetDir=$1
   local l_dockerRepoName=$2
-  local l_dockerRepoAccount=$3
-  local l_dockerRepoPassword=$4
+  local l_archType=$3
+  local l_dockerRepoAccount=$4
+  local l_dockerRepoPassword=$5
 
   local l_fileList
   local l_file
@@ -49,8 +50,7 @@ function loadAndPushDockerImage() {
   # shellcheck disable=SC2068
   for l_file in ${l_fileList[@]};do
     l_errorLog=$(docker load -i "${l_file}" 2>&1)
-    l_errorLog=$(echo -e "${l_errorLog}" | grep -oE "^Loaded image:(.*)$")
-    if [ "${l_errorLog}" ];then
+    if [ "$?" -eq 0 ];then
       l_image="${l_errorLog#*:}"
       l_image="${l_image// /}"
       echo "成功加载docker镜像：${l_image}"
@@ -58,18 +58,18 @@ function loadAndPushDockerImage() {
       if [ "${l_dockerRepoName}" ];then
         #镜像更名
         docker tag "${l_image}" "${l_dockerRepoName}/${l_image}"
-        #推送镜像到仓库中
-        docker push "${l_dockerRepoName}/${l_image}" 2>&1
+        #推送镜像到仓库中，这里要
+        l_errorLog=$(docker push --platform="${l_archType}" "${l_dockerRepoName}/${l_image}" 2>&1)
         # shellcheck disable=SC2181
         if [ "$?" -ne 0 ];then
-          echo "${l_image}镜像推送失败"
+          echo "${l_image}镜像推送失败:${l_errorLog}"
           resultVal="false"
           break
         fi
       fi
 
     else
-      echo "从${l_file##*/}文件加载docker镜像失败"
+      echo "从${l_file##*/}文件加载docker镜像失败:${l_errorLog}"
       resultVal="false"
       break
     fi
@@ -143,7 +143,8 @@ function execute(){
       l_dockerFilePath="${l_selfRootDir}/${l_chartName}/docker"
     fi
     #导入离线安装包中的docker镜像，并如果存在Docker镜像仓库则推送到Docker镜像仓库中
-    loadAndPushDockerImage "${l_dockerFilePath}" "${l_dockerRepoName}" "${l_dockerRepoAccount}" "${l_dockerRepoPassword}"
+    loadAndPushDockerImage "${l_dockerFilePath}" "${l_dockerRepoName}" "${l_forceDeployArchType}" \
+      "${l_dockerRepoAccount}" "${l_dockerRepoPassword}"
     [[ "${resultVal}" == "false" ]] && return
   else
     echo "找不到Docker镜像"
