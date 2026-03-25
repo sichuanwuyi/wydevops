@@ -114,6 +114,10 @@ function executePackageStage() {
     l_remoteInstallProxyShell="${l_array[1]}"
     echo "-----------l_shellOrYamlFile=|${l_shellOrYamlFile}|--------------"
     echo "-----------l_remoteInstallProxyShell=|${l_remoteInstallProxyShell}|------------"
+    echo "---1---l_i=${l_i}-----------"
+    echo "---2---${l_chartName}:${l_chartVersion}----|${l_deployType}|----|${l_installMode}|----|${l_images}|-----|${l_remoteDir}|----${l_localBaseDir}----"
+
+
     #发布服务安装包
     invokeExtendPointFunc "deployServicePackage" "deploy.sh.deploy.service.package" "" "${l_i}" "${l_chartName}" "${l_chartVersion}" \
       "${l_deployType}" "${l_installMode}" "${l_images}" "${l_remoteDir}" "${l_localBaseDir}" "${l_shellOrYamlFile}" "${l_remoteInstallProxyShell}"
