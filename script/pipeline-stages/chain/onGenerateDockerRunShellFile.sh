@@ -28,10 +28,10 @@ function onGenerateDockerRunShellFile_default() {
 
     #在gBuildPath目录下生成docker-run.sh文件。
     #l_generatorFile=docker-run-generator.sh
-    # shellcheck disable=SC1090
     echo "---A--|${l_remaining_params[0]}|----|${l_remaining_params[1]}|----|${l_remaining_params[2]}|-----"
     echo "---B--|${l_remaining_params[3]}|----|${l_remaining_params[4]}|----|${l_remaining_params[5]}|-----"
     echo "---C--|${l_remaining_params[6]}|----|${l_remaining_params[7]}|----|${l_remaining_params[8]}|-----"
+    # shellcheck disable=SC1090
     source "${l_generatorFile}" "${l_remaining_params[@]}"
     gDefaultRetVal="${l_buildPath}/docker-run.sh"
   fi
