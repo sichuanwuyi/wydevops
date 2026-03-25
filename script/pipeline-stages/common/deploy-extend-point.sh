@@ -594,7 +594,8 @@ function _deployServiceByDocker(){
 
       info "common.deploy.extend.point.creating.install.sh" "${l_localBaseDir##*/}#install.sh"
       l_nodeIps="${l_archTypeMap[${l_archType}]//,${l_proxyNode}/}"
-      echo -e "#!/usr/bin/env bash\n source ${l_remoteDir}/${l_remoteInstallProxyShell##*/} \"${l_chartName}\" \"${l_chartVersion}\" \"${l_curArchType}\" \"${l_archType}\" \"${l_offlinePackage}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \"${gDockerRepoPassword}\" \"${l_nodeIps}\"" > "${l_localDir}/install.sh"
+      _generateInstallShellFile "${l_localDir}" "${l_remoteDir}" "${l_remoteInstallProxyShell##*/}" \
+        "${l_chartName}" "${l_chartVersion}" "${l_curArchType}" "${l_archType}" "${l_offlinePackage}" "${l_nodeIps}"
 
       info "common.deploy.extend.point.creating.remote.dir" "${l_ip}#${l_remoteDir}"
       timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "rm -rf ${l_remoteDir} && mkdir -p ${l_remoteDir}"
@@ -1438,6 +1439,30 @@ function _install_tonistiigi_binfmt() {
     info "common.deploy.extend.point.saving.qemu.image" "tonistiigi/binfmt:latest#${gImageCacheDir}"
     saveImage "tonistiigi/binfmt:latest" "linux/${l_localArchType##*/}" "${gImageCacheDir}"
   fi
+}
+
+function _generateInstallShellFile() {
+  export gDockerRepoName
+  export gDockerRepoAccount
+  export gDockerRepoPassword
+
+  local l_localDir=$1
+  local l_remoteDir=$2
+  local l_remoteInstallProxyShell=$3
+  local l_chartName=$4
+  local l_chartVersion=$5
+  local l_curArchType=$6
+  local l_archType=$7
+  local l_offlinePackage=$8
+  local l_nodeIps=$9
+
+  echo -e "#!/usr/bin/env bash
+# source ${l_remoteDir}/${l_remoteInstallProxyShell/}
+source ${l_remoteDir}/${l_remoteInstallProxyShell/} ${l_chartName} ${l_chartVersion} \\
+  ${l_curArchType} ${l_archType} ${l_offlinePackage} ${gDockerRepoName} ${gDockerRepoAccount} \\
+  ${gDockerRepoPassword} ${l_nodeIps}
+" > "${l_localDir}/install.sh"
+
 }
 
 #**********************私有方法-结束***************************#
