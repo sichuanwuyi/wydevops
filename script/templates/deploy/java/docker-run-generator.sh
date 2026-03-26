@@ -47,13 +47,13 @@ function generateDockerRunShellFile() {
   echo \"echo ${l_password} | docker login ${l_repoName} -u ${l_account} --password-stdin\"
   echo \"${l_password}\" | docker login \"${l_repoName}\" -u \"${l_account}\" --password-stdin
   echo \"docker rm -f ${l_chartName}\"
-  docker rm -f \"${l_chartName}\"
+  docker rm -f \"${l_chartName}\" > /dev/null 2>&1
   echo \"docker run -d --platform \$1 ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}\"
   docker run -d --platform \$1 ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_repoName}/${l_mainImage}" > "${gBuildPath}/docker-run.sh"
   else
   echo "#!/usr/bin/env bash
   echo \"docker rm -f ${l_chartName}\"
-  docker rm -f \"${l_chartName}\"
+  docker rm -f \"${l_chartName}\" > /dev/null 2>&1
   echo \"docker run -d --platform \$1 ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}\"
   docker run -d --platform \$1 ${l_exposePorts:1} -v ${l_remoteDir}/config:${l_workDirInContainer}/config --name ${l_chartName} ${l_mainImage}" > "${gBuildPath}/docker-run.sh"
   fi
