@@ -170,6 +170,7 @@ function _install_tonistiigi_binfmt() {
 
 function execute(){
   export resultVal
+  exprot _selfRootDir
   export WYDEVOPS_LOG_LANGUAGE
 
   local l_chartName=$1
@@ -189,9 +190,9 @@ function execute(){
 
   #为log-helper.sh需要的环境变量WYDEVOPS_LOG_LANGUAGE赋值
   WYDEVOPS_LOG_LANGUAGE="${l_logLanguage}"
-
-  l_selfRootDir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -L)"
-  source "${l_selfRootDir}/log-helper.sh"
+  echo "------WYDEVOPS_LOG_LANGUAGE=${WYDEVOPS_LOG_LANGUAGE}--------------"
+  echo "------${_selfRootDir}/log-helper.sh--------------"
+  source "${_selfRootDir}/log-helper.sh"
 
   if [ "${l_dockerRepoName}" ];then
     #从Docker镜像仓库拉取Docker镜像
@@ -242,8 +243,10 @@ function execute(){
 
 }
 
-export resultVal
+exprot _selfRootDir
+_selfRootDir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -L)"
 
+export resultVal
 #convertI18NText方法的返回值变量。
 export gLogI18NRetVal
 #引入工作模式全局变量,jenkins模式下输出的日志不设置颜色。
