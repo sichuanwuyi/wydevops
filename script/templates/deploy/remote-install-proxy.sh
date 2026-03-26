@@ -170,23 +170,28 @@ function _install_tonistiigi_binfmt() {
 
 function execute(){
   export resultVal
+  export WYDEVOPS_LOG_LANGUAGE
 
   local l_chartName=$1
   local l_chartVersion=$2
   local l_curArchType=$3
   local l_targetArchType=$4
   local l_offlinePackage=$5
-  local l_dockerRepoName=$6
-  local l_dockerRepoAccount=$7
-  local l_dockerRepoPassword=$8
-  local l_nodeInfoList=$9
+  local l_nodeInfoList=$6
+  local l_logLanguage=$7
+  local l_dockerRepoName=$8
+  local l_dockerRepoAccount=$9
+  local l_dockerRepoPassword=${10}
 
   local l_selfRootDir
   local l_dockerFilePath
   local l_errorLog
 
-  # shellcheck disable=SC2164
-  l_selfRootDir=$(cd "$(dirname "$0")"; pwd)
+  #为log-helper.sh需要的环境变量WYDEVOPS_LOG_LANGUAGE赋值
+  WYDEVOPS_LOG_LANGUAGE="${l_logLanguage}"
+
+  l_selfRootDir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -L)"
+  source "${l_selfRootDir}/log-helper.sh"
 
   if [ "${l_dockerRepoName}" ];then
     #从Docker镜像仓库拉取Docker镜像
@@ -256,10 +261,8 @@ gTempFileDir="${_selfRootDir}/temp"
 #引入yaml-helper.yaml文件中的文件内存缓存变量
 #在删除文件时需要同步清除缓存中的内容。
 export gFileContentMap
-#获取脚本所在的根目录
-export _selfRootDir
 
-_selfRootDir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -L)"
-source "${_selfRootDir}/log-helper.sh"
+#引入环境变量WYDEVOPS_LOG_LANGUAGE
+export WYDEVOPS_LOG_LANGUAGE
 
 execute "${@}"

@@ -618,7 +618,7 @@ function _deployServiceByDocker(){
       info "common.deploy.extend.point.creating.install.sh" "${l_localBaseDir##*/}#install.sh"
       l_nodeIps="${l_archTypeMap[${l_archType}]//,${l_proxyNode}/}"
       _generateInstallShellFile "${l_localDir}" "${l_remoteDir}" "${l_remoteInstallProxyShell##*/}" \
-        "${l_chartName}" "${l_chartVersion}" "${l_curArchType}" "${l_archType}" "${l_offlinePackage}" "${l_nodeIps}"
+        "${l_chartName}" "${l_chartVersion}" "${l_curArchType}" "${l_archType}" "${l_offlinePackage}" "${l_nodeIps}" "${WYDEVOPS_LOG_LANGUAGE}"
 
       info "common.deploy.extend.point.creating.remote.dir" "${l_ip}#${l_remoteDir}"
       timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "rm -rf ${l_remoteDir} && mkdir -p ${l_remoteDir}"
@@ -1434,10 +1434,11 @@ function _generateInstallShellFile() {
   local l_targetArchType=$7
   local l_offlinePackage=$8
   local l_nodeIps=$9
+  local l_logLanguage=${10}
 
   echo -e "#!/usr/bin/env bash
 source ${l_remoteDir}/${l_remoteInstallProxyShell/} \"${l_chartName}\" \"${l_chartVersion}\" \\
-  \"${l_curArchType}\" \"${l_targetArchType}\" \"${l_offlinePackage}\" \"${l_nodeIps}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \"${gDockerRepoPassword}\"
+  \"${l_curArchType}\" \"${l_targetArchType}\" \"${l_offlinePackage}\" \"${l_nodeIps}\" \"${l_logLanguage}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \"${gDockerRepoPassword}\"
   " > "${l_localDir}/install.sh"
 }
 
