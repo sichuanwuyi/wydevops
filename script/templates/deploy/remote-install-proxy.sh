@@ -238,30 +238,28 @@ function execute(){
 }
 
 export resultVal
-export gMessagePropertiesMap
 
-if [[ "${gMessagePropertiesMap}" && "${#gMessagePropertiesMap[@]}" -eq 0 ]]; then
-  #获取脚本所在的根目录
-  export _selfRootDir
-  _selfRootDir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -L)"
-  #convertI18NText方法的返回值变量。
-  export gLogI18NRetVal
-  #引入工作模式全局变量,jenkins模式下输出的日志不设置颜色。
-  export gWorkMode
-  gWorkMode="local"
-  # 申明全局调试模式指示变量，用于debug函数内控制信息的显示
-  export gDebugMode
-  gDebugMode="false"
-  # 申明默认调试文件输出目录
-  export gDebugOutDir
-  gDebugOutDir="${_selfRootDir}/debug"
-  #引入的全局临时文件目录
-  export gTempFileDir
-  gTempFileDir="${_selfRootDir}/temp"
-  #引入yaml-helper.yaml文件中的文件内存缓存变量
-  #在删除文件时需要同步清除缓存中的内容。
-  export gFileContentMap
-  source "${_selfRootDir}/log-helper.sh"
-fi
+#convertI18NText方法的返回值变量。
+export gLogI18NRetVal
+#引入工作模式全局变量,jenkins模式下输出的日志不设置颜色。
+export gWorkMode
+gWorkMode="local"
+# 申明全局调试模式指示变量，用于debug函数内控制信息的显示
+export gDebugMode
+gDebugMode="false"
+# 申明默认调试文件输出目录
+export gDebugOutDir
+gDebugOutDir="${_selfRootDir}/debug"
+#引入的全局临时文件目录
+export gTempFileDir
+gTempFileDir="${_selfRootDir}/temp"
+#引入yaml-helper.yaml文件中的文件内存缓存变量
+#在删除文件时需要同步清除缓存中的内容。
+export gFileContentMap
+#获取脚本所在的根目录
+export _selfRootDir
+
+_selfRootDir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -L)"
+source "${_selfRootDir}/log-helper.sh"
 
 execute "${@}"
