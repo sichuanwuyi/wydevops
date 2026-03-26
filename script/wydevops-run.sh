@@ -57,9 +57,8 @@ if [ ! "${_SELF_SCRIPT_DIR}" ];then
   #echo -e "${BBlue}_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}${Color_Off}"
 fi
 
-bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" \
--e -f -m \
---localConfigFile "${3:-ci-cd-config.yaml}" \
+bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" --localConfigFile "${3:-ci-cd-config.yaml}" \
+-e -f -m -c \
 -A linux/amd64 \
 -O linux/amd64 \
 -B single \
