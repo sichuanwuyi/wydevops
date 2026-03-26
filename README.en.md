@@ -7,20 +7,21 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
 
 1. Designed to support multi-language projects (currently adapted for Go, Java, Next.js, and Vue), as well as single-module and multi-module projects.
 2. Supports building Docker images for both `linux/amd64` and `linux/arm64` architectures.
-3. Supports two automated microservice deployment methods: K8S and Docker. In local working mode, the entire CI/CD process can be completed directly from the source code project, right up to the microservice running in Docker or a K8S cluster.
-4. Supports layered packaging of microservice images, resulting in smaller deployment packages for production environments.
-5. Includes a mechanism for sending notification messages to external systems.
-6. Supports offline building of microservice deployment packages, caching all third-party images pulled from the public network locally, which greatly facilitates microservice development in private network environments.
-7. Supports deploying multiple microservices with a single Helm chart, making it easy to uniformly release and uninstall closely coupled business modules.
-8. Supports deploying multiple microservices within a single container, minimizing the use of valuable Pod resources.
-9. Supports nexus3、harbor(2.10+)、registry、aws-ecr(AWS ECR repository) as Docker and Helm chart repositories, eliminating the need for the `helm-push` plugin.
-10. Supports registry as Docker repositories.
-11. Supports integration with Jenkins, allowing consolidation with Jenkins Pipelines using just a single entry script.
-12. All code is developed in Shell, providing maximum flexibility and user adaptability, with the lowest learning curve for developers of various languages.
-13. The project includes powerful, originally developed tools for reading and writing YAML files, offering great convenience for users to custom-extend functionalities.
-14. Designed with a three-tier management model (company-level, development group-level, project-level), providing interfaces for personnel at all levels to manage and control the CI/CD process.
-15. Provides a plugin mechanism for K8S resource configuration files, making it easy for developers to customize configurations.
-16. Based on this project, the maintenance team has already developed the wydevops microservice management platform, which is not yet open-sourced.
+3. Enables heterogeneous building and running of Docker images across CPU architectures through the integration of QEMU.
+4. Supports two automated microservice deployment methods: K8S and Docker. In local working mode, the entire CI/CD process can be completed directly from the source code project, right up to the microservice running in Docker or a K8S cluster.
+5. Supports layered packaging of microservice images, resulting in smaller deployment packages for production environments.
+6. Includes a mechanism for sending notification messages to external systems.
+7. Supports offline building of microservice deployment packages, caching all third-party images pulled from the public network locally, which greatly facilitates microservice development in private network environments.
+8. Supports deploying multiple microservices with a single Helm chart, making it easy to uniformly release and uninstall closely coupled business modules.
+9. Supports deploying multiple microservices within a single container, minimizing the use of valuable Pod resources.
+10. Supports nexus3、harbor(2.10+)、registry、aws-ecr(AWS ECR repository) as Docker and Helm chart repositories, eliminating the need for the `helm-push` plugin.
+11. Supports registry as Docker repositories.
+12. Supports integration with Jenkins, allowing consolidation with Jenkins Pipelines using just a single entry script.
+13. All code is developed in Shell, providing maximum flexibility and user adaptability, with the lowest learning curve for developers of various languages.
+14. The project includes powerful, originally developed tools for reading and writing YAML files, offering great convenience for users to custom-extend functionalities.
+15. Designed with a three-tier management model (company-level, development group-level, project-level), providing interfaces for personnel at all levels to manage and control the CI/CD process.
+16. Provides a plugin mechanism for K8S resource configuration files, making it easy for developers to customize configurations.
+17. Based on this project, the maintenance team has already developed the wydevops microservice management platform, which is not yet open-sourced.
 
 ## Running Environment
 
