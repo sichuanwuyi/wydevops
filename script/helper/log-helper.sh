@@ -469,7 +469,7 @@ function loadMessageProperties(){
   local l_language
   local l_matchedFile="true"
 
-  if [ "${#gMessagePropertiesMap[@]}" -ne 0 ]; then
+  if [[ "${gMessagePropertiesMap}" && "${#gMessagePropertiesMap[@]}" -ne 0 ]]; then
     #已经加载过了就直接返回。
     return
   fi

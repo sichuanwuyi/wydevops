@@ -468,6 +468,8 @@ function _deployServiceByDocker(){
   local l_configFile
   local l_nodeIps
   local l_errorLog
+  local l_messageFiles
+  local l_messageFile
 
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].activeProfile"
   l_activeProfile="${gDefaultRetVal}"
@@ -573,9 +575,13 @@ function _deployServiceByDocker(){
         mkdir -p "${l_localDir}/i18n"
       fi
       #复制message_remote_*.properties文件到${l_localDir}/i18n目录中
-      info "common.deploy.extend.point.copying.i18n.message.file" "${l_localDir}/i18n" "-n"
-      l_errorLog=$(cp -f "${gBuildScriptRootDir}"/i18n/message_remote_*.properties "${l_localDir}/i18n/" 2>&1)
-      [[ "$?" -ne 0 ]] && error "common.deploy.extend.point.execute.command.failed" "${l_errorLog}" "*" || warn "common.deploy.extend.point.success" "" "*"
+      info "common.deploy.extend.point.copying.i18n.message.files" "${l_localDir}/i18n"
+      l_messageFiles=$(find "${gBuildScriptRootDir}/i18n" -maxdepth 1 -type f -name "message_remote_*.properties")
+      for l_messageFile in ${l_messageFiles[@]};do
+        info "common.deploy.extend.point.copying.i18n.message.file" "${l_messageFile##*/}#${l_messageFile//_remote_/_}" "-n"
+        l_errorLog=$(cp -f "${l_messageFile//_remote_/_}" "${l_localDir}/i18n/" 2>&1)
+        [[ "$?" -ne 0 ]] && error "common.deploy.extend.point.execute.command.failed" "${l_errorLog}" "*" || warn "common.deploy.extend.point.success" "" "*"
+      done
 
       info "common.deploy.extend.point.checking.docker.installed" "${l_ip}" "-n"
       l_content=$(timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "docker -v")
