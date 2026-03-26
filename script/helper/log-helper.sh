@@ -166,8 +166,10 @@ function registerTempFile(){
   if [[ "${l_content}" ]];then
     [[ "${l_content}" == "${l_tmpFile}" ]] && return
     rm -f "${l_content}"
-    # shellcheck disable=SC2184
-    unset gFileContentMap["${l_tmpFile}"]
+    if [ "${gFileContentMap}" ];then
+      # shellcheck disable=SC2184
+      unset gFileContentMap["${l_tmpFile}"]
+    fi
   fi
 
   #info "log.helper.register.tmp.file" "${l_tmpFile##*/}"
@@ -182,8 +184,10 @@ function unregisterTempFile(){
     rm -f "${l_tmpFile}"
     # shellcheck disable=SC2184
     unset gTempFileRegTables["${l_tmpFile##*/}"]
-    # shellcheck disable=SC2184
-    unset gFileContentMap["${l_tmpFile}"]
+    if [ "${gFileContentMap}" ];then
+      # shellcheck disable=SC2184
+      unset gFileContentMap["${l_tmpFile}"]
+    fi
   fi
 }
 

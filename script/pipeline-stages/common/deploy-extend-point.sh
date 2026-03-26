@@ -427,6 +427,7 @@ function _deployServiceByDocker(){
   export gDefaultRetVal
   export gCiCdYamlFile
   export gHelmBuildOutDir
+  export gBuildScriptRootDir
   export gDockerRepoName
   export gDockerRepoAccount
   export gDockerRepoPassword
@@ -561,6 +562,20 @@ function _deployServiceByDocker(){
           [[ "$?" -ne 0 ]] && error "common.deploy.extend.point.execute.command.failed" "${l_errorLog}" "*" || warn "common.deploy.extend.point.success" "" "*"
         fi
       fi
+
+      #复制log-helper.sh文件到${l_localDir}目录中。
+      info "common.deploy.extend.point.copying.log.helper.shell.file" "${l_offlinePackage}#${l_localDir}" "-n"
+      l_errorLog=$(cp -f "${gBuildScriptRootDir}/helper/log-helper.sh" "${l_localDir}/log-helper.sh" 2>&1)
+      [[ "$?" -ne 0 ]] && error "common.deploy.extend.point.execute.command.failed" "${l_errorLog}" "*" || warn "common.deploy.extend.point.success" "" "*"
+
+      #创建${l_localDir}/i18n目录
+      if [ ! -d "${l_localDir}/i18n" ];then
+        mkdir -p "${l_localDir}/i18n"
+      fi
+      #复制message_remote_*.properties文件到${l_localDir}/i18n目录中
+      info "common.deploy.extend.point.copying.i18n.message.file" "${l_localDir}/i18n" "-n"
+      l_errorLog=$(cp -f "${gBuildScriptRootDir}/i18n/message_remote_*.properties" "${l_localDir}/i18n" 2>&1)
+      [[ "$?" -ne 0 ]] && error "common.deploy.extend.point.execute.command.failed" "${l_errorLog}" "*" || warn "common.deploy.extend.point.success" "" "*"
 
       info "common.deploy.extend.point.checking.docker.installed" "${l_ip}" "-n"
       l_content=$(timeout 3s ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "docker -v")
@@ -1397,50 +1412,6 @@ function _install_tonistiigi_binfmt_in_k8s() {
 
 }
 
-function _install_tonistiigi_binfmt() {
-  export gImageCacheDir
-
-  local l_localArchType=$1
-
-  docker image inspect tonistiigi/binfmt:latest >/dev/null 2>&1
-  # shellcheck disable=SC2181
-  if [ "$?" -eq 0 ];then
-    info "common.deploy.extend.point.install.qemu.image.success" "tonistiigi/binfmt:latest"
-    return
-  fi
-
-  if [ "${gDockerRepoName}" ];then
-   docker run --rm --privileged "${gDockerRepoName}/tonistiigi/binfmt:latest" --install all
-   if [ "$?" -eq 0 ];then
-     warn "common.deploy.extend.point.install.qemu.image.from.local.repo.success" "${gDockerRepoName}/tonistiigi/binfmt:latest"
-     return
-   fi
-  fi
-
-  if [ -f "${gImageCacheDir}/tonistiigi_binfmt-latest-${l_localArchType//\//-}.tar" ];then
-    docker load -i "${gImageCacheDir}/tonistiigi_binfmt-latest-${l_localArchType//\//-}.tar"
-    if [ "$?" -eq 0 ];then
-      warn "common.deploy.extend.point.load.qemu.image.from.local.cache.success" "tonistiigi_binfmt:latest"
-    fi
-  fi
-
-  docker run --rm --privileged tonistiigi/binfmt:latest --install all
-  if [ "$?" -ne 0 ];then
-    error "common.deploy.extend.point.install.qemu.image.failed" "tonistiigi/binfmt:latest"
-  fi
-  info "common.deploy.extend.point.install.qemu.image.success" "tonistiigi/binfmt:latest"
-
-  if [ "${gDockerRepoName}" ];then
-    info "common.deploy.extend.point.pushing.qemu.image" "tonistiigi/binfmt:latest#${gDockerRepoName}"
-    pushImage "tonistiigi/binfmt:latest" "linux/${l_localArchType##*/}" "${gDockerRepoName}"
-  fi
-
-  if [ ! -f "${gImageCacheDir}/tonistiigi_binfmt-latest-${l_localArchType//\//-}.tar" ];then
-    info "common.deploy.extend.point.saving.qemu.image" "tonistiigi/binfmt:latest#${gImageCacheDir}"
-    saveImage "tonistiigi/binfmt:latest" "linux/${l_localArchType##*/}" "${gImageCacheDir}"
-  fi
-}
-
 function _generateInstallShellFile() {
   export gDockerRepoName
   export gDockerRepoAccount
@@ -1452,13 +1423,13 @@ function _generateInstallShellFile() {
   local l_chartName=$4
   local l_chartVersion=$5
   local l_curArchType=$6
-  local l_archType=$7
+  local l_targetArchType=$7
   local l_offlinePackage=$8
   local l_nodeIps=$9
 
   echo -e "#!/usr/bin/env bash
 source ${l_remoteDir}/${l_remoteInstallProxyShell/} \"${l_chartName}\" \"${l_chartVersion}\" \\
-  \"${l_curArchType}\" \"${l_archType}\" \"${l_offlinePackage}\" \"${l_nodeIps}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \"${gDockerRepoPassword}\"
+  \"${l_curArchType}\" \"${l_targetArchType}\" \"${l_offlinePackage}\" \"${l_nodeIps}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \"${gDockerRepoPassword}\"
   " > "${l_localDir}/install.sh"
 }
 
