@@ -188,9 +188,11 @@ function execute(){
   local l_dockerFilePath
   local l_errorLog
 
+  l_selfRootDir="${_selfRootDir}"
+
   #为log-helper.sh需要的环境变量WYDEVOPS_LOG_LANGUAGE赋值
   WYDEVOPS_LOG_LANGUAGE="${l_logLanguage}"
-  source "${_selfRootDir}/log-helper.sh"
+  source "${l_selfRootDir}/log-helper.sh"
 
   if [ "${l_dockerRepoName}" ];then
     #从Docker镜像仓库拉取Docker镜像
