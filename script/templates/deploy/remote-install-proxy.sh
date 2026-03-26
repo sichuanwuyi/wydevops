@@ -190,8 +190,6 @@ function execute(){
 
   #为log-helper.sh需要的环境变量WYDEVOPS_LOG_LANGUAGE赋值
   WYDEVOPS_LOG_LANGUAGE="${l_logLanguage}"
-  echo "------WYDEVOPS_LOG_LANGUAGE=${WYDEVOPS_LOG_LANGUAGE}--------------"
-  echo "------${_selfRootDir}/log-helper.sh--------------"
   source "${_selfRootDir}/log-helper.sh"
 
   if [ "${l_dockerRepoName}" ];then
