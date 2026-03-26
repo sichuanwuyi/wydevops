@@ -57,9 +57,11 @@ if [ ! "${_SELF_SCRIPT_DIR}" ];then
   #echo -e "${BBlue}_SELF_SCRIPT_DIR=${_SELF_SCRIPT_DIR}${Color_Off}"
 fi
 
-bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" \
--e -f -m \
---localConfigFile "${3:-ci-cd-config.yaml}" \
+#以下bash行会自动更新到项目中的wydevops-run.sh文件中，后续行会智能合并到项目中wydevops-run.sh文件中的内容,合并规则如下:
+#1.新的参数行会合并到项目下的wydevops-run.sh文件中
+#2.如果项目下wydevops-run.sh文件中的参数值被修改过，则要保留修改后的参数值
+bash "${_SCRIPTS_ROOT_DIR}/wydevops.sh" --localConfigFile "${3:-ci-cd-config.yaml}" \
+-e -f -m -c \
 -A linux/amd64 \
 -O linux/amd64 \
 -B single \
