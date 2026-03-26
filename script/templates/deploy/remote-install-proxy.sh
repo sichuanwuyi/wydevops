@@ -262,6 +262,8 @@ if ! type -t "info" > /dev/null; then
   export gFileContentMap
   echo "----------${_selfRootDir}/log-helper.sh-------------"
   source "${_selfRootDir}/log-helper.sh"
+else
+  echo "----------${_selfRootDir}/log-helper.sh-----1111--------"
 fi
 
 execute "${@}"
