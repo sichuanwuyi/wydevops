@@ -260,7 +260,7 @@ if ! type -t "info" > /dev/null; then
   #引入yaml-helper.yaml文件中的文件内存缓存变量
   #在删除文件时需要同步清除缓存中的内容。
   export gFileContentMap
-  source ./log-helper.sh
+  source "${_selfRootDir}/log-helper.sh"
 fi
 
 execute "${@}"
