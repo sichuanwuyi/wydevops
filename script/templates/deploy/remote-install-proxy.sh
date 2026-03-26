@@ -222,8 +222,8 @@ function execute(){
 
   #先确保本地拉起Docker镜像。
   if [ -f "${l_selfRootDir}/docker-run.sh" ];then
-    info "remote.install.sh.execute.docker.run"
-    l_errorLog=$(bash "${l_selfRootDir}/docker-run.sh" "${l_targetArchType}" & )
+    info "remote.install.sh.execute.docker.run" "" "-n"
+    l_errorLog=$(bash "${l_selfRootDir}/docker-run.sh" "${l_targetArchType}" 2>&1)
     # shellcheck disable=SC2181
     if [ "$?" -ne 0 ];then
       error "remote.install.sh.execute.failed" "\n${l_errorLog}" "*"
@@ -231,8 +231,8 @@ function execute(){
       warn "remote.install.sh.execute.success" "" "*"
     fi
   elif [ -f "${l_selfRootDir}/docker-compose.yaml" ];then
-    info "remote.install.sh.execute.docker.compose.run"
-    l_errorLog=$(docker-compose -d -f "${l_selfRootDir}/docker-compose.yaml" up &)
+    info "remote.install.sh.execute.docker.compose.run" "" "-n"
+    l_errorLog=$(docker-compose -d -f "${l_selfRootDir}/docker-compose.yaml" up 2>&1)
     # shellcheck disable=SC2181
     if [ "$?" -ne 0 ];then
       error "remote.install.sh.execute.failed" "\n${l_errorLog}" "*"
