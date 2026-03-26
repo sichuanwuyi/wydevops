@@ -574,7 +574,7 @@ function _deployServiceByDocker(){
       fi
       #复制message_remote_*.properties文件到${l_localDir}/i18n目录中
       info "common.deploy.extend.point.copying.i18n.message.file" "${l_localDir}/i18n" "-n"
-      l_errorLog=$(cp -f "${gBuildScriptRootDir}/i18n/message_remote_*.properties" "${l_localDir}/i18n" 2>&1)
+      l_errorLog=$(cp -f "${gBuildScriptRootDir}"/i18n/message_remote_*.properties "${l_localDir}/i18n/" 2>&1)
       [[ "$?" -ne 0 ]] && error "common.deploy.extend.point.execute.command.failed" "${l_errorLog}" "*" || warn "common.deploy.extend.point.success" "" "*"
 
       info "common.deploy.extend.point.checking.docker.installed" "${l_ip}" "-n"
