@@ -470,6 +470,7 @@ function _deployServiceByDocker(){
   local l_errorLog
   local l_messageFiles
   local l_messageFile
+  local l_newMessageFile
 
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].activeProfile"
   l_activeProfile="${gDefaultRetVal}"
@@ -578,7 +579,8 @@ function _deployServiceByDocker(){
       info "common.deploy.extend.point.copying.i18n.message.files" "${l_localDir}/i18n"
       l_messageFiles=$(find "${gBuildScriptRootDir}/i18n" -maxdepth 1 -type f -name "message_remote_*.properties")
       for l_messageFile in ${l_messageFiles[@]};do
-        info "common.deploy.extend.point.copying.i18n.message.file" "${l_messageFile##*/}#${l_messageFile//_remote_/_}" "-n"
+        l_newMessageFile="${l_messageFile##*/}"
+        info "common.deploy.extend.point.copying.i18n.message.file" "${l_newMessageFile}#${l_newMessageFile//_remote_/_}" "-n"
         l_errorLog=$(cp -f "${l_messageFile//_remote_/_}" "${l_localDir}/i18n/" 2>&1)
         [[ "$?" -ne 0 ]] && error "common.deploy.extend.point.execute.command.failed" "${l_errorLog}" "*" || warn "common.deploy.extend.point.success" "" "*"
       done
