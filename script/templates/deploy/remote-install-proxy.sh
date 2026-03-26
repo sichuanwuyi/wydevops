@@ -243,6 +243,7 @@ export resultVal
   #获取脚本所在的根目录
   export _selfRootDir
   _selfRootDir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -L)"
+  echo "------_selfRootDir=${_selfRootDir}-------"
   #convertI18NText方法的返回值变量。
   export gLogI18NRetVal
   #引入工作模式全局变量,jenkins模式下输出的日志不设置颜色。
@@ -260,6 +261,7 @@ export resultVal
   #引入yaml-helper.yaml文件中的文件内存缓存变量
   #在删除文件时需要同步清除缓存中的内容。
   export gFileContentMap
+  echo "------log-helper.sh=${_selfRootDir}/log-helper.sh-------"
   source "${_selfRootDir}/log-helper.sh"
 #fi
 
