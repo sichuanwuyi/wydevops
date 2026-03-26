@@ -170,7 +170,7 @@ function _install_tonistiigi_binfmt() {
 
 function execute(){
   export resultVal
-  exprot _selfRootDir
+  export _selfRootDir
   export WYDEVOPS_LOG_LANGUAGE
 
   local l_chartName=$1
@@ -243,7 +243,7 @@ function execute(){
 
 }
 
-exprot _selfRootDir
+export _selfRootDir
 _selfRootDir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -L)"
 
 export resultVal
