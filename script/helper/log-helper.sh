@@ -481,7 +481,6 @@ function loadMessageProperties(){
 
   l_language=${WYDEVOPS_LOG_LANGUAGE}
   l_file_path="${_selfRootDir}/i18n/message_${l_language}.properties"
-  echo "----l_language=${l_language}------l_file_path=${l_file_path}---------"
   if [ ! -f "${l_file_path}" ]; then
     l_matchedFile="false"
     if [[ "${l_language}" =~ ^zh ]];then

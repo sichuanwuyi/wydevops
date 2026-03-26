@@ -581,7 +581,7 @@ function _deployServiceByDocker(){
       for l_messageFile in ${l_messageFiles[@]};do
         l_newMessageFile="${l_messageFile##*/}"
         info "common.deploy.extend.point.copying.i18n.message.file" "${l_newMessageFile}#${l_newMessageFile//_remote_/_}" "-n"
-        l_errorLog=$(cp -f "${l_messageFile//_remote_/_}" "${l_localDir}/i18n/" 2>&1)
+        l_errorLog=$(cp -f "${l_messageFile}" "${l_localDir}/i18n/${l_messageFile//_remote_/_}" 2>&1)
         [[ "$?" -ne 0 ]] && error "common.deploy.extend.point.execute.command.failed" "${l_errorLog}" "*" || warn "common.deploy.extend.point.success" "" "*"
       done
 
