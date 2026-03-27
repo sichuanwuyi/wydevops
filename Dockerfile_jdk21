@@ -7,19 +7,19 @@ LABEL org.opencontainers.image.authors="wuyi <11372349@qq.com>"
 
 # Install system dependencies, git, and Docker CLI in a single layer for efficiency.
 # This follows best practices: update, install, and clean up in one RUN command.
-RUN apt-get update && \
-    apt-get install -y git ca-certificates curl libxml2-utils && \
-    # Add Docker's official GPG key
-    install -m 0755 -d /etc/apt/keyrings && \
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
-    chmod a+r /etc/apt/keyrings/docker.asc && \
-    # Set up the Docker repository
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-    # Update apt with the new repo and install Docker CLI
-    apt-get update && \
-    apt-get install -y docker-ce-cli && \
-    # Clean up apt cache to reduce image size
-    rm -rf /var/lib/apt/lists/*
+#RUN apt-get update && \
+#    apt-get install -y git ca-certificates curl libxml2-utils && \
+#    # Add Docker's official GPG key
+#    install -m 0755 -d /etc/apt/keyrings && \
+#    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
+#    chmod a+r /etc/apt/keyrings/docker.asc && \
+#    # Set up the Docker repository
+#    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+#    # Update apt with the new repo and install Docker CLI
+#    apt-get update && \
+#    apt-get install -y docker-ce-cli && \
+#    # Clean up apt cache to reduce image size
+#    rm -rf /var/lib/apt/lists/*
 
 # =================================================================
 # STAGE 2: Environment and User Configuration
@@ -40,6 +40,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     ENABLE_REMOVE_IMAGE=true \
     SHOW_HELP=false \
     SHOW_VERSION=false
+    GIT_REPO_URL=https://gitee.com/tmt_china/wydevops.git
+    GIT_REPO_BRANCH=develop
 
 # ARG to receive the host's docker group GID for docker.sock access.
 # Pass this during build: --build-arg DOCKER_GID=$(getent group docker | cut -d: -f3)
@@ -56,15 +58,12 @@ RUN groupadd --gid 1001 tmt && \
 # =================================================================
 # Switch to the non-root user.
 USER tmt
-WORKDIR /home/tmt
+WORKDIR /home/tmt/.wydevops
 
 # Clone the application repository, move files to the correct location,
 # set executable permissions, and clean up, all in a single RUN command.
-RUN git clone --depth 1 -b master https://gitee.com/tmt_china/wydevops.git && \
-    mkdir -p ${WYDEVOPS_HOME} && \
-    mv wydevops/script ${WYDEVOPS_HOME}/ && \
-    mv wydevops/client-config.yaml ${WYDEVOPS_HOME}/ && \
-    rm -rf wydevops && \
+RUN git clone --depth 1 -b $GIT_REPO_BRANCH $GIT_REPO_URL && \
+    mv ${WYDEVOPS_HOME}/wydevops/client-config.yaml ${WYDEVOPS_HOME}/ && \
     chmod +x ${WYDEVOPS_HOME}/script/wydevops-run.sh && \
     chmod +x ${WYDEVOPS_HOME}/script/tools/linux-amd64/kubectl && \
     chmod +x ${WYDEVOPS_HOME}/script/tools/linux-amd64/helm
