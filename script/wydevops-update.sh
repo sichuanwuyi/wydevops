@@ -118,7 +118,9 @@ export g_update_occurred="false"
 if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
   # If directory exists and is a git repo, pull the latest changes.
   info "wydevops.update.sh.sync.scripts.from.git.repository" "" "-n"
-  cd "${_SCRIPTS_PROJECT_DIR}" || exit
+  cd "${_SCRIPTS_PROJECT_DIR}" || exit 111
+
+  ls -a
 
   # Get the commit hash before pulling.
   l_before_hash=$(git rev-parse HEAD 2>&1)

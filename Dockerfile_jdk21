@@ -64,18 +64,18 @@ WORKDIR /home/tmt/.wydevops
 # set executable permissions, and clean up, all in a single RUN command.
 RUN git clone --depth 1 -b $GIT_REPO_BRANCH $GIT_REPO_URL && \
     mv ${WYDEVOPS_HOME}/wydevops/client-config.yaml ${WYDEVOPS_HOME}/ && \
-    chmod +x ${WYDEVOPS_HOME}/script/wydevops-run.sh && \
-    chmod +x ${WYDEVOPS_HOME}/script/tools/linux-amd64/kubectl && \
-    chmod +x ${WYDEVOPS_HOME}/script/tools/linux-amd64/helm
+    chmod +x ${WYDEVOPS_HOME}/wydevops/script/wydevops-run.sh && \
+    chmod +x ${WYDEVOPS_HOME}/wydevops/script/tools/linux-amd64/kubectl && \
+    chmod +x ${WYDEVOPS_HOME}/wydevops/script/tools/linux-amd64/helm
 
 # Add the custom tools directory to the PATH.
-ENV PATH=${WYDEVOPS_HOME}/script/tools/linux-amd64:${PATH}
+ENV PATH=${WYDEVOPS_HOME}/wydevops/script/tools/linux-amd64:${PATH}
 
 # =================================================================
 # STAGE 4: Container Execution
 # =================================================================
 # Set the entrypoint to the main execution script.
-ENTRYPOINT ["/bin/sh", "-c", "${WYDEVOPS_HOME}/script/wydevops-run.sh"]
+ENTRYPOINT ["/bin/sh", "-c", "${WYDEVOPS_HOME}/wydevops/script/wydevops-run.sh"]
 
 # Set the default command-line arguments for the entrypoint.
 CMD ["-A", "linux/amd64", "-O", "linux/amd64", "-B", "single", "-S", "build,docker,chart,package,deploy"]
