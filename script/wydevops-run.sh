@@ -52,7 +52,7 @@ fi
 
 if [ ! "${_TARGET_PROJECT_HOME}" ];then
   _TARGET_PROJECT_HOME="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -L)"
-  if [ "${_SCRIPTS_ROOT_DIR}" == "${_SCRIPTS_ROOT_DIR}" ];then
+  if [ "${_TARGET_PROJECT_HOME}" == "${_SCRIPTS_ROOT_DIR}" ];then
     error "wydevops.run.sh.target.project.home.not.set"
   fi
 fi
