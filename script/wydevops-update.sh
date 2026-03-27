@@ -119,6 +119,7 @@ if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
   # If directory exists and is a git repo, pull the latest changes.
   info "wydevops.update.sh.sync.scripts.from.git.repository" ""
   echo "-----_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}-------"
+  echo "--------------------------------"
   cd "${_SCRIPTS_PROJECT_DIR}" || exit 111
 
   ls -a
@@ -142,7 +143,7 @@ if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
     fi
   else
     # git pull failed (e.g., network error).
-    warn "wydevops.update.sh.sync.scripts.failed" "" "*"
+    warn "wydevops.update.sh.sync.scripts.failed" "\n${l_result}" "*"
   fi
 
   # shellcheck disable=SC2164
