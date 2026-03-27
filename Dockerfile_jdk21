@@ -39,8 +39,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     ENABLE_FORCE_COVERAGE=true \
     ENABLE_REMOVE_IMAGE=true \
     SHOW_HELP=false \
-    SHOW_VERSION=false
-    GIT_REPO_URL=https://gitee.com/tmt_china/wydevops.git
+    SHOW_VERSION=false \
+    GIT_REPO_URL=https://gitee.com/tmt_china/wydevops.git \
     GIT_REPO_BRANCH=develop
 
 # ARG to receive the host's docker group GID for docker.sock access.
