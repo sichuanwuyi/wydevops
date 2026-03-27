@@ -1,0 +1,82 @@
+# =================================================================
+# STAGE 1: Base Image and System Setup
+# =================================================================
+FROM maven:4.0.0-rc-5-eclipse-temurin-21-noble
+
+LABEL org.opencontainers.image.authors="wuyi <11372349@qq.com>"
+
+# Install system dependencies, git, and Docker CLI in a single layer for efficiency.
+# This follows best practices: update, install, and clean up in one RUN command.
+RUN apt-get update && \
+    apt-get install -y git ca-certificates curl libxml2-utils && \
+    # Add Docker's official GPG key
+    install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
+    chmod a+r /etc/apt/keyrings/docker.asc && \
+    # Set up the Docker repository
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    # Update apt with the new repo and install Docker CLI
+    apt-get update && \
+    apt-get install -y docker-ce-cli && \
+    # Clean up apt cache to reduce image size
+    rm -rf /var/lib/apt/lists/*
+
+# =================================================================
+# STAGE 2: Environment and User Configuration
+# =================================================================
+# Set environment variables for the application.
+ENV DEBIAN_FRONTEND=noninteractive \
+    WYDEVOPS_WORK_MODE=local \
+    WYDEVOPS_LOG_LANGUAGE=en \
+    WYDEVOPS_HOME=/home/tmt/.wydevops \
+    TARGET_PROJECT_HOME=/home/tmt/project \
+    DOCKER_REPO_CONFIG="" \
+    CHART_REPO_CONFIG="" \
+    IMAGE_LOCAL_CACHE_DIR=/home/tmt/cachedImages \
+    ENABLE_CLEAR_CACHED_PARAMS=true \
+    ENABLE_DEBUG=false \
+    ENABLE_NOTIFY=true \
+    ENABLE_FORCE_COVERAGE=true \
+    ENABLE_REMOVE_IMAGE=true \
+    SHOW_HELP=false \
+    SHOW_VERSION=false
+
+# ARG to receive the host's docker group GID for docker.sock access.
+# Pass this during build: --build-arg DOCKER_GID=$(getent group docker | cut -d: -f3)
+ARG DOCKER_GID=999
+
+# Create a dedicated user and group for the application.
+# Also, create a 'docker' group with the host's GID and add the user to it.
+RUN groupadd --gid 1001 tmt && \
+    groupadd --gid ${DOCKER_GID} docker && \
+    useradd --uid 1001 --gid tmt --groups docker -m -s /bin/bash tmt
+
+# =================================================================
+# STAGE 3: Application Setup (as non-root user)
+# =================================================================
+# Switch to the non-root user.
+USER tmt
+WORKDIR /home/tmt
+
+# Clone the application repository, move files to the correct location,
+# set executable permissions, and clean up, all in a single RUN command.
+RUN git clone --depth 1 -b master https://gitee.com/tmt_china/wydevops.git && \
+    mkdir -p ${WYDEVOPS_HOME} && \
+    mv wydevops/script ${WYDEVOPS_HOME}/ && \
+    mv wydevops/client-config.yaml ${WYDEVOPS_HOME}/ && \
+    rm -rf wydevops && \
+    chmod +x ${WYDEVOPS_HOME}/script/wydevops-run.sh && \
+    chmod +x ${WYDEVOPS_HOME}/script/tools/linux-amd64/kubectl && \
+    chmod +x ${WYDEVOPS_HOME}/script/tools/linux-amd64/helm
+
+# Add the custom tools directory to the PATH.
+ENV PATH=${WYDEVOPS_HOME}/script/tools/linux-amd64:${PATH}
+
+# =================================================================
+# STAGE 4: Container Execution
+# =================================================================
+# Set the entrypoint to the main execution script.
+ENTRYPOINT ["/bin/sh", "-c", "${WYDEVOPS_HOME}/script/wydevops-run.sh"]
+
+# Set the default command-line arguments for the entrypoint.
+CMD ["-A", "linux/amd64", "-O", "linux/amd64", "-B", "single", "-S", "build,docker,chart,package,deploy"]
