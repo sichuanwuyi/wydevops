@@ -180,10 +180,10 @@ function usage() {
     [${l_switches}]
     -c, --clearCachedParams  ${l_clearCachedParam}
     -d, --debug              ${l_debugParam}
-    -e, --enableNotify       ${l_enableNotifyParam}
     -f, --forceCoverage      ${l_forceCoverageParam}
     -h, --help               ${l_helpParam}
     -m, --multipleModel      ${l_multipleModelParam}
+    -n, --enableNotify       ${l_enableNotifyParam}
     -r, --removeImage        ${l_removeImageParam}
     -t, --template           ${l_templateParam}
     -v, --version            ${l_versionParam}
@@ -197,7 +197,7 @@ function usage() {
     -L, --language        string    ${l_languageParam}
         --localConfigFile string    ${l_localConfigFileParam}
     -M, --workMode        string    ${l_workModeParam}
-    -N, --notify          string    ${l_notifyParam}
+    -N, --notifyUrl       string    ${l_notifyParam}
     -O, --outArchTypes    string    ${l_outArchTypesParam}
     -P, --buildPath       string    ${l_buildPathParam}
     -S, --buildStages     string    ${l_buildStagesParam}
@@ -467,7 +467,7 @@ function parseOptions0() {
   gDebugMode="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdefhmrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdfhmnrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -484,14 +484,14 @@ function parseOptions0() {
       -d|--debug)
         gDebugMode="true"
         shift ;;
-      -e|--enableNotify)
-        shift ;;
       -f|--forceCoverage)
         shift ;;
       -h|--help)
         usage
         exit ;;
       -m|--multipleModel)
+        shift ;;
+      -n|--enableNotify)
         shift ;;
       -r|--removeImage)
         shift ;;
@@ -551,7 +551,7 @@ function parseOptions1() {
   gMultipleModelProject="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdefhmrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdfhmnrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -568,8 +568,6 @@ function parseOptions1() {
         shift ;;
       -d|--debug)
         shift ;;
-      -e|--enableNotify)
-        shift ;;
       -f|--forceCoverage)
         gForceCoverage="true"
         shift ;;
@@ -578,6 +576,8 @@ function parseOptions1() {
         exit ;;
       -m|--multipleModel)
         gMultipleModelProject="true"
+        shift ;;
+      -n|--enableNotify)
         shift ;;
       -r|--removeImage)
         gDeleteImageAfterBuilding="true"
@@ -637,7 +637,7 @@ function parseOptions1() {
         fi
         shift 2
         ;;
-      -N|--notify)
+      -N|--notifyUrl)
         shift 2
         ;;
       -O|--outArchTypes)
@@ -664,6 +664,12 @@ function parseOptions1() {
         ;;
     esac
   done
+
+  #set default value
+  [[ ! "${gArchTypes}" ]] && gArchTypes="linux/amd64"
+  [[ ! "${gOfflineArchTypes}" ]] && gOfflineArchTypes="linux/amd64"
+  [[ ! "${gBuildType}" ]] && gBuildType="single"
+
 }
 
 #二次解析输入参数，关注后续执行阶段需要的参数
@@ -683,7 +689,7 @@ function parseOptions2() {
   gUseTemplate="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdefhmrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,enableNotify,forceCoverage,help,multipleModel,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notify:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdfhmnrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -699,15 +705,15 @@ function parseOptions2() {
         shift ;;
       -d|--debug)
         shift ;;
-      -e|--enableNotify)
-        gEnableNotify="true"
-        shift ;;
       -f|--forceCoverage)
         gForceCoverage="true"
         shift ;;
       -h|--help)
         shift ;;
       -m|--multipleModel)
+        shift ;;
+      -n|--enableNotify)
+        gEnableNotify="true"
         shift ;;
       -r|--removeImage)
         shift ;;
@@ -744,7 +750,7 @@ function parseOptions2() {
       -M|--workMode)
         shift 2
         ;;
-      -N|--notify)
+      -N|--notifyUrl)
         l_param="${2}"
         if [ "${l_param}" ];then
           gUpdateNotifyUrl="${l_param}"
@@ -783,6 +789,9 @@ function parseOptions2() {
         ;;
     esac
   done
+
+  #set default value
+  [[ ! "${gBuildStages}" ]] && gBuildStages="build,docker,chart,package,deploy"
 
 }
 

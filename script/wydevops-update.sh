@@ -64,6 +64,7 @@ function combineCurrentFile() {
         l_remaining_params=("${l_params[@]:2}")
       fi
       exec "${l_current_run_script}" "${l_remaining_params[@]}"
+      exit 0
   fi
 
   info "wydevops.update.sh.sync.scripts.fail" "" "*"
