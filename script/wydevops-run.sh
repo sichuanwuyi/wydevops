@@ -120,7 +120,6 @@ _cmdFlags=""
 [[ "${SHOW_VERSION}" == "true" ]] && _cmdFlags="${_cmdFlags} -v"
 [[ "${ENABLE_DEBUG}" == "true" ]] && _cmdFlags="${_cmdFlags} -d"
 _cmdFlags="${_cmdFlags:1}"
-echo "------------_cmdFlags=${_cmdFlags}---------------"
 _cmdFlagParams=("${_cmdFlags}")
 
 #The following bash lines will be automatically updated into the project's wydevops-run.sh file.
