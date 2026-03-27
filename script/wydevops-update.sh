@@ -117,7 +117,8 @@ export g_update_occurred="false"
 # --- Sync the scripts from Git repository ---
 if [ -d "${_SCRIPTS_PROJECT_DIR}/.git" ]; then
   # If directory exists and is a git repo, pull the latest changes.
-  info "wydevops.update.sh.sync.scripts.from.git.repository" "" "-n"
+  info "wydevops.update.sh.sync.scripts.from.git.repository" ""
+  echo "-----_SCRIPTS_PROJECT_DIR=${_SCRIPTS_PROJECT_DIR}-------"
   cd "${_SCRIPTS_PROJECT_DIR}" || exit 111
 
   ls -a
