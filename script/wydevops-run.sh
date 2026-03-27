@@ -16,6 +16,34 @@ if [ -z "${WYDEVOPS_WORK_MODE}" ];then
   export WYDEVOPS_WORK_MODE="local"
 fi
 
+if [ -z "${ENABLE_CLEAR_CACHED_PARAMS}" ];then
+  export ENABLE_CLEAR_CACHED_PARAMS=true
+fi
+
+if [ -z "${ENABLE_NOTIFY}" ];then
+  export ENABLE_NOTIFY=true
+fi
+
+if [ -z "${ENABLE_FORCE_COVERAGE}" ];then
+  export ENABLE_FORCE_COVERAGE=true
+fi
+
+if [ -z "${ENABLE_REMOVE_IMAGE}" ];then
+  export ENABLE_REMOVE_IMAGE=true
+fi
+
+if [ -z "${SHOW_HELP}" ];then
+  export SHOW_HELP=false
+fi
+
+if [ -z "${SHOW_VERSION}" ];then
+  export SHOW_VERSION=false
+fi
+
+if [ -z "${ENABLE_DEBUG}" ];then
+  export ENABLE_DEBUG=false
+fi
+
 # The home directory for all wydevops related files and scripts.
 # In a cross-platform Bash environment (like Git Bash), always use forward slashes for internal logic.
 _WYDEVOPS_HOME="${1}"
