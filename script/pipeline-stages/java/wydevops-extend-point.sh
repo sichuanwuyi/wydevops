@@ -40,7 +40,7 @@ function _onBeforeInitGlobalParams_ex() {
 
   l_pomXmlFile="${gBuildPath}/pom.xml"
   if [ ! -f "${l_pomXmlFile}" ];then
-      error "java.wydevops.extend.point.pom.not.found"
+      error "java.wydevops.extend.point.pom.not.found" "${l_pomXmlFile}"
   fi
 
   #读取JDK的版本
@@ -54,7 +54,7 @@ function _onBeforeInitGlobalParams_ex() {
     l_pomXmlFile=$(dirname "${gBuildPath%/}")
     l_pomXmlFile="${l_pomXmlFile}/pom.xml"
     if [ ! -f "${l_pomXmlFile}" ];then
-      error "java.wydevops.extend.point.pom.not.found"
+      error "java.wydevops.extend.point.pom.not.found" "${l_pomXmlFile}"
     fi
 
     #再次读取JDK的版本
@@ -143,7 +143,7 @@ function _onBeforeReplaceParamPlaceholder_ex() {
 
   l_pomXmlFile="${gBuildPath}/pom.xml"
   if [ ! -f "${l_pomXmlFile}" ];then
-    error "java.wydevops.extend.point.pom.not.found"
+    error "java.wydevops.extend.point.pom.not.found" "${l_pomXmlFile}"
   fi
 
   debug "java.wydevops.extend.point.multi.module.project.compliance.check"
