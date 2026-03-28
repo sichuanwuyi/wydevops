@@ -51,22 +51,17 @@ ARG DOCKER_GID=999
 
 # Create a dedicated user and group for the application.
 # Also, create a 'docker' group with the host's GID and add the user to it.
-RUN groupadd --gid 1001 tmt && \
-    groupadd --gid ${DOCKER_GID} docker && \
-    useradd --uid 1001 --gid tmt --groups docker -m -s /bin/bash tmt
+RUN groupadd --gid ${DOCKER_GID} docker
 
 # =================================================================
 # STAGE 3: Application Setup (as non-root user)
 # =================================================================
 # Switch to the non-root user.
-USER tmt
+USER root
 WORKDIR ${WYDEVOPS_HOME}
 
-COPY --chown=tmt:tmt ./wydevops-update.sh ${WYDEVOPS_HOME}/
-COPY --chown=tmt:tmt ./client-config.yaml ${WYDEVOPS_HOME}/
-
-# set executable permissions, all in a single RUN command.
-RUN chmod +x ${WYDEVOPS_HOME}/wydevops-update.sh
+COPY ./wydevops-update.sh ${WYDEVOPS_HOME}/
+COPY ./client-config.yaml ${WYDEVOPS_HOME}/
 
 # =================================================================
 # STAGE 4: Container Execution

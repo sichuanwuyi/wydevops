@@ -14,6 +14,23 @@
 #    - If URL is the same, fetch and reset to the latest version.
 # =================================================================
 
+# --- Helper function to set execute permissions ---
+function set_script_permissions() {
+    local dir="$1"
+    if [ -d "$dir" ]; then
+        echo "INFO: Setting execute permissions for all .sh files in $dir..."
+        # Find all .sh files and apply +x. Also find specific tools.
+        find "$dir" -type f -name "*.sh" -exec chmod +x {} \;
+        if [ -f "$dir/script/tools/linux-amd64/kubectl" ]; then
+            chmod +x "$dir/script/tools/linux-amd64/kubectl"
+        fi
+        if [ -f "$dir/script/tools/linux-amd64/helm" ]; then
+            chmod +x "$dir/script/tools/linux-amd64/helm"
+        fi
+        echo "INFO: Permissions set."
+    fi
+}
+
 # --- Helper for colored output ---
 _Color_Off='\033[0m'
 _BGreen='\033[1;32m'
@@ -95,22 +112,20 @@ if [ -d "$_SCRIPTS_PROJECT_DIR/.git" ]; then
         echo "INFO: Old URL: $_CURRENT_REMOTE_URL"
         echo "INFO: New URL: $_FINAL_REPO_URL"
         echo "INFO: Removing old repository and re-cloning..."
-
         # Remove the old directory completely to ensure a clean state
         rm -rf "${_SCRIPTS_PROJECT_DIR:?}"/* "${_SCRIPTS_PROJECT_DIR:?}"/.??*
-
         # Re-clone the repository
         git clone --depth 1 -b "$_FINAL_BRANCH" "$_AUTH_REPO_URL" "$_SCRIPTS_PROJECT_DIR"
-
+        set_script_permissions "$_SCRIPTS_PROJECT_DIR"
     else
         echo "INFO: Remote URL is correct. Fetching latest changes..."
         # Use the authenticated URL for fetching updates
         git -C "$_SCRIPTS_PROJECT_DIR" remote set-url origin "$_AUTH_REPO_URL"
-
         # Fetch from origin and reset hard to the target branch
         # This discards any local changes and ensures the code is identical to the remote branch
         git -C "$_SCRIPTS_PROJECT_DIR" fetch origin
         git -C "$_SCRIPTS_PROJECT_DIR" reset --hard "origin/$_FINAL_BRANCH"
+        set_script_permissions "$_SCRIPTS_PROJECT_DIR"
         echo "INFO: Successfully updated to the latest version of branch '$_FINAL_BRANCH'."
     fi
 
@@ -118,9 +133,9 @@ else
     echo "INFO: No git repository found in $_SCRIPTS_PROJECT_DIR. Cloning for the first time..."
     # Ensure the directory exists but is empty
     mkdir -p "$_SCRIPTS_PROJECT_DIR"
-
     # Clone the repository
     git clone --depth 1 -b "$_FINAL_BRANCH" "$_AUTH_REPO_URL" "$_SCRIPTS_PROJECT_DIR"
+    set_script_permissions "$_SCRIPTS_PROJECT_DIR"
 fi
 
 echo "INFO: wydevops code is up-to-date."
