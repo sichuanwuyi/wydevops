@@ -8,19 +8,25 @@ LABEL org.opencontainers.image.authors="wuyi <11372349@qq.com>"
 # Install system dependencies, git, and Docker CLI in a single layer for efficiency.
 # This follows best practices: update, install, and clean up in one RUN command.
 RUN apt-get update && \
-    apt-get install -y git ca-certificates curl libxml2-utils && \
-    curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq && \
+    # Install base packages and prerequisites for adding new repositories.
+    apt-get install -y --no-install-recommends \
+        git \
+        ca-certificates \
+        curl \
+        libxml2-utils \
+        sshpass && \
+    # Download and install yq.
+    curl -L "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" -o /usr/local/bin/yq && \
     chmod +x /usr/local/bin/yq && \
-    # Add Docker's official GPG key
+    # Add Docker's official GPG key and repository.
     install -m 0755 -d /etc/apt/keyrings && \
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
+    curl -fsSL "https://download.docker.com/linux/ubuntu/gpg" -o /etc/apt/keyrings/docker.asc && \
     chmod a+r /etc/apt/keyrings/docker.asc && \
-    # Set up the Docker repository
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-    # Update apt with the new repo and install Docker CLI
+    # Update apt with the new repo and install Docker CLI.
     apt-get update && \
-    apt-get install -y docker-ce-cli && \
-    # Clean up apt cache to reduce image size
+    apt-get install -y --no-install-recommends docker-ce-cli && \
+    # Clean up apt cache to reduce image size.
     rm -rf /var/lib/apt/lists/*
 
 # =================================================================
