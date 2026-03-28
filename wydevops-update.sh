@@ -66,9 +66,13 @@ _CLIENT_CONFIG_FILE="${_WYDEVOPS_HOME}/client-config.yaml"
 # --- Check for client configuration ---
 if [ -f "$_CLIENT_CONFIG_FILE" ]; then
   GIT_REPO_URL=$(yq e '.git.repoUrl' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
+  [[ "${GIT_REPO_URL}" == "null" ]] && GIT_REPO_URL=""
   GIT_BRANCH=$(yq e '.git.branch' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
+  [[ "${GIT_BRANCH}" == "null" ]] && GIT_BRANCH=""
   _GIT_USERNAME=$(yq e '.git.username' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
+  [[ "${_GIT_USERNAME}" == "null" ]] && _GIT_USERNAME=""
   _GIT_PASSWORD=$(yq e '.git.password' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
+  [[ "${_GIT_PASSWORD}" == "null" ]] && _GIT_PASSWORD=""
 else
   # shellcheck disable=SC2034
   GIT_REPO_URL=""

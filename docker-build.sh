@@ -5,5 +5,6 @@ docker run \
 -v /var/run/docker.sock:/var/run/docker.sock \
 -v /mnt/d/tmt_project/tmt-ignite3-server:/root/project \
 -v /home/wuyi/wydevops:/root/.wydevops/wydevops \
+-e WYDEVOPS_LOG_LANGUAGE="zh" \
 --name wydevops-runner \
 wydevops-runner:1.2.0
