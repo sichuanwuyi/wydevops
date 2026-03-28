@@ -687,11 +687,11 @@ function _createDockerImage() {
   info "common.docker.extend.point.building.image" "${l_image}"
 
   if [ "${gEnableNoCacheOnDockerBuild}" == "true" ];then
-    info "common.docker.extend.point.executing.command" "docker buildx --no-cache --platform ${l_archType} --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir}"
-    docker buildx --no-cache --platform "${l_archType}" --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
+    info "common.docker.extend.point.executing.command" "docker buildx build --no-cache --platform ${l_archType} --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir}"
+    docker buildx build --no-cache --platform "${l_archType}" --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
   else
-    info "common.docker.extend.point.executing.command" "docker buildx --platform ${l_archType} --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir}"
-    docker buildx --platform "${l_archType}" --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
+    info "common.docker.extend.point.executing.command" "docker buildx build --platform ${l_archType} --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir}"
+    docker buildx build --platform "${l_archType}" --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
   fi
 
   l_errorLog=$(cat "${l_tmpFile}")
