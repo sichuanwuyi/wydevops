@@ -84,25 +84,19 @@ function existDockerImage() {
   local l_imageInfo
 
   gDefaultRetVal="false"
-  l_imageInfo=$(docker image list | grep -oE "^(.*)${l_image%:*}([ ]+)${l_image##*:}([ ]+).*$")
-  if [ "${l_imageInfo}" ];then
-    # shellcheck disable=SC2068
-    #判断镜像名称和版本是否一致。
-    if [[ "${l_imageInfo// /}" =~ ^(${l_image%:*}) \
-      && "${l_imageInfo#* }" =~ ^([ ]*)${l_image##*:} ]];then
-      if [ "${l_archType}" ];then
-        #判断镜像的架构类型是否一致
-        #l_architecture=$(docker inspect "${l_image}" | grep "Architecture")
-        #l_errorLog=$(grep -oE "^.*${l_archType#*/}.*$" <<< "${l_architecture}")
-        l_errorLog=$(docker inspect -f '{{.Architecture}}' "${l_image}" | grep -x "${l_archType#*/}")
-        if [ "${l_errorLog}" ];then
-          gDefaultRetVal="true"
-        fi
-      else
+  # Use docker inspect with --format for machine-readable output. This is more reliable than parsing `docker image list`.
+  # It attempts to get the architecture of the image. If the command succeeds and returns any output, the image exists.
+  l_imageInfo=$(docker image inspect --format='{{.Architecture}}' "${l_image}" 2>/dev/null)
+  if [ -n "${l_imageInfo}" ];then
+    # If an architecture check is required, verify it matches.
+    if [ "${l_archType}" ];then
+      if [ "${l_imageInfo}" == "${l_archType#*/}" ];then
         gDefaultRetVal="true"
       fi
+    else
+      # If no architecture check is needed, the image is considered to exist.
+      gDefaultRetVal="true"
     fi
-
   fi
 }
 

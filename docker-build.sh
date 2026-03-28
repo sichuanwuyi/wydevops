@@ -7,4 +7,8 @@ docker run \
 -v /home/wuyi/wydevops:/root/.wydevops/wydevops \
 -e WYDEVOPS_LOG_LANGUAGE="zh" \
 --name wydevops-runner \
-wydevops-runner:1.2.0
+wydevops-runner:1.2.0 \
+-A "linux/amd64" \
+-O "linux/amd64" \
+-B "double" \
+-S "build,docker,chart,package,deploy"

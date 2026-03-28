@@ -14,7 +14,8 @@ RUN apt-get update && \
         ca-certificates \
         curl \
         libxml2-utils \
-        sshpass && \
+        sshpass \
+        docker-buildx-plugin && \
     # Download and install yq.
     curl -L "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" -o /usr/local/bin/yq && \
     chmod +x /usr/local/bin/yq && \
