@@ -698,7 +698,7 @@ function _createDockerImage() {
   l_errorLog=$(grep -oE "^(.*)naming to docker.io/(${l_image}|library/${l_image}) (.*)done$" "${l_tmpFile}")
   unregisterTempFile "${l_tmpFile}"
 
-  if [ ! "${l_errorLog}" ];then
+  if [ "$?" -ne 0 ];then
     error "common.docker.extend.point.image.build.failed" "${l_errorLog}"
   fi
 
