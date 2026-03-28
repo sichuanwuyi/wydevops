@@ -63,11 +63,8 @@ WORKDIR ${WYDEVOPS_HOME}
 COPY --chown=tmt:tmt ./wydevops-update.sh ${WORKDIR}/
 COPY --chown=tmt:tmt ./client-config.yaml ${WORKDIR}/
 
-# Clone the application repository, move files to the correct location,
-# set executable permissions, and clean up, all in a single RUN command.
-RUN git clone --depth 1 -b $GIT_REPO_BRANCH $GIT_REPO_URL && \
-    mv ${WYDEVOPS_HOME}/wydevops/client-config.yaml ${WYDEVOPS_HOME}/ && \
-    chmod +x ${WYDEVOPS_HOME}/wydevops-update.sh && \
+# set executable permissions, all in a single RUN command.
+RUN chmod +x ${WYDEVOPS_HOME}/wydevops-update.sh && \
     chmod +x ${WYDEVOPS_HOME}/wydevops/script/tools/linux-amd64/kubectl && \
     chmod +x ${WYDEVOPS_HOME}/wydevops/script/tools/linux-amd64/helm
 

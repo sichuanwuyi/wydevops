@@ -81,15 +81,15 @@ fi
 
 echo -e "${_BGreen}[INFO]: Target Git Repository: ${_FINAL_REPO_URL}${_Color_Off}"
 echo -e "${_BGreen}[INFO]: Target Git Branch: ${_FINAL_BRANCH}${_Color_Off}"
-echo -e "${_BGreen}[INFO]: Target Directory: ${_WYDEVOPS_HOME}${_Color_Off}"
+echo -e "${_BGreen}[INFO]: Target Directory: ${_SCRIPTS_PROJECT_DIR}${_Color_Off}"
 
 # --- Main Logic ---
 # Check if the target directory exists and is a git repository
-if [ -d "$_WYDEVOPS_HOME/.git" ]; then
-    echo "INFO: Git repository exists in $_WYDEVOPS_HOME."
+if [ -d "$_SCRIPTS_PROJECT_DIR/.git" ]; then
+    echo "INFO: Git repository exists in $_SCRIPTS_PROJECT_DIR."
 
     # Get the current remote URL
-    _CURRENT_REMOTE_URL=$(git -C "$_WYDEVOPS_HOME" remote get-url origin)
+    _CURRENT_REMOTE_URL=$(git -C "$_SCRIPTS_PROJECT_DIR" remote get-url origin)
     echo "INFO: Current remote URL: $_CURRENT_REMOTE_URL"
 
     # Compare current remote URL with the configured final URL
@@ -100,32 +100,32 @@ if [ -d "$_WYDEVOPS_HOME/.git" ]; then
         echo "INFO: Removing old repository and re-cloning..."
 
         # Remove the old directory completely to ensure a clean state
-        rm -rf "${_WYDEVOPS_HOME:?}"/* "${_WYDEVOPS_HOME:?}"/.??*
+        rm -rf "${_SCRIPTS_PROJECT_DIR:?}"/* "${_SCRIPTS_PROJECT_DIR:?}"/.??*
 
         # Re-clone the repository
-        git clone --depth 1 -b "$_FINAL_BRANCH" "$_AUTH_REPO_URL" "$_WYDEVOPS_HOME"
+        git clone --depth 1 -b "$_FINAL_BRANCH" "$_AUTH_REPO_URL" "$_SCRIPTS_PROJECT_DIR"
 
     else
         echo "INFO: Remote URL is correct. Fetching latest changes..."
         # Use the authenticated URL for fetching updates
-        git -C "$_WYDEVOPS_HOME" remote set-url origin "$_AUTH_REPO_URL"
+        git -C "$_SCRIPTS_PROJECT_DIR" remote set-url origin "$_AUTH_REPO_URL"
 
         # Fetch from origin and reset hard to the target branch
         # This discards any local changes and ensures the code is identical to the remote branch
-        git -C "$_WYDEVOPS_HOME" fetch origin
-        git -C "$_WYDEVOPS_HOME" reset --hard "origin/$_FINAL_BRANCH"
+        git -C "$_SCRIPTS_PROJECT_DIR" fetch origin
+        git -C "$_SCRIPTS_PROJECT_DIR" reset --hard "origin/$_FINAL_BRANCH"
         echo "INFO: Successfully updated to the latest version of branch '$_FINAL_BRANCH'."
     fi
 
 else
-    echo "INFO: No git repository found in $_WYDEVOPS_HOME. Cloning for the first time..."
+    echo "INFO: No git repository found in $_SCRIPTS_PROJECT_DIR. Cloning for the first time..."
     # Ensure the directory exists but is empty
-    mkdir -p "$_WYDEVOPS_HOME"
+    mkdir -p "$_SCRIPTS_PROJECT_DIR"
 
     # Clone the repository
-    git clone --depth 1 -b "$_FINAL_BRANCH" "$_AUTH_REPO_URL" "$_WYDEVOPS_HOME"
+    git clone --depth 1 -b "$_FINAL_BRANCH" "$_AUTH_REPO_URL" "$_SCRIPTS_PROJECT_DIR"
 fi
 
 echo "INFO: wydevops code is up-to-date."
 
-source "${_WYDEVOPS_HOME}/wydevops/script/wydevops-run.sh" "${@}"
+source "$_SCRIPTS_PROJECT_DIR/script/wydevops-run.sh" "${@}"
