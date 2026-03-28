@@ -48,7 +48,7 @@ _FALLBACK_GIT_BRANCH="${GIT_BRANCH:-master}"
 _CLIENT_CONFIG_FILE="${_WYDEVOPS_HOME}/client-config.yaml"
 # --- Check for client configuration ---
 if [ -f "$_CLIENT_CONFIG_FILE" ]; then
-  GIT_REPO_URL=$(yq e '.git.repository' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
+  GIT_REPO_URL=$(yq e '.git.repoUrl' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
   GIT_BRANCH=$(yq e '.git.branch' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
   _GIT_USERNAME=$(yq e '.git.username' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
   _GIT_PASSWORD=$(yq e '.git.password' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
