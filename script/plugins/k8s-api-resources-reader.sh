@@ -20,9 +20,10 @@ function tryLoadApiResources() {
   l_ip="${l_array[0]}"
   l_port="${l_array[1]}"
   l_account="${l_array[2]}"
+  l_password="${l_array[3]}"
 
   #尝试先完成免密登录配置
-  tryConnectByPasswordless "${l_account}" "${l_ip}"
+  tryConnectByPasswordless "${l_account}" "${l_password}" "${l_ip}"
 
   #从ApiServer服务器读取各类资源的Api版本，将信息缓存到gApiResourcesInfo变量中。
   gApiResourcesInfo=$(ssh -o "StrictHostKeyChecking no" -p "${l_port}" "${l_account}@${l_ip}" "kubectl api-resources")

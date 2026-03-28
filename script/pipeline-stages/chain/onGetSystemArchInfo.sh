@@ -14,11 +14,11 @@ function onGetSystemArchInfo_ubuntu() {
 
   gDefaultRetVal="false|"
 
-  #尝试先完成免密登录配置
-  tryConnectByPasswordless "${l_account}" "${l_ip}"
-
   #先判断是否是linux系统
   if [ "${l_ip}" ];then
+    #尝试先完成免密登录配置
+    tryConnectByPasswordless "${l_account}" "${l_password}" "${l_ip}"
+
     #使用*.pem文件登录，例如登录AWS EC2服务器
     if [[ "${l_password}" =~ ^(.*).pem$ ]];then
       info "on.get.system.arch.info.executing.command.with.pem.file" "${l_password}#${l_port}#${l_account}#${l_ip}"

@@ -4,7 +4,8 @@ function tryConnectByPasswordless() {
   export gDefaultRetVal
 
   local l_user=$1
-  local l_host=$2
+  local l_password=$2
+  local l_host=$3
 
   local l_idRSAFile
   local l_result
@@ -26,7 +27,7 @@ function tryConnectByPasswordless() {
 
   l_result=$(ssh-copy-id -o "BatchMode=yes" "${l_user}@${l_host}" 2>&1)
   if [ "$?" -ne 0 ];then
-    l_result=$(ssh-copy-id "${l_user}@${l_host}")
+    l_result=$(sshpass -p "${l_password}" ssh-copy-id "${l_user}@${l_host}")
     if [ "$?" -ne 0 ];then
       warn "ssh.helper.execute.ssh-copy-id.failed" "${l_host}#\n${l_result}"
       gDefaultRetVal="false"
