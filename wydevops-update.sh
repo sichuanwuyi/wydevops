@@ -125,4 +125,4 @@ fi
 
 echo "INFO: wydevops code is up-to-date."
 
-source "$_SCRIPTS_PROJECT_DIR/script/wydevops-run.sh" "${@}"
+source "$_SCRIPTS_ROOT_DIR/wydevops-run.sh" "${@}"
