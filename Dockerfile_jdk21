@@ -9,6 +9,8 @@ LABEL org.opencontainers.image.authors="wuyi <11372349@qq.com>"
 # This follows best practices: update, install, and clean up in one RUN command.
 RUN apt-get update && \
     apt-get install -y git ca-certificates curl libxml2-utils && \
+    curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq && \
+    chmod +x /usr/local/bin/yq && \
     # Add Docker's official GPG key
     install -m 0755 -d /etc/apt/keyrings && \
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \

@@ -48,19 +48,16 @@ _FALLBACK_GIT_BRANCH="${GIT_BRANCH:-master}"
 _CLIENT_CONFIG_FILE="${_WYDEVOPS_HOME}/client-config.yaml"
 # --- Check for client configuration ---
 if [ -f "$_CLIENT_CONFIG_FILE" ]; then
-  export gDefaultRetVal
-  readParam "$_CLIENT_CONFIG_FILE" "git.repoUrl"
-  GIT_REPO_URL="${gDefaultRetVal}"
-  readParam "$_CLIENT_CONFIG_FILE" "git.branch"
-  GIT_BRANCH="${gDefaultRetVal}"
-  readParam "$_CLIENT_CONFIG_FILE" "git.username"
-  _GIT_USERNAME="${gDefaultRetVal}"
-  readParam "$_CLIENT_CONFIG_FILE" "git.password"
-  _GIT_PASSWORD="${gDefaultRetVal}"
+  GIT_REPO_URL=$(yq e '.git.repository' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
+  GIT_BRANCH=$(yq e '.git.branch' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
+  _GIT_USERNAME=$(yq e '.git.username' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
+  _GIT_PASSWORD=$(yq e '.git.password' "$_CLIENT_CONFIG_FILE" 2>/dev/null || echo "")
 else
   # shellcheck disable=SC2034
   GIT_REPO_URL=""
   GIT_BRANCH=""
+  _GIT_USERNAME=""
+  _GIT_PASSWORD=""
 fi
 
 # --- Determine final Git settings ---
