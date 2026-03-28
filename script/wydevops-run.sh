@@ -85,13 +85,6 @@ if [ ! "${_TARGET_PROJECT_HOME}" ];then
   fi
 fi
 
-if [ ! -f "${_TARGET_PROJECT_HOME}/wydevops-run.sh" ];then
-  info "wydevops.run.sh.copying.wydevops.run.sh.to.project.home" "${_TARGET_PROJECT_HOME}"
-  cp -f "${_SCRIPTS_ROOT_DIR}/wydevops-run.sh" "${_TARGET_PROJECT_HOME}/wydevops-run.sh"
-  exec "${_TARGET_PROJECT_HOME}/wydevops-run.sh" "${@}"
-  exit 0
-fi
-
 # Delete the first three parameters.
 _param=("${@}")
 _param_count=${#_param[@]}
