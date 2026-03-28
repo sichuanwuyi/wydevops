@@ -28,6 +28,7 @@ function tryConnectByPasswordless() {
   # First, try to copy the ID using BatchMode, which relies on pre-existing keys and avoids password prompts.
   # Added StrictHostKeyChecking=no to automatically accept the server's host key.
   l_result=$(ssh-copy-id -o "BatchMode=yes" -o "StrictHostKeyChecking=no" "${l_user}@${l_host}" 2>&1)
+  # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
     # If key-based auth fails, fallback to password-based auth using sshpass.
     # The error "Permission denied" indicates this is the part that is currently failing.
