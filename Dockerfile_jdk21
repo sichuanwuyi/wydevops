@@ -73,7 +73,7 @@ COPY ./client-config.yaml ${WYDEVOPS_HOME}/
 # STAGE 4: Container Execution
 # =================================================================
 # Set the entrypoint to the main execution script.
-ENTRYPOINT ["/bin/sh", "-c", "exec ${WYDEVOPS_HOME}/wydevops-update.sh \"$@\"", "--"]
+ENTRYPOINT ["/bin/sh", "-c", "exec ${WYDEVOPS_HOME}/wydevops-update.sh \"\" \"\" \"\" \"$@\"", "--"]
 
 # Set the default command-line arguments for the entrypoint.
 CMD ["-A", "linux/amd64", "-O", "linux/amd64", "-B", "single", "-S", "build,docker,chart,package,deploy"]
