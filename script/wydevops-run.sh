@@ -92,17 +92,6 @@ if [ ! -f "${_TARGET_PROJECT_HOME}/wydevops-run.sh" ];then
   exit 0
 fi
 
-export g_update_occurred="false"
-# shellcheck disable=SC1090
-source "${_SCRIPTS_ROOT_DIR}/wydevops-update.sh"
-
-# --- Self-update logic (Final Intelligent Merge) ---
-# This logic runs if the `wydevops-update.sh` script detected a git update.
-if [[ "${g_update_occurred}" == "true" ]]; then
-  combineCurrentFile "${_SCRIPTS_ROOT_DIR}/wydevops-run.sh" "${BASH_SOURCE[0]}" "$@"
-fi
-# --- End of self-update logic ---
-
 # Delete the first three parameters.
 _param=("${@}")
 _param_count=${#_param[@]}

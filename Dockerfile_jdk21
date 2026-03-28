@@ -41,7 +41,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     SHOW_HELP=false \
     SHOW_VERSION=false \
     GIT_REPO_URL=https://gitee.com/tmt_china/wydevops.git \
-    GIT_REPO_BRANCH=develop
+    GIT_BRANCH=develop
 
 # ARG to receive the host's docker group GID for docker.sock access.
 # Pass this during build: --build-arg DOCKER_GID=$(getent group docker | cut -d: -f3)
@@ -58,13 +58,16 @@ RUN groupadd --gid 1001 tmt && \
 # =================================================================
 # Switch to the non-root user.
 USER tmt
-WORKDIR /home/tmt/.wydevops
+WORKDIR ${WYDEVOPS_HOME}
+
+COPY --chown=tmt:tmt ./wydevops-update.sh ${WORKDIR}/
+COPY --chown=tmt:tmt ./client-config.yaml ${WORKDIR}/
 
 # Clone the application repository, move files to the correct location,
 # set executable permissions, and clean up, all in a single RUN command.
 RUN git clone --depth 1 -b $GIT_REPO_BRANCH $GIT_REPO_URL && \
     mv ${WYDEVOPS_HOME}/wydevops/client-config.yaml ${WYDEVOPS_HOME}/ && \
-    chmod +x ${WYDEVOPS_HOME}/wydevops/script/wydevops-run.sh && \
+    chmod +x ${WYDEVOPS_HOME}/wydevops-update.sh && \
     chmod +x ${WYDEVOPS_HOME}/wydevops/script/tools/linux-amd64/kubectl && \
     chmod +x ${WYDEVOPS_HOME}/wydevops/script/tools/linux-amd64/helm
 
@@ -75,7 +78,7 @@ ENV PATH=${WYDEVOPS_HOME}/wydevops/script/tools/linux-amd64:${PATH}
 # STAGE 4: Container Execution
 # =================================================================
 # Set the entrypoint to the main execution script.
-ENTRYPOINT ["/bin/sh", "-c", "${WYDEVOPS_HOME}/wydevops/script/wydevops-run.sh"]
+ENTRYPOINT ["/bin/sh", "-c", "${WYDEVOPS_HOME}/wydevops/wydevops-update.sh"]
 
 # Set the default command-line arguments for the entrypoint.
 CMD ["-A", "linux/amd64", "-O", "linux/amd64", "-B", "single", "-S", "build,docker,chart,package,deploy"]
