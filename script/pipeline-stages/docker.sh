@@ -99,7 +99,7 @@ function _processThirdPartyImage(){
 
   if [ "${gDeleteImageAfterBuilding}" == "true" ];then
     info "docker.sh.prune.system"
-    docker system prune -f
+    docker image prune -f
   fi
 
 }
@@ -167,7 +167,7 @@ function _createDockerImageByCustomizeDir(){
 
   if [ "${gDeleteImageAfterBuilding}" == "true" ];then
     info "docker.sh.prune.system"
-    docker system prune -f
+    docker image prune -f
   fi
 }
 
@@ -245,7 +245,7 @@ function _createDockerImageByDockerfile() {
 
   if [ "${gDeleteImageAfterBuilding}" == "true" ];then
     info "docker.sh.prune.system"
-    docker system prune -f
+    docker image prune -f
   fi
 }
 

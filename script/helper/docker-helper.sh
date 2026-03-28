@@ -100,7 +100,6 @@ function existDockerImage() {
   fi
 }
 
-
 #拉取镜像并检查其架构是否与传入的一致
 function pullAndCheckImage(){
   export gDefaultRetVal
