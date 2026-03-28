@@ -43,6 +43,7 @@ function _installHelmCommand() {
   info "chain.oninstallhelmtool.installing.helm" "${l_systemType}-${l_archType}#${HOME}" "-n"
   mkdir -p "${HOME}/helm" || true
   cp -f "${l_scriptRootDir}/tools/${l_systemType}-${l_archType}/${l_commandName}" "${HOME}/helm/${l_commandName}"
+  chmod +x "${HOME}/helm/${l_commandName}"
 
   if command -v helm &> /dev/null; then
     info "chain.oninstallhelmtool.install.success" "" "*"

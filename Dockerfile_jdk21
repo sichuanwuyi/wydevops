@@ -60,16 +60,11 @@ RUN groupadd --gid 1001 tmt && \
 USER tmt
 WORKDIR ${WYDEVOPS_HOME}
 
-COPY --chown=tmt:tmt ./wydevops-update.sh ${WORKDIR}/
-COPY --chown=tmt:tmt ./client-config.yaml ${WORKDIR}/
+COPY --chown=tmt:tmt ./wydevops-update.sh ${WYDEVOPS_HOME}/
+COPY --chown=tmt:tmt ./client-config.yaml ${WYDEVOPS_HOME}/
 
 # set executable permissions, all in a single RUN command.
-RUN chmod +x ${WYDEVOPS_HOME}/wydevops-update.sh && \
-    chmod +x ${WYDEVOPS_HOME}/wydevops/script/tools/linux-amd64/kubectl && \
-    chmod +x ${WYDEVOPS_HOME}/wydevops/script/tools/linux-amd64/helm
-
-# Add the custom tools directory to the PATH.
-ENV PATH=${WYDEVOPS_HOME}/wydevops/script/tools/linux-amd64:${PATH}
+RUN chmod +x ${WYDEVOPS_HOME}/wydevops-update.sh
 
 # =================================================================
 # STAGE 4: Container Execution
