@@ -30,11 +30,11 @@ RUN apt-get update && \
 ENV DEBIAN_FRONTEND=noninteractive \
     WYDEVOPS_WORK_MODE=local \
     WYDEVOPS_LOG_LANGUAGE=en \
-    WYDEVOPS_HOME=/home/tmt/.wydevops \
-    TARGET_PROJECT_HOME=/home/tmt/project \
+    WYDEVOPS_HOME=/home/root/.wydevops \
+    TARGET_PROJECT_HOME=/home/root/project \
     DOCKER_REPO_CONFIG="" \
     CHART_REPO_CONFIG="" \
-    IMAGE_LOCAL_CACHE_DIR=/home/tmt/cachedImages \
+    IMAGE_LOCAL_CACHE_DIR=/home/root/cachedImages \
     ENABLE_CLEAR_CACHED_PARAMS=true \
     ENABLE_DEBUG=false \
     ENABLE_NOTIFY=true \
