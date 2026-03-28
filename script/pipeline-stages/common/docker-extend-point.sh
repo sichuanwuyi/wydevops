@@ -686,6 +686,8 @@ function _createDockerImage() {
   registerTempFile "${l_tmpFile}"
   info "common.docker.extend.point.building.image" "${l_image}"
 
+  docker image prune -f
+
   if [ "${gEnableNoCacheOnDockerBuild}" == "true" ];then
     info "common.docker.extend.point.executing.command" "docker buildx --no-cache --platform ${l_archType} --tag ${l_image} --file ${l_dockerFile} ${l_dockerBuildDir}"
     docker buildx --no-cache --platform "${l_archType}" --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
