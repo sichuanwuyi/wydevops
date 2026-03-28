@@ -70,7 +70,7 @@ RUN chmod +x ${WYDEVOPS_HOME}/wydevops-update.sh
 # STAGE 4: Container Execution
 # =================================================================
 # Set the entrypoint to the main execution script.
-ENTRYPOINT ["/bin/sh", "-c", "${WYDEVOPS_HOME}/wydevops/wydevops-update.sh"]
+ENTRYPOINT ["/bin/sh", "-c", "${WYDEVOPS_HOME}/wydevops-update.sh"]
 
 # Set the default command-line arguments for the entrypoint.
 CMD ["-A", "linux/amd64", "-O", "linux/amd64", "-B", "single", "-S", "build,docker,chart,package,deploy"]
