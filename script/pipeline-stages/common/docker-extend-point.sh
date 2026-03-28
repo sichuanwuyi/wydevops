@@ -694,8 +694,7 @@ function _createDockerImage() {
     docker build --platform "${l_archType}" --tag "${l_image}" --file "${l_dockerFile}" "${l_dockerBuildDir}" 2>&1 | tee "${l_tmpFile}"
   fi
 
-  # shellcheck disable=SC2002
-  l_errorLog=$(grep -oE "^(.*)naming to docker.io/(${l_image}|library/${l_image}) (.*)done$" "${l_tmpFile}")
+  l_errorLog=$(cat "${l_tmpFile}")
   unregisterTempFile "${l_tmpFile}"
 
   # shellcheck disable=SC2181
