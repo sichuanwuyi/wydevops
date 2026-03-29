@@ -129,7 +129,7 @@ function pullAndCheckImage(){
   if [ "$?" -eq 0 ];then
     l_errorLog=$(docker inspect -f '{{.Architecture}}' "${l_tmpImage}" | grep -x "${l_archType#*/}")
     if [ ! "${l_errorLog}" ];then
-      error "docker.helper.pull.from.private.repo.fail.arch.mismatch" "${l_repoName}#${l_archType}#${l_image}#${l_archType}"
+      error "docker.helper.pull.from.docker.repo.fail.arch.mismatch" "${l_repoName}#${l_archType}#${l_image}#${l_archType}"
       gDefaultRetVal="false"
     else
       if [[ "${l_pullFromRepoName}" == "true" && "${l_repoName}" ]];then

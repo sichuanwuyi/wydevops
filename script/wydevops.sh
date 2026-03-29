@@ -79,6 +79,9 @@ fi
 
 export gWorkMode
 export gClearCachedParams
+export gMultipleModelProject
+export gForceCoverage
+export gDeleteImageAfterBuilding
 export gGlobalParamCacheFileName
 export gArchTypes
 export gCiCdYamlFileName
@@ -131,5 +134,20 @@ invokeExtendPointFunc "onValidateGlobalParams" "wydevops.sh.validate.global.para
 info "wydevops.sh.executing.cicd.standard.flow"
 #执行cicd标准流程
 source "${_selfRootDir}/cicd-entry.sh"
+
+# =================================================================
+# Final Cleanup Step
+# =================================================================
+# After the main script execution, check if image cleanup is enabled.
+if [[ "${gDeleteImageAfterBuilding}" == "true" ]]; then
+  info "wydevops.sh.final.cleanup.step" "" "-n"
+  _errorLog=$(docker image prune -f 2>&1)
+  # shellcheck disable=SC2181
+  if [ "$?" -ne 0 ];then
+    warn "wydevops.sh.final.cleanup.step.failed" "\n${_errorLog}" "*"
+  else
+    info "wydevops.sh.final.cleanup.step.success" "" "*"
+  fi
+fi
 
 exit 0

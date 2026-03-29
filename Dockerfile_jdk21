@@ -34,6 +34,7 @@ RUN apt-get update && \
 # =================================================================
 # Set environment variables for the application.
 ENV DEBIAN_FRONTEND=noninteractive \
+    DOCKER_CLI_EXPERIMENTAL=enabled \
     WYDEVOPS_WORK_MODE=local \
     WYDEVOPS_LOG_LANGUAGE=en \
     WYDEVOPS_HOME=/root/.wydevops \
@@ -57,7 +58,9 @@ ARG DOCKER_GID=999
 
 # Create a dedicated user and group for the application.
 # Also, create a 'docker' group with the host's GID and add the user to it.
-RUN groupadd --gid ${DOCKER_GID} docker
+RUN groupadd --gid ${DOCKER_GID} docker&& \
+    mkdir -p /root/.docker && \
+    echo '{"experimental": "enabled"}' > /root/.docker/config.json
 
 # =================================================================
 # STAGE 3: Application Setup (as non-root user)
