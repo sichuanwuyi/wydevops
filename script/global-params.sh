@@ -685,7 +685,6 @@ function parseOptions2() {
   local getOpt_cmd
 
   gEnableNotify="false"
-  gDeleteImageAfterBuilding="false"
   gUseTemplate="false"
 
   #解析命令行参数
@@ -706,7 +705,6 @@ function parseOptions2() {
       -d|--debug)
         shift ;;
       -f|--forceCoverage)
-        gForceCoverage="true"
         shift ;;
       -h|--help)
         shift ;;

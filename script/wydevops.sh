@@ -89,7 +89,6 @@ export gHelmBuildOutDir
 
 info "wydevops.sh.second.parse.options"
 parseOptions1 "${@}"
-echo "---222---gDeleteImageAfterBuilding=${gDeleteImageAfterBuilding}---------"
 
 partLog "wydevops.sh.part1.init.global.params"
 
