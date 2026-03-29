@@ -111,7 +111,7 @@ function pruneDanglingImage(){
   export gDeleteImageAfterBuilding
 
   local l_errorLog
-
+  echo "---------gDeleteImageAfterBuilding=${gDeleteImageAfterBuilding}----------"
   if [[ "${gDeleteImageAfterBuilding}" == "true" ]]; then
     info "wydevops.sh.final.cleanup.step" "" "-n"
     l_errorLog=$(docker image prune -f 2>&1)
