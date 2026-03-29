@@ -35,6 +35,7 @@ RUN apt-get update && \
 # Set environment variables for the application.
 ENV DEBIAN_FRONTEND=noninteractive \
     DOCKER_CLI_EXPERIMENTAL=enabled \
+    DOCKER_BUILDKIT=1 \
     WYDEVOPS_WORK_MODE=local \
     WYDEVOPS_LOG_LANGUAGE=en \
     WYDEVOPS_HOME=/root/.wydevops \

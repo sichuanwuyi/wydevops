@@ -60,6 +60,10 @@ function sendNotify_ex() {
   unset l_i
 }
 
+function sendNotifyBeforeExit_ex(){
+  pruneDanglingImage
+}
+
 #加载通知消息模板文件
 function useNotifyTemplate_ex() {
   export gDefaultRetVal
@@ -99,6 +103,24 @@ function useNotifyTemplate_ex() {
 }"
   else
     eval "gDefaultRetVal=${l_template}"
+  fi
+}
+
+#清理悬空镜像
+function pruneDanglingImage(){
+  export gDeleteImageAfterBuilding
+
+  local l_errorLog
+
+  if [[ "${gDeleteImageAfterBuilding}" == "true" ]]; then
+    info "wydevops.sh.final.cleanup.step" "" "-n"
+    l_errorLog=$(docker image prune -f 2>&1)
+    # shellcheck disable=SC2181
+    if [ "$?" -ne 0 ];then
+      warn "wydevops.sh.final.cleanup.step.failed" "\n${l_errorLog}" "*"
+    else
+      warn "wydevops.sh.final.cleanup.step.success" "" "*"
+    fi
   fi
 }
 

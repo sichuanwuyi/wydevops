@@ -139,15 +139,6 @@ source "${_selfRootDir}/cicd-entry.sh"
 # Final Cleanup Step
 # =================================================================
 # After the main script execution, check if image cleanup is enabled.
-if [[ "${gDeleteImageAfterBuilding}" == "true" ]]; then
-  info "wydevops.sh.final.cleanup.step" "" "-n"
-  _errorLog=$(docker image prune -f 2>&1)
-  # shellcheck disable=SC2181
-  if [ "$?" -ne 0 ];then
-    warn "wydevops.sh.final.cleanup.step.failed" "\n${_errorLog}" "*"
-  else
-    info "wydevops.sh.final.cleanup.step.success" "" "*"
-  fi
-fi
+pruneDanglingImage
 
 exit 0
