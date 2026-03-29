@@ -102,7 +102,8 @@ _cmdFlags=""
 [[ "${SHOW_VERSION}" == "true" ]] && _cmdFlags="${_cmdFlags} -v"
 [[ "${ENABLE_DEBUG}" == "true" ]] && _cmdFlags="${_cmdFlags} -d"
 _cmdFlags="${_cmdFlags:1}"
-_cmdFlagParams=("${_cmdFlags}")
+# shellcheck disable=SC2206
+_cmdFlagParams=(${_cmdFlags})
 
 #The following bash lines will be automatically updated into the project's wydevops-run.sh file.
 #Subsequent lines will be intelligently merged into the file's content according to the following rules:
