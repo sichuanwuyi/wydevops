@@ -46,9 +46,12 @@ function _onBeforeInitGlobalParams_ex() {
   fi
 
   #读取JDK的版本
-  l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.target"]/text()' "${l_pomXmlFile}" 2>&1)
+  l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.release"]/text()' "${l_pomXmlFile}" 2>&1)
   if [ ! "${l_tmpVersion}" ];then
-    l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.source"]/text()' "${l_pomXmlFile}" 2>&1)
+    l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.target"]/text()' "${l_pomXmlFile}" 2>&1)
+    if [ ! "${l_tmpVersion}" ];then
+      l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.source"]/text()' "${l_pomXmlFile}" 2>&1)
+    fi
   fi
 
   #数值校验（支持整数和小数）
@@ -57,9 +60,12 @@ function _onBeforeInitGlobalParams_ex() {
     l_pomXmlFile="${l_pomXmlFile}/pom.xml"
     if [ -f "${l_pomXmlFile}" ];then
       #再次读取JDK的版本
-      l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.target"]/text()' "${l_pomXmlFile}" 2>&1)
+      l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.release"]/text()' "${l_pomXmlFile}" 2>&1)
       if [ ! "${l_tmpVersion}" ];then
-        l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.source"]/text()' "${l_pomXmlFile}" 2>&1)
+        l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.target"]/text()' "${l_pomXmlFile}" 2>&1)
+        if [ ! "${l_tmpVersion}" ];then
+          l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.source"]/text()' "${l_pomXmlFile}" 2>&1)
+        fi
       fi
     else
       warn "java.wydevops.extend.point.pom.not.found" "\n${l_pomXmlFile}"
