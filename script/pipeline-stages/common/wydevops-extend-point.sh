@@ -973,6 +973,7 @@ function _loadGlobalParamsFromCiCdYaml() {
   export gArchTypes
   export gOfflineArchTypes
   export gValidBuildStages
+  export gDeployType
 
   #以下4个配置参数以ci-cid.yaml文件中的内容为最高优先级的配置值。
   export gRollback
@@ -1047,6 +1048,20 @@ function _loadGlobalParamsFromCiCdYaml() {
     gRollback="true"
   fi
   info "common.wydevops.extend.point.rollback.config.value" "${gRollback}"
+
+  #初始化gDeployType参数，命令行参数配置优先级更高。
+  if [ -z "${gDeployType}" ];then
+    readParam "${l_cicdYaml}" "globalParams.deployType"
+    if [ "${gDefaultRetVal}" != "null" ];then
+      #调用解密接口解密gTargetApiServer参数值。
+      gDeployType="${gDefaultRetVal}"
+    else
+      gDeployType="k8s"
+    fi
+    info "common.wydevops.extend.point.deploy.type.param.from.cicd.yaml" "${gDeployType}"
+  else
+    info "common.wydevops.extend.point.deploy.type.param.from.command.line" "${gDeployType}"
+  fi
 
   #初始化gTargetApiServer参数。
   readParam "${l_cicdYaml}" "globalParams.targetApiServer"

@@ -12,6 +12,7 @@ function executeDeployStage() {
   export gBuildPath
   export gBuildType
   export gDockerRepoName
+  export gDeployType
 
   local l_i
   local l_packageName
@@ -86,8 +87,13 @@ function executeDeployStage() {
     [[ -d "${l_localBaseDir}" ]] && rm -rf "${l_localBaseDir:?}"
     mkdir -p "${l_localBaseDir}"
 
-    readParam "${gCiCdYamlFile}" "deploy[${l_i}].deployType"
-    l_deployType="${gDefaultRetVal}"
+    if [ -z "${gDeployType}" ];then
+      readParam "${gCiCdYamlFile}" "deploy[${l_i}].deployType"
+      l_deployType="${gDefaultRetVal}"
+    else
+      #使用命令行传入的参数
+      l_deployType="${gDeployType}"
+    fi
 
     readParam "${gCiCdYamlFile}" "deploy[${l_i}].installMode"
     l_installMode="${gDefaultRetVal}"

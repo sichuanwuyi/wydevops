@@ -51,6 +51,8 @@ export gGlobalParamNames=(
 "gArchTypes" \
 #导出的离线包构建类型数组
 "gOfflineArchTypes" \
+#部署类型：docker、k8s
+"gDeployType" \
 #当前版本是否支持回滚操作
 "gRollback" \
 #k8s集群SSH连接参数
@@ -156,6 +158,7 @@ function usage() {
   local l_multipleModelParam="${gMessagePropertiesMap['global.params.sh.usage.multipleModel']}"
   local l_removeImageParam="${gMessagePropertiesMap['global.params.sh.usage.removeImage']}"
   local l_templateParam="${gMessagePropertiesMap['global.params.sh.usage.template']}"
+  local l_updateParam="${gMessagePropertiesMap['global.params.sh.usage.update']}"
   local l_versionParam="${gMessagePropertiesMap['global.params.sh.usage.version']}"
 
   local l_optionsParams="${gMessagePropertiesMap['global.params.sh.usage.options']}"
@@ -171,6 +174,7 @@ function usage() {
   local l_notifyParam="${gMessagePropertiesMap['global.params.sh.usage.notify']}"
   local l_outArchTypesParam="${gMessagePropertiesMap['global.params.sh.usage.outArchTypes']}"
   local l_buildPathParam="${gMessagePropertiesMap['global.params.sh.usage.buildPath']}"
+  local l_releaseTypeParam="${gMessagePropertiesMap['global.params.sh.usage.releaseType']}"
   local l_buildStagesParam="${gMessagePropertiesMap['global.params.sh.usage.buildStages']}"
   local l_templateStringParam="${gMessagePropertiesMap['global.params.sh.usage.template.string']}"
   local l_workDirParam="${gMessagePropertiesMap['global.params.sh.usage.workDir']}"
@@ -186,6 +190,7 @@ function usage() {
     -n, --enableNotify       ${l_enableNotifyParam}
     -r, --removeImage        ${l_removeImageParam}
     -t, --template           ${l_templateParam}
+    -u, --update             ${l_updateParam}
     -v, --version            ${l_versionParam}
 
     [${l_optionsParams}]
@@ -200,6 +205,7 @@ function usage() {
     -N, --notifyUrl       string    ${l_notifyParam}
     -O, --outArchTypes    string    ${l_outArchTypesParam}
     -P, --buildPath       string    ${l_buildPathParam}
+    -R, --releaseType     string    ${l_releaseTypeParam}
     -S, --buildStages     string    ${l_buildStagesParam}
     -T, --template        string    ${l_templateStringParam}
     -W, --workDir         string    ${l_workDirParam}
@@ -467,7 +473,7 @@ function parseOptions0() {
   gDebugMode="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdfhmnrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdfhmnrtuvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,update,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -496,6 +502,8 @@ function parseOptions0() {
       -r|--removeImage)
         shift ;;
       -t|--template)
+        shift ;;
+      -u|--update)
         shift ;;
       -v|--version)
         version
@@ -538,6 +546,7 @@ function parseOptions1() {
   export gWorkMode
   export gBuildType
   export gArchTypes
+  export gDeployType
   export gOfflineArchTypes
   export gForceCoverage
   export gMultipleModelProject
@@ -551,7 +560,7 @@ function parseOptions1() {
   gMultipleModelProject="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdfhmnrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdfhmnrtuvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,update,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -583,6 +592,8 @@ function parseOptions1() {
         gDeleteImageAfterBuilding="true"
         shift ;;
       -t|--template)
+        shift ;;
+      -u|--update)
         shift ;;
       -v|--version)
         version
@@ -649,6 +660,13 @@ function parseOptions1() {
         fi
         shift 2
         ;;
+      -R|--releaseType)
+        l_param="${2}"
+        if [ "${l_param}" ];then
+          gDeployType="${l_param}"
+        fi
+        shift 2
+        ;;
       -S|--buildStages)
         shift 2
         ;;
@@ -688,7 +706,7 @@ function parseOptions2() {
   gUseTemplate="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdfhmnrtvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdfhmnrtuvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,update,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -717,6 +735,8 @@ function parseOptions2() {
         shift ;;
       -t|--template)
         gUseTemplate="true"
+        shift ;;
+      -u|--update)
         shift ;;
       -v|--version)
         shift ;;
@@ -759,6 +779,9 @@ function parseOptions2() {
         shift 2
         ;;
       -P|--buildPath)
+        shift 2
+        ;;
+      -R|--releaseType)
         shift 2
         ;;
       -S|--buildStages)

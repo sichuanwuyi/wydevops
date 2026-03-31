@@ -80,4 +80,4 @@ COPY ./client-config.yaml ${WYDEVOPS_HOME}/
 ENTRYPOINT ["/bin/sh", "-c", "exec ${WYDEVOPS_HOME}/wydevops-update.sh \"\" \"\" \"\" \"$@\"", "--"]
 
 # Set the default command-line arguments for the entrypoint.
-CMD ["-A", "linux/amd64", "-O", "linux/amd64", "-B", "single", "-S", "build,docker,chart,package,deploy"]
+CMD ["-A", "linux/amd64", "-O", "linux/amd64", "-B", "single", "-R", "k8s", "-S", "build,docker,chart,package,deploy"]

@@ -44,6 +44,10 @@ if [ -z "${ENABLE_DEBUG}" ];then
   export ENABLE_DEBUG=false
 fi
 
+if [ -z "${ENABLE_AUTO_UPDATE}" ];then
+  export ENABLE_AUTO_UPDATE=true
+fi
+
 # The home directory for all wydevops related files and scripts.
 # In a cross-platform Bash environment (like Git Bash), always use forward slashes for internal logic.
 _WYDEVOPS_HOME="${1}"
@@ -101,6 +105,7 @@ _cmdFlags=""
 [[ "${SHOW_HELP}" == "true" ]] && _cmdFlags="${_cmdFlags} -h"
 [[ "${SHOW_VERSION}" == "true" ]] && _cmdFlags="${_cmdFlags} -v"
 [[ "${ENABLE_DEBUG}" == "true" ]] && _cmdFlags="${_cmdFlags} -d"
+[[ "${ENABLE_AUTO_UPDATE}" == "true" ]] && _cmdFlags="${_cmdFlags} -u"
 _cmdFlags="${_cmdFlags:1}"
 # shellcheck disable=SC2206
 _cmdFlagParams=(${_cmdFlags})

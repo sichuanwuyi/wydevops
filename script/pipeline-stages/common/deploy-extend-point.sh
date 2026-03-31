@@ -187,6 +187,7 @@ function initialGlobalParamsForDeployStage_ex() {
 
 function onBeforeDeployingServicePackage_ex() {
   export gCiCdYamlFile
+  export gDeployType
 
   local l_index=$1
   local l_chartName=$2
@@ -197,8 +198,12 @@ function onBeforeDeployingServicePackage_ex() {
   local l_remoteDir=$6
   local l_localBaseDir=$7
 
-  readParam "${gCiCdYamlFile}" "deploy[${l_index}].deployType"
-  l_deployType="${gDefaultRetVal}"
+  if [ -z "${gDeployType}" ];then
+    readParam "${gCiCdYamlFile}" "deploy[${l_index}].deployType"
+    l_deployType="${gDefaultRetVal}"
+  else
+    l_deployType="${gDeployType}"
+  fi
 
   if [ "${l_deployType}" == "docker" ];then
     #检查项目配置文件中需要配置的参数，并为其赋初始值。
