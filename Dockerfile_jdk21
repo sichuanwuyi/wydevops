@@ -43,6 +43,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     DOCKER_REPO_CONFIG="" \
     CHART_REPO_CONFIG="" \
     IMAGE_LOCAL_CACHE_DIR=/root/cachedImages \
+    ENABLE_AUTO_UPDATE=true \
     ENABLE_CLEAR_CACHED_PARAMS=true \
     ENABLE_DEBUG=false \
     ENABLE_NOTIFY=true \
