@@ -473,7 +473,7 @@ function parseOptions0() {
   gDebugMode="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdfhmnrtuvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,update,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdfhmnrtuvA:B:C:D:I:L:M:N:O:P:R:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,update,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,releaseType:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -560,7 +560,7 @@ function parseOptions1() {
   gMultipleModelProject="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdfhmnrtuvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,update,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdfhmnrtuvA:B:C:D:I:L:M:N:O:P:R:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,update,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,releaseType:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
@@ -706,7 +706,7 @@ function parseOptions2() {
   gUseTemplate="false"
 
   #解析命令行参数
-  getOpt_cmd=$(getopt -o cdfhmnrtuvA:B:C:D:I:L:M:N:O:P:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,update,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
+  getOpt_cmd=$(getopt -o cdfhmnrtuvA:B:C:D:I:L:M:N:O:P:R:S:T:W: -l clearCachedParams,debug,forceCoverage,help,multipleModel,enableNotify,removeImage,template,update,version,archTypes:,buildType:,chartRepo:,dockerRepo:,imageCacheDir:,language:,localConfigFile:,workMode:,notifyUrl:,outArchTypes:,buildPath:,releaseType:,buildStages:,enableTemplate:,workDir: -n "${0}" -- "${@}")
 
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ];then
