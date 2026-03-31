@@ -1,25 +1,3 @@
-
-
-
-
-好的，请稍等。我需要先读取 `README.md` 文件的内容，然后为您提供完整的翻译。
-
-
-
-
-toolName: view_files
-
-status: success
-
-
-filePath: E:\tmt\wydevops\README.md
-
-好的，我已经阅读了 `README.md` 的全部内容。这是一个功能非常强大的 CI/CD 工具，文档也写得非常详细。
-
-以下是 `README.md` 文件的完整英文翻译：
-
----
-
 # Introduction to wydevops
 
 This project utilizes a unified, standard process to manage microservice compilation, Docker image generation (multi-architecture), Helm chart generation, offline package creation, and automated deployment.
@@ -41,7 +19,8 @@ The goal of `wydevops` is to create the most powerful, easily extensible and mai
 11. **Registry Support**: Also supports a standard Docker registry.
 12. **Bilingual Logs**: Console output logs support both Chinese and English, defaulting to English.
 13. **Jenkins Integration**: Easily integrates with Jenkins Pipelines using a single entry-point script.
-14. **Shell-based**: All code is developed in Shell, offering maximum flexibility and adaptability for users. The learning curve is minimal for developers of any language.
+14  **Enables Docker-based deployment**: You can deploy wydevops using Docker, which means you don't have to install its dependencies on your host machine.
+15. **Shell-based**: All code is developed in Shell, offering maximum flexibility and adaptability for users. The learning curve is minimal for developers of any language.
 15. **Powerful YAML Tooling**: Features a powerful, originally developed tool for reading and writing YAML files, providing great convenience for custom extensions.
 16. **Three-tier Management Model**: Designed with a three-tier management model (Company, Language, Project), providing interfaces for personnel at all levels to manage and control the CI/CD process.
 17. **K8s Plugin Mechanism**: Provides a plugin mechanism for Kubernetes resource configuration files, allowing developers to easily customize them.
