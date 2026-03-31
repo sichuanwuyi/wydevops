@@ -39,8 +39,10 @@ function _onBeforeInitGlobalParams_ex() {
   fi
 
   l_pomXmlFile="${gBuildPath}/pom.xml"
-  if [ ! -f "${l_pomXmlFile}" ];then
-      error "java.wydevops.extend.point.pom.not.found" "\n${l_pomXmlFile}"
+  if [ -f "${l_pomXmlFile}" ];then
+    info "java.wydevops.extend.point.pom.found" "\n${l_pomXmlFile}"
+  else
+    error "java.wydevops.extend.point.pom.not.found" "\n${l_pomXmlFile}"
   fi
 
   #读取JDK的版本
@@ -53,14 +55,14 @@ function _onBeforeInitGlobalParams_ex() {
   if ! [[ "${l_tmpVersion}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
     l_pomXmlFile=$(dirname "${gBuildPath%/}")
     l_pomXmlFile="${l_pomXmlFile}/pom.xml"
-    if [ ! -f "${l_pomXmlFile}" ];then
-      error "java.wydevops.extend.point.pom.not.found" "\n${l_pomXmlFile}"
-    fi
-
-    #再次读取JDK的版本
-    l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.target"]/text()' "${l_pomXmlFile}" 2>&1)
-    if [ ! "${l_tmpVersion}" ];then
-      l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.source"]/text()' "${l_pomXmlFile}" 2>&1)
+    if [ -f "${l_pomXmlFile}" ];then
+      #再次读取JDK的版本
+      l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.target"]/text()' "${l_pomXmlFile}" 2>&1)
+      if [ ! "${l_tmpVersion}" ];then
+        l_tmpVersion=$(xmllint --xpath  '/*[local-name()="project"]/*[local-name()="properties"]/*[local-name()="maven.compiler.source"]/text()' "${l_pomXmlFile}" 2>&1)
+      fi
+    else
+      warn "java.wydevops.extend.point.pom.not.found" "\n${l_pomXmlFile}"
     fi
   fi
 
