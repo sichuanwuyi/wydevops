@@ -1,27 +1,51 @@
+
+
+
+
+好的，请稍等。我需要先读取 `README.md` 文件的内容，然后为您提供完整的翻译。
+
+
+
+
+toolName: view_files
+
+status: success
+
+
+filePath: E:\tmt\wydevops\README.md
+
+好的，我已经阅读了 `README.md` 的全部内容。这是一个功能非常强大的 CI/CD 工具，文档也写得非常详细。
+
+以下是 `README.md` 文件的完整英文翻译：
+
+---
+
 # Introduction to wydevops
 
-This project uses a unified, standard process to manage the compilation, building, Docker image generation (multi-architecture), Helm chart generation, offline release package creation, and automated deployment of microservices.
-The goal of wydevops is to create the most powerful, easily extensible and maintainable, and simplest-to-use CI/CD pipeline.
+This project utilizes a unified, standard process to manage microservice compilation, Docker image generation (multi-architecture), Helm chart generation, offline package creation, and automated deployment.
+
+The goal of `wydevops` is to create the most powerful, easily extensible and maintainable, and simplest to use CI/CD pipeline.
 
 ## Features of the Current V1.* Version
 
-1. Designed to support multi-language projects (currently adapted for Go, Java, Next.js, and Vue), as well as single-module and multi-module projects.
-2. Supports building Docker images for both `linux/amd64` and `linux/arm64` architectures.
-3. Enables heterogeneous building and running of Docker images across CPU architectures through the integration of QEMU.
-4. Supports two automated microservice deployment methods: K8S and Docker. In local working mode, the entire CI/CD process can be completed directly from the source code project, right up to the microservice running in Docker or a K8S cluster.
-5. Supports layered packaging of microservice images, resulting in smaller deployment packages for production environments.
-6. Includes a mechanism for sending notification messages to external systems.
-7. Supports offline building of microservice deployment packages, caching all third-party images pulled from the public network locally, which greatly facilitates microservice development in private network environments.
-8. Supports deploying multiple microservices with a single Helm chart, making it easy to uniformly release and uninstall closely coupled business modules.
-9. Supports deploying multiple microservices within a single container, minimizing the use of valuable Pod resources.
-10. Supports nexus3、harbor(2.10+)、registry、aws-ecr(AWS ECR repository) as Docker and Helm chart repositories, eliminating the need for the `helm-push` plugin.
-11. Supports registry as Docker repositories.
-12. Supports integration with Jenkins, allowing consolidation with Jenkins Pipelines using just a single entry script.
-13. All code is developed in Shell, providing maximum flexibility and user adaptability, with the lowest learning curve for developers of various languages.
-14. The project includes powerful, originally developed tools for reading and writing YAML files, offering great convenience for users to custom-extend functionalities.
-15. Designed with a three-tier management model (company-level, development group-level, project-level), providing interfaces for personnel at all levels to manage and control the CI/CD process.
-16. Provides a plugin mechanism for K8S resource configuration files, making it easy for developers to customize configurations.
-17. Based on this project, the maintenance team has already developed the wydevops microservice management platform, which is not yet open-sourced.
+1.  **Multi-language Support**: Currently adapted for GO, JAVA, Next.js, and Vue projects.
+2.  **Multi-architecture Docker Images**: Supports building Docker images for both `linux/amd64` and `linux/arm64` architectures.
+3.  **Cross-architecture Builds**: Achieves cross-CPU architecture Docker image building and running through the integration of QEMU.
+4.  **Flexible Deployment**: Supports automated microservice deployment to both Kubernetes and Docker. In local mode, the entire CI/CD process can be completed directly from the source code project, right up to the microservice running in a Docker or Kubernetes cluster.
+5.  **Layered Image Packaging**: Creates smaller deployment packages for production environments by layering microservice images.
+6.  **Notification Mechanism**: Includes a mechanism to send notification messages to external systems.
+7.  **Offline Builds**: Supports offline building of microservice deployment packages. It caches all third-party images pulled from the public internet, providing great convenience for microservice development in private network environments.
+8.  **Multi-service Charts**: Supports deploying multiple microservices with a single Helm chart, facilitating unified release and uninstallation of tightly coupled business modules.
+9.  **Multi-service Containers**: Supports deploying multiple microservices within a single container, minimizing the use of valuable Pod resources.
+10. **Multiple Registries**: Supports Nexus3, Harbor (2.10+), and AWS ECR as Docker and Helm chart registries. The `helm push` plugin is no longer required.
+11. **Registry Support**: Also supports a standard Docker registry.
+12. **Bilingual Logs**: Console output logs support both Chinese and English, defaulting to English.
+13. **Jenkins Integration**: Easily integrates with Jenkins Pipelines using a single entry-point script.
+14. **Shell-based**: All code is developed in Shell, offering maximum flexibility and adaptability for users. The learning curve is minimal for developers of any language.
+15. **Powerful YAML Tooling**: Features a powerful, originally developed tool for reading and writing YAML files, providing great convenience for custom extensions.
+16. **Three-tier Management Model**: Designed with a three-tier management model (Company, Language, Project), providing interfaces for personnel at all levels to manage and control the CI/CD process.
+17. **K8s Plugin Mechanism**: Provides a plugin mechanism for Kubernetes resource configuration files, allowing developers to easily customize them.
+18. **Management Platform**: Based on this project, the maintenance team has developed the `wydevops` Microservice Management Platform (currently not open-source).
 
 ## Running Environment
 
@@ -29,161 +53,157 @@ The goal of wydevops is to create the most powerful, easily extensible and maint
 2.  Can be run in the Bash command line on Linux.
 3.  Can be integrated with Jenkins Pipelines via the `Jenkinsfile` provided in the source code.
 
-## Third-Party Dependencies
+## Dependencies
 
 1.  **git**
-    *   On Ubuntu (Debian/Ubuntu series):
-        Update package index and install:
-        ```
+    *   **Ubuntu (Debian/Ubuntu series)**:
+        ```bash
         sudo apt update
         sudo apt install -y git
+        git --version
+        git config --global user.name "Your Name"
+        git config --global user.email "you@example.com"
         ```
-        Verify: `git --version`
-        Basic configuration: `git config --global user.name "Your Name"` and `git config --global user.email "you@example.com"`
-    *   On Windows using the official installer:
-        Download and run: https://git-scm.com/download/win
+    *   **Windows**:
+        Download and run the official installer from: https://git-scm.com/download/win
         Follow the installation wizard (default options are fine).
-        Open PowerShell or cmd, and verify: `git --version`
-        Basic configuration (in PowerShell or Git Bash): `git config --global user.name "Your Name"` and `git config --global user.email "you@example.com"`
+        Verify in PowerShell or cmd: `git --version`
+        Configure in PowerShell or Git Bash: `git config --global user.name "Your Name"`, `git config --global user.email "you@example.com"`
 
 2.  **libxml2**
-    This is a library for processing XML files. Users need to download and install it themselves.
-    Currently, it is only used in Java projects to read configurations from the pom.xml file. Installation is not required for non-Java projects.
-    *   Ubuntu (Debian/Ubuntu series) installation command: `sudo apt install libxml2-utils`
-    *   Windows installation command: `choco install libxml2`
+    A library for processing XML files. Required only for Java projects to read `pom.xml`. Non-Java projects do not need it.
+    *   **Ubuntu**: `sudo apt install libxml2-utils`
+    *   **Windows**: `choco install libxml2`
 
 3.  **docker**
-    This is a tool for building and managing Docker images. Users need to download and install it themselves.
-    *   Ubuntu (Debian/Ubuntu series) installation command: `sudo apt install docker-ce`
-    *   For Windows, it can be downloaded and installed from here: [Docker Desktop](https://www.docker.com/get-started)
+    The tool for building and managing Docker images.
+    *   **Ubuntu**: `sudo apt install docker-ce`
+    *   **Windows**: Download from [Docker Desktop](https://www.docker.com/get-started).
 
 4.  **helm**
-    This is a tool for K8S microservice deployment. This project will automatically install the corresponding `helm` command (the built-in version is v3.15.1) from the `/tools` directory based on the system architecture, so users do not need to install it.
+    A tool for Kubernetes microservice deployment. This project automatically installs the corresponding `helm` command (built-in version v3.15.1) from the `/tools` directory based on the system architecture. **No user installation is required.**
 
 5.  **kubectl**
-    This is a command-line tool for K8S resource management.
-    *   On Linux, this project will automatically install the corresponding `kubectl` command from the `/tools` directory based on the system architecture, so users do not need to install it.
-    *   On Windows, users can install Docker Desktop and start its built-in K8S cluster (convenient for local debugging), as Docker Desktop comes with the `kubectl` command; alternatively, run the installation command: `choco install kubectl`.
-    *   After installing `kubectl`, you need to specify the K8S cluster information it manages, as follows:
-        1)  Type "Environment Variables" in the Windows search and select "Edit the system environment variables".
-        2)  In the "System Properties" dialog, click the "Environment Variables..." button.
-        3)  In the "User variables" or "System variables" section, click "New...".
-        4)  For `Variable name`, enter `KUBECONFIG`.
-        5)  For `Variable value`, enter the full path to your kubeconfig file, e.g., `C:\Users\YourUser\.kube\my-cluster-config`.
-        6)  Click OK to save. You will need to open a new terminal window for the settings to take effect.
+    A command-line tool for managing Kubernetes resources.
+    *   **Linux**: The project automatically installs the corresponding `kubectl` command from the `/tools` directory. **No user installation is required.**
+    *   **Windows**: Users can install Docker Desktop and enable its built-in Kubernetes cluster (convenient for local debugging), which includes `kubectl`. Alternatively, run `choco install kubectl`.
+        After installation, you need to configure the `KUBECONFIG` environment variable to point to your cluster's configuration file.
 
-6.  **Istio must be installed in the K8S cluster**
-    Under the default configuration, wydevops deploys microservices using the Istio sidecar model.
-    Therefore, it is required that Istio is already installed in the K8S cluster (see [here](https://istio.io/latest/docs/setup/getting-started/) for installation instructions).
-    **Special Reminder:** wydevops will connect to the target cluster (specified by the `targetApiServer` parameter) to dynamically fetch the `apiVersion` for all generated K8S resource types, ensuring that the version of the generated K8S resources is consistent with the target cluster.
+6.  **Istio in Kubernetes Cluster**
+    By default, `wydevops` deploys microservices using the Istio sidecar model. Therefore, Istio must be installed in the target Kubernetes cluster (see [installation guide](https://istio.io/latest/docs/setup/getting-started/)).
+    *   **Note**: `wydevops` dynamically fetches the `apiVersion` for all generated Kubernetes resource types from the target cluster to ensure version consistency.
 
-7.  **Dependencies for Local Compilation**
-    This project supports the deployment of microservices for various target languages, each requiring its own specific build dependencies.
-    For example, Java projects require a JDK, while Python projects need a Python interpreter.
-    Please install the appropriate build dependencies based on your target language.
-    Note: If you are building inside a Docker container, you do not need to install these local build dependencies.
+7.  **Local Compilation Dependencies for Target Language**
+    The project supports various languages, each with its own compilation dependencies (e.g., JDK for Java). Please install them as needed.
+    *   **Note**: If you use the in-Docker compilation method, you do not need to install these local dependencies.
 
-## Installation Steps
+## Shell Source Code Deployment
 
-1. Create a directory to serve as the root for wydevops, and define the environment variable `WYDEVOPS_HOME` to point to this directory.
-    *   On Ubuntu (Debian/Ubuntu series):
-        1) `vim ~/.bashrc`
-        2) At the end of the file, add: `export WYDEVOPS_HOME={path_to_the_new_directory}`, then save and exit.
-        3) Execute the command: `source ~/.bashrc`
-    *   On Windows:
-        1) Type "Environment Variables" in the Windows search and select "Edit the system environment variables".
-        2) In the "System Properties" dialog, click the "Environment Variables..." button.
-        3) In the "User variables" or "System variables" section, click "New...".
-        4) For `Variable name`, enter `WYDEVOPS_HOME`.
-        5) For `Variable value`, enter the path to the newly created directory.
-        6) Click OK to save. You will need to open a new terminal window for the settings to take effect.
-2. Open a Git Bash command line in the `$WYDEVOPS_HOME` directory and execute the following command to download the project's source code.
+1.  Create a root directory for `wydevops` and define the `WYDEVOPS_HOME` environment variable pointing to it.
+2.  In the `$WYDEVOPS_HOME` directory, clone the project source code:
     `git clone -b master https://github.com/sichuanwuyi/wydevops.git`
     or
     `git clone -b master https://gitee.com/tmt_china/wydevops.git`
-3. Create the `$WYDEVOPS_HOME/client-config.json` file and write the following content into it, so that wydevops can automatically update to the latest version upon execution.
+3.  Create a `$WYDEVOPS_HOME/client-config.json` file with the following content to enable automatic updates:
     ```json
     {
       "repoUrl": "https://gitee.com/tmt_china/wydevops.git",
       "branch": "master"
     }
     ```
-4. Define the environment variable WYDEVOPS_LOG_LANGUAGE (refer to item 1 for definition methods). 
-   This is used to specify the language for the logs output by wydevops during runtime. Supported languages are: English (en-US) and Simplified Chinese (zh-CN). The default value is en-US. 
-5. Define the environment variable WYDEVOPS_WORK_MODE (refer to item 1 for definition methods).
-   This is used to specify the working mode for wydevops during runtime. Supported modes are: local mode and jenkins mode. The default value is local.
-6. Install the third-party dependencies (see the methods described above).
-7. Verify the installation.
-    Execute the command: `bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h`
-    If there are no errors, the installation was successful.
+4.  Define the `WYDEVOPS_LOG_LANGUAGE` environment variable (`en` or `zh`, defaults to `en`).
+5.  Define the `WYDEVOPS_WORK_MODE` environment variable (`local` or `jenkins`, defaults to `local`).
+6.  Install the third-party dependencies mentioned above.
+7.  Verify the installation by running: `bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h`. No errors indicate a successful installation.
 
-## Integration with Projects to be Packaged and Deployed
+## Integration with Your Project (Source Code Deployment)
 
-1.  Copy the `$WYDEVOPS_HOME/wydevops/script/wydevops-run.sh` file to the root directory of the target project.
-2.  Open the `wydevops-run.sh` file in the target project's root directory and modify or confirm the following in the parameter line of the `wydevops.sh` execution command at the end of the file:
-    1)  Specify the local cache directory for third-party Docker images (the `-I` parameter). The default value is `~/.wydevops/cachedImage`.
-    2)  Specify the project's language type (the `-L` parameter). Currently supported values are: `java`, `go`, `nextjs`, `vue`. For other project types, you need to extend it yourself or contact the wydevops maintenance team.
-    3)  Confirm the architecture type for this packaging run (the `-A` parameter). Optional values are: `linux/amd64`, `linux/arm64`. The default is `linux/amd64`.
-    4)  Confirm the architecture type for the offline installation package generated by this process (the `-O` parameter). Optional values are: `linux/amd64`, `linux/arm64`. The default is `linux/amd64`.
-    5)  Other parameters can be left unchanged. If you need to modify them, you can execute the command `bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h` to query parameter details.
-3.  Create a file named `ci-cd-config.yaml` in the root directory of the target project.
-    The following parameters must be added under the `globalParams` configuration section in this file:
-    1)  The name of the microservice (`serviceName`).
-    2)  The version of the microservice (`businessVersion`).
-    3)  The main port number of the microservice (`mainPort`), multi-port configuration is supported (separate port numbers with an English comma).
-    4)  The gateway domain for the microservice (`gatewayHost`), default is `*`, meaning any host.
-    5)  The gateway path prefix for the microservice (`gatewayPath`), default is `/"${serviceName}"`. This parameter can be modified according to actual needs. By default, the gateway will discard `/"${serviceName}"` from the request path during forwarding (determined by rewrite rules).
-    6)  Whether to enable the K8S service liveness probe (`livenessProbeEnable`), default is `true`.
-    7)  If `livenessProbeEnable=true`, the URI for the K8S service liveness probe (`livenessUri`) must be configured, default is `"/health"`.
-    8)  Whether to enable the K8S service readiness probe (`readinessProbeEnable`), default is `true`.
-    9)  If `readinessProbeEnable=true`, the URI for the K8S service readiness probe (`readinessUri`) must be configured, default is `"/health"`.
-    10) Default SSH parameter information for the K8S cluster node server (`targetApiServer`), format: `{server_ip}|{ssh_port}|{ssh_user}|{ssh_password}`.
-        Passwordless SSH login from the local machine to this node server must be configured in advance, otherwise deployment will fail.
-    11) The target namespace for deployment (`targetNamespace`), default is `default`. Non-existent namespaces will be created automatically during deployment.
-        Example: `targetApiServer: 172.27.213.84|22|admin|admin123456`
-    12) Repository information for pulling images within the K8s cluster (`targetDockerRepo`),
-        Format: `{repo_type(nexus or harbor)},{instance_name(nexus) or project_name(harbor)},{repo_access_address({IP}:{port})},{login_user},{login_password}`
-        Example: `targetDockerRepo: registry,wydevops,192.168.1.218:30783,admin,admin123,30784`
+1.  Copy the `$WYDEVOPS_HOME/wydevops/script/wydevops-run.sh` file to your target project's root directory.
+2.  Modify the `wydevops-run.sh` file in your project to configure the parameters for the `wydevops.sh` execution command:
+    *   `-I`: Specify the cache directory for third-party Docker images (defaults to `~/.wydevops/cachedImage`).
+    *   `-L`: Specify the project's language type (`java`, `go`, `nextjs`, `vue`).
+    *   `-A`: Confirm the architecture for the build (`linux/amd64` or `linux/arm64`, defaults to `linux/amd64`).
+    *   `-O`: Confirm the architecture for the offline package (`linux/amd64` or `linux/arm64`, defaults to `linux/amd64`).
+    *   For other parameters, run `bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h`.
+3.  Create a `ci-cd-config.yaml` file in your project's root directory. The following parameters are mandatory under `globalParams`:
+    *   `serviceName`: Name of the microservice.
+    *   `businessVersion`: Version of the microservice.
+    *   `mainPort`: Main port number (multiple ports can be comma-separated).
+    *   `gatewayHost`: Gateway domain (defaults to `*`).
+    *   `gatewayPath`: Gateway path prefix (defaults to `/${serviceName}`).
+    *   `livenessProbeEnable`: Whether to enable K8s liveness probes (defaults to `true`).
+    *   `livenessUri`: URI for the liveness probe (required if enabled, defaults to `/health`).
+    *   `readinessProbeEnable`: Whether to enable K8s readiness probes (defaults to `true`).
+    *   `readinessUri`: URI for the readiness probe (required if enabled, defaults to `/health`).
+    *   `targetApiServer`: SSH parameters for the target K8s cluster node server. Format: `{IP}|{Port}|{User}|{Password}`.
+    *   `targetNamespace`: Target deployment namespace (defaults to `default`).
+    *   `targetDockerRepo`: Image registry information for the K8s cluster. Format: `{type},{name},{address},{user},{password}`.
+    *   For a comprehensive list of all parameters, refer to the `_ci-cd-template.yaml` files in the `$WYDEVOPS_HOME/wydevops/script/templates/config` directory.
 
-    The above parameters must be configured before executing subsequent processes, otherwise deployment will fail. There are many other configuration parameters. For a more comprehensive understanding, please refer to the `_ci-cd-template.yaml` configuration template files for each language in the `$WYDEVOPS_HOME/wydevops/script/templates/config` directory. This file contains details of all configuration parameters.
+## Using Docker Deployment
+
+### Building the Docker Image for Java Projects
+
+1.  The `Dockerfile_jdk21` file in the project root is used to build the Docker image for `wydevops`-adapted Java projects.
+2.  In the project root, execute: `docker build -t wydevops-runner:1.2.0 -f Dockerfile_jdk21 .`
+3.  After the build is complete, modify and run the `docker-build.sh` script to package and deploy your Java project. 
+    The script includes volume mounts for the Maven repository, settings.xml, Docker socket, and project source code, as well as environment variables and parameters for the `wydevops` run.
+    The content of the docker-build.sh script is as follows:
+    
+    docker rm -f wydevops-runner && \  # Remove any existing container with the same name
+    docker run \
+    # Mount the local Maven repository to the container's Maven repository directory
+    -v /mnt/d/maven-repository:/root/.m2/repository \
+    # Mount the local Maven's settings.xml file to the container's Maven settings.xml file
+    -v /mnt/d/apache-maven-3.9.12/conf/settings-docker.xml:/root/.m2/settings.xml \
+    # Mount the local docker.sock file to the container's docker.sock file
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    # Specify the target project's root directory to the container's project root directory
+    -v /mnt/d/tmt_project/tmt-ignite3-server:/root/project \
+    # Mount the local wydevops directory to the container's wydevops directory; the image will automatically download or update the wydevops source code
+    -v /home/wuyi/wydevops:/root/.wydevops/wydevops \
+    # Specify the log language for wydevops runtime as Chinese. Valid values: zh, en. Defaults to en.
+    -e WYDEVOPS_LOG_LANGUAGE="zh" \
+    # Specify the name of the wydevops container as wydevops-runner
+    --name wydevops-runner \
+    # Specify the wydevops image as wydevops-runner:1.2.0
+    wydevops-runner:1.2.0 \
+    # Specify the architecture type for this build as linux/arm64
+    -A "linux/arm64" \
+    # Specify the image architecture type in the generated offline package
+    -O "linux/arm64" \
+    # Specify that a single Docker image will be generated. If set to "double", two images will be created: a base image and a business image.
+    -B "single" \
+    # Default deployment mode is K8s. This requires targetApiServer, targetNamespace, and targetDockerRepo to be configured in ci-cd-config.yaml.
+    -R "k8s" \
+    # Specify the sequence of steps for this process: build, docker, chart, package, deploy.
+    -S "build,docker,chart,package,deploy"
+
+5. The `wydevops` team is preparing packaging images for Go, Vue, and Next.js. Stay tuned.
 
 ## Deep Customization for Specific Project Types
 
-For Java and Go projects, wydevops has undergone further deep customization. Through `params-mapping-in-yaml-file.config` and `params-mapping-in-xml-file.config` files, parameters 1)-5) mentioned above are bound to certain parameters in the target project's own configuration files (for specific binding rules, please refer to the comments in the `params-mapping-in-*-file.config` files).
-When wydevops runs, it automatically extracts the values of the bound parameters based on the target project's configuration files. These `params-mapping-in-*-file.config` files depend on the internal project development specifications of each company or organization and are the concrete embodiment of the R&D team's project specifications within wydevops. This binding mechanism can enforce strict adherence to development specifications by developers.
-In actual development, the content of the `params-mapping-in-*-file.config` files can be flexibly adjusted to adapt to the R&D team's project development specifications.
+For Java and Go projects, `wydevops` offers deep customization through `params-mapping-in-*-file.config` files. This mechanism binds `wydevops` parameters to parameters within the project's native configuration files (e.g., `application.yaml` or `pom.xml`), allowing `wydevops` to automatically extract these values at runtime. This enforces development standards within the organization.
 
-1.  **Default Specification for Java Projects**
-    1)  In the Java specification supported by wydevops by default, all `application.yaml` files must be stored in the `/resources/config` directory.
-    2)  By default, wydevops uses `application-prod.yaml` as the production environment configuration file for Java projects, meaning `spring.profiles.active` must be configured as `prod` when packaging for the production environment.
-    3)  The `params-mapping-in-yaml-file.config` file details which parameters in `application*.yaml` files are bound to which wydevops parameters.
-    4)  The `params-mapping-in-xml-file.config` file details which custom parameters the `pom.xml` file has and which wydevops parameters their values are bound to.
-2.  **Default Specification for Go Projects**
-    1)  By default, the configuration file name for the production environment is `config-prod.yaml`, and this file must be located in the project's root directory.
-    2)  The `config-prod.yaml` file must contain:
-    3)  `app.appName` — its value is bound to `globalParams.serviceName` and `globalParams.serviceNameZh`.
-    4)  `app.version` — its value is bound to `globalParams.businessVersion`.
-    5)  `app.port` — its value is bound to `globalParams.mainPort`, `globalParams.containerPorts`, and `globalParams.servicePorts`.
-    6)  `app.gateway.domain` — its value is bound to `globalParams.gatewayHost`.
-    7)  `app.gateway.route-prefix` — its value is bound to `globalParams.gatewayPath`.
+*   **Java Project Default Specification**: Defines rules for `application.yaml` location, production profile naming (`application-prod.yaml`), and parameter mappings from `application*.yaml` and `pom.xml`.
+*   **Go Project Default Specification**: Defines rules for the production configuration file name (`config-prod.yaml`) and parameter mappings within it (e.g., `app.appName` to `globalParams.serviceName`).
 
-**Important Note: Wydevops parameters that have binding rules defined in the `params-mapping-in-*-file.config` files do not need to be specified in `ci-cd-config.yaml`.**
+**Note**: Any `wydevops` parameter defined with a binding rule in a `params-mapping-in-*-file.config` file does not need to be defined in `ci-cd-config.yaml`.
 
-## Sample Project Description
+## Sample Projects
 
-The `/sample` directory in the project source code contains sample projects for four types: Java, Go, Next.js, and Vue. Each example is relatively simple, and interested developers can refer to these sample projects.
+The `/sample` directory in the source code contains example projects for Java, Go, Next.js, and Vue. Developers interested can refer to these simple examples.
 
 ## 💼 Commercial Support & Services
 
-For organizations that require professional assistance, I offer a range of paid services to help you get the most out of `wydevops`. Whether you're looking to integrate it into a complex environment, need custom features, or require dedicated support, I'm here to help.
+We offer a range of paid services for enterprises and teams with professional needs, designed to help you maximize the value of `wydevops`.
 
-My services include:
+Services include:
+1.  **Consulting & Implementation**
+2.  **Custom Feature Development**
+3.  **Premium Technical Support**
 
-1. **Consulting & Implementation**: Expert guidance on integrating `wydevops` into your existing CI/CD pipelines and development workflows.
-2. **Custom Feature Development**: Need a specific feature or integration? I can design, build, and test custom extensions tailored to your unique requirements.
-3. **Premium Support**: Get dedicated, priority support with guaranteed response times (SLA) for your mission-critical systems.
-
-If you or your team are interested in leveraging my expertise to accelerate your DevOps journey, please feel free to reach out.
+If you or your team are interested in leveraging our expertise to accelerate your DevOps process, please feel free to contact us.
 
 **Contact**: `11372349@qq.com`
 

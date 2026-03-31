@@ -80,7 +80,7 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
    请根据目标语言的不同，安装其对应的编译依赖库。
    注意：如果采用的是在Docker中编译的方式，则无需安装目标语言的本地编译依赖库。
 
-## 安装步骤
+## Shell源码部署
 1. 创建一个目录作为wydevops的根目录，并定义环境变量WYDEVOPS_HOME指向这个目录。
    ubuntu (Debian/Ubuntu 系列)下：
     1) vim ~/.bashrc
@@ -112,7 +112,7 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
    执行命令：bash $WYDEVOPS_HOME/wydevops/script/wydevops.sh -h
    如果没有报错，说明安装成功。
 
-## 与需要打包部署的项目集成
+## 源码部署方式下——与需要打包部署的项目集成
 1. 将$WYDEVOPS_HOME/wydevops/script/wydevops-run.sh文件复制到目标项目的根目录下。
 2. 打开目标项目的根目录下wydevops-run.sh文件，在其末尾的执行wydevops.sh命令的参数行中做如下修改或确认：
    1) 指定本地的第三方docker镜像的缓存目录(-I参数)。默认值为~/.wydevops/cachedImage。
@@ -142,6 +142,46 @@ wydevops的目标是打造功能最强大的、最易扩展和维护的、使用
       
       上述参数是在执行后续流程前必须配置好的，否则会导致部署失败。除此之外还有很多其他配置参数，如需更全面的了解
    请参考$WYDEVOPS_HOME/wydevops/script/templates/config目录下各语言的配置模板文件_ci-cd-template.yaml。该文件中包含了所有的配置参数详情。
+
+## 使用docker部署
+### 构建wydevops适配的Java项目使用的docker镜像
+1. wydevops项目根目录下有一个Dockerfile_jdk21文件，用于构建wydevops适配的Java项目使用的docker镜像。
+2. 在wydevops项目根目录下执行如下命令：
+   docker build -t wydevops-runner:1.2.0 -f Dockerfile_jdk21 .
+3. 构建完成后，参照wydevops项目根目录下的docker-build.sh脚本，修正参数后运行该脚本即可完成指定的Java项目的打包部署：
+   docker-build.sh脚本内容如下：
+
+   #删除可能存在的同名镜像
+   docker rm -f wydevops-runner && \  
+   docker run \
+   #挂载本地的maven仓库到容器的maven仓库目录
+   -v /mnt/d/maven-repository:/root/.m2/repository \
+   #挂载本地maven的settings.xml文件到容器的maven的settings.xml文件
+   -v /mnt/d/apache-maven-3.9.12/conf/settings-docker.xml:/root/.m2/settings.xml \
+   #挂载本地的docker.sock文件到容器的docker.sock文件·
+   -v /var/run/docker.sock:/var/run/docker.sock \
+   #指定目标项目的根目录到容器的项目根目录
+   -v /mnt/d/tmt_project/tmt-ignite3-server:/root/project \
+   #挂载本地的wydevops目录到容器的wydevops目录，wydevops镜像会自动下载或更新wydevops源码·
+   -v /home/wuyi/wydevops:/root/.wydevops/wydevops \
+   #指定wydevops运行时的日志语言为中文，可选值有：zh、en。默认值为en
+   -e WYDEVOPS_LOG_LANGUAGE="zh" \
+   #指定wydevops容器的名称为wydevops-runner
+   --name wydevops-runner \
+   #指定wydevops镜像为wydevops-runner:1.2.0
+   wydevops-runner:1.2.0 \
+   #指定本次打包的架构类型为linux/arm64
+   -A "linux/arm64" \
+   #指定本次生成的离线安装包中镜像的架构类型
+   -O "linux/arm64" \
+   #指定本次生成的单个docker镜像。若配置为double，则会生成两个镜像，一个为基础镜像，另一个为业务镜像。
+   -B "single" \
+   #默认部署模式为K8s模式, 此配置要求ci-cd-config.yaml文件中必须配置targetApiServer、targetNamespace、targetDockerRepo这三个参数。
+   -R "k8s" \
+   #指定本次流程依次执行的步骤为：build、docker、chart、package、deploy。
+   -S "build,docker,chart,package,deploy" 
+
+4. wydevops团队正在准备go、vue、next.js类型的打包镜像，敬请期待。
    
 ## 对部分项目类型的深度定制 
    对java项目和go项目，wydevops做了进一步的深度定制，通过params-mapping-in-yaml-file.config、params-mapping-in-xml-file.config配置文件
