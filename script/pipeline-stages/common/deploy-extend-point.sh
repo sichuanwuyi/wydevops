@@ -1481,12 +1481,15 @@ function _handleEnvironmentVariables() {
   l_count=${#l_arrays[@]}
   for ((l_i=0; l_i < l_count; l_i++));do
     l_param="${l_arrays[${l_i}]}"
+    echo "-------l_param=${l_param}---------"
     if [[ "${l_param}" =~ ^(params\.)*  ]];then
       l_key="${l_param%%=}"
+      echo "-------l_key=${l_key}---------"
       if [[ "${l_key}" =~ ^(params\.ds\.).*.username || ${l_key} =~ ^(params\.ds\.).*\.password  ]];then
-        l_value="${l_key//params.ds./}"
+        l_value="${l_key//params\.ds\./}"
         l_value="${l_value^^}"
         l_value="${l_value//./_}"
+        echo "-------l_value=${l_value}---------"
         _setStringParams="${_setStringParams},${l_key}='\${${l_value}}'"
       else
         l_result="${l_result},${l_param}"
