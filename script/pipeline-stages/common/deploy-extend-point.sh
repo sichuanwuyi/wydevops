@@ -1481,7 +1481,7 @@ function _handleEnvironmentVariables() {
   l_count=${#l_arrays[@]}
   for ((l_i=0; l_i < l_count; l_i++));do
     l_param="${l_arrays[${l_i}]}"
-    if [[ "${l_key}" =~ ^(params\.)*  ]];then
+    if [[ "${l_param}" =~ ^(params\.)*  ]];then
       l_key="${l_param%%=}"
       if [[ "${l_key}" =~ ^(params\.ds\.).*.username || ${l_key} =~ ^(params\.ds\.).*\.password  ]];then
         l_value="${l_key//params.ds./}"
