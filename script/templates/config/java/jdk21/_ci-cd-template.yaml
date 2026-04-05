@@ -432,12 +432,12 @@ chart:
                 valueFrom:
                   fieldRef:
                     fieldPath: status.hostIP
-              - name: MASTER_DS_USERNAME
+              - name: MYSQL_MASTER_USERNAME
                 valueFrom:
                   secretKeyRef:
                     name: ${serviceName}-${versionSuffix}-default-secret
                     key: username
-              - name: MASTER_DS_PASSWORD
+              - name: MYSQL_MASTER_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: ${serviceName}-${versionSuffix}-default-secret
