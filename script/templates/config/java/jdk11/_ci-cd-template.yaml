@@ -460,7 +460,7 @@ chart:
             generatorName: default
             enable: true
             configPath:
-          - name: Secret-datasource
+          - name: Secret
             type: Secret
             generatorName: default
             enable: true

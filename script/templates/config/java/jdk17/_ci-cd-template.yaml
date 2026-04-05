@@ -476,6 +476,11 @@ chart:
             generatorName: default
             enable: false
             configPath:
+          - name: Secret-docker-config
+            type: Secret
+            generatorName: docker-config
+            enable: false
+            configPath:
           - name: Deployment
             type: Deployment
             generatorName: default
@@ -486,15 +491,10 @@ chart:
             generatorName: default
             enable: true
             configPath:
-          - name: Secret-datasource
-            type: Secret
+          - name: StatefulSet
+            type: StatefulSet
             generatorName: default
             enable: true
-            configPath:
-          - name: Secret-docker-config
-            type: Secret
-            generatorName: docker-config
-            enable: false
             configPath:
           - name: Service
             type: Service
