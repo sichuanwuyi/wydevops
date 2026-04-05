@@ -1485,8 +1485,8 @@ function _handleEnvironmentVariables() {
       l_key="${l_param%%=}"
       if [[ "${l_key}" =~ ^(params\.ds\.).*.username || ${l_key} =~ ^(params\.ds\.).*\.password  ]];then
         l_value="${l_key//params.ds./}"
-        l_value="${l_result^^}"
-        l_value="${l_result//./_}"
+        l_value="${l_value^^}"
+        l_value="${l_value//./_}"
         _setStringParams="${_setStringParams},${l_key}='\${${l_value}}'"
       else
         l_result="${l_result},${l_param}"
