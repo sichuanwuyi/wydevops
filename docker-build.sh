@@ -12,4 +12,4 @@ wydevops-runner:1.2.0 \
 -O "linux/arm64" \
 -B "double" \
 -R "k8s" \
--S "deploy"
+-S "build,docker,chart,package,deploy"
