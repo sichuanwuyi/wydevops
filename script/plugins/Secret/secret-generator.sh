@@ -2,7 +2,7 @@
 
 function secretGenerator_default() {
   local l_resourceType=$2
-  local l_generatorName=$4
+  local l_generatorName=$3
   local l_valuesYaml=$4
   local l_deploymentIndex=$5
 
