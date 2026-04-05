@@ -23,9 +23,15 @@ function secretGenerator_default() {
     l_array=(${gDefaultRetVal//|null|/ })
     t_username=$(echo -n "${l_array[0]}" | base64)
     t_password=$(echo -n "${l_array[1]}" | base64)
-    # 生成Java项目中数据源的Secret
-    commonGenerator_default "Secret" "${@}"
+  else
+    # shellcheck disable=SC2034
+    t_username=$(echo -n "root" | base64)
+    # shellcheck disable=SC2034
+    t_password=$(echo -n "123456" | base64)
   fi
+
+  # 生成Java项目中数据源的Secret
+  commonGenerator_default "Secret" "${@}"
 
   unset t_username
   unset t_password
