@@ -457,54 +457,67 @@ chart:
 
         resourcePlugins:
           - name: ConfigMap
+            type: ConfigMap
             generatorName: default
             enable: true
             configPath:
           - name: Secret
+            type: Secret
             generatorName: default
             enable: false
             configPath:
           - name: Deployment
+            type: Deployment
             generatorName: default
             enable: true
             configPath:
           - name: DaemonSet
+            type: DaemonSet
             generatorName: default
             enable: true
             configPath:
           - name: StatefulSet
+            type: StatefulSet
             generatorName: default
             enable: true
             configPath:
           - name: Service
+            type: Service
             generatorName: default
             enable: true
             configPath:
           - name: Gateway
+            type: Gateway
             generatorName: default
             enable: true
             configPath: istioRoute
           - name: VirtualService
+            type: VirtualService
             generatorName: default
             enable: true
             configPath: istioRoute
           - name: DestinationRule
+            type: DestinationRule
             generatorName: default
             enable: true
             configPath: istioRoute
           - name: ServiceAccount
+            type: ServiceAccount
             generatorName: default
             enable: true
             configPath:
           - name: HorizontalPodAutoscaler
+            type: HorizontalPodAutoscaler
             generatorName: default
             enable: true
             configPath:
           - name: Ingress
+            type: Ingress
             generatorName: default
             enable: false
             configPath: ingressRoute
           - name: ApisixRoute
+            type: ApisixRoute
             generatorName: default
             enable: false
             configPath: apisixRoute

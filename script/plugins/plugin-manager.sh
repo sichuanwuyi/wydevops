@@ -170,7 +170,7 @@ function commonGenerator_default() {
   info "plugin.common.load.template.file" "${l_resourceType}#${l_templateFile##*/}"
 
   #设定目标配置文件
-  l_targetFile="${l_valuesYaml%/*}/templates/${t_deploymentName}-${l_resourceType,,}.yaml"
+  l_targetFile="${l_valuesYaml%/*}/templates/${t_deploymentName}-${l_resourceType,,}-${l_generatorName}.yaml"
 
   #读取模板文件内容。
   l_content=$(cat "${l_templateFile}")

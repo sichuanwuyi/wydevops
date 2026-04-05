@@ -355,7 +355,7 @@ function onModifyingValuesYaml_ex(){
 
     ((l_pluginIndex = 0))
     while true;do
-      readParam "${l_valuesYaml}" "${l_moduleName}.resourcePlugins[${l_pluginIndex}].name"
+      readParam "${l_valuesYaml}" "${l_moduleName}.resourcePlugins[${l_pluginIndex}].type"
       [[ "${gDefaultRetVal}" == "null" ]] && break
 
       if [ ! "${gDefaultRetVal}" ];then

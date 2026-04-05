@@ -1,6 +1,37 @@
 #!/usr/bin/env bash
 
 function secretGenerator_default() {
+  local l_resourceType=$2
+  local l_generatorName=$4
+  local l_valuesYaml=$4
+  local l_deploymentIndex=$5
+
+  local t_generatorName="${l_generatorName//_/-}"
+  local t_username
+  local t_password
+
+  local l_array
+
+  #最终确定采用的ApiVersion版本
+  [[ -z "${t_apiVersion}" ]] && t_apiVersion="v1"
+  info "plugin.common.k8s.api.version" "${l_resourceType}#${t_apiVersion}"
+
+  #将生成的Chart镜像推送到gChartRepoName仓库中。
+  invokeExtendPointFunc "readDSCredentialParams" "secret.generator.sh.read.ds.credential.params" "" "${l_valuesYaml}" "${l_deploymentIndex}"
+  if [ "${gDefaultRetVal}" ];then
+    # shellcheck disable=SC2206
+    l_array=(${gDefaultRetVal//|null|/ })
+    t_username=$(echo -n "${l_array[0]}" | base64)
+    t_password=$(echo -n "${l_array[1]}" | base64)
+    # 生成Java项目中数据源的Secret
+    commonGenerator_default "Secret" "${@}"
+  fi
+
+  unset t_username
+  unset t_password
+}
+
+function secretGenerator_docker-config() {
   export gDefaultRetVal
   export gDockerRepoName
   export gDockerRepoAccount

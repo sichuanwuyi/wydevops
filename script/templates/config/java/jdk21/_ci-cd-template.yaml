@@ -432,6 +432,16 @@ chart:
                 valueFrom:
                   fieldRef:
                     fieldPath: status.hostIP
+              - name: MASTER_DS_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: ${serviceName}-${versionSuffix}-default-secret
+                    key: username
+              - name: MASTER_DS_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: ${serviceName}-${versionSuffix}-default-secret
+                    key: password
             envFrom:
             volumeMounts:
               - name: ${serviceName}-workdir
@@ -482,54 +492,72 @@ chart:
 
         resourcePlugins:
           - name: ConfigMap
+            type: ConfigMap
             generatorName: default
             enable: true
             configPath:
           - name: Secret
+            type: Secret
             generatorName: default
             enable: false
             configPath:
           - name: Deployment
+            type: Deployment
             generatorName: default
             enable: true
             configPath:
           - name: DaemonSet
+            type: DaemonSet
             generatorName: default
             enable: true
             configPath:
-          - name: StatefulSet
+          - name: Secret-datasource
+            type: Secret
             generatorName: default
             enable: true
+            configPath:
+          - name: Secret-docker-config
+            type: Secret
+            generatorName: docker-config
+            enable: false
             configPath:
           - name: Service
+            type: Service
             generatorName: default
             enable: true
             configPath:
           - name: Gateway
+            type: Gateway
             generatorName: default
             enable: true
             configPath: istioRoute
           - name: VirtualService
+            type: VirtualService
             generatorName: default
             enable: true
             configPath: istioRoute
           - name: DestinationRule
+            type: DestinationRule
             generatorName: default
             enable: true
             configPath: istioRoute
           - name: ServiceAccount
+            type: ServiceAccount
             generatorName: default
             enable: true
             configPath:
           - name: HorizontalPodAutoscaler
+            type: HorizontalPodAutoscaler
             generatorName: default
             enable: true
             configPath:
           - name: Ingress
+            type: Ingress
             generatorName: default
             enable: false
             configPath: ingressRoute
           - name: ApisixRoute
+            type: ApisixRoute
             generatorName: default
             enable: false
             configPath: apisixRoute
