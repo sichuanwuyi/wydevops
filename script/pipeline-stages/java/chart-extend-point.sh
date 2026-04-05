@@ -17,10 +17,10 @@ function _readDSCredentialParams_ex() {
     || warn "java.chart.extend.point.ds.password.not.found"
 
   if [[ "${l_username}" && "${l_password}" ]];then
-    warn "java.chart.extend.point.ds.secret.generated.success" "MySQL#master"
+    warn "java.chart.extend.point.ds.params.reading.success" "MySQL#master"
     gDefaultRetVal="${l_username}|null|${l_password}"
   else
-    warn "java.chart.extend.point.ds.secret.generated.failed" "MySQL#master"
+    warn "java.chart.extend.point.ds.params.reading.failed" "MySQL#master"
     gDefaultRetVal=""
   fi
 }
