@@ -697,6 +697,8 @@ function _deployServiceInK8S() {
 
   local l_content
 
+  local _setStringParams
+
   readParam "${gCiCdYamlFile}" "deploy[${l_index}].activeProfile"
   l_activeProfile="${gDefaultRetVal}"
 
@@ -874,9 +876,21 @@ function _deployServiceInK8S() {
     fi
 
     if [ "${l_settingParams}" ];then
+      #替换数据源账号和密码为环境变量
+      _setStringParams=""
+      _handleEnvironmentVariables "${l_settingParams}"
+      l_settingParams="${gDefaultRetVal}"
+
+      [[ "${_setStringParams}" =~ ^(,) ]] && _setStringParams="${_setStringParams:1}"
       [[ "${l_settingParams}" =~ ^(,) ]] && l_settingParams="${l_settingParams:1}"
-      info "common.deploy.extend.point.reinstalling.service.with.params" "${l_chartName}#helm ${l_installMode} ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
-      l_content=$(helm ${l_installMode} "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" 2>&1)
+
+      if [ "${_setStringParams}" ];then
+        info "common.deploy.extend.point.reinstalling.service.with.params" "${l_chartName}#helm ${l_installMode} ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams} --set-string ${_setStringParams}"
+        l_content=$(helm ${l_installMode} "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" --set-string "${_setStringParams}" 2>&1)
+      else
+        info "common.deploy.extend.point.reinstalling.service.with.params" "${l_chartName}#helm ${l_installMode} ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config --set ${l_settingParams}"
+        l_content=$(helm ${l_installMode} "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" --set "${l_settingParams}" 2>&1)
+      fi
     else
       info "common.deploy.extend.point.reinstalling.service.with.params" "${l_chartName}#helm ${l_installMode} ${l_chartName} ${l_chartFile} --namespace ${l_namespace} --create-namespace --kubeconfig ${l_localBaseDir}/kube-config"
       l_content=$(helm ${l_installMode} "${l_chartName}" "${l_chartFile}" --namespace "${l_namespace}" --create-namespace --kubeconfig "${l_localBaseDir}/kube-config" 2>&1)
@@ -1445,6 +1459,46 @@ function _generateInstallShellFile() {
 source ${l_remoteDir}/${l_remoteInstallProxyShell/} \"${l_chartName}\" \"${l_chartVersion}\" \\
   \"${l_curArchType}\" \"${l_targetArchType}\" \"${l_offlinePackage}\" \"${l_nodeIps}\" \"${l_logLanguage}\" \"${gDockerRepoName}\" \"${gDockerRepoAccount}\" \"${gDockerRepoPassword}\"
   " > "${l_localDir}/install.sh"
+}
+
+function _handleEnvironmentVariables() {
+  export gDefaultRetVal
+  export _setStringParams
+
+  local l_Params=$1
+
+  local l_result
+  local l_arrays
+  local l_count
+  local l_i
+  local l_param
+  local l_key
+  local l_value
+
+  _setStringParams=""
+
+  stringToArray "${l_Params}" "l_arrays" ","
+  l_count=${#l_arrays[@]}
+  for ((l_i=0; l_i < l_count; l_i++));do
+    l_param="${l_arrays[${l_i}]}"
+    if [[ "${l_key}" =~ ^(params\.)*  ]];then
+      l_key="${l_param%%=}"
+      if [[ "${l_key}" =~ ^(params\.ds\.).*.username || ${l_key} =~ ^(params\.ds\.).*\.password  ]];then
+        l_value="${l_key//params.ds./}"
+        l_value="${l_result^^}"
+        l_value="${l_result//./_}"
+        _setStringParams="${_setStringParams},${l_key}='\${${l_value}}'"
+      else
+        l_result="${l_result},${l_param}"
+      fi
+    else
+      l_result="${l_result},${l_param}"
+    fi
+  done
+
+  echo "-----_setStringParams=|${_setStringParams}|--------"
+
+  gDefaultRetVal="${l_result}"
 }
 
 #**********************私有方法-结束***************************#
