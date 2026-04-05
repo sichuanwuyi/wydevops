@@ -43,6 +43,10 @@ function getApiVersion() {
 
   #从gApiResourcesInfo变量中提取l_resourceType资源的Api版本
   gDefaultRetVal=$(echo "${gApiResourcesInfo}" | awk -v var="${l_resourceType}" '$NF == var {print $3}')
+  if [[ "${gDefaultRetVal}" == "false" || "${gDefaultRetVal}" == "true"  ]]; then
+    #有些资源类型没有短名称，这会导致$2位置存放的才是版本信息。
+    gDefaultRetVal=$(echo "${gApiResourcesInfo}" | awk -v var="${l_resourceType}" '$NF == var {print $2}')
+  fi
 }
 
 export gApiResourcesInfo
