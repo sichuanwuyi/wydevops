@@ -8,8 +8,8 @@ docker run \
 -e WYDEVOPS_LOG_LANGUAGE="zh" \
 --name wydevops-runner \
 wydevops-runner:1.2.0 \
--A "linux/arm64" \
--O "linux/arm64" \
--B "double" \
+-A "linux/amd64" \
+-O "linux/amd64" \
+-B "single" \
 -R "k8s" \
--S "chart,package,deploy"
+-S "build,docker,chart,package,deploy"

@@ -25,8 +25,9 @@ function secretGenerator_default() {
     #更新l_targetFile文件中data属性的值为gDefaultRetVal。
     updateParam "${l_targetFile}" "data" "${gDefaultRetVal}"
 
-    l_secretName="${l_targetFile##*/}"
-    l_secretName="${l_secretName//\.yaml/}"
+    readParam "${l_valuesYaml}" "deployment${l_deploymentIndex}.name"
+    l_secretName="${gDefaultRetVal}"
+    l_secretName="${l_secretName}-${t_generatorName}-secret"
     invokeExtendPointFunc "insertEnvParamsToValuesYaml" "secret.generator.sh.set.envfrom.params" "" \
       "${l_valuesYaml}" "${l_deploymentIndex}" "${l_secretName}"
   fi
