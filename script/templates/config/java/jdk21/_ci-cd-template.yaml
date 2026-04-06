@@ -499,7 +499,7 @@ chart:
           - name: Secret
             type: Secret
             generatorName: default
-            enable: false
+            enable: true
             configPath:
           - name: Secret-docker-config
             type: Secret

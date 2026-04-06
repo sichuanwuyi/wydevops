@@ -464,7 +464,7 @@ chart:
           - name: Secret
             type: Secret
             generatorName: default
-            enable: false
+            enable: true
             configPath:
           - name: Deployment
             type: Deployment
