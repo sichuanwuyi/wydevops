@@ -1495,9 +1495,6 @@ function _handleEnvironmentVariables() {
       l_result="${l_result},${l_param}"
     fi
   done
-
-  echo "-----_setStringParams=|${_setStringParams}|--------"
-
   gDefaultRetVal="${l_result}"
 }
 

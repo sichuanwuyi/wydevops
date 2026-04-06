@@ -1451,11 +1451,11 @@ function readDSCredentialParams_ex() {
       fi
       warn "java.chart.extend.point.ds.params.reading.success" "${l_tmpKey}#${l_value}"
       l_value=$(echo -n "${l_value}" | base64)
-      l_result="${l_result}\n${l_tmpKey}=${l_value}"
+      l_result="${l_result}\n${l_tmpKey}: ${l_value}"
     fi
   done
 
-  [[ "${l_result}" ]] && gDefaultRetVal="${l_result:1}" || gDefaultRetVal=""
+  [[ "${l_result}" ]] && gDefaultRetVal="${l_result:2}" || gDefaultRetVal=""
 }
 
   #根据参数向values.yaml文件中写入env环境变量配置。
