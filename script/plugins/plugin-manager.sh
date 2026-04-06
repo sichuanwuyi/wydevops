@@ -179,7 +179,7 @@ function commonGenerator_default() {
   #将替换后的内容写入配置文件中。
   echo "${l_content}" > "${l_targetFile}"
 
-  gDefaultRetVal="true"
+  gDefaultRetVal="true|${l_targetFile}"
 }
 
 function loadPlugins() {

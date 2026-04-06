@@ -1421,6 +1421,65 @@ function _addParamsToValuesYaml(){
   done
 
 }
+
+function readDSCredentialParams_ex() {
+  export gDefaultRetVal
+
+  local l_valuesYaml=$1
+  local l_deploymentIndex=$2
+
+  local l_key
+  local l_value
+  local l_tmpKey
+  local l_result
+  declare -A paramMaps
+  # 新增顺序索引数组
+  declare -a paramKeys
+
+  getAllParamPathAndValue "${l_valuesYaml}" "params.ds" "paramMaps" "paramKeys"
+
+  l_result=""
+  # 遍历数组
+  for l_key in "${paramKeys[@]}"; do
+    l_tmpKey="${l_key//params\.ds\./}"
+    l_tmpKey="${l_tmpKey^^}"
+    l_tmpKey="${l_tmpKey//./_}"
+    l_value="${paramMaps[${l_key}]}"
+    if [ -z "${l_value}" ];then
+      [[ "${l_key}" == *username* ]] && l_value="root" || l_value="123456"
+    fi
+    warn "java.chart.extend.point.ds.params.reading.success" "${l_tmpKey}#${l_value}"
+    l_value=$(echo -n "${l_value}" | base64)
+    l_result="${l_result}\n,  ${l_tmpKey}=${l_value}"
+  done
+
+  [[ "${l_result}" ]] && gDefaultRetVal="${l_result:2}" || gDefaultRetVal=""
+}
+
+  #根据参数向values.yaml文件中写入env环境变量配置。
+function insertEnvParamsToValuesYaml_ex(){
+  local l_valuesYaml=$1
+  local l_deploymentIndex=$2
+  local l_secretName=$3
+
+  local l_size
+  local l_index
+  local l_content
+
+  getListSize "${l_valuesYaml}" "deployment${l_deploymentIndex}.containers[0].envFrom"
+  l_size="${gDefaultRetVal}"
+  if [[ "${l_size}" -gt 0 ]];then
+    ((l_index=l_size-1))
+  else
+    ((l_index=0))
+  fi
+
+  l_content="secretRef:\n  name: ${l_secretName}"
+  insertParam "${l_valuesYaml}" "deployment${l_deploymentIndex}.containers[0].envFrom[${l_index}]" "${l_content}"
+}
+
+
+
 #**********************私有方法-结束***************************#
 
 #加载chart阶段脚本库文件
