@@ -1478,8 +1478,6 @@ function insertEnvParamsToValuesYaml_ex(){
   insertParam "${l_valuesYaml}" "deployment${l_deploymentIndex}.containers[0].envFrom[${l_index}]" "${l_content}"
 }
 
-
-
 #**********************私有方法-结束***************************#
 
 #加载chart阶段脚本库文件

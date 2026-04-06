@@ -405,6 +405,14 @@ chart:
                 nodePort: ${nodePorts}
             #定义环境变量
             env:
+              - name: NODE_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: spec.nodeName
+              - name: NODE_IP
+                valueFrom:
+                  fieldRef:
+                    fieldPath: status.hostIP
             envFrom:
             volumeMounts:
               - name: ${serviceName}-workdir

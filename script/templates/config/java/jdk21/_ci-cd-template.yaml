@@ -432,16 +432,6 @@ chart:
                 valueFrom:
                   fieldRef:
                     fieldPath: status.hostIP
-              - name: MYSQL_MASTER_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: ${serviceName}-${versionSuffix}-default-secret
-                    key: username
-              - name: MYSQL_MASTER_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: ${serviceName}-${versionSuffix}-default-secret
-                    key: password
             envFrom:
             volumeMounts:
               - name: ${serviceName}-workdir
