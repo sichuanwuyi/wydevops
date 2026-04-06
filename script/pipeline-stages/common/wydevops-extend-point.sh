@@ -982,6 +982,7 @@ function _loadGlobalParamsFromCiCdYaml() {
   export gTargetGatewayHosts
   export gGatewayPath
   export gServiceName
+  export gDataSourceSecret
 
   if [ ! "${gRuntimeVersion}" ];then
     #初始化gRuntimeVersion参数。
@@ -1117,6 +1118,15 @@ function _loadGlobalParamsFromCiCdYaml() {
   fi
   gBusinessVersion="${gDefaultRetVal}"
   info "common.wydevops.extend.point.business.version.config.value" "${gBusinessVersion}"
+
+  #初始化gDataSourceSecret参数。
+  readParam "${l_cicdYaml}" "globalParams.dataSourceSecret"
+  if [ "${gDefaultRetVal}" != "null" ];then
+    gDataSourceSecret="${gDefaultRetVal}"
+  else
+    gDataSourceSecret=""
+  fi
+  info "common.wydevops.extend.point.data.source.secret.config.value" "${gDataSourceSecret}"
 }
 
 #------------------------私有方法--结束-------------------------#

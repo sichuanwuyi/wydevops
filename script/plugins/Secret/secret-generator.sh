@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 function secretGenerator_default() {
+  export gDataSourceSecret
+
   local l_resourceType=$2
   local l_generatorName=$3
   local l_valuesYaml=$4
@@ -9,6 +11,12 @@ function secretGenerator_default() {
   local t_generatorName="${l_generatorName//_/-}"
   local l_targetFile
   local l_secretName
+
+  if [ "${gDataSourceSecret}" ];then
+    invokeExtendPointFunc "insertEnvParamsToValuesYaml" "secret.generator.sh.set.envfrom.params" "" \
+      "${l_valuesYaml}" "${l_deploymentIndex}" "${gDataSourceSecret}"
+    return
+  fi
 
   #最终确定采用的ApiVersion版本
   [[ -z "${t_apiVersion}" ]] && t_apiVersion="v1"

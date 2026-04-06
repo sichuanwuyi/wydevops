@@ -109,6 +109,7 @@ export gGlobalParamNames=(
 "gChartRepoAccount" \
 "gChartRepoPassword" \
 "gChartRepoWebPort" \
+"gDataSourceSecret" \
 
 #发布平台相关参数
 "gUpdateNotifyUrl" \

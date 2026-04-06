@@ -139,6 +139,8 @@ globalParams:
 
   #定义K8S集群内部拉取docker镜像时使用的secret资源的名称，默认设置为空
   imagePullSecret:
+  #全局数据源Secret名称，默认设置为空
+  dataSourceSecret:
 
   #是否启用K8S服务存活探针
   livenessProbeEnable: true
