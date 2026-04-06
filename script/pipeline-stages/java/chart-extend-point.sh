@@ -7,6 +7,17 @@ function _readDSCredentialParams_ex() {
 
   local l_username
   local l_password
+  local l_key
+
+  declare -A paramMaps
+  # 新增顺序索引数组
+  declare -a paramKeys
+
+  getAllParamPathAndValue "${l_valuesYaml}" "params.ds" "paramMaps" "paramKeys"
+  # 遍历数组
+  for l_key in "${paramKeys[@]}"; do
+    echo "---${l_key}=${paramMaps[${l_key}]}---"
+  done
 
   readParam "${l_valuesYaml}" "params.ds.mysql.master.username" "MySQL#master"
   [[ "${gDefaultRetVal}" && "${gDefaultRetVal}" != "null" ]] && l_username="${gDefaultRetVal}" \

@@ -175,6 +175,9 @@ function createConfigFile_ex() {
       echo "  ${l_key}=${paramMaps[${l_key}]}," >> "${l_settingFile}"
     done
 
+    unset paramMaps
+    unset paramKeys
+
     #删除解压出的目录
     rm -rf "./${l_chartName}/"
 
