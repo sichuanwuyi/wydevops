@@ -1441,19 +1441,21 @@ function readDSCredentialParams_ex() {
   l_result=""
   # 遍历数组
   for l_key in "${paramKeys[@]}"; do
-    l_tmpKey="${l_key//params\.ds\./}"
-    l_tmpKey="${l_tmpKey^^}"
-    l_tmpKey="${l_tmpKey//./_}"
-    l_value="${paramMaps[${l_key}]}"
-    if [ -z "${l_value}" ];then
-      [[ "${l_key}" == *username* ]] && l_value="root" || l_value="123456"
+    if [[ "${l_key}" =~ ^(.*)\.username$ || "${l_key}" =~ ^(.*)\.password$ ]];then
+      l_tmpKey="${l_key//params\.ds\./}"
+      l_tmpKey="${l_tmpKey^^}"
+      l_tmpKey="${l_tmpKey//./_}"
+      l_value="${paramMaps[${l_key}]}"
+      if [ -z "${l_value}" ];then
+        [[ "${l_key}" == *username* ]] && l_value="root" || l_value="123456"
+      fi
+      warn "java.chart.extend.point.ds.params.reading.success" "${l_tmpKey}#${l_value}"
+      l_value=$(echo -n "${l_value}" | base64)
+      l_result="${l_result}\n${l_tmpKey}=${l_value}"
     fi
-    warn "java.chart.extend.point.ds.params.reading.success" "${l_tmpKey}#${l_value}"
-    l_value=$(echo -n "${l_value}" | base64)
-    l_result="${l_result}\n,  ${l_tmpKey}=${l_value}"
   done
 
-  [[ "${l_result}" ]] && gDefaultRetVal="${l_result:2}" || gDefaultRetVal=""
+  [[ "${l_result}" ]] && gDefaultRetVal="${l_result:1}" || gDefaultRetVal=""
 }
 
   #根据参数向values.yaml文件中写入env环境变量配置。
