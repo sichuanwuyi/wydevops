@@ -9,7 +9,7 @@ ENV JAVA_OPTS=_JAVA-OPTS_
 ENV LANG=C.UTF-8
 
 COPY ./dependencies/ ./snapshot-dependencies/ ./application/ ./spring-boot-loader/ _WORK-DIR-IN-CONTAINER_/
-COPY ./wydevops-config/ _WORK-DIR-IN-CONTAINER_/wydevops-config/
+#COPY ./wydevops-config/ _WORK-DIR-IN-CONTAINER_/wydevops-config/
 
 EXPOSE _EXPOSE_
 
